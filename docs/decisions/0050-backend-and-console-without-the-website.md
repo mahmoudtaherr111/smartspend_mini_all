@@ -23,9 +23,10 @@ kept. In code it was wired into everything:
   3000 where the phone apps' debug builds look; `npm run dev:web` is the website's, used by Playwright.
 - **The console is a site of its own:** its own stylesheet (no scroll lock), its own UI kit (`admin/src/kit`), its own
   tRPC client (`admin/src/lib/trpc.ts`, which imports only the router's types) and its own Vite cache. The old screens
-  it still hosts are rebuilt as console pages one by one, judged on what an admin needs rather than copied; when the
-  last one moves, the old console page leaves and a test refuses any import of `src/` from `admin/` or `api/`.
+  it hosted were rebuilt as console pages, judged on what an admin needs rather than copied (2026-11-05): the old
+  console page is gone, the console's Vite config has no `@` alias into `src/`, and
+  `tests/knowledge/architecture.test.ts` refuses any import of `src/` from `admin/` or `api/`.
 
 ## Consequences
 - The production image holds no website and spends nothing on it; turning it back on is one variable and one build.
-- Until the rebuild ends, `admin/` still imports those old screens from `src/`, so `src/` cannot be deleted yet.
+- Nothing outside the website imports `src/`, so parking it costs nothing; deleting it, or reviving it, is one decision with no console work attached.

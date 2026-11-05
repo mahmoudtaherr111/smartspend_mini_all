@@ -1,3 +1,4 @@
+import { logAdminAction } from "./lib/admin-audit";
 import { z } from "zod";
 import {
   router,
@@ -226,7 +227,9 @@ export const exportRouter = router({
   // ─── Export All Users (Admin only) ───
   allUsers: adminProcedure
     .input(z.object({ format: z.enum(["json", "csv", "xlsx"]) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      // Names, phone numbers and emails leave the server here, so every export is in the audit log.
+      await logAdminAction(ctx, { action: "EXPORT_ALL_USERS", targetType: "users", targetId: "all", details: { format: input.format } });
       const oauthUsers = await db
         .select({
           name: users.name,

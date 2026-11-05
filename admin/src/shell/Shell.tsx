@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import {
   Banknote,
   BookOpen,
@@ -8,6 +8,7 @@ import {
   ChartLine,
   Cpu,
   Home,
+  Layers,
   Megaphone,
   LifeBuoy,
   SlidersHorizontal,
@@ -15,8 +16,8 @@ import {
   Menu,
   Plug,
   Receipt,
+  ScrollText,
   Users,
-  Wrench,
   X,
 } from "lucide-react";
 import { Button } from "@admin/kit/button";
@@ -56,9 +57,16 @@ const AREAS: Area[] = [
   },
   {
     to: "/money",
-    label: "الفلوس والباقات",
-    hint: "الاشتراكات والإيراد وحدود كل باقة",
+    label: "الفلوس",
+    hint: "الاشتراكات والإيراد",
     icon: Banknote,
+    adminOnly: true,
+  },
+  {
+    to: "/plans",
+    label: "الباقات والحدود",
+    hint: "كل باقة بتعمل إيه وقد إيه، والمكالمة",
+    icon: Layers,
     adminOnly: true,
   },
   {
@@ -119,10 +127,10 @@ const AREAS: Area[] = [
     adminOnly: true,
   },
   {
-    to: "/legacy",
-    label: "باقي الأدوات",
-    hint: "اللوحة القديمة لحد ما كل قسم يتنقل",
-    icon: Wrench,
+    to: "/audit",
+    label: "سجل الأدمن",
+    hint: "مين غيّر إيه وإمتى",
+    icon: ScrollText,
     adminOnly: true,
   },
 ];
@@ -141,8 +149,6 @@ export function Shell({
     onSettled: () => window.location.assign("/admin/"),
   });
   const areas = AREAS.filter((area) => isAdmin || !area.adminOnly);
-  // The previous console brings its own menu, so it gets the whole width; this menu stays a tap away.
-  const wide = useLocation().pathname.startsWith("/legacy");
 
   const nav = (
     <nav className="flex flex-col gap-1" aria-label="أقسام الإدارة">
@@ -178,7 +184,7 @@ export function Shell({
         <Button
           variant="ghost"
           size="icon"
-          className={wide ? "" : "lg:hidden"}
+          className="lg:hidden"
           aria-label={open ? "اقفل القايمة" : "افتح القايمة"}
           onClick={() => setOpen((value) => !value)}
         >
@@ -200,12 +206,12 @@ export function Shell({
         </Button>
       </header>
       <div className="mx-auto flex max-w-[1500px] gap-6 px-4 py-6">
-        <aside className={`hidden w-60 shrink-0 ${wide ? "" : "lg:block"}`}>
+        <aside className="hidden w-60 shrink-0 lg:block">
           <div className="sticky top-20">{nav}</div>
         </aside>
         {open && (
           <div
-            className={`fixed inset-x-0 top-14 z-20 border-b bg-background p-4 shadow-sm ${wide ? "" : "lg:hidden"}`}
+            className="fixed inset-x-0 top-14 z-20 border-b bg-background p-4 shadow-sm lg:hidden"
           >
             {nav}
           </div>

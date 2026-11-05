@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@admin/kit/input";
@@ -6,7 +7,7 @@ import { Switch } from "@admin/kit/switch";
 import { trpc } from "@admin/lib/trpc";
 import { SaveBar } from "../ui/SaveBar";
 import { LoadError, Loading, PageHeader } from "../ui/states";
-import { dayTime } from "../ui/words";
+import { AUDIT_ACTION, dayTime } from "../ui/words";
 
 // Each AI feature an admin can stop for everyone (api/lib/feature-switches.ts), in the words of the app.
 const SWITCHES = [
@@ -26,19 +27,6 @@ const FIELDS = [
   ["mobile_store_url_ios", "رابط التطبيق على App Store", "https://apps.apple.com/app/…", ""],
 ] as const;
 
-const ACTION: Record<string, string> = {
-  UPDATE_SYSTEM_SETTINGS: "غيّر الإعدادات",
-  UPDATE_USER_PLAN: "غيّر باقة مستخدم",
-  UPDATE_USER_ROLE: "غيّر صلاحية مستخدم",
-  DELETE_USER: "مسح حساب",
-  REVOKE_SESSION: "سجّل خروج جهاز",
-  ADD_AI_PROVIDER: "ضاف موصل",
-  UPDATE_AI_PROVIDER: "عدّل موصل",
-  DELETE_AI_PROVIDER: "شال موصل",
-  SET_USER_TOKEN_LIMIT: "حدد حد ذكاء لمستخدم",
-  RESET_USER_TOKENS: "صفّر استهلاك ذكاء",
-  RESPOND_SUPPORT_TICKET: "رد على تذكرة",
-};
 
 /** The controls for a bad day and for app releases, and the record of what every admin changed. */
 export function Operations() {
@@ -122,7 +110,7 @@ export function Operations() {
 
       <section className="mt-4 rounded-xl border bg-background p-4">
         <h2 className="font-bold">سجل الرقابة</h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">آخر 30 حاجة الأدمنز غيروها، باسم كل واحد.</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">آخر 30 حاجة الأدمنز غيروها، باسم كل واحد. <Link className="underline" to="/audit">السجل كله بالفلاتر</Link></p>
         {audit.isLoading ? (
           <Loading />
         ) : !audit.data ? (
@@ -134,7 +122,7 @@ export function Operations() {
             {audit.data.logs.map((log: { id: number; action: string; adminName?: string; targetType: string | null; targetId: string | null; createdAt: string | Date }) => (
               <li key={log.id} className="flex flex-wrap justify-between gap-2 py-2">
                 <span>
-                  <b>{log.adminName || "أدمن"}</b> {ACTION[log.action] ?? log.action}
+                  <b>{log.adminName || "أدمن"}</b> {AUDIT_ACTION[log.action] ?? log.action}
                   {log.targetId && log.targetType !== "system_settings" ? <span className="text-muted-foreground"> ({log.targetId})</span> : null}
                 </span>
                 <span className="text-xs text-muted-foreground">{dayTime(log.createdAt)}</span>

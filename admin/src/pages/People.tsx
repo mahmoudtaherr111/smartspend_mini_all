@@ -2,8 +2,11 @@ import { useDeferredValue, useState } from "react";
 import { Link } from "react-router-dom";
 import { Search } from "lucide-react";
 import { Badge } from "@admin/kit/badge";
+import { toast } from "sonner";
+import { Button } from "@admin/kit/button";
 import { Input } from "@admin/kit/input";
 import { trpc } from "@admin/lib/trpc";
+import { Confirm } from "../ui/Confirm";
 import { LoadError, Loading, PageHeader } from "../ui/states";
 import { ACCOUNT, PLAN, ROLE, day, word } from "../ui/words";
 
@@ -12,10 +15,26 @@ export function People() {
   const [query, setQuery] = useState("");
   const deferred = useDeferredValue(query.trim());
   const people = trpc.adminConsole.searchPeople.useQuery({ query: deferred, limit: 50 });
+  const [exporting, setExporting] = useState(false);
+  const exportAll = trpc.export.allUsers.useMutation({
+    onSuccess: (file) => {
+      const blob = new Blob(["﻿" + String(file.data)], { type: "text/csv;charset=utf-8" });
+      const link = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: file.filename });
+      link.click();
+      URL.revokeObjectURL(link.href);
+      setExporting(false);
+    },
+    onError: (error) => toast.error(error.message),
+  });
 
   return (
     <div>
-      <PageHeader title="الناس" description="دوّر بالاسم أو رقم التليفون أو الإيميل، وافتح أي حد تشوف كل حاجة عنه." />
+      <PageHeader title="الناس" description="دوّر بالاسم أو رقم التليفون أو الإيميل، وافتح أي حد تشوف كل حاجة عنه."
+        actions={<Button variant="outline" onClick={() => setExporting(true)}>نزّل القايمة كلها</Button>} />
+      <Confirm open={exporting} onOpenChange={setExporting} title="تنزيل كل المستخدمين" confirmLabel="نزّل" busy={exportAll.isPending}
+        onConfirm={() => exportAll.mutate({ format: "csv" })}>
+        <p>ملف CSV فيه اسم كل مستخدم ورقمه وإيميله وباقته وآخر دخول. ده بيانات شخصية: احفظه في مكان آمن وامسحه لما تخلص. التنزيل بيتسجل في سجل الأدمن.</p>
+      </Confirm>
       <div className="relative mb-4 max-w-md">
         <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
         <Input

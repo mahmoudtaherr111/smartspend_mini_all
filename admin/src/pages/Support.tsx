@@ -37,6 +37,11 @@ export function Support({ isAdmin }: { isAdmin: boolean }) {
     },
     onError: (error) => toast.error(error.message),
   });
+  // Only an admin may close a ticket (support.close); a support moderator answers it.
+  const close = trpc.support.close.useMutation({
+    onSuccess: () => { toast.success("التذكرة اتقفلت"); void utils.support.listAll.invalidate(); },
+    onError: (error) => toast.error(error.message),
+  });
 
   return (
     <div>
@@ -95,9 +100,14 @@ export function Support({ isAdmin }: { isAdmin: boolean }) {
                     </div>
                   </div>
                 ) : (
-                  <Button className="mt-3" size="sm" variant="outline" onClick={() => { setOpenId(ticket.id); setReply(""); }}>
-                    {ticket.response ? "رد تاني" : "رد"}
-                  </Button>
+                  <div className="mt-3 flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => { setOpenId(ticket.id); setReply(""); }}>
+                      {ticket.response ? "رد تاني" : "رد"}
+                    </Button>
+                    {isAdmin && ticket.status !== "closed" && (
+                      <Button size="sm" variant="ghost" disabled={close.isPending} onClick={() => close.mutate({ id: ticket.id })}>اقفلها</Button>
+                    )}
+                  </div>
                 )}
               </li>
             ))}

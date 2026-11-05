@@ -14,12 +14,12 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-05 f7bb4b83 | 2026-11-05 389cc707 | 8 | — | — | 5 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 6 | — | — | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 9 | — | 2 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 7 | — | 1 | 7 | 1 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-05 5af36e21 | 2026-11-05 f7bb4b83 | 9 | — | 2 | 3 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-05 5af36e21 | 2026-11-05 df6216e1 | 7 | — | 1 | 7 | 1 |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 16 | **1** | — | 7 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-05 df6216e1 | 2026-11-03 ff028180 | 2 | — | — | 2 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-04 4def5707 | 2026-11-05 08b37c7f | 4 | — | — | 3 | 1 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 4 | — | — | 6 | 1 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-05 5af36e21 | 2026-11-05 5af36e21 | 7 | — | — | 7 | — |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 10 | — | — | 3 | 5 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-05 f7bb4b83 | 2026-11-05 0c8067ac | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 7 | — | — | 3 | 1 |
@@ -47,7 +47,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
 - The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 
-### Gaps (46)
+### Gaps (47)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and The website has no receipt capture. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
@@ -103,11 +103,12 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
 - `logAdminAction` in `api/lib/admin-audit.ts` records actions in `admin_audit_logs` and the audit tab shows them, but not every procedure of `api/admin-router.ts` calls it yet, and a failed write of the trail does not stop the action.
-- The backup button returns settings with secrets masked, onboarding questions and ads to the browser; nothing backs up the database.
+- Nothing backs up the database from the console; `admin.triggerBackupDemo` (settings with secrets masked, onboarding questions and ads) has no screen.
+- No screen shows when each background job last ran or whether it failed: `withScheduledJobLock` records nothing.
 - `support.assign` has no screen, so tickets cannot be given to one person of the team.
 - No screen edits SEO pages (`seo.upsert`, `seo.list` and `seo.delete` have no caller); the sitemap is served at `/sitemap.xml` from the app's address.
 - Ads show only in the mobile app (`mobile/app/lib/src/features/ads/sponsored_card.dart`), which records impressions and clicks; the website shows none.
-- Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one), `support.getById`, `support.assign` and every statistic of `analytics`.
+- Procedures without a screen: `admin.sendPushNotification` (web push only), `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.updateUserPlan` (the console uses the `V2` one), `admin.getAICostOverview`, `admin.getAIClassificationStats`, `admin.getVoiceUsageStats`, `admin.getUserAiQuota`, `admin.getUserSmartProfile`, `admin.listAllUsers`, `admin.listSubscriptionsAdmin`, `admin.listStorePurchasesAdmin`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getActivityLog`, `admin.getUserSessions`, `admin.discoverProviderModels`, `admin.saveAiModels`, the discount codes (store billing has none), `support.getById`, `support.assign` and every statistic of `analytics`. The console's own procedures cover what these showed.
 
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
 - Two accountings remain: the `ai_cost_*` events of `recordAICostMetric` estimate tokens on their own and the screen that would show them is not mounted ([admin](admin.md)); the ledger is the priced one.
@@ -119,7 +120,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The Capacitor shells (`android/`, `ios/`) serve the build from `https://localhost` and call the API on another site, where a `SameSite=Lax` cookie is not sent, so they cannot keep a session since the website stopped holding the token. The Flutter app replaces them (decision 0022); until they are retired they only reach the sign-in screen.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (27)
+### Debt (26)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - **Clarifications save immediately with undo (Decision 0039).** A clarification saves as soon as it is answered; the saved items are shown afterwards with an immediate "تراجع" (Undo) banner rather than requiring a blocking confirmation modal. This design eliminates friction during frequent Egyptian micro-transaction and voice recording; undo and post-save edits remain instant and safe. Questions stored before the source was kept save a spoken sentence as `manual`.
@@ -149,9 +150,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
 - The activity checks and scheduled templates have no test against a real database; `api/notification-engine.delivery.test.ts` covers the push payloads only.
-
-**Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
-- Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`, `admin.getClassificationLogs` and `admin.getVoiceUsageStats` and displays none of them: the panel that would show them, `src/pages/Admin.tsx#ClassificationDashboard`, is never mounted. The classification quality itself is shown by the command center's quality card (`admin.getClassificationQuality`).
 
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
 - `executeAiGateway` — the execution half of the "universal gateway", with its own price-based cost calculation and ledger write — has one caller, the voice call's `think` tool. Elsewhere only its route resolution is used, by `api/lib/smart-pipeline.ts`.

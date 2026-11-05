@@ -1,7 +1,5 @@
 import { Link } from "react-router-dom";
-import { AdminPlansTab } from "@/components/admin/settings/AdminPlansTab";
 import { trpc } from "@admin/lib/trpc";
-import { SettingsEditor } from "../ui/SettingsEditor";
 import { LoadError, Loading, PageHeader } from "../ui/states";
 import { STORE, SUBSCRIPTION, count, day, word } from "../ui/words";
 
@@ -36,8 +34,8 @@ export function Money() {
   return (
     <div>
       <PageHeader
-        title="الفلوس والباقات"
-        description="الاشتراكات من Google Play وApp Store، وتقدير الإيراد الشهري، وإيه اللي كل باقة فيها وحدودها."
+        title="الفلوس"
+        description="الاشتراكات من Google Play وApp Store، وتقدير الإيراد الشهري قبل نصيب المتجر."
       />
       {money.isLoading ? (
         <Loading />
@@ -121,16 +119,9 @@ export function Money() {
         </>
       )}
 
-      <section className="mt-6">
-        <h2 className="mb-1 text-lg font-bold">الباقات وحدودها</h2>
-        <p className="mb-4 text-sm text-muted-foreground">
-          كل خانة هنا بتتحفظ لما تدوس «احفظ» تحت، وبتوصل للتطبيق خلال دقايق.
-          الحدود اللي صفر معناها من غير حد.
-        </p>
-        <SettingsEditor>
-          {(props) => <AdminPlansTab {...props} />}
-        </SettingsEditor>
-      </section>
+      <p className="mt-6 text-sm text-muted-foreground">
+        مميزات كل باقة وحدودها والمكالمة الصوتية في صفحة <Link className="underline" to="/plans">الباقات والحدود</Link>.
+      </p>
     </div>
   );
 }

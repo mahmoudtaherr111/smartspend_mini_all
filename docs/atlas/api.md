@@ -341,7 +341,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `export.allUsers` | mutation | `adminProcedure` | yes | `local_users`, `users` | — | — | `src/pages/Admin.tsx` |
+| `export.allUsers` | mutation | `adminProcedure` | yes | `local_users`, `users` | — | `api/lib/admin-audit.ts` | `src/pages/Admin.tsx` |
 | `export.monthlyReportHtml` | mutation | `proReportProcedure` | yes | — | — | `api/services/pro-report-engine.ts` | `src/components/insights/AIInsights.tsx` |
 | `export.myExpenses` | mutation | `authedProcedure` | yes | `expenses` | — | `api/lib/app-time.ts`, `api/services/ledger-semantics.ts`, `contracts/ledger-movement.ts` | `src/components/expenses/ExportExpensesCard.tsx` |
 

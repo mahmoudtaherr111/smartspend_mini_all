@@ -1,16 +1,19 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { trpc } from "@admin/lib/trpc";
 import { Shell } from "./shell/Shell";
 import { SignIn } from "./pages/SignIn";
 import { AiCalls } from "./pages/AiCalls";
+import { Audit } from "./pages/Audit";
 import { Classifications } from "./pages/Classifications";
 import { Connectors } from "./pages/Connectors";
 import { Growth } from "./pages/Growth";
-import { Communications, Rules } from "./pages/Hosted";
+import { Communications } from "./pages/comms/Communications";
+import { Rules } from "./pages/rules/Rules";
 import { AiSetup } from "./pages/ai/AiSetup";
 import { BankMessages } from "./pages/bank/BankMessages";
 import { Money } from "./pages/Money";
+import { Plans } from "./pages/plans/Plans";
 import { Operations } from "./pages/Operations";
 import { People } from "./pages/People";
 import { Support } from "./pages/Support";
@@ -19,7 +22,6 @@ import { Today } from "./pages/Today";
 import { ErrorBoundary } from "./ui/ErrorBoundary";
 import { Loading } from "./ui/states";
 
-const LegacyConsole = lazy(() => import("./pages/LegacyConsole"));
 
 /** Only staff reach the console: anyone else sees the sign-in page, and a signed-in user without the role is told so. */
 export default function App() {
@@ -47,7 +49,9 @@ export default function App() {
             />
             <Route path="/support" element={<Support isAdmin={isAdmin} />} />
             {isAdmin && <Route path="/operations" element={<Operations />} />}
+            {isAdmin && <Route path="/audit" element={<Audit />} />}
             {isAdmin && <Route path="/money" element={<Money />} />}
+            {isAdmin && <Route path="/plans" element={<Plans />} />}
             {isAdmin && (
               <Route path="/communications" element={<Communications />} />
             )}
@@ -66,7 +70,6 @@ export default function App() {
             {isAdmin && (
               <Route path="/ai/connectors" element={<Connectors />} />
             )}
-            {isAdmin && <Route path="/legacy" element={<LegacyConsole />} />}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

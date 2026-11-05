@@ -1196,6 +1196,7 @@ model {
   smartspend.api.trpc.expense.update -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.export.allUsers -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.export.allUsers -[reads]-> smartspend.mysql.users
+  smartspend.api.trpc.export.allUsers -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.export.monthlyReportHtml -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.export.myExpenses -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.export.myExpenses -[uses]-> smartspend.api.modules.ledger

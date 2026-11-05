@@ -26,7 +26,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@admin": path.resolve(import.meta.dirname, "src"),
-      "@": path.join(root, "src"),
       "@contracts": path.join(root, "contracts"),
       "@db": path.join(root, "db"),
       db: path.join(root, "db"),

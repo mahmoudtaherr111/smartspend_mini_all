@@ -117,6 +117,7 @@ flowchart LR
   router_analytics -.-> tbl_more
   router_analytics -.-> tbl_users
   router_analytics ==> tbl_user_analytics
+  router_export --> sys_accounts
   router_export -.-> tbl_local_users
   router_export -.-> tbl_users
   router_seo ==> tbl_seo_pages

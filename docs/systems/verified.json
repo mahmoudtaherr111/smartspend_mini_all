@@ -61,13 +61,13 @@
     "admin": {
       "files": {
         "api/admin-console-router.ts": "376d69f09ad6",
-        "api/admin-router.ts": "fbc87b22e971",
+        "api/admin-router.ts": "e8201ba5d982",
         "api/ads-router.ts": "ace6b064f74c",
         "api/ai-setup-router.ts": "5c77cfe36acb",
         "api/analytics-router.ts": "5fd34da40d33",
         "api/boot.ts#GET /admin": "ecbf724126aa",
-        "api/export-router.ts#export.allUsers": "c142aeea8326",
-        "api/export-router.ts#rest-of-file": "6fd0720d7afa",
+        "api/export-router.ts#export.allUsers": "3bfd5860a07e",
+        "api/export-router.ts#rest-of-file": "8bc72b35b4e8",
         "api/seo-router.ts": "34739ab2bc7e",
         "api/support-router.ts": "e1f2a36f2111",
         "src/components/admin/AdminAdsTab.tsx": "3a9364ae243b",
@@ -98,9 +98,9 @@
         "src/pages/Admin.tsx": "9444393be5fa",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-05 f7bb4b83",
-      "arabic": "e664f55132be",
-      "arabicChecked": "2026-11-05 f7bb4b83"
+      "checked": "2026-11-05 5af36e21",
+      "arabic": "8decbb36f2b1",
+      "arabicChecked": "2026-11-05 5af36e21"
     },
     "ai-center": {
       "files": {
@@ -345,7 +345,7 @@
         "api/boot.ts#job:monthly-behavior-snapshots": "1a1a7ff4d857",
         "api/boot.ts#job:monthly-report-generation": "60a67c71d204",
         "api/export-router.ts#export.monthlyReportHtml": "335e0925b0ca",
-        "api/export-router.ts#rest-of-file": "6fd0720d7afa",
+        "api/export-router.ts#rest-of-file": "8bc72b35b4e8",
         "api/jobs/monthly-behavior-job.ts": "09dbf0046bb6",
         "api/jobs/monthly-report-job.ts": "2652352873fa",
         "api/lib/report-wait.ts": "67ab20e868a4",
@@ -366,7 +366,7 @@
         "api/services/user-profile-service.ts": "620d598615c2",
         "src/components/insights/AIInsights.tsx": "3be01c23f12c"
       },
-      "checked": "2026-11-05 f7bb4b83",
+      "checked": "2026-11-05 5af36e21",
       "arabic": "2e2041ed05c5",
       "arabicChecked": "2026-11-05 f7bb4b83"
     },
@@ -394,7 +394,7 @@
         "api/expense-router.ts#expense.update": "4f3b81c3338b",
         "api/expense-router.ts#rest-of-file": "491c6b9cd8a2",
         "api/export-router.ts#export.myExpenses": "89b0670d4bbb",
-        "api/export-router.ts#rest-of-file": "6fd0720d7afa",
+        "api/export-router.ts#rest-of-file": "8bc72b35b4e8",
         "api/goals-router.ts": "504b451d0fcb",
         "api/jobs/rollup-reconciliation-job.ts": "07b3be75e8b0",
         "api/jobs/taxonomy-migration-job.ts": "5ea0dd684409",
@@ -443,7 +443,7 @@
         "src/pages/PlanPage.tsx": "107068a002b0",
         "src/pages/WalletsPage.tsx": "a1964708847b"
       },
-      "checked": "2026-11-05 df6216e1",
+      "checked": "2026-11-05 5af36e21",
       "arabic": "24d840e68d75",
       "arabicChecked": "2026-11-05 df6216e1"
     },

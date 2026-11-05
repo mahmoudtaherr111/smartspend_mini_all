@@ -19,6 +19,7 @@ export default defineConfig({
     environment: "node",
     environmentMatchGlobs: [
       ["src/**", "jsdom"],
+      ["admin/**", "jsdom"],
       ["api/**", "node"],
       ["tests/**", "node"],
     ],
@@ -27,6 +28,8 @@ export default defineConfig({
       "api/**/*.spec.ts",
       "src/**/*.test.ts",
       "src/**/*.test.tsx",
+      "admin/**/*.test.ts",
+      "admin/**/*.test.tsx",
       "tests/**/*.test.ts",
       "tests/**/*.test.tsx",
       "tests/**/*.spec.ts",

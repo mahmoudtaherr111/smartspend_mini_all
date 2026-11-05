@@ -1989,7 +1989,7 @@ export const adminRouter = router({
 
     sendInstantNotification: adminProcedure
     .input(z.object({
-      targetType: z.enum(["all", "pro", "free", "specific"]),
+      targetType: z.enum(["all", "free", "pro", "ultra", "specific"]),
       targetUserId: z.union([z.string(), z.number()]).optional(),
       targetUserType: z.string().optional(),
       title: z.string().min(1),
@@ -2007,7 +2007,7 @@ export const adminRouter = router({
           if (input.targetUserType && sub.userType !== input.targetUserType) return false;
           return true;
         });
-      } else if (input.targetType === "pro" || input.targetType === "free") {
+      } else if (input.targetType === "pro" || input.targetType === "free" || input.targetType === "ultra") {
         const targetPlan = input.targetType;
         const [proUsersList, proLocalList] = await Promise.all([
           db.select({ id: users.id }).from(users).where(eq(users.plan, targetPlan)),
