@@ -6,7 +6,8 @@ const bankMessages = (stored: Record<string, string>, plan: "free" | "pro") =>
 
 describe("the plans page row for bank messages", () => {
   it("is not shown while capture is off", () => {
-    expect(bankMessages({}, "pro")).toBeUndefined();
+    expect(bankMessages({ capture_enabled: "false" }, "pro")).toBeUndefined();
+    expect(bankMessages({}, "pro")).toBeDefined();
   });
 
   it("gives the free month's limit, and tells Pro that what was missed is recorded on subscribing", () => {

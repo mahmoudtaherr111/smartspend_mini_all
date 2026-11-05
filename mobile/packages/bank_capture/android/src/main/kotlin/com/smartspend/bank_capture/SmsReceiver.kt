@@ -63,7 +63,7 @@ internal object SmsCapture {
         if (!settings.connected) return false
         val config = settings.config ?: return false
         if (!config.enabled || !config.consented) return false
-        if (config.gate.dropReason(sender, sender, text, true) != null) return false
+        if (!config.gate.keeps(null, text)) return false
         synchronized(CaptureOwnerGuard.lock) {
             if (!CaptureOwnerGuard.matches(settings, owner, token)) return false
             val queue = CaptureQueue(context)

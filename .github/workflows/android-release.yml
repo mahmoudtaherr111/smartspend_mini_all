@@ -74,6 +74,22 @@ jobs:
             --dart-define=SMARTSPEND_ENV=production \
             --dart-define=SMARTSPEND_API_URL=https://api.smartspend.app
 
+      # The build that reads SMS directly (decision 0048): for sideloading and testing until Google Play approves the
+      # SMS declaration; the store build above has no SMS permission at all.
+      - name: Build SMS APK
+        working-directory: mobile/app
+        run: |
+          flutter build apk --release             --android-project-arg=smartspend.sms=true             --dart-define=SMARTSPEND_ENV=production             --dart-define=SMARTSPEND_API_URL=https://api.smartspend.app
+          mkdir -p build/sms-apk
+          cp build/app/outputs/flutter-apk/app-release.apk build/sms-apk/smartspend-sms.apk
+
+      - name: Upload SMS APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartspend-sms-apk
+          path: mobile/app/build/sms-apk/smartspend-sms.apk
+          retention-days: 30
+
       - name: Upload Release AAB Artifact
         uses: actions/upload-artifact@v4
         with:

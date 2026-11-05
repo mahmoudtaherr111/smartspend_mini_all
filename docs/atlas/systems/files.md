@@ -16,7 +16,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/analytics-router.ts` | [admin](admin.md) |
 | `api/app-config-router.ts` | [platform](platform.md) |
 | `api/auth-router.ts` | [accounts](accounts.md) |
-| `api/boot.ts` | [accounts](accounts.md): `GET /api/auth/google/callback`, `GET /api/auth/google/start`, `job:daily-auth-cleanup` · [admin](admin.md): `GET /admin` · [ai-center](ai-center.md): `job:memory-embedding-backfill` · [bank-messages](bank-messages.md): `job:capture-ai-sweep`, `job:capture-breaker`, `job:capture-silent-devices`, `job:seed-capture-catalog` · [billing](billing.md): `POST /api/webhooks/apple-asn`, `POST /api/webhooks/google-play`, `POST /api/webhooks/paymob`, `job:daily-subscription-expiry` · [expense-capture](expense-capture.md): `job:classification-log-cleanup` · [insights](insights.md): `job:monthly-behavior-snapshots`, `job:monthly-report-generation` · [money](money.md): `job:coaching-reminders`, `job:nightly-rollup-reconciliation`, `job:taxonomy-migration` · [notifications](notifications.md): `GET /api/webhooks/whatsapp`, `POST /api/webhooks/whatsapp`, `job:scheduled-notifications`, `job:seed-default-templates`, `job:smart-activity-notifications`, `job:whatsapp-outbox` · [platform](platform.md): `ALL /api/trpc/*`, `GET /health`, `GET /robots.txt`, `GET /sitemap.xml`, `job:data-retention-lifecycle` · [voice-calls](voice-calls.md): `job:voice-call-memory`, `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
+| `api/boot.ts` | [accounts](accounts.md): `GET /api/auth/google/callback`, `GET /api/auth/google/start`, `job:daily-auth-cleanup` · [admin](admin.md): `GET /admin` · [ai-center](ai-center.md): `job:memory-embedding-backfill` · [bank-messages](bank-messages.md): `job:capture-ai-sweep`, `job:capture-breaker`, `job:capture-silent-devices`, `job:cashflow-cutover`, `job:seed-capture-catalog` · [billing](billing.md): `POST /api/webhooks/apple-asn`, `POST /api/webhooks/google-play`, `POST /api/webhooks/paymob`, `job:daily-subscription-expiry` · [expense-capture](expense-capture.md): `job:classification-log-cleanup` · [insights](insights.md): `job:monthly-behavior-snapshots`, `job:monthly-report-generation` · [money](money.md): `job:coaching-reminders`, `job:nightly-rollup-reconciliation`, `job:taxonomy-migration` · [notifications](notifications.md): `GET /api/webhooks/whatsapp`, `POST /api/webhooks/whatsapp`, `job:scheduled-notifications`, `job:seed-default-templates`, `job:smart-activity-notifications`, `job:whatsapp-outbox` · [platform](platform.md): `ALL /api/trpc/*`, `GET /health`, `GET /robots.txt`, `GET /sitemap.xml`, `job:data-retention-lifecycle` · [voice-calls](voice-calls.md): `job:voice-call-memory`, `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
 | `api/budget-router.ts` | [money](money.md) |
 | `api/business-router.ts` | [money](money.md) |
 | `api/capture-admin-router.ts` | [bank-messages](bank-messages.md) |
@@ -29,6 +29,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/export-router.ts` | [admin](admin.md): `export.allUsers` · [insights](insights.md): `export.monthlyReportHtml` · [money](money.md): `export.myExpenses` · rest of the file: [admin](admin.md), [insights](insights.md), [money](money.md) |
 | `api/goals-router.ts` | [money](money.md) |
 | `api/image-router.ts` | [expense-capture](expense-capture.md) |
+| `api/jobs/cashflow-cutover-job.ts` | [bank-messages](bank-messages.md) |
 | `api/jobs/data-retention-job.ts` | [platform](platform.md) |
 | `api/jobs/monthly-behavior-job.ts` | [insights](insights.md) |
 | `api/jobs/monthly-report-job.ts` | [insights](insights.md) |
@@ -57,7 +58,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/capture/activity.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/admission.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/ai-queue.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/capture/ai-reader.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/care.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/catalog.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/consent.ts` | [bank-messages](bank-messages.md) |
@@ -67,7 +67,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/capture/identity-links.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/instruments.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/intake.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/capture/keep-merchants.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/markers.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/memory.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/model-contract.ts` | [bank-messages](bank-messages.md) |
@@ -75,18 +74,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/capture/operations.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/privacy.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/questions.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/capture/reader/clauses.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/capture/reader/counterparty.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/capture/reader/explain.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/capture/reader/fixtures.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/capture/reader/kind.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/capture/reader/lexicon.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/capture/reader/normalize.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/capture/reader/read.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/capture/reader/roles.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/capture/reader/spans.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/capture/reader/types.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/capture/reader/when.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/samples.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/schema-state.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/seed-sources.ts` | [bank-messages](bank-messages.md) |

@@ -56,8 +56,7 @@ class BankNotificationListener : NotificationListenerService() {
         if (sbn.isOngoing) return
 
         val read = NotificationText.read(notification.extras ?: return, messaging) ?: return
-        val gate = config.gate.dropReason(read.sender, read.title, read.text, messaging)
-        if (gate != null) return
+        if (!config.gate.keeps(read.title, read.text)) return
 
         synchronized(CaptureOwnerGuard.lock) {
             if (!CaptureOwnerGuard.matches(settings, owner, token)) return

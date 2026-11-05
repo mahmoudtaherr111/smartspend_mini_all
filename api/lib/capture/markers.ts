@@ -11,7 +11,7 @@ import { invalidateFinanceUserCache } from "../../services/finance-semantic-laye
 import { getDb } from "../../queries/connection";
 import { asciiDigits } from "../anonymizer";
 import { normalizeArabic } from "../unified-normalizer";
-import { CAPTURE_GATE, type SignalReading } from "./intake";
+import { CAPTURE_CURRENCY_WORDS, type SignalReading } from "./intake";
 import type { CaptureOwner } from "./devices";
 import type { PreparedCaptureText } from "./privacy";
 import { localInstruments } from "./instruments";
@@ -26,7 +26,7 @@ export const CAPTURE_MARKERS_MAX = 30;
 let tooCommon: Set<string> | null = null;
 const TOO_COMMON = () =>
   (tooCommon ??= new Set(
-    [...CAPTURE_GATE.currencyWords, "تم", "من", "في", "على", "الى", "خصم", "ايداع", "تحويل", "بطاقه", "بطاقتك", "حساب", "حسابك", "card", "account", "bank"].map(
+    [...CAPTURE_CURRENCY_WORDS, "تم", "من", "في", "على", "الى", "خصم", "ايداع", "تحويل", "بطاقه", "بطاقتك", "حساب", "حسابك", "card", "account", "bank"].map(
       (word) => fold(word),
     ),
   ));

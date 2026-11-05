@@ -96,8 +96,8 @@ export function registerCaptureRoutes(app: Hono): void {
     const parsed = captureSignalsRequestSchema.safeParse(await readJson(c));
     if (!parsed.success) return fail(c, 400, "invalid_request");
     const settings = await getSystemSettings();
-    const consent = await captureConsentsOf(device, undefined, settings.capture_read_mode === "model_first" ? CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION : undefined);
-    if (!consent.capture || (settings.capture_read_mode === "model_first" && !consent.aiReading)) return fail(c, 403, "consent_required");
+    const consent = await captureConsentsOf(device, undefined, CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION);
+    if (!consent.capture || !consent.aiReading) return fail(c, 403, "consent_required");
     // The day's signals of all the user's phones: past the cap, the batch waits until Cairo midnight.
     const dailyLimit = Number.parseInt(settings.capture_daily_signal_limit ?? "1000", 10) || 0;
     if (!(await takeDailySignals(device, parsed.data.signals.length, dailyLimit))) {
@@ -146,12 +146,12 @@ export function registerCaptureRoutes(app: Hono): void {
   app.get("/api/capture/v1/config", async (c) => {
     const device = await deviceOf(c);
     if (!device) return fail(c, 401, "invalid_device");
-    const [enabled, settings, catalog] = await Promise.all([captureOpen(device), getSystemSettings(), getCaptureCatalog()]);
-    const consent = await captureConsentsOf(device, undefined, settings.capture_read_mode === "model_first" ? CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION : undefined);
+    const [enabled, catalog] = await Promise.all([captureOpen(device), getCaptureCatalog()]);
+    const consent = await captureConsentsOf(device, undefined, CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION);
     await touchCaptureDevice(device.deviceId, false);
     const config: CaptureConfig = {
       apiVersion: CAPTURE_API_VERSION,
-      enabled: enabled && (settings.capture_read_mode !== "model_first" || (consent.capture && consent.aiReading)),
+      enabled: enabled && consent.capture && consent.aiReading,
       consent,
       minClientVersion: CAPTURE_MIN_CLIENT_VERSION,
       catalogVersion: catalog.version,

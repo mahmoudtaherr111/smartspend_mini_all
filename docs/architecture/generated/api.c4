@@ -3083,6 +3083,22 @@ model {
         file 'api/boot.ts'
       }
     }
+    cashflow-cutover = job 'cashflow-cutover' {
+      technology 'once at boot'
+      description 'Scheduled in api/boot.ts.'
+      metadata {
+        schedule 'once at boot'
+        file 'api/boot.ts'
+      }
+    }
+    cashflow-cutover = job 'cashflow-cutover' {
+      technology 'cron */10 * * * *'
+      description 'Scheduled in api/boot.ts.'
+      metadata {
+        schedule '*/10 * * * *'
+        file 'api/boot.ts'
+      }
+    }
     classification-log-cleanup = job 'classification-log-cleanup' {
       technology 'cron 0 3 * * 0'
       description 'Scheduled in api/boot.ts.'

@@ -44,8 +44,12 @@ const event = (id: number, overrides: Partial<EventKeys> = {}): EventKeys => ({
 
 describe("one payment, one event", () => {
   it("does not merge automatic readings on amount/time alone, nor on conflicting references", () => {
-    const next = signal({ sourceSlug: "cib", channelKey: "1:notification:cib", receivedAt: at(1) });
-    expect(matchSignal(next, [event(7, { sourceSlug: "cib" })], [], true)).toEqual({ type: "new" });
+    const next = signal({ sourceSlug: "cib", channelKey: "1:notification:cib", receivedAt: at(1), cardSuffix: null, merchantKey: null });
+    expect(matchSignal(next, [event(7, { sourceSlug: "cib", cardSuffix: null, merchantKey: null })], [], true)).toEqual({ type: "new" });
+    // The same card and merchant from the other channel minutes later is the same payment (decision 0049).
+    expect(matchSignal({ ...next, cardSuffix: "1234", merchantKey: "costa" }, [event(7, { sourceSlug: "cib" })], [], true)).toEqual({ type: "merge", eventId: 7, rule: "cross_channel" });
+    // A channel the event already has is a second payment, never the same one again.
+    expect(matchSignal({ ...next, cardSuffix: "1234", merchantKey: "costa" }, [event(7, { sourceSlug: "cib", channels: ["1:notification:cib"] })], [], true)).toEqual({ type: "new" });
     expect(matchSignal({ ...next, balanceAfter: 900, referenceHmac: "new-ref" }, [event(7, { sourceSlug: "cib", balanceAfter: 900, referenceHmac: "old-ref" })], [], true)).toEqual({ type: "new" });
   });
   it("uses exact same-account balance evidence for automatic cross-channel repeats", () => {

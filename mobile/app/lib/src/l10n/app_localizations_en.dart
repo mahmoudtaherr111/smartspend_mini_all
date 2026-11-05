@@ -69,7 +69,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get captureConsentBody =>
-      'We read only the notifications and messages of bank and wallet apps. Personal messages and codes never leave your phone. A message with a transaction goes to the server to be read, with its numbers hidden, and is deleted after 30 days. Nothing is recorded until you approve it.';
+      'The app sends us only the messages and notifications that talk about money (debit, transfer, balance, payment and the like) from banks, wallets and SMS. AI reads each message to find the amount, the kind and the other side; your phone, card and account numbers are hidden before it sees them, while shop and people names stay so it can file them. Verification codes are never stored or read. Payments are recorded on their own and you get a notification to undo; the message is deleted after 30 days.';
 
   @override
   String get captureConsentAgree => 'I agree, continue';
@@ -103,15 +103,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get captureAiReadingTitle => 'Let AI read unclear messages';
+  String get captureAiReadingTitle => 'AI reading of messages';
 
   @override
   String get captureAiReadingBody =>
-      'When we can\'t read a bank message\'s amount or kind, we send it to AI with your numbers hidden, and ask you before recording anything.';
+      'It reads each message and records it for you. Turn it off and bank messages are not recorded.';
 
   @override
   String get captureAiReadingFailed =>
       'We couldn\'t save your choice. Try again.';
+
+  @override
+  String get captureQuestionsBody =>
+      'When a payment is filed under \"general\" or is a transfer to someone, we ask you what it was for when you open the app, and remember your answer next time.';
+
+  @override
+  String get captureQuestionsTitle => 'Ask me what it was for';
 
   @override
   String get captureSmsTitle => 'Read bank SMS';

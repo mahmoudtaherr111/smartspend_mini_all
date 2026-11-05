@@ -42,7 +42,7 @@ export function AdminSmsAiSection({ formData, updateField }: Props) {
           </div>
         </div>
         <div className="space-y-2">
-          <FieldLabel hint="أقصى تكلفة عند المزود لكل المستخدمين في اليوم (بتوقيت القاهرة)، محسوبة من أسعار الموديلات في شاشة المزودين. لما توصل، الرسايل بتتقري بالقوالب لحد بكره. مع سقف، الموديل اللي مالوش سعر مابيتطلبش. ٠ = من غير سقف.">
+          <FieldLabel hint="أقصى تكلفة عند المزود لكل المستخدمين في اليوم (بتوقيت القاهرة)، محسوبة من أسعار الموديلات في شاشة المزودين. لما توصل، الرسايل بتستنى ومحدش بيضيع منها، وبتتقري بكره. الموديل اللي مالوش سعر مابيتطلبش. لازم يكون أكبر من صفر.">
             سقف التكلفة اليومي ($)
           </FieldLabel>
           <Input
@@ -50,8 +50,8 @@ export function AdminSmsAiSection({ formData, updateField }: Props) {
             min="0"
             step="0.01"
             aria-label="سقف التكلفة اليومي لرسايل البنوك"
-            value={formData.sms_ai_daily_cost_cap_usd ?? "0"}
-            onChange={(e) => updateField("sms_ai_daily_cost_cap_usd", e.target.value)}
+            value={formData.capture_ai_daily_cost_cap_usd ?? "50"}
+            onChange={(e) => updateField("capture_ai_daily_cost_cap_usd", e.target.value)}
             className="h-8 font-mono bg-slate-50 dark:bg-slate-900 max-w-[12rem]"
           />
         </div>

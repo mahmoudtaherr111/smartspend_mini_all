@@ -2,7 +2,6 @@ package com.smartspend.bank_capture
 
 import java.io.File
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.json.JSONObject
 import org.junit.jupiter.api.DynamicTest
@@ -19,42 +18,38 @@ class CaptureGateTest {
         JSONObject(file.readText())
     }
 
-    private fun words(name: String): List<String> {
-        val list = fixture.getJSONArray(name)
+    private fun keywords(): List<String> {
+        val list = fixture.getJSONArray("keywords")
         return (0 until list.length()).map { list.getString(it) }
     }
 
     @TestFactory
-    fun `drops what the shared cases drop and keeps the rest`(): List<DynamicTest> {
-        val gate = CaptureGate(words("otpWords"), words("currencyWords"))
+    fun `keeps what the shared cases keep and nothing else`(): List<DynamicTest> {
+        val gate = CaptureGate(keywords())
         val cases = fixture.getJSONArray("cases")
         return (0 until cases.length()).map { index ->
             val case = cases.getJSONObject(index)
             DynamicTest.dynamicTest(case.getString("name")) {
-                val reason = gate.dropReason(
-                    sender = case.optString("sender").takeIf { case.has("sender") },
-                    title = case.optString("title").takeIf { case.has("title") },
-                    text = case.getString("text"),
-                    fromMessagingApp = case.getBoolean("messaging"),
-                )
-                val expected = if (case.isNull("drop")) null else case.getString("drop")
-                assertEquals(expected, reason)
+                val kept = gate.keeps(case.optString("title").takeIf { case.has("title") }, case.getString("text"))
+                assertEquals(case.getBoolean("keep"), kept)
             }
         }
     }
 
     @Test
-    fun `reads Arabic digits and letter variants the way the server does`() {
-        assertEquals("0123456789", CaptureGate.asciiDigits("٠١٢٣٤٥٦٧٨٩"))
-        assertEquals("كلمه السر", CaptureGate.fold("كلمة السر"))
+    fun `the build's own list is the shared list`() {
+        assertEquals(keywords(), CaptureGate.DEFAULT_KEYWORDS)
     }
 
     @Test
-    fun `takes only a long number for a person`() {
-        assertTrue(CaptureGate.isPersonalSender("01001234567"))
-        assertTrue(CaptureGate.isPersonalSender("٠١٠٠١٢٣٤٥٦٧"))
-        assertFalse(CaptureGate.isPersonalSender("19019"))
-        assertFalse(CaptureGate.isPersonalSender("CIB"))
-        assertFalse(CaptureGate.isPersonalSender(null))
+    fun `an empty list from the server falls back to the build's own`() {
+        assertTrue(CaptureGate(emptyList()).keeps(null, "تم خصم 75 جنيه"))
+    }
+
+    @Test
+    fun `reads Arabic digits and letter variants the way the server does`() {
+        assertEquals("0123456789", CaptureGate.asciiDigits("٠١٢٣٤٥٦٧٨٩"))
+        assertEquals("اضافه", CaptureGate.fold("إضافة"))
+        assertEquals("تحويل", CaptureGate.fold("تَحْوِيل"))
     }
 }

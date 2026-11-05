@@ -221,6 +221,7 @@ flowchart LR
   mod_jobs --> sys_accounts
   mod_jobs --> sys_ai_center
   mod_jobs --> sys_ai_platform
+  mod_jobs --> sys_bank_messages
   mod_jobs --> sys_insights
   mod_jobs --> sys_money
   mod_jobs --> sys_notifications
@@ -281,7 +282,7 @@ flowchart LR
 | `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 27 |
 | `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 16 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
-| `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 6 |
+| `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 7 |
 | `platform` — Platform services | Environment validation, Redis client (cache, shared state for one-time codes, generation counters with replay of bumps Redis missed) and cache keys, the generation watcher that tells a per-process copy of shared data to reload, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 12 |
 | `storage` — File storage | File storage behind one driver interface (local disk or S3-compatible storage such as R2), plus the avatar service. | 5 |
 

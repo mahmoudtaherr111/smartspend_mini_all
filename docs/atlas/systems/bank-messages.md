@@ -2,7 +2,7 @@
 
 # Bank and wallet messages
 
-Automatic capture of bank and wallet messages from phones: the catalog of banks, wallets and subscriptions the admin edits, the reader that reads a message without a model, the admin's model for what the reader is unsure of, the intake that merges signals into payments, and the user's answer that writes the ledger.
+Automatic capture of bank and wallet messages from phones: the phone's keyword filter, the catalog of banks, wallets and subscriptions the admin edits, the model that reads every message with checks that hold for any bank, the intake that merges signals into payments and records them on their own with undo, and the user's answers and questions.
 
 How it works: [docs/systems/bank-messages.md](../../systems/bank-messages.md) · بالعربي: [docs/ar/systems/bank-messages.md](../../ar/systems/bank-messages.md) · [All systems](README.md)
 
@@ -21,15 +21,15 @@ flowchart LR
     job_capture_ai_sweep["Job · capture-ai-sweep"]
     job_capture_breaker["Job · capture-breaker"]
     job_capture_silent_devices["Job · capture-silent-devices"]
+    job_cashflow_cutover["Job · cashflow-cutover"]
     job_seed_capture_catalog["Job · seed-capture-catalog"]
     router_captureAdmin["captureAdmin API · 10 procedures"]
     router_capture["capture API · 21 procedures"]
   end
   subgraph g_modules["Code modules"]
-    mod_capture_ai_reader["Message model reader"]
+    mod_capture_ai_reader["Message model reading"]
     mod_capture_catalog["Capture catalog"]
     mod_capture_intake["Capture intake"]
-    mod_capture_reader["Message reader"]
     mod_web_bank_capture["Automatic bank capture activity"]
   end
   subgraph g_tables["MySQL tables"]
@@ -68,6 +68,7 @@ flowchart LR
   job_capture_ai_sweep --> mod_capture_intake
   job_capture_breaker --> mod_capture_intake
   job_capture_silent_devices --> mod_capture_intake
+  job_cashflow_cutover --> sys_platform
   job_seed_capture_catalog --> mod_capture_catalog
   mod_capture_ai_reader --> ext_gemini
   mod_capture_ai_reader --> mod_capture_intake
@@ -86,7 +87,6 @@ flowchart LR
   mod_capture_catalog ==> tbl_subscription_catalog
   mod_capture_intake --> mod_capture_ai_reader
   mod_capture_intake --> mod_capture_catalog
-  mod_capture_intake --> mod_capture_reader
   mod_capture_intake --> sys_accounts
   mod_capture_intake --> sys_ai_center
   mod_capture_intake --> sys_expense_capture
@@ -110,8 +110,6 @@ flowchart LR
   mod_capture_intake ==> tbl_in_app_notifications
   mod_capture_intake ==> tbl_system_settings
   mod_capture_intake ==> tbl_user_wallets
-  mod_capture_reader --> sys_expense_capture
-  mod_capture_reader --> sys_platform
   mod_web_bank_capture --> sys_web_app
   router_capture --> mod_capture_catalog
   router_capture --> mod_capture_intake
@@ -132,10 +130,9 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `capture-ai-reader` — Message model reader | Layer two of capture: reads one bank or wallet message with the model the admin assigned to bank messages (the server's Gemini key until then), behind the admin's switch, the plan budget and a daily USD cap, on condensed and redacted text, one message of one user per call, with the reply checked against a versioned contract before it is used. The unsure-message queue calls the active sms-v2 reader. The separate sms-v4 contract grounds fields in source quotes and proposes decimal-exact EGP postings; an offline CLI checks saved replies without calling a model or writing the ledger. With the admin switch and the user's consent, each reading's numbered-marker text, reply and posting are kept as a sample to build a reader without a model (decision 0048). | 8 |
+| `capture-ai-reader` — Message model reading | How capture reads a message (decision 0049): the code labels every amount in the redacted message and the model names which label is the amount, the fee, the balance and the pound value, with the status, kind, direction, the other side, the method and a category; checks that read no words keep it honest, and a pure function gives the posting in pounds. The transport asks the admin's routes for bank messages or the server's Gemini key, behind the switch, durable reservations and cost caps; the privacy gate hides identifying numbers and drops one-time codes before anything is stored or sent; the vault seals the private values to the signal. With the admin switch and the user's consent, each reading's redacted text and facts are kept as a sample (decision 0048). A live benchmark scores the same path on a case file without printing message text. | 7 |
 | `capture-catalog` — Capture catalog | The banks, wallets, payment networks, fintech and messaging apps whose notifications are read, and the subscriptions recognised in card charges: the shipped seed, the per-process copy that reloads on an admin change, and the lookups by Android app, SMS sender and merchant name. | 3 |
-| `capture-intake` — Capture intake | Where captured bank and wallet notifications come in (decision 0028): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config, a notification's button), the server's filter that keeps only what the reader reads as money that moved, the rules that merge the signals of one payment into one event (decision 0029), the user's memory of where each merchant and person is filed and which banks and kinds are recorded on their own (decision 0030), the monthly limit with the payments held over it, the queue where the admin's model reads what the reader is unsure of and the questions it leaves for the phone (decision 0031), the breaker that stops a bank whose recordings are taken back, the admin's bulk undo and the numbers per bank and kind (decision 0032), who capture is open to with the oldest build, the phones per plan and the daily cap, and the cards and phrases each user asked to ignore (decision 0033), each phone's health with the notice when one stops, the wallet suggested for a card seen in messages and deleting a user's capture data (decision 0034), the redaction that keeps a message's merchant, the admins' in-app alerts and the support timeline (decision 0035), the notice written in the phone's language, where each kind would be filed, and the user's answer, which writes the ledger through the ledger writer. | 18 |
-| `capture-reader` — Message reader | Layer one of capture, before any model: reads a bank, wallet or payment notification into what happened, which way, how much and in what currency, with which card and with whom, when, how sure it is and why (normalization with a position map, piece finders, an Arabic and English lexicon, sentences, money roles, kind and direction, the other side, the date), plus its benchmark corpus. | 12 |
+| `capture-intake` — Capture intake | Where captured bank and wallet messages come in and become ledger rows (decisions 0028, 0049): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config with the phone's keyword list, notices and their acknowledgement, a notification's button, heartbeats), the server's admission (a listed app, no personal sender, a keyword) before every message is sealed with one model job, the worker that reads each job with the model and places the reading, the rules that merge the signals of one payment into one event and link a fee sent apart (decision 0029), recording every complete reading on its own with undo, the user's memory of where each merchant and person is filed (decision 0030), optional questions after saving for users who turn them on, the monthly limit with the payments held over it, the breaker that pauses a bank whose recordings are taken back, the admin's bulk undo and the numbers, phone health and deleting the user's data. | 17 |
 | `web-bank-capture` — Automatic bank capture activity | User-facing automatic capture activity, processing states, undo and optional purpose questions after a movement has been saved. | 1 |
 
 ## API procedures
@@ -181,6 +178,8 @@ flowchart LR
 | `capture-ai-sweep` | job, `* * * * *` | `api/boot.ts` |
 | `capture-breaker` | job, `*/15 * * * *` | `api/boot.ts` |
 | `capture-silent-devices` | job, `0 11 * * *` | `api/boot.ts` |
+| `cashflow-cutover` | job, once at boot | `api/boot.ts` |
+| `cashflow-cutover` | job, `*/10 * * * *` | `api/boot.ts` |
 | `seed-capture-catalog` | job, once at boot | `api/boot.ts` |
 
 ## Data
@@ -229,27 +228,28 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | yes | `api/lib/capture/ai-reader.ts` |
+| `GEMINI_API_KEY` | yes | `api/lib/capture/model-reader.ts` |
 | `JWT_SECRET` | yes | `api/lib/capture/memory.ts` |
 
 ## Source its explanation describes
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/bank-messages.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>48 files and declarations</summary>
+<details><summary>36 files and declarations</summary>
 
 - `api/boot.ts#job:capture-ai-sweep`
 - `api/boot.ts#job:capture-breaker`
 - `api/boot.ts#job:capture-silent-devices`
+- `api/boot.ts#job:cashflow-cutover`
 - `api/boot.ts#job:seed-capture-catalog`
 - `api/capture-admin-router.ts`
 - `api/capture-router.ts`
 - `api/capture-v1-routes.ts`
+- `api/jobs/cashflow-cutover-job.ts`
 - `api/lib/capture/access.ts`
 - `api/lib/capture/activity.ts`
 - `api/lib/capture/admission.ts`
 - `api/lib/capture/ai-queue.ts`
-- `api/lib/capture/ai-reader.ts`
 - `api/lib/capture/care.ts`
 - `api/lib/capture/catalog.ts`
 - `api/lib/capture/consent.ts`
@@ -259,7 +259,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/capture/identity-links.ts`
 - `api/lib/capture/instruments.ts`
 - `api/lib/capture/intake.ts`
-- `api/lib/capture/keep-merchants.ts`
 - `api/lib/capture/markers.ts`
 - `api/lib/capture/memory.ts`
 - `api/lib/capture/model-contract.ts`
@@ -267,18 +266,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/capture/operations.ts`
 - `api/lib/capture/privacy.ts`
 - `api/lib/capture/questions.ts`
-- `api/lib/capture/reader/clauses.ts`
-- `api/lib/capture/reader/counterparty.ts`
-- `api/lib/capture/reader/explain.ts`
-- `api/lib/capture/reader/fixtures.ts`
-- `api/lib/capture/reader/kind.ts`
-- `api/lib/capture/reader/lexicon.ts`
-- `api/lib/capture/reader/normalize.ts`
-- `api/lib/capture/reader/read.ts`
-- `api/lib/capture/reader/roles.ts`
-- `api/lib/capture/reader/spans.ts`
-- `api/lib/capture/reader/types.ts`
-- `api/lib/capture/reader/when.ts`
 - `api/lib/capture/samples.ts`
 - `api/lib/capture/schema-state.ts`
 - `api/lib/capture/seed-sources.ts`

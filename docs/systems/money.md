@@ -357,7 +357,10 @@ Checked against the code; each one names where it lives.
 Own-account, cash, card-repayment and investment movements are excluded from those totals; their real direction
 still enters wallet movement. Linked refunds remain negative expense in the purchase category. The SQL lens,
 rollup deltas/reconciliation, direct expense/analytics/budget/goal queries, AI finance facts, export filters and
-web chart use the same buckets. The legacy default remains compatible until cutover.
+web chart use the same buckets. The legacy default remains compatible until cutover. The `cashflow-cutover` job
+(`api/jobs/cashflow-cutover-job.ts`) runs the migration at boot and every ten minutes and turns the flag on once no
+legacy row is left; with rows it cannot resolve it tells the admins (decision 0049). Rows the capture model wrote
+(`promptVersion` sms-v4 or sms-v5) keep their linked fee and canonical kind.
 
 Every ledger mutation locks the identity first. Both wallets of an internal movement are checked against the
 owner pair; the destination is a metadata link, not a second ledger row. Wallet views reverse that leg, and wallet

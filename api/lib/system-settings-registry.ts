@@ -223,12 +223,9 @@ export const SETTINGS: SettingDef[] = [
   { key: "rag_model", default: "" },
 
   // ── Misc ──
-  // The model that reads bank messages the reader cannot (api/lib/capture/ai-reader.ts, decision 0025). "false" stops
+  // The model that reads every bank message (api/lib/capture/model-reader.ts, decision 0049). "false" stops
   // every call.
   { key: "sms_ai_enabled", default: "true" },
-  // USD a Cairo day across all users, priced from the admin's model prices; 0 means no cap. With a cap, only models
-  // with a price are called.
-  { key: "sms_ai_daily_cost_cap_usd", default: "0" },
   // USD a Cairo day across all AI work; past it AI stops until midnight (api/lib/feature-switches.ts). 0 means no cap.
   { key: "ai_daily_cost_cap_usd", default: "50" },
   // "true" stops one AI feature for everyone (api/lib/feature-switches.ts, read by clients through appConfig.get).
@@ -246,29 +243,27 @@ export const SETTINGS: SettingDef[] = [
   { key: "mobile_store_url_ios", default: "" },
   // Capture from phones (/api/capture/v1, decision 0028). "false" refuses every signal and tells phones to stop; off
   // until the closed beta.
-  { key: "capture_enabled", default: "false" },
+  // Capture for everyone who installs the app and agrees (decision 0049); the admin can turn it off at once.
+  { key: "capture_enabled", default: "true" },
   // Who capture is open to while capture_enabled is on (decision 0033): the platforms ("android,ios"), and when not
   // empty, only these users ("local:12,oauth:7") for a closed beta.
   { key: "capture_platforms", default: "android,ios" },
   { key: "capture_beta_users", default: "" },
   // Signals one user's phones may send a Cairo day; past it the phone is told to wait until midnight. 0 means none.
   { key: "capture_daily_signal_limit", default: "1000" },
-  // Pairs recorded without a question for everyone (decision 0030), "<source>:<kind>" or "*:<kind>", comma separated;
-  // empty until the closed beta has measured them.
-  { key: "capture_auto_pairs", default: "" },
   // Sources whose payments are never recorded on their own (a bank that changed its messages), comma separated slugs.
   { key: "capture_paused_sources", default: "" },
-  // A transfer to a person from this many pounds is always asked about before it is recorded.
-  { key: "capture_p2p_ask_above", default: "1000" },
   // Question notifications a user gets a Cairo day; the rest wait in the app.
   { key: "capture_daily_question_notices", default: "2" },
-  { key: "capture_read_mode", default: "reader_first" },
+  // "cashflow-v1" once the ledger's two-kind cutover ran (decision 0045); boot runs it on a clean ledger.
   { key: "capture_financial_version", default: "" },
-  { key: "capture_questions_enabled", default: "false" },
+  // Whether the app may ask "what was this for?" after saving; each user turns it on for themselves (decision 0049).
+  { key: "capture_questions_enabled", default: "true" },
   // Keep redacted messages and their readings (v7 §8) from users who gave the `message_samples` consent. Off until the
   // retention period is approved by the lawyer.
   { key: "capture_samples_enabled", default: "false" },
-  { key: "capture_model_qualified", default: "" },
+  // USD a Cairo day across all users for reading bank messages, priced from the admin's model prices; past it the
+  // messages wait for the next day. Must be above 0.
   { key: "capture_ai_daily_cost_cap_usd", default: "50" },
   { key: "capture_ai_tokens_free", default: "2000000" },
   { key: "capture_ai_concurrency", default: "64" },

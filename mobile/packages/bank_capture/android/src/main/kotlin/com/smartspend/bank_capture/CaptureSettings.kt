@@ -88,11 +88,11 @@ internal class CaptureConfig(
     val appPackages: Set<String>,
     /** Messaging apps: their notifications are SMS, judged by the sender. */
     val messagingPackages: Set<String>,
-    val otpWords: List<String>,
-    val currencyWords: List<String>,
+    /** The words that send a message (decision 0049); empty means this build's own list. */
+    val keywords: List<String>,
     val batchMax: Int,
 ) {
-    val gate: CaptureGate by lazy { CaptureGate(otpWords, currencyWords) }
+    val gate: CaptureGate by lazy { CaptureGate(keywords) }
 
     companion object {
         fun parse(json: JSONObject): CaptureConfig {
@@ -116,8 +116,7 @@ internal class CaptureConfig(
                 consented = json.optJSONObject("consent")?.optBoolean("capture", false) ?: false,
                 appPackages = apps,
                 messagingPackages = messaging,
-                otpWords = words("otpWords"),
-                currencyWords = words("currencyWords"),
+                keywords = words("keywords"),
                 batchMax = json.optInt("batchMax", 20).coerceIn(1, 20),
             )
         }

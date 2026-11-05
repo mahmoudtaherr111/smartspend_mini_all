@@ -1,4 +1,4 @@
-/** Synthetic transport replies; exercises HTTP, durable jobs and real MySQL, never a paid provider. */
+/** Synthetic sms-v5 replies (number labels); exercises HTTP, durable jobs and real MySQL, never a paid provider. */
 import {
   afterAll,
   beforeAll,
@@ -40,10 +40,10 @@ import { syncCaptureSeed } from "../api/lib/capture/catalog";
 import { invalidateSettingsCache } from "../api/lib/settings-cache";
 import {
   checkCaptureReply,
+  labelAmounts,
   proposeCapturePosting,
   type CaptureModelReply,
 } from "../api/lib/capture/model-contract";
-import { CAPTURE_PROMPT_DIGEST } from "../api/lib/capture/model-reader";
 import { drainCaptureModel } from "../api/lib/capture/ai-queue";
 import { captureRouter } from "../api/capture-router";
 import { expenseRouter } from "../api/expense-router";
@@ -60,7 +60,7 @@ const fake = vi.hoisted(() => ({
 vi.mock("../api/lib/capture/model-reader", async (original) => ({
   ...(await original<typeof import("../api/lib/capture/model-reader")>()),
   readCaptureWithModel: vi.fn(async (text: { text: string }) => {
-    const check = checkCaptureReply(fake.reply, text.text);
+    const check = checkCaptureReply(fake.reply, labelAmounts(text.text));
     if (!check.ok) return { outcome: "invalid_reply" };
     await fake.afterRead?.();
     return {
@@ -81,9 +81,7 @@ const own = <T extends { userId: unknown; userType: unknown }>(table: T) =>
   );
 const keys = [
   "capture_enabled",
-  "capture_read_mode",
   "capture_financial_version",
-  "capture_model_qualified",
   "capture_monthly_limit_free",
   "capture_questions_enabled",
   "capture_samples_enabled",
@@ -91,29 +89,19 @@ const keys = [
 const text =
   "Successful purchase EGP 100 including service fee EGP 5 at ZED MARKET. Available balance EGP 900.";
 const reply: CaptureModelReply = {
-  state: "done",
-  stateQuote: "Successful purchase",
-  type: "purchase",
-  flow: "out",
-  flowQuote: "Successful purchase",
-  ownership: "unknown",
-  ownershipQuote: null,
-  amount: { value: 100, currency: "EGP", quote: "purchase EGP 100" },
-  egp: null,
-  fee: {
-    value: 5,
-    currency: "EGP",
-    quote: "service fee EGP 5",
-    includedInAmount: true,
-    inclusionQuote: "purchase EGP 100 including service fee EGP 5",
-  },
-  balance: { value: 900, currency: "EGP", quote: "Available balance EGP 900" },
-  limit: null,
-  partyType: "merchant",
+  status: "completed",
+  kind: "purchase",
+  direction: "out",
+  amount: "N1",
+  amountEgp: null,
+  fee: "N2",
+  feeIncluded: true,
+  balance: "N3",
   party: "ZED MARKET",
-  partyQuote: "at ZED MARKET",
-  via: "card",
+  partyType: "merchant",
+  method: "card",
   category: null,
+  subcategory: null,
   recurring: false,
 };
 
@@ -176,28 +164,17 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
         });
       for (const [key, value] of Object.entries({
         capture_enabled: "true",
-        capture_read_mode: "model_first",
         capture_financial_version: "cashflow-v1",
         capture_monthly_limit_free: "50",
         capture_questions_enabled: "true",
         capture_samples_enabled: "false",
-        capture_model_qualified: JSON.stringify({
-          version: "sms-v4",
-          digest: CAPTURE_PROMPT_DIGEST,
-          routes: [
-            { slug: "synthetic-a", model: "synthetic-model" },
-            { slug: "synthetic-b", model: "synthetic-model" },
-          ],
-          pairs: ["cib:purchase", "cib:fee", "cib:transfer"],
-          dataProcessingApproved: true,
-        }),
       }))
         await setting(key, value);
       ({ token } = await registerCaptureDevice(owner, {
         platform: "android",
         installationId: "synthetic-automatic",
       }));
-      for (const scope of ["capture", "ai_reading"] as const)
+      for (const scope of ["capture", "ai_reading", "purpose_questions"] as const)
         await setCaptureConsent(
           owner,
           scope,
@@ -320,20 +297,19 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
       expect(await db.select().from(expenses).where(own(expenses))).toEqual([]);
     });
     it("withholds an unresolved fee relationship without saving a guessed amount", async () => {
-      fake.reply = {
-        ...reply,
-        fee: { ...reply.fee!, includedInAmount: null, inclusionQuote: null },
-      };
-      await send("synthetic-auto-03");
+      // A foreign charge with no pound value: the amount is not guessed, the user finishes it.
+      fake.reply = { ...reply, fee: null, balance: null };
+      await send("synthetic-auto-03", "Successful purchase USD 20 at ZED MARKET.");
       expect(await db.select().from(expenses).where(own(expenses))).toEqual([]);
       const [job] = await db
         .select()
         .from(captureAiJobs)
         .where(own(captureAiJobs));
-      expect(job.outcome).toMatch(/^waiting_/);
+      expect(job.outcome).toBe("review");
       expect(await caller.activity()).toEqual([
-        expect.objectContaining({ state: "waiting", amountEgp: null }),
+        expect.objectContaining({ state: "review", amountEgp: null }),
       ]);
+      expect(await caller.pending()).toHaveLength(1);
       const other = captureRouter.createCaller({
         user: { id: owner.userId, type: "oauth", role: "user", plan: "free" },
       } as never);
@@ -343,14 +319,12 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
       "Successful payment of service fee EGP 5. Reference 123456789012.";
     const feeReply: CaptureModelReply = {
       ...reply,
-      type: "fee",
-      stateQuote: "Successful payment",
-      flowQuote: "payment",
-      amount: { value: 5, currency: "EGP", quote: "fee EGP 5" },
+      kind: "fee",
+      amount: "N1",
       fee: null,
+      feeIncluded: null,
       balance: null,
       party: null,
-      partyQuote: null,
       partyType: "bank",
       category: null,
     };
@@ -424,7 +398,7 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
         .where(own(captureAiJobs));
       expect(job).toMatchObject({
         status: "queued",
-        outcome: "configuration_changed",
+        outcome: "disabled",
       });
     });
     it("joins proved own-account legs into two wallet views without overwriting a later note", async () => {
@@ -446,18 +420,14 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
         });
       fake.reply = {
         ...reply,
-        type: "transfer",
-        stateQuote: "Successful transfer",
-        flowQuote: "Sent",
-        amount: { value: 100, currency: "EGP", quote: "Sent EGP 100" },
+        kind: "transfer",
+        amount: "N1",
         fee: null,
+        feeIncluded: null,
         balance: null,
         party: null,
-        partyQuote: null,
-        partyType: "own",
-        ownership: "own",
-        ownershipQuote: "between your accounts",
-        via: "bank_transfer",
+        partyType: "own_account",
+        method: "bank_transfer",
       };
       await send(
         "synthetic-own-out",
@@ -468,12 +438,7 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
       await updateLedgerEntry(owner, row.id, {
         description: "Synthetic edited note",
       });
-      fake.reply = {
-        ...fake.reply,
-        flow: "in",
-        flowQuote: "Received",
-        amount: { value: 100, currency: "EGP", quote: "Received EGP 100" },
-      };
+      fake.reply = { ...fake.reply, direction: "in" };
       await send(
         "synthetic-own-in",
         "Successful transfer. Received EGP 100 between your accounts to card ending 5678. Reference 123456789012.",
@@ -528,19 +493,7 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
     it("holds over-limit movements and releases them automatically only after upgrade and active consent", async () => {
       await setting("capture_monthly_limit_free", "1");
       await send("synthetic-limit-first");
-      fake.reply = {
-        ...reply,
-        amount: { value: 200, currency: "EGP", quote: "purchase EGP 200" },
-        fee: {
-          ...reply.fee!,
-          inclusionQuote: "purchase EGP 200 including service fee EGP 5",
-        },
-        balance: {
-          value: 800,
-          currency: "EGP",
-          quote: "Available balance EGP 800",
-        },
-      };
+      fake.reply = { ...reply };
       await send(
         "synthetic-limit-held",
         text.replace("EGP 100", "EGP 200").replace("EGP 900", "EGP 800"),
@@ -597,17 +550,24 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
       expect(rows.find((row) => row.id === question.expenseId)?.category).toBe("أكل وشرب");
       expect((await getFinanceSummary(owner)).totalExpense).toBe(100);
       const [usage] = await db.select().from(captureUsage).where(own(captureUsage)); expect(usage.reserved).toBe(1);
-      fake.reply = { ...reply, amount: { value: 120, currency: "EGP", quote: "purchase EGP 120" }, fee: null, balance: null };
+      fake.reply = { ...reply, fee: null, feeIncluded: null, balance: null };
       await send("synthetic-question-memory", "Successful purchase EGP 120 at ZED MARKET.");
       expect(await caller.nextQuestion()).toBeNull();
       const learned = await db.select().from(expenses).where(and(own(expenses), eq(expenses.amount, "120.00"))); expect(learned[0].category).toBe("أكل وشرب");
       const other = captureRouter.createCaller({ user: { id: owner.userId, type: "oauth", role: "user", plan: "free" } } as never);
       await expect(other.answerQuestion({ questionId: question.questionId, action: "keep" })).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
+    it("asks nothing after saving unless the user turned the questions on", async () => {
+      await setCaptureConsent(owner, "purpose_questions", false, CAPTURE_CONSENT_TEXT_VERSION);
+      await send("synthetic-question-off");
+      expect(await caller.nextQuestion()).toBeNull();
+      expect(await db.select().from(captureQuestions).where(own(captureQuestions))).toHaveLength(0);
+      expect(await db.select().from(expenses).where(own(expenses))).toHaveLength(2);
+    });
     it("limits new questions to three Cairo dayside displays, and skipping never asks that event again", async () => {
       for (let i = 0; i < 5; i++) {
         const amount = 100 + i;
-        fake.reply = { ...reply, amount: { value: amount, currency: "EGP", quote: `purchase EGP ${amount}` }, fee: null, balance: null };
+        fake.reply = { ...reply, fee: null, feeIncluded: null, balance: null };
         await send(`synthetic-question-limit-${i}`, `Successful purchase EGP ${amount} at ZED MARKET.`);
       }
       const ids: number[] = [];
@@ -627,7 +587,7 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
       expect(await caller.answerQuestion({ questionId: question.questionId, action: "set", categoryId: "food" })).toMatchObject({ result: "superseded" });
       const [row] = await db.select().from(expenses).where(eq(expenses.id, question.expenseId)); expect(row.category).toBe("تسوق");
       // Use another merchant so the existing filing is not already learned.
-      fake.reply = { ...reply, party: "OTHER MARKET", partyQuote: "at OTHER MARKET" };
+      fake.reply = { ...reply, party: "OTHER MARKET" };
       await send("synthetic-question-purpose", text.replace("ZED MARKET", "OTHER MARKET"));
       const next = (await caller.nextQuestion())!; expect(next).toBeTruthy();
       await caller.answerQuestion({ questionId: next.questionId, action: "set", purpose: "دفعت مصاريف الحضانة" });
@@ -635,8 +595,7 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
       expect(answered.parsedMetadata).toMatchObject({ capture: { details: { purpose: "دفعت مصاريف الحضانة", categoryPending: false } } });
     });
     it("never turns the model's generic transfer category into ATM cash movement", async () => {
-      fake.reply = { ...reply, type: "transfer", stateQuote: "Successful transfer", flowQuote: "Sent", amount: { value: 100, currency: "EGP", quote: "Sent EGP 100" }, fee: null, balance: null,
-        party: null, partyQuote: null, partyType: "unknown", category: "transfer", via: "bank_transfer" };
+      fake.reply = { ...reply, kind: "transfer", fee: null, feeIncluded: null, balance: null, party: null, partyType: "unknown", category: "transfer", method: "bank_transfer" };
       await send("synthetic-transfer-category", "Successful transfer. Sent EGP 100.");
       const [row] = await db.select().from(expenses).where(own(expenses)); expect(row).toBeTruthy();
       expect(row.parsedMetadata).toMatchObject({ financial: { kind: "personal_transfer", excluded: false } });
@@ -645,14 +604,14 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
       await caller.answerQuestion({ questionId: question.questionId, action: "set", movementKind: "own_transfer" });
       expect((await getFinanceSummary(owner)).totalExpense).toBe(0);
     });
-    it("requires renewed automatic consent instead of silently broadening a legacy grant", async () => {
-      await db.update(captureConsents).set({ textVersion: "2026-10-27" }).where(own(captureConsents));
-      expect((await caller.status()).consent).toEqual({ capture: false, aiReading: false, samples: false });
+    it("requires renewed consent instead of silently broadening an older grant", async () => {
+      await db.update(captureConsents).set({ textVersion: "2026-11-04" }).where(own(captureConsents));
+      expect((await caller.status()).consent).toEqual({ capture: false, aiReading: false, samples: false, questions: false });
       const rejected = await app.request("/api/capture/v1/signals", { method: "POST", headers: { "content-type": "application/json", "x-capture-device": token }, body: JSON.stringify({ signals: [{ id: "synthetic-old-consent", channel: "notification", app: "com.cibeg.ddc1.digitalbanking.live", text, postedAt: new Date().toISOString() }] }) });
       expect(rejected.status).toBe(403);
       expect(await db.select().from(captureAiJobs).where(own(captureAiJobs))).toHaveLength(0);
       for (const scope of ["capture", "ai_reading"] as const) await setCaptureConsent(owner, scope, true, CAPTURE_CONSENT_TEXT_VERSION);
-      expect((await caller.status()).consent).toEqual({ capture: true, aiReading: true, samples: false });
+      expect((await caller.status()).consent).toEqual({ capture: true, aiReading: true, samples: false, questions: false });
       await send("synthetic-current-consent");
       expect(await db.select().from(expenses).where(own(expenses))).toHaveLength(2);
     });
@@ -665,12 +624,11 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
     });
     it("links an explicitly chosen contact by a private full-phone identity and records a repayment automatically", async () => {
       const [person] = await db.insert(userContacts).values({ ...owner, name: "Synthetic contact", relation: "friend" });
-      fake.reply = { ...reply, type: "transfer", stateQuote: "Successful transfer", flowQuote: "Sent", amount: { value: 100, currency: "EGP", quote: "Sent EGP 100" }, fee: null, balance: null,
-        party: "[PHONE_1]", partyQuote: "to [PHONE_1]", partyType: "person", via: "wallet" };
+      fake.reply = { ...reply, kind: "transfer", fee: null, feeIncluded: null, balance: null, party: "[PHONE_1]", partyType: "person", method: "wallet" };
       await send("synthetic-phone-loan", "Successful transfer. Sent EGP 100 to 01000000001.");
       const question = (await caller.nextQuestion())!; expect(question).toBeTruthy();
       await caller.answerQuestion({ questionId: question.questionId, action: "set", categoryId: "transfer", subCategoryId: "debt", contactId: person.insertId });
-      fake.reply = { ...fake.reply, flow: "in", flowQuote: "Received", amount: { value: 40, currency: "EGP", quote: "Received EGP 40" }, partyQuote: "from [PHONE_1]" };
+      fake.reply = { ...fake.reply, direction: "in" };
       await send("synthetic-phone-repayment", "Successful transfer. Received EGP 40 from +201000000001.");
       const rows = await db.select().from(expenses).where(own(expenses));
       expect(rows).toHaveLength(2); expect(rows.every((row) => row.contactId === person.insertId)).toBe(true);
@@ -682,10 +640,9 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
     it("matches an own-account principal when the outgoing debit includes a fee", async () => {
       const [bank] = await db.insert(userWallets).values({ ...owner, name: "Synthetic debit", provider: "bank", lastFourDigits: "1234" });
       const [cash] = await db.insert(userWallets).values({ ...owner, name: "Synthetic destination", provider: "cash", lastFourDigits: "5678" });
-      fake.reply = { ...reply, type: "transfer", stateQuote: "Successful transfer", flowQuote: "Sent", amount: { value: 100, currency: "EGP", quote: "Sent EGP 100" }, balance: null,
-        fee: { ...reply.fee!, inclusionQuote: "Sent EGP 100 including service fee EGP 5" }, ownership: "own", ownershipQuote: "between your accounts", partyType: "own", party: null, partyQuote: null, via: "bank_transfer" };
+      fake.reply = { ...reply, kind: "transfer", balance: null, partyType: "own_account", party: null, method: "bank_transfer" };
       await send("synthetic-own-fee-out", "Successful transfer. Sent EGP 100 including service fee EGP 5 between your accounts from card ending 1234. Reference 111222333444.");
-      fake.reply = { ...fake.reply, flow: "in", flowQuote: "Received", amount: { value: 95, currency: "EGP", quote: "Received EGP 95" }, fee: null };
+      fake.reply = { ...fake.reply, direction: "in", fee: null, feeIncluded: null };
       await send("synthetic-own-fee-in", "Successful transfer. Received EGP 95 between your accounts to card ending 5678. Reference 111222333444.");
       expect(await db.select().from(captureEvents).where(own(captureEvents))).toHaveLength(1);
       const wallets = walletRouter.createCaller({ user: { id: owner.userId, type: "local", role: "user", plan: "free" } } as never);
@@ -707,7 +664,7 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
       await send("synthetic-sample-03");
       const samples = await db.select().from(captureSamples).where(own(captureSamples));
       expect(samples).toHaveLength(1);
-      expect(samples[0]).toMatchObject({ promptVersion: "sms-v4", provider: "synthetic-a", model: "synthetic-model", channel: "notification" });
+      expect(samples[0]).toMatchObject({ promptVersion: "sms-v5", provider: "synthetic-a", model: "synthetic-model", channel: "notification" });
       expect(samples[0].textRedacted).toContain("ZED MARKET");
       expect(samples[0].posting).toMatchObject({ status: "ready", principalEgp: "95.00", feeEgp: "5.00" });
       expect(samples[0].receivedMonth).toMatch(/^\d{4}-\d{2}$/);

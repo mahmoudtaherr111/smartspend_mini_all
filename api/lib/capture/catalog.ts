@@ -253,10 +253,22 @@ export function sourceForPackage(catalog: CaptureCatalog, packageName: string): 
 }
 
 /** The active source a confirmed SMS sender id belongs to (compared without case or surrounding spaces). */
+/**
+ * The source an SMS sender id names: an id the admin registered, else the source's own names ("CIB", "VF-Cash",
+ * "BanqueMisr" match the aliases "cib", "vf-cash", "banque misr"), compared without case, spaces or signs. A sender
+ * that names no source is still read; this only tells which bank it was.
+ */
 export function sourceForSender(catalog: CaptureCatalog, sender: string): CaptureSource | null {
   const wanted = sender.trim().toLowerCase();
   if (!wanted) return null;
-  return catalog.sources.find((source) => source.status === "active" && source.senderIds.some((id) => id.toLowerCase() === wanted)) ?? null;
+  const active = catalog.sources.filter((source) => source.status === "active" && source.kind !== "sms_app");
+  const registered = active.find((source) => source.senderIds.some((id) => id.toLowerCase() === wanted));
+  if (registered) return registered;
+  const squash = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+  const key = squash(wanted);
+  if (key.length < 2) return null;
+  const named = active.filter((source) => [source.slug, source.nameEn, ...source.aliases].some((name) => squash(name) === key));
+  return named.length === 1 ? named[0] : null;
 }
 
 /**

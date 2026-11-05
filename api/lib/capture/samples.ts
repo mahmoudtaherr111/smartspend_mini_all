@@ -22,7 +22,8 @@ export interface CaptureSampleInput {
   promptVersion: string;
   provider: string | null;
   model: string | null;
-  reply: unknown;
+  /** The model's checked facts (sms-v5): kinds, labels resolved to the message's own numbers. */
+  facts: unknown;
   posting: unknown;
   receivedAt: Date;
 }
@@ -37,7 +38,7 @@ export async function keepCaptureSample(tx: LedgerTx, owner: { userId: number; u
   await tx.insert(captureSamples).values({
     userId: owner.userId, userType: owner.userType, signalId: input.signalId, eventId: input.eventId, sourceSlug: input.sourceSlug,
     channel: input.channel.slice(0, 16), textRedacted: input.text, textHmac: input.textHmac, promptVersion: input.promptVersion,
-    provider: input.provider, model: input.model, modelReply: input.reply, posting: input.posting,
+    provider: input.provider, model: input.model, modelReply: input.facts, posting: input.posting,
     receivedMonth: businessDateKey(input.receivedAt).slice(0, 7),
   }).onDuplicateKeyUpdate({ set: { eventId: input.eventId } });
   return true;

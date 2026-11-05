@@ -73,19 +73,7 @@ export function AdminCaptureSection({ formData, updateField }: Props) {
           />
         </div>
         <div className="space-y-2">
-          <FieldLabel hint="بنك ونوع رسالة بيتسجلوا لوحدهم للكل، بعد ما الدقة على رسايل حقيقية تثبت. بالشكل cib:card_purchase، أو *:card_purchase لكل البنوك، ومفصولين بفاصلة. فاضي = كل حاجة بتتسأل (إلا اللي المستخدم وافق عليه بنفسه).">
-            الأنواع اللي بتتسجل لوحدها
-          </FieldLabel>
-          <Input
-            aria-label="الأنواع اللي بتتسجل لوحدها"
-            value={formData.capture_auto_pairs ?? ""}
-            onChange={(e) => updateField("capture_auto_pairs", e.target.value)}
-            className="h-8 font-mono bg-slate-50 dark:bg-slate-900"
-            dir="ltr"
-          />
-        </div>
-        <div className="space-y-2">
-          <FieldLabel hint="بنوك عمليتها مابتتسجلش لوحدها أبداً، مثلاً بنك غيّر شكل رسايله. الـ slug من قايمة رسايل البنوك، ومفصولين بفاصلة.">
+          <FieldLabel hint="بنوك عمليتها مابتتسجلش لوحدها، مثلاً بنك غيّر شكل رسايله والقراية بقت غلط: رسايلها بتتقري وبتستنى المستخدم يأكدها. الـ slug من قايمة رسايل البنوك، ومفصولين بفاصلة.">
             بنوك موقفة عن التسجيل لوحدها
           </FieldLabel>
           <Input
@@ -94,19 +82,6 @@ export function AdminCaptureSection({ formData, updateField }: Props) {
             onChange={(e) => updateField("capture_paused_sources", e.target.value)}
             className="h-8 font-mono bg-slate-50 dark:bg-slate-900"
             dir="ltr"
-          />
-        </div>
-        <div className="space-y-2">
-          <FieldLabel hint="تحويل لشخص أو من شخص بالمبلغ ده أو أكتر بيتسأل عنه قبل ما يتسجل، لإنه ممكن يكون بين حسابات المستخدم.">
-            سؤال قبل تسجيل تحويل شخص من (ج.م)
-          </FieldLabel>
-          <Input
-            type="number"
-            min="0"
-            aria-label="سؤال قبل تسجيل تحويل شخص من"
-            value={formData.capture_p2p_ask_above ?? "1000"}
-            onChange={(e) => updateField("capture_p2p_ask_above", e.target.value)}
-            className="h-8 font-mono bg-slate-50 dark:bg-slate-900 max-w-[12rem]"
           />
         </div>
         <div className="space-y-2">

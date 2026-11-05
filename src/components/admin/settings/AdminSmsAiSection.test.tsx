@@ -15,8 +15,8 @@ describe("AdminSmsAiSection", () => {
 
   it("sets the daily cost cap in dollars", () => {
     const updateField = vi.fn();
-    render(<AdminSmsAiSection formData={{ sms_ai_daily_cost_cap_usd: "2" }} updateField={updateField} />);
+    render(<AdminSmsAiSection formData={{ capture_ai_daily_cost_cap_usd: "2" }} updateField={updateField} />);
     fireEvent.change(screen.getByLabelText("سقف التكلفة اليومي لرسايل البنوك"), { target: { value: "1.5" } });
-    expect(updateField).toHaveBeenCalledWith("sms_ai_daily_cost_cap_usd", "1.5");
+    expect(updateField).toHaveBeenCalledWith("capture_ai_daily_cost_cap_usd", "1.5");
   });
 });

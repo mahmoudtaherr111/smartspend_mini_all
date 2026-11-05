@@ -36,6 +36,28 @@ export function memoryKeyOf(counterparty: { type: string; name: string | null; m
   return null;
 }
 
+const DROP_TOKENS = new Set([
+  "pos", "ecom", "e-com", "ecommerce", "e-commerce", "purchase", "payment", "at", "the",
+  "eg", "egy", "egypt", "cairo", "giza", "alexandria", "alex", "maadi", "nasr", "city", "heliopolis", "zamalek", "dokki",
+  "mohandessin", "october", "6th", "sheikh", "zayed", "new",
+  "us", "usa", "gb", "uk", "ie", "nl", "lu", "sg", "ae", "uae", "ireland", "irl", "luxembourg", "netherlands",
+  "llc", "inc", "ltd", "co", "sae", "s.a.e", "plc", "pbc", "bv", "b.v", "gmbh", "sarl", "corp", "company",
+]);
+
+/** A merchant's name reduced to what stays the same across branches, terminals and cities. */
+export function merchantKey(name: string): string | null {
+  let value = name.toLowerCase();
+  // A web address names its owner: help.uber.com → uber, netflix.com → netflix.
+  value = value.replace(/\b(?:https?:\/\/)?(?:www\.|help\.|pay\.|billing\.|checkout\.)?([a-z0-9-]+)\.(?:com|net|org|io|ai|co|eg|com\.eg)\b(?:\/\S*)?/g, "$1");
+  value = value.replace(/[*_/\\|]+/g, " ").replace(/[^\p{L}\p{N}\s&.-]/gu, " ");
+  const tokens = value
+    .split(/\s+/)
+    .map((token) => token.replace(/^[.-]+|[.-]+$/g, ""))
+    .filter((token) => token && !DROP_TOKENS.has(token) && !/^\d+$/.test(token) && !/^#?\d+$/.test(token));
+  const key = tokens.join(" ").trim();
+  return key || null;
+}
+
 export interface Filing {
   categoryId: string;
   subCategoryId: string;

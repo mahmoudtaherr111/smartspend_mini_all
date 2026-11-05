@@ -114,6 +114,9 @@ const REFERENCE_AR = new RegExp(
   "gu",
 );
 
+/** Ten or more digits (spaces or dashes between them) that no pattern above named. */
+const LEFTOVER_IDENTIFIER = new RegExp(`${NO_DIGIT_BEFORE}${D}(?:[\\s-]?${D}){9,}${NO_DIGIT_AFTER}`, "gu");
+
 /** A one-time code: four to six digits soon after a code keyword. */
 const OTP = new RegExp(
   `${START}(?:رمز|كود|التحقق|برقم|otp|code|verification|passcode|pin)[^0-9\\u0660-\\u0669\\u06F0-\\u06F9]{0,30}?${NO_DIGIT_BEFORE}(${D}{4,6})${NO_DIGIT_AFTER}`,
@@ -221,7 +224,8 @@ export function redactWithFindings(text: string): RedactedText {
   return redactCore(text, legacyMarker);
 }
 
-function redactCore(text: string, marker: MarkerWriter): RedactedText {
+/** `names: false` leaves counterparty names in place (bank-message capture, decision 0049); identifiers are always masked. */
+function redactCore(text: string, marker: MarkerWriter, options: { names?: boolean } = {}): RedactedText {
   const cardLast4: string[] = [];
   const keepLast4 = (digits: string) => {
     const last4 = asciiDigits(digits).slice(-4);
@@ -257,9 +261,11 @@ function redactCore(text: string, marker: MarkerWriter): RedactedText {
     r = r.replace(pattern, (match, token: string) => maskTail(match, token, marker("REF", token)));
   }
   r = r.replace(OTP, (match, code: string) => maskTail(match, code, marker("OTP", code)));
+  // Capture never refuses a payment over a number it cannot name: any run of ten digits left is an identifier.
+  if (options.names === false) r = r.replace(LEFTOVER_IDENTIFIER, (match) => marker("REF", match));
   let incompleteName = false;
   // A name pass stops at the first word that is not a name, so "from AHMED to MOHAMED" needs a second one.
-  for (let pass = 0; pass < 4; pass++) {
+  for (let pass = 0; options.names !== false && pass < 4; pass++) {
     const next = maskNames(r, (value, explicit) => marker("PERSON", value, explicit), () => { incompleteName = true; });
     if (next === r) break;
     r = next;
@@ -279,7 +285,7 @@ export interface NumberedRedactedText {
 }
 
 /** Numbered markers for capture. Never pass localValue's return value to a provider or store it in public telemetry. */
-export function redactWithPrivateTokens(text: string): NumberedRedactedText {
+export function redactWithPrivateTokens(text: string, options: { names?: boolean } = {}): NumberedRedactedText {
   const values = new Map<string, string>();
   const byValue = new Map<string, string>();
   const counts = new Map<RedactionTokenKind, number>();
@@ -298,7 +304,7 @@ export function redactWithPrivateTokens(text: string): NumberedRedactedText {
     byValue.set(key, token);
     markers.push({ marker: token, kind, ...(explicitHolder ? { explicitHolder: true as const } : {}) });
     return token;
-  });
+  }, options);
   return Object.freeze({
     text: redacted.text,
     markers: Object.freeze(markers.map((entry) => Object.freeze(entry))),

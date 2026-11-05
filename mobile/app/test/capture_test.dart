@@ -174,7 +174,7 @@ void main() {
     );
   });
 
-  testWidgets('lets the person allow the model to read unclear messages', (
+  testWidgets('lets the person allow the model to read their messages', (
     tester,
   ) async {
     _phoneScreen(tester);
@@ -207,7 +207,7 @@ void main() {
 
     final toggle = find.widgetWithText(
       SwitchListTile,
-      'خلّي الذكاء الاصطناعي يقرا الرسايل المش واضحة',
+      'قراءة الرسايل بالذكاء الاصطناعي',
     );
     await tester.ensureVisible(toggle);
     await tester.pumpAndSettle();
@@ -220,6 +220,59 @@ void main() {
       'scope': 'ai_reading',
       'granted': true,
       'textVersion': '2026-10-27',
+    });
+    expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
+  });
+
+  testWidgets('lets the person turn on the questions after saving', (
+    tester,
+  ) async {
+    _phoneScreen(tester);
+    var questions = false;
+    final api = _api()
+      ..answer(
+        'capture.status',
+        (_) => {
+          'enabled': true,
+          'mode': 'automatic',
+          'questionsEnabled': true,
+          'consent': {
+            'capture': true,
+            'aiReading': true,
+            'questions': questions,
+          },
+          'consentTextVersion': '2026-11-05',
+          'usage': {'period': '2026-11', 'limit': 50, 'used': 3, 'held': 0},
+        },
+      )
+      ..answer('capture.setConsent', (_) {
+        questions = true;
+        return {'success': true};
+      });
+    final app = TestApp(token: 'session-token', api: api);
+    app.bankCapture
+      ..access = CaptureAccess.granted
+      ..setup = CaptureSetup(
+        baseUrl: 'http://localhost:3000',
+        deviceToken: 'cap_device-token',
+        ownerKey: 'local:42',
+        language: 'ar',
+      );
+    await app.pump(tester);
+    await _openMore(tester);
+
+    final toggle = find.widgetWithText(SwitchListTile, 'اسألني اتصرفت في إيه');
+    await tester.ensureVisible(toggle);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+    await tester.tap(
+      find.descendant(of: toggle, matching: find.byType(Switch)),
+    );
+    await tester.pumpAndSettle();
+    expect(api.lastInput('capture.setConsent'), {
+      'scope': 'purpose_questions',
+      'granted': true,
+      'textVersion': '2026-11-05',
     });
     expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
   });

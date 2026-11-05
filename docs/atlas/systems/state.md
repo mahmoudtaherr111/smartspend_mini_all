@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 75 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 76 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 18 | — | — | 1 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-04 af88390d | 2026-11-04 af88390d | 11 | — | — | 4 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 8 | — | — | 5 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 6 | — | — | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 9 | — | 2 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-04 61a28184 | 2026-11-04 61a28184 | 7 | — | 1 | 7 | 1 |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-04 61a28184 | 2026-11-04 61a28184 | 16 | **1** | — | 7 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-03 ff028180 | 2026-11-03 ff028180 | 2 | — | — | 2 | 2 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 7 | — | 1 | 7 | 1 |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 16 | **1** | — | 7 | — |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-05 df6216e1 | 2026-11-03 ff028180 | 2 | — | — | 2 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 4 | — | — | 3 | 1 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-04 907e6d5e | 2026-11-04 907e6d5e | 4 | — | — | 6 | 1 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-04 61a28184 | 2026-11-04 61a28184 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-04 61a28184 | 2026-11-04 61a28184 | 5 | — | — | — | 7 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 4 | — | — | 6 | 1 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 8 | — | — | 3 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 7 | — | — | 3 | 1 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 
 
 Every system's explanation names at least one test.
 
-## What is waiting (75 issue(s))
+## What is waiting (76 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -47,16 +47,17 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
 - The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 
-### Gaps (45)
+### Gaps (46)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and The website has no receipt capture. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
-- iPhone capture is not built: the card on an iPhone only opens the Shortcuts app. There is no push: a question from the model the phone did not fetch within about a minute shows only in the app. The Android side was compiled and tested only in CI; it has not run on a real phone yet.
-- A merchant after من، إلى، to or from is kept only when the reader named it or it looks like a business (`api/lib/capture/keep-merchants.ts`); a plain name the reader missed ("من AHMED STORES") still reaches the model as `[REDACTED_NAME]`.
-- No export of `capture_samples` exists yet: the rows are kept, but building the no-model reader from them needs an admin export without user ids (`api/lib/capture/samples.ts`).
-- The merge windows are guesses until real messages measure them. A hold the bank settles later is not joined to its charge (the reader reads a hold as no transaction), and a transfer that might be between the user's own accounts without both legs saying so is asked about as two payments.
+- iPhone capture is not built: iOS gives apps no SMS. Nothing has run on a real phone: this machine cannot run an Android emulator, so the path was proved from the phone's HTTP calls to the ledger with a real model.
+- The SMS build (`-Psmartspend.sms=true`, the `smartspend-sms-apk` artifact of `.github/workflows/android-release.yml`) may not go to Google Play before the SMS declaration is approved; the store build has notifications only.
+- A payment announced by the bank's SMS and its app's notification is joined when both name the same card, account or merchant, or the same balance (`matchSignal`); if neither message names any of them, two rows appear.
+- No export of `capture_samples` exists yet (`api/lib/capture/samples.ts`).
+- Without an admin route for `sms`, only Gemini on the server's key reads; a second provider needs its key and prices in the console.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - A call does not go on with the screen locked or the app in the background: the page keeps the microphone only in the foreground, and the call resumes if the app comes back within the hold (`src/lib/voice/call-connection.ts`). Keeping it alive needs native work in the Android and iOS shells.
@@ -124,7 +125,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - **Clarifications save immediately with undo (Decision 0039).** A clarification saves as soon as it is answered; the saved items are shown afterwards with an immediate "تراجع" (Undo) banner rather than requiring a blocking confirmation modal. This design eliminates friction during frequent Egyptian micro-transaction and voice recording; undo and post-save edits remain instant and safe. Questions stored before the source was kept save a spoken sentence as `manual`.
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
-- Until the admin assigns a model to the `sms` purpose, `readMessageWithModel` falls back to `GEMINI_API_KEY` with `mapModelName("flash")` (`smsRoutes` in `api/lib/capture/ai-reader.ts`). It is meant to go once the key is registered as a provider in the console (decision 0025).
+- The phone sends any message with a keyword, so a one-time code that mentions a purchase reaches the server, which drops it before storing (`looksLikeOneTimeCode`); a code the rule misses would reach the model.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - **Bug (provider).** On `gemini-3.8-live-extended-thinking`, a tool call sometimes never reaches the app: the model says a line, stays IN_PROGRESS, then apologises for a "system error" with no `toolCall` message and no provider error. In matched probes the standard model called the tool in 26 of 26 attempts. On 2026-09-30 at LOW, 42 of 49 single-tool probe runs passed (86%, 95% interval 73–93%) against 26 of 26 for the standard model, the same with a minimal raw setup and with the app's; between the filler and the apology only ~62 text tokens reach the model's context, so the call is also absent in the minimal harness; its internal cause is not established (`api/services/voice/engine/gemini-live.ts`). `LostToolCallGuard` keeps the apology from the user and asks again. The rate varies with time: in one later batch of 20 the first call was lost in 13, the retries rescued 10 and 3 still failed. The extended model also takes about 4.6 seconds longer to call a tool and ~6× the tokens per turn. Ultra Thinking stays off until it is qualified.

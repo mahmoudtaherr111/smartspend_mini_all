@@ -61,3 +61,5 @@ A record explains why the code looks the way it does. What the code does today i
 | [0047](0047-post-save-feedback-and-explicit-wallet-semantics.md) | Optional purpose questions after saving, renewed automatic consent, and explicit wallet kinds |
 
 | [0048](0048-direct-sms-samples-and-live-contract-fixes.md) | Direct SMS in its own build, redacted samples with consent, and sms-v4 checks fitted to live model replies |
+
+| [0049](0049-one-capture-path-model-decides.md) | One capture path: the phone sends on keywords, the model decides on labelled numbers, checks that read no words, everything complete recorded on its own |

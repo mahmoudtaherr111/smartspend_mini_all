@@ -12,11 +12,11 @@ describe("toGeminiSchema", () => {
   it("turns Zod JSON Schema into Gemini's subset instead of letting the chain drop the schema", () => {
     const out = toGeminiSchema(CAPTURE_MODEL_REPLY_SCHEMA as StructuredSchema);
     const keys = keysDeep(out);
-    for (const banned of ["$schema", "additionalProperties", "anyOf", "minLength", "maxLength"]) expect(keys.has(banned)).toBe(false);
+    for (const banned of ["$schema", "additionalProperties", "anyOf", "minLength", "maxLength", "pattern"]) expect(keys.has(banned)).toBe(false);
     const props = out.properties as Record<string, Record<string, unknown>>;
-    expect(props.flow).toEqual({ type: "string", enum: ["in", "out"], nullable: true });
-    expect((props.amount as { nullable?: boolean; type?: string }).type).toBe("object");
-    expect((props.amount as { nullable?: boolean }).nullable).toBe(true);
+    expect(props.direction).toEqual({ type: "string", enum: ["in", "out"], nullable: true });
+    // A number label ("N1"): Gemini gets a nullable string; the label's pattern is checked after the reply.
+    expect(props.amount).toEqual({ type: "string", nullable: true });
     expect(out.propertyOrdering).toEqual(Object.keys(props));
     expect(out.required).toEqual((CAPTURE_MODEL_REPLY_SCHEMA as { required: string[] }).required);
   });

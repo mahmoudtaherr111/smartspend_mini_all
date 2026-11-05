@@ -18,7 +18,7 @@
   "captureStatusFailed": "We can't tell its state right now. Try again.",
   "captureStart": "Turn on bank message recording",
   "captureConsentTitle": "Before we start",
-  "captureConsentBody": "We read only the notifications and messages of bank and wallet apps. Personal messages and codes never leave your phone. A message with a transaction goes to the server to be read, with its numbers hidden, and is deleted after 30 days. Nothing is recorded until you approve it.",
+  "captureConsentBody": "The app sends us only the messages and notifications that talk about money (debit, transfer, balance, payment and the like) from banks, wallets and SMS. AI reads each message to find the amount, the kind and the other side; your phone, card and account numbers are hidden before it sees them, while shop and people names stay so it can file them. Verification codes are never stored or read. Payments are recorded on their own and you get a notification to undo; the message is deleted after 30 days.",
   "captureConsentAgree": "I agree, continue",
   "captureUnavailable": "Bank message recording isn't available yet. We'll let you know when it is.",
   "captureConnectFailed": "We couldn't turn it on right now. Check your connection and try again.",
@@ -33,9 +33,11 @@
       }
     }
   },
-  "captureAiReadingTitle": "Let AI read unclear messages",
-  "captureAiReadingBody": "When we can't read a bank message's amount or kind, we send it to AI with your numbers hidden, and ask you before recording anything.",
+  "captureAiReadingTitle": "AI reading of messages",
+  "captureAiReadingBody": "It reads each message and records it for you. Turn it off and bank messages are not recorded.",
   "captureAiReadingFailed": "We couldn't save your choice. Try again.",
+  "captureQuestionsBody": "When a payment is filed under \"general\" or is a transfer to someone, we ask you what it was for when you open the app, and remember your answer next time.",
+  "captureQuestionsTitle": "Ask me what it was for",
   "captureSmsTitle": "Read bank SMS",
   "captureSmsBody": "We read bank and wallet SMS as they arrive; personal messages are never read.",
   "captureSmsOn": "On: bank SMS are recorded as they arrive.",

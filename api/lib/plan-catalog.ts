@@ -95,7 +95,7 @@ export function buildPlanCatalogEntry(
 
   // Recording from bank messages, once the admin has opened it: over a limit, payments are held and recorded on an
   // upgrade (the owner's decision, docs/decisions/0028-capture-intake-from-phones.md).
-  if (settings.capture_enabled === "true") {
+  if (settings.capture_enabled !== "false") {
     const captured = planNumber(settings, plan, "capture_monthly_limit");
     rows.push({
       key: "bank_messages",

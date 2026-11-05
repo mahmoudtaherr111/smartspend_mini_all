@@ -129,13 +129,13 @@ export interface CaptureActionResponse {
   expenseId?: number;
 }
 
-/** The phone's first filter. Fixed code on the phone reads these lists; the server never sends a pattern. */
+/**
+ * The phone's only filter (decision 0049): a message whose title or text holds one of these words is sent; the
+ * server judges everything else. Fixed code on the phone folds and compares them; the server never sends a pattern.
+ */
 export interface CaptureGateConfig {
-  schema: 1;
-  /** Words that mark a one-time code. With a 4–8 digit number and no currency word, the phone drops the message. */
-  otpWords: string[];
-  /** Words that mark money. */
-  currencyWords: string[];
+  schema: 2;
+  keywords: string[];
 }
 
 export interface CaptureConfig {
@@ -174,5 +174,5 @@ export type CaptureError = (typeof CAPTURE_ERRORS)[number];
 
 /** Consents a user gives for capture, each with the version of the text they agreed to. */
 /** `message_samples`: keep the redacted message and its reading to build a reader that needs no model (v7 §8). */
-export const CAPTURE_CONSENT_SCOPES = ["capture", "ai_reading", "message_samples"] as const;
+export const CAPTURE_CONSENT_SCOPES = ["capture", "ai_reading", "message_samples", "purpose_questions"] as const;
 export type CaptureConsentScope = (typeof CAPTURE_CONSENT_SCOPES)[number];

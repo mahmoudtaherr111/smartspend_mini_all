@@ -155,7 +155,7 @@ export async function insertLedgerEntriesInTx(tx: LedgerTx, owner: LedgerOwner, 
       if (entry.counterWalletId) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "التحويل بين المحافظ لسه بيتجهز." });
       const metadata = { ...entry.parsedMetadata };
       const capture = metadata.capture as { details?: { promptVersion?: string } } | undefined;
-      if (capture?.details?.promptVersion === "sms-v4") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "تسجيل رسايل البنك لسه بيتجهز." });
+      if (isModelCapture(capture?.details?.promptVersion)) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "تسجيل رسايل البنك لسه بيتجهز." });
       delete metadata.financial;
       return { ...entry, parsedMetadata: entry.parsedMetadata ? metadata : null };
     }
@@ -430,12 +430,17 @@ export async function updateLedgerEntryInTx(tx: LedgerTx, owner: LedgerOwner, id
   return row;
 }
 
+/** A row the capture model wrote (sms-v4 and later): its fee is a linked row and its kind is canonical. */
+function isModelCapture(version: string | undefined): boolean {
+  return version === "sms-v4" || version === "sms-v5";
+}
+
 /** Bundle edits stay atomic. Bank-declared fee metadata remains immutable evidence for late-signal deduplication. */
 async function updateLinkedFeeInTx(tx: LedgerTx, owner: LedgerOwner, row: LedgerRow, change: LedgerEntryChange): Promise<void> {
   if (change.linkedFeeAmount === undefined && change.walletId === undefined && change.date === undefined) return;
   const capture = (row.parsedMetadata as { capture?: { eventId?: unknown; parentExpenseId?: unknown; details?: { promptVersion?: string } } } | null)?.capture;
   if (change.linkedFeeAmount !== undefined && (!Number.isFinite(change.linkedFeeAmount) || change.linkedFeeAmount < 0 || change.linkedFeeAmount > ExpenseInputLimits.amountMax)) throw new TRPCError({ code: "BAD_REQUEST", message: "الرسوم لازم تكون مبلغ صحيح أو صفر." });
-  if (typeof capture?.eventId !== "number" || capture.parentExpenseId || capture.details?.promptVersion !== "sms-v4") {
+  if (typeof capture?.eventId !== "number" || capture.parentExpenseId || !isModelCapture(capture.details?.promptVersion)) {
     if (change.linkedFeeAmount !== undefined) throw new TRPCError({ code: "BAD_REQUEST", message: "عدّل الرسوم من العملية الأصلية." });
     return;
   }

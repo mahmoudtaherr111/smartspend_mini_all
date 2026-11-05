@@ -1,6 +1,6 @@
 # 0026. Bank and wallet messages are read by code first; the model reads only what the code is unsure of
 
-- Status: accepted. Built in `api/lib/capture/reader/` (the reader, its corpus and benchmark, `npm run bench:capture`).
+- Status: superseded by [decision 0049](0049-one-capture-path-model-decides.md): the rule reader was removed on 2026-11-05 and the model reads every message.
   Not yet connected to message intake: the old intake is being removed and the new one (signals, events, Android
   capture) follows, per the capture plan.
 - Decided and recorded: 2026-10-20.
@@ -20,7 +20,7 @@ name or number after "إلى"/"من", a footer that says "لا تشارك" in a 
 ## Decision
 1. **Two layers.** Code reads every message first (layer one). Only a reading the code calls `unsure` goes to the
    model (layer two: the admin's provider, redacted text, budget and validation, decision 0025). Both answer in one
-   shape, `Reading` (`api/lib/capture/reader/types.ts`), so nothing after them cares who read.
+   shape, `Reading` (the reader's types, removed with it), so nothing after them cares who read.
 2. **The reader is one pure function**, `readMessage`: no database, network or clock. It normalizes the text into two
    views with a map back to the original, finds typed pieces (money, card, account, phone, InstaPay address, date,
    time, reference, one-time code, link, percentage), finds the words of a bilingual lexicon (each with an id), cuts

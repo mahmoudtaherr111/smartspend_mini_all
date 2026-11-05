@@ -42,6 +42,7 @@ import { runMonthlyReportJob } from "./jobs/monthly-report-job";
 import { runMonthlyBehaviorJob } from "./jobs/monthly-behavior-job";
 import { runRollupReconciliationJob } from "./jobs/rollup-reconciliation-job";
 import { runDataRetentionJob } from "./jobs/data-retention-job";
+import { runCashflowCutoverJob } from "./jobs/cashflow-cutover-job";
 import { runSubscriptionExpiryJob, runRenewalReminders } from "./jobs/subscription-expiry-job";
 
 function directPeerAddress(c: HonoContext): string | undefined {
@@ -90,6 +91,10 @@ if (cronsEnabled) {
   void withScheduledJobLock("seed-capture-catalog", async () => {
     await syncCaptureSeed();
   }).catch((err) => createLogger("boot").error({ err, event: "capture.seed.failed" }, "Capture catalog seed failed"));
+  // The ledger's two-kind cutover runs at once on a new database, so capture records from the first message.
+  void withScheduledJobLock("cashflow-cutover", async () => {
+    await runCashflowCutoverJob();
+  }).catch((err) => createLogger("boot").error({ err, event: "cashflow.cutover_failed" }, "Cashflow cutover failed"));
 } else {
   console.info(
     "[Boot] Background jobs disabled; set ENABLE_CRONS=true on one or more replicas.",
@@ -141,6 +146,11 @@ scheduleProtectedJob("*/5 * * * *", "coaching-reminders", async () => {
 scheduleProtectedJob("* * * * *", "whatsapp-outbox", async () => {
   const { processOutbox } = await import("./lib/whatsapp/outbox");
   await processOutbox();
+});
+
+// Until the ledger's cutover is active (decision 0049): a no-op afterwards.
+scheduleProtectedJob("*/10 * * * *", "cashflow-cutover", async () => {
+  await runCashflowCutoverJob();
 });
 
 scheduleProtectedJob("* * * * *", "capture-ai-sweep", async () => {

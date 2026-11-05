@@ -12,24 +12,23 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `api-routers` | tRPC routers and HTTP sub-apps | 27 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq` |
 | `auth` | Authentication and sessions | 6 | `capture-intake`, `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `capture-intake`, `jobs` | `google-oauth` |
 | `security` | Request security | 12 | `database`, `platform` | `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `capture-intake` | `turnstile` |
-| `platform` | Platform services | 12 | `contracts`, `database` | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `capture-reader`, `classification`, `coaching`, `database`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
+| `platform` | Platform services | 12 | `contracts`, `database` | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `database`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
 | `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `mysql` |
 | `contracts` | Shared contracts | 16 | — | `ai-actions`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `api-routers`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `voice`, `web-account`, `web-admin`, `web-capture`, `web-finance`, `web-lib`, `web-pages`, `web-shared`, `web-voice-call` | — |
 | `billing` | Billing | 8 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `google-oauth`, `paymob` |
 | `ledger` | Ledger writer and aggregates | 11 | `ai-providers`, `capture-intake`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `notifications`, `platform` | `ai-actions`, `api-routers`, `capture-intake`, `coaching`, `finance-semantic-layer`, `jobs`, `notifications`, `voice` | — |
 | `coaching` | Commitments and coaching plans | 3 | `arabic-nlp`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform` | `ai-actions`, `api-core`, `api-routers`, `ledger`, `voice` | — |
 | `accounts` | Account lifecycle | 1 | `capture-intake`, `database` | `api-routers` | — |
-| `jobs` | Scheduled job bodies | 6 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `whatsapp` | `api-core` | `fireworks` |
+| `jobs` | Scheduled job bodies | 7 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `capture-intake`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `whatsapp` | `api-core` | `fireworks` |
 | `notifications` | Notifications | 2 | `contracts`, `database`, `ledger`, `platform` | `api-core`, `api-routers`, `jobs`, `ledger` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 4 | `database`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
 | `voice` | Voice | 39 | `ai-actions`, `ai-insights`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
 | `ai-providers` | AI provider access | 14 | `ai-governance`, `contracts`, `database`, `platform` | `ai-governance`, `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `capture-ai-reader`, `classification`, `jobs`, `ledger`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 4 | `ai-providers`, `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-routers`, `capture-ai-reader`, `jobs` | — |
-| `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `capture-intake`, `capture-reader`, `classification`, `coaching`, `receipt-parsing`, `voice` | — |
-| `capture-intake` | Capture intake | 18 | `arabic-nlp`, `auth`, `capture-ai-reader`, `capture-catalog`, `capture-reader`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `security` | `accounts`, `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `ledger` | — |
-| `capture-ai-reader` | Message model reader | 8 | `ai-governance`, `ai-providers`, `capture-intake`, `classification`, `contracts`, `database`, `platform`, `security` | `capture-intake` | `gemini` |
+| `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `capture-intake`, `classification`, `coaching`, `receipt-parsing`, `voice` | — |
+| `capture-intake` | Capture intake | 17 | `arabic-nlp`, `auth`, `capture-ai-reader`, `capture-catalog`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `security` | `accounts`, `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `jobs`, `ledger` | — |
+| `capture-ai-reader` | Message model reading | 7 | `ai-governance`, `ai-providers`, `capture-intake`, `classification`, `contracts`, `database`, `platform`, `security` | `capture-intake` | `gemini` |
 | `capture-catalog` | Capture catalog | 3 | `contracts`, `database`, `platform` | `api-core`, `api-routers`, `capture-intake` | — |
-| `capture-reader` | Message reader | 12 | `arabic-nlp`, `platform` | `capture-intake` | — |
 | `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
 | `classification-qa` | Classification benchmark helpers | 2 | `classification` | — | — |
 | `classification` | Expense classification pipeline | 40 | `ai-providers`, `arabic-nlp`, `contracts`, `database`, `platform` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-routers`, `arabic-nlp`, `capture-ai-reader`, `capture-intake`, `classification-qa`, `finance-semantic-layer`, `ledger`, `receipt-parsing`, `voice` | `gemini` |
@@ -270,6 +269,7 @@ Job implementations scheduled from api/boot.ts.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
+| `api/jobs/cashflow-cutover-job.ts` | `capture-intake`, `ledger`, `platform` | — | — | — |
 | `api/jobs/data-retention-job.ts` | `database` | — | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `capture_ai_accounts`, `capture_ai_days`, `capture_ai_jobs`, `capture_ai_reservations`, `capture_events`, `capture_questions`, `capture_samples`, `capture_signals`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage`, `whatsapp_messages` |
 | `api/jobs/monthly-behavior-job.ts` | `api-routers`, `database`, `platform` | — | `expenses`, `user_profiles` | — |
 | `api/jobs/monthly-report-job.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `whatsapp` | `fireworks` | `local_users`, `monthly_reports`, `users`, `whatsapp_contacts` | `monthly_reports` |
@@ -394,14 +394,14 @@ Normalizers, dictionaries, Arabic number parsing, negation detection, the words 
 
 ### `capture-intake` — Capture intake
 
-Where captured bank and wallet notifications come in (decision 0028): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config, a notification's button), the server's filter that keeps only what the reader reads as money that moved, the rules that merge the signals of one payment into one event (decision 0029), the user's memory of where each merchant and person is filed and which banks and kinds are recorded on their own (decision 0030), the monthly limit with the payments held over it, the queue where the admin's model reads what the reader is unsure of and the questions it leaves for the phone (decision 0031), the breaker that stops a bank whose recordings are taken back, the admin's bulk undo and the numbers per bank and kind (decision 0032), who capture is open to with the oldest build, the phones per plan and the daily cap, and the cards and phrases each user asked to ignore (decision 0033), each phone's health with the notice when one stops, the wallet suggested for a card seen in messages and deleting a user's capture data (decision 0034), the redaction that keeps a message's merchant, the admins' in-app alerts and the support timeline (decision 0035), the notice written in the phone's language, where each kind would be filed, and the user's answer, which writes the ledger through the ledger writer.
+Where captured bank and wallet messages come in and become ledger rows (decisions 0028, 0049): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config with the phone's keyword list, notices and their acknowledgement, a notification's button, heartbeats), the server's admission (a listed app, no personal sender, a keyword) before every message is sealed with one model job, the worker that reads each job with the model and places the reading, the rules that merge the signals of one payment into one event and link a fee sent apart (decision 0029), recording every complete reading on its own with undo, the user's memory of where each merchant and person is filed (decision 0030), optional questions after saving for users who turn them on, the monthly limit with the payments held over it, the breaker that pauses a bank whose recordings are taken back, the admin's bulk undo and the numbers, phone health and deleting the user's data.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `api/capture-v1-routes.ts` | `capture-catalog`, `contracts`, `platform`, `security` | — | — | — |
 | `api/lib/capture/access.ts` | `database`, `platform` | — | — | `capture_usage` |
 | `api/lib/capture/activity.ts` | `database`, `ledger` | — | `capture_ai_jobs`, `capture_events`, `expenses` | — |
-| `api/lib/capture/ai-queue.ts` | `capture-ai-reader`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | — | `capture_ai_jobs`, `capture_signals`, `local_users`, `users` | `capture_ai_jobs`, `capture_signals` |
+| `api/lib/capture/ai-queue.ts` | `capture-ai-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | — | `capture_ai_jobs`, `capture_signals`, `local_users`, `users` | `capture_ai_jobs`, `capture_signals` |
 | `api/lib/capture/care.ts` | `capture-catalog`, `database`, `ledger`, `platform` | — | `capture_devices`, `capture_events`, `capture_markers`, `user_wallets` | `capture_ai_jobs`, `capture_consents`, `capture_devices`, `capture_events`, `capture_markers`, `capture_memory`, `capture_questions`, `capture_samples`, `capture_signals`, `capture_user_pairs`, `in_app_notifications`, `user_wallets` |
 | `api/lib/capture/consent.ts` | `database` | — | `capture_consents`, `local_users`, `users` | `capture_consents`, `capture_samples` |
 | `api/lib/capture/devices.ts` | `auth`, `contracts`, `database`, `platform` | — | `capture_devices` | `capture_devices` |
@@ -409,22 +409,20 @@ Where captured bank and wallet notifications come in (decision 0028): the device
 | `api/lib/capture/fees.ts` | `contracts`, `database` | — | `capture_events`, `expenses` | `capture_events`, `expenses` |
 | `api/lib/capture/identity-links.ts` | `database` | — | `capture_markers`, `user_contacts` | `capture_markers` |
 | `api/lib/capture/instruments.ts` | `security` | — | — | — |
-| `api/lib/capture/intake.ts` | `capture-ai-reader`, `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform` | — | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `expenses`, `local_users`, `user_wallets`, `users` | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `expenses`, `in_app_notifications`, `user_wallets` |
-| `api/lib/capture/keep-merchants.ts` | `security` | — | — | — |
+| `api/lib/capture/intake.ts` | `capture-ai-reader`, `capture-catalog`, `contracts`, `database`, `ledger`, `platform` | — | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `expenses`, `local_users`, `user_wallets`, `users` | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `expenses`, `in_app_notifications`, `user_wallets` |
 | `api/lib/capture/markers.ts` | `arabic-nlp`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `security` | — | `capture_markers`, `user_wallets` | `capture_markers` |
 | `api/lib/capture/memory.ts` | `contracts`, `database`, `platform` | — | `capture_memory`, `capture_user_pairs` | `capture_memory`, `capture_user_pairs` |
 | `api/lib/capture/operations.ts` | `database`, `ledger`, `platform` | — | `capture_ai_jobs`, `capture_consents`, `capture_devices`, `capture_events`, `capture_markers`, `capture_usage`, `local_users`, `users` | `capture_events`, `in_app_notifications`, `system_settings` |
 | `api/lib/capture/questions.ts` | `classification`, `contracts`, `database`, `ledger`, `platform` | — | `capture_questions`, `expenses` | `capture_questions` |
 | `api/lib/capture/schema-state.ts` | — | — | — | — |
 
-### `capture-ai-reader` — Message model reader
+### `capture-ai-reader` — Message model reading
 
-Layer two of capture: reads one bank or wallet message with the model the admin assigned to bank messages (the server's Gemini key until then), behind the admin's switch, the plan budget and a daily USD cap, on condensed and redacted text, one message of one user per call, with the reply checked against a versioned contract before it is used. The unsure-message queue calls the active sms-v2 reader. The separate sms-v4 contract grounds fields in source quotes and proposes decimal-exact EGP postings; an offline CLI checks saved replies without calling a model or writing the ledger. With the admin switch and the user's consent, each reading's numbered-marker text, reply and posting are kept as a sample to build a reader without a model (decision 0048).
+How capture reads a message (decision 0049): the code labels every amount in the redacted message and the model names which label is the amount, the fee, the balance and the pound value, with the status, kind, direction, the other side, the method and a category; checks that read no words keep it honest, and a pure function gives the posting in pounds. The transport asks the admin's routes for bank messages or the server's Gemini key, behind the switch, durable reservations and cost caps; the privacy gate hides identifying numbers and drops one-time codes before anything is stored or sent; the vault seals the private values to the signal. With the admin switch and the user's consent, each reading's redacted text and facts are kept as a sample (decision 0048). A live benchmark scores the same path on a case file without printing message text.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `api/lib/capture/admission.ts` | `database`, `platform` | — | `capture_ai_accounts`, `capture_ai_days`, `capture_ai_reservations`, `local_users`, `users` | `capture_ai_accounts`, `capture_ai_days`, `capture_ai_reservations` |
-| `api/lib/capture/ai-reader.ts` | `ai-governance`, `ai-providers`, `capture-intake`, `platform`, `security` | — | — | — |
 | `api/lib/capture/model-contract.ts` | `contracts`, `security` | — | — | — |
 | `api/lib/capture/model-reader.ts` | `ai-governance`, `ai-providers`, `capture-intake`, `platform` | — | — | — |
 | `api/lib/capture/privacy.ts` | `contracts`, `security` | — | — | — |
@@ -441,25 +439,6 @@ The banks, wallets, payment networks, fintech and messaging apps whose notificat
 | `api/lib/capture/catalog.ts` | `contracts`, `database`, `platform` | — | `capture_sources`, `subscription_catalog` | `capture_sources`, `subscription_catalog` |
 | `api/lib/capture/seed-sources.ts` | — | — | — | — |
 | `api/lib/capture/seed-subscriptions.ts` | — | — | — | — |
-
-### `capture-reader` — Message reader
-
-Layer one of capture, before any model: reads a bank, wallet or payment notification into what happened, which way, how much and in what currency, with which card and with whom, when, how sure it is and why (normalization with a position map, piece finders, an Arabic and English lexicon, sentences, money roles, kind and direction, the other side, the date), plus its benchmark corpus.
-
-| File | Imports from clusters | External systems referenced | Reads | Writes |
-| --- | --- | --- | --- | --- |
-| `api/lib/capture/reader/clauses.ts` | — | — | — | — |
-| `api/lib/capture/reader/counterparty.ts` | — | — | — | — |
-| `api/lib/capture/reader/explain.ts` | — | — | — | — |
-| `api/lib/capture/reader/fixtures.ts` | — | — | — | — |
-| `api/lib/capture/reader/kind.ts` | — | — | — | — |
-| `api/lib/capture/reader/lexicon.ts` | — | — | — | — |
-| `api/lib/capture/reader/normalize.ts` | — | — | — | — |
-| `api/lib/capture/reader/read.ts` | — | — | — | — |
-| `api/lib/capture/reader/roles.ts` | — | — | — | — |
-| `api/lib/capture/reader/spans.ts` | `arabic-nlp` | — | — | — |
-| `api/lib/capture/reader/types.ts` | — | — | — | — |
-| `api/lib/capture/reader/when.ts` | `platform` | — | — | — |
 
 ### `receipt-parsing` — Receipt parsing
 

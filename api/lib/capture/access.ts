@@ -22,7 +22,8 @@ const list = (value: string | undefined) =>
  * when the beta list is not empty the user is on it.
  */
 export function captureOpenFor(settings: Record<string, string | undefined>, owner: CaptureOwner, platform?: string | null): boolean {
-  if (settings.capture_enabled !== "true") return false;
+  // On unless the admin turned it off (decision 0049): a new database has no row for it.
+  if (settings.capture_enabled === "false") return false;
   if (platform && !list(settings.capture_platforms ?? "android,ios").has(platform)) return false;
   const beta = list(settings.capture_beta_users);
   return beta.size === 0 || beta.has(`${owner.userType}:${owner.userId}`.toLowerCase());

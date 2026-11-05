@@ -10,7 +10,7 @@
         "api/lib/access-control.ts": "ec360a101b90",
         "api/lib/admin-audit.ts": "182cdae6283d",
         "api/lib/admin-safe-fields.ts": "cfb73d6bbe66",
-        "api/lib/anonymizer.ts": "1385b9e873fc",
+        "api/lib/anonymizer.ts": "b0e765ca9d68",
         "api/lib/get-client-ip.ts": "72af77e654a4",
         "api/lib/google-id-token.ts": "219f290d6998",
         "api/lib/http-origin-security.ts": "066096844fe2",
@@ -54,9 +54,9 @@
         "src/pages/Login.tsx": "721a99583418",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-11-04 61a28184",
-      "arabic": "d367876b2a7b",
-      "arabicChecked": "2026-11-04 61a28184"
+      "checked": "2026-11-05 df6216e1",
+      "arabic": "215ccc473529",
+      "arabicChecked": "2026-11-05 df6216e1"
     },
     "admin": {
       "files": {
@@ -87,19 +87,19 @@
         "src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx": "88d1c8cbcd39",
         "src/components/admin/capture/AdminCaptureNumbers.tsx": "fc68fb7725a8",
         "src/components/admin/capture/AdminCaptureTab.tsx": "7a3d0409d074",
-        "src/components/admin/settings/AdminCaptureSection.tsx": "ae07fa37dd43",
+        "src/components/admin/settings/AdminCaptureSection.tsx": "b023c4a1b05c",
         "src/components/admin/settings/AdminKeysTab.tsx": "326d1b6bb70a",
         "src/components/admin/settings/AdminOperationsSection.tsx": "14f41844095f",
         "src/components/admin/settings/AdminPlansTab.tsx": "0de7a93480c1",
         "src/components/admin/settings/AdminSettingsShared.tsx": "a310475825d1",
-        "src/components/admin/settings/AdminSmsAiSection.tsx": "ec8a865da902",
+        "src/components/admin/settings/AdminSmsAiSection.tsx": "6b35a02ada7c",
         "src/components/admin/settings/AdminVoiceCallSection.tsx": "ae339f527cf2",
         "src/pages/Admin.tsx": "9444393be5fa",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-04 907e6d5e",
-      "arabic": "1d434180a749",
-      "arabicChecked": "2026-11-04 907e6d5e"
+      "checked": "2026-11-05 df6216e1",
+      "arabic": "c184cbe7c1f6",
+      "arabicChecked": "2026-11-05 df6216e1"
     },
     "ai-center": {
       "files": {
@@ -183,54 +183,42 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "3185b204f24e"
       },
-      "checked": "2026-11-04 61a28184",
-      "arabic": "ef3e05731e75",
-      "arabicChecked": "2026-11-04 61a28184"
+      "checked": "2026-11-05 df6216e1",
+      "arabic": "2b1f6b50f951",
+      "arabicChecked": "2026-11-05 df6216e1"
     },
     "bank-messages": {
       "files": {
         "api/boot.ts#job:capture-ai-sweep": "4afba3fe5c9c",
         "api/boot.ts#job:capture-breaker": "46eeeaa447e0",
         "api/boot.ts#job:capture-silent-devices": "e650646f7646",
+        "api/boot.ts#job:cashflow-cutover": "a4ba7ab5395f",
         "api/boot.ts#job:seed-capture-catalog": "c2080520b0f3",
         "api/capture-admin-router.ts": "2f6bf9be58c6",
-        "api/capture-router.ts": "046e18d49010",
-        "api/capture-v1-routes.ts": "7be640f7220d",
-        "api/lib/capture/access.ts": "a05bd6473e8d",
-        "api/lib/capture/activity.ts": "aedd1fdb0db3",
+        "api/capture-router.ts": "b311feac0069",
+        "api/capture-v1-routes.ts": "3d346a26bb14",
+        "api/jobs/cashflow-cutover-job.ts": "7f6adefe9122",
+        "api/lib/capture/access.ts": "23da3d33aebd",
+        "api/lib/capture/activity.ts": "9ef1cab5fab6",
         "api/lib/capture/admission.ts": "743a668dd677",
-        "api/lib/capture/ai-queue.ts": "4bf662002304",
-        "api/lib/capture/ai-reader.ts": "c7dd878f0c11",
+        "api/lib/capture/ai-queue.ts": "fd6b48fbbc59",
         "api/lib/capture/care.ts": "5f71a2479578",
-        "api/lib/capture/catalog.ts": "dd7c3d61d374",
-        "api/lib/capture/consent.ts": "d94041f06895",
+        "api/lib/capture/catalog.ts": "f001d3474790",
+        "api/lib/capture/consent.ts": "e3f24a815cde",
         "api/lib/capture/devices.ts": "caff87cd0199",
-        "api/lib/capture/events.ts": "7458f3f1cdb7",
-        "api/lib/capture/fees.ts": "82cc9bb53e75",
+        "api/lib/capture/events.ts": "8936d6b8d3b9",
+        "api/lib/capture/fees.ts": "95c528f3cb4f",
         "api/lib/capture/identity-links.ts": "098288d84314",
         "api/lib/capture/instruments.ts": "548f489f588a",
-        "api/lib/capture/intake.ts": "ad13f8840e88",
-        "api/lib/capture/keep-merchants.ts": "3c94830a3d74",
-        "api/lib/capture/markers.ts": "520d1dbab96a",
-        "api/lib/capture/memory.ts": "37a0bd659e1f",
-        "api/lib/capture/model-contract.ts": "675100ab4a44",
-        "api/lib/capture/model-reader.ts": "cbc34457dc3d",
+        "api/lib/capture/intake.ts": "6d6ba536902b",
+        "api/lib/capture/markers.ts": "3c5fbf495715",
+        "api/lib/capture/memory.ts": "6dab8103c402",
+        "api/lib/capture/model-contract.ts": "eb21555b5850",
+        "api/lib/capture/model-reader.ts": "35357eed14e8",
         "api/lib/capture/operations.ts": "166e0fb5bd16",
-        "api/lib/capture/privacy.ts": "a132785c68f0",
-        "api/lib/capture/questions.ts": "c5930e9a0621",
-        "api/lib/capture/reader/clauses.ts": "5b86ed12ca60",
-        "api/lib/capture/reader/counterparty.ts": "4560b5469773",
-        "api/lib/capture/reader/explain.ts": "3455f6c511dd",
-        "api/lib/capture/reader/fixtures.ts": "6b247889aee7",
-        "api/lib/capture/reader/kind.ts": "b6380005c443",
-        "api/lib/capture/reader/lexicon.ts": "5eaad8c63e3e",
-        "api/lib/capture/reader/normalize.ts": "44a0526d25db",
-        "api/lib/capture/reader/read.ts": "dcba52e82722",
-        "api/lib/capture/reader/roles.ts": "820f9ae2d0cd",
-        "api/lib/capture/reader/spans.ts": "c114d6c25a66",
-        "api/lib/capture/reader/types.ts": "dbc3ac582ea5",
-        "api/lib/capture/reader/when.ts": "3c9cce811dd1",
-        "api/lib/capture/samples.ts": "f840bdd1724d",
+        "api/lib/capture/privacy.ts": "b7b6abc9101c",
+        "api/lib/capture/questions.ts": "e4c3b030f8af",
+        "api/lib/capture/samples.ts": "b7a0442c87a9",
         "api/lib/capture/schema-state.ts": "f35686735395",
         "api/lib/capture/seed-sources.ts": "693b8813dd6c",
         "api/lib/capture/seed-subscriptions.ts": "706a9d802a32",
@@ -238,9 +226,9 @@
         "api/lib/sms-ai-contract.ts": "34562a4b9e0c",
         "src/components/bank-capture/CaptureOverview.tsx": "30e973b0cfd2"
       },
-      "checked": "2026-11-04 af88390d",
-      "arabic": "c741c03b9a40",
-      "arabicChecked": "2026-11-04 af88390d"
+      "checked": "2026-11-05 df6216e1",
+      "arabic": "43cd34189611",
+      "arabicChecked": "2026-11-05 df6216e1"
     },
     "billing": {
       "files": {
@@ -250,7 +238,7 @@
         "api/boot.ts#job:daily-subscription-expiry": "3559570d054c",
         "api/jobs/subscription-expiry-job.ts": "188c27a5cbe7",
         "api/lib/paymob.ts": "026fedc0cf46",
-        "api/lib/plan-catalog.ts": "63caf39384d3",
+        "api/lib/plan-catalog.ts": "26dd6a0605c2",
         "api/lib/store-billing/apple-app-store-verifier.ts": "b0702e56a260",
         "api/lib/store-billing/entitlement.ts": "d74cc491ae6e",
         "api/lib/store-billing/google-play-verifier.ts": "56e6d0d49152",
@@ -261,7 +249,7 @@
         "src/pages/Pro.tsx": "fe168b78b55e",
         "src/pages/UltraLounge.tsx": "394f7655307b"
       },
-      "checked": "2026-11-03 ff028180",
+      "checked": "2026-11-05 df6216e1",
       "arabic": "64a70c660023",
       "arabicChecked": "2026-11-03 ff028180"
     },
@@ -424,7 +412,7 @@
         "api/services/installments.ts": "c8bdc9de1497",
         "api/services/ledger-bundles.ts": "0491358afb74",
         "api/services/ledger-semantics.ts": "285af0b3e4f8",
-        "api/services/ledger-writer.ts": "09f3868ab857",
+        "api/services/ledger-writer.ts": "d8077f5397b0",
         "api/services/wallet-balance-policy.ts": "694476838cb3",
         "api/wallet-router.ts": "4ff144574e46",
         "src/components/budgets/BudgetsPanel.tsx": "514a88e41280",
@@ -451,9 +439,9 @@
         "src/pages/PlanPage.tsx": "107068a002b0",
         "src/pages/WalletsPage.tsx": "a1964708847b"
       },
-      "checked": "2026-11-04 61a28184",
-      "arabic": "faed0983340e",
-      "arabicChecked": "2026-11-04 61a28184"
+      "checked": "2026-11-05 df6216e1",
+      "arabic": "24d840e68d75",
+      "arabicChecked": "2026-11-05 df6216e1"
     },
     "notifications": {
       "files": {
@@ -489,7 +477,7 @@
         "api/boot.ts#GET /robots.txt": "c4dc59fa55af",
         "api/boot.ts#GET /sitemap.xml": "64c40dc44152",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "6a403e321e21",
+        "api/boot.ts#rest-of-file": "e8b5a2aa15d5",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "013fac14e6c9",
         "api/lib/app-time.ts": "7eaf4ab8fae6",
@@ -502,7 +490,7 @@
         "api/lib/redis-client.ts": "b5bd5c4ff3ad",
         "api/lib/settings-cache.ts": "cf6ddd683871",
         "api/lib/shared-generation.ts": "2d53bf30e567",
-        "api/lib/system-settings-registry.ts": "92abf6349e62",
+        "api/lib/system-settings-registry.ts": "417bfcb7fc23",
         "api/middleware.ts": "e82907a611a2",
         "api/queries/connection.ts": "49fd2ab76893",
         "api/router.ts": "d748ca88b929",
@@ -515,7 +503,7 @@
         "api/services/storage/types.ts": "766de83090e8",
         "contracts/account-deletion.ts": "6fcd736f6cae",
         "contracts/ai-models.ts": "7eeda8042bd8",
-        "contracts/capture-intake.ts": "7e37fa4c5d16",
+        "contracts/capture-intake.ts": "a034a66af1ac",
         "contracts/capture.ts": "fabd04c9d7ac",
         "contracts/categories.ts": "aca28dd35f9b",
         "contracts/constants.ts": "f047c234a332",
@@ -530,13 +518,13 @@
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
         "db/relations.ts": "23d6f74c42ad",
-        "db/schema.ts": "dd3e812074f0",
+        "db/schema.ts": "b6dd75e38e9a",
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "24dd31475b42"
       },
-      "checked": "2026-11-04 61a28184",
-      "arabic": "dca4996fb80e",
-      "arabicChecked": "2026-11-04 61a28184"
+      "checked": "2026-11-05 df6216e1",
+      "arabic": "0fa0bb2c9247",
+      "arabicChecked": "2026-11-05 df6216e1"
     },
     "voice-calls": {
       "files": {

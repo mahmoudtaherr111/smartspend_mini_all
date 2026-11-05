@@ -1,39 +1,32 @@
 package com.smartspend.bank_capture
 
 /**
- * The phone's first filter (decision 0028). It drops only what is clearly not a bank's: a message from a person's
- * number, a one-time code, a text without a digit. Anything else is sent, because what the phone drops is lost; the
- * server reads it and is strict. The word lists come from the server's `/config` (`gate`); the code stays fixed and
- * never runs a pattern the server sends.
+ * The phone's only filter (decision 0049): a message is sent when its text holds one of the keywords. Everything
+ * else (codes, offers, personal senders, what the message means) is the server's to judge, so nothing a bank writes
+ * differently is lost on the phone. The keywords come from the server's `/config` (`gate.keywords`); this build's
+ * own list is used until a config arrives. The code never runs a pattern the server sends.
  *
  * Pure Kotlin, no Android types: `src/test` runs the cases of `contracts/capture-fixtures/phone-gate.json`, the
  * same file the server's tests read.
  */
-class CaptureGate(otpWords: Collection<String>, currencyWords: Collection<String>) {
-    private val otpWords = otpWords.map(::fold).filter { it.isNotEmpty() }
-    private val currencyWords = currencyWords.map(::fold).filter { it.isNotEmpty() }
+class CaptureGate(keywords: Collection<String>) {
+    private val keywords = keywords.map(::fold).filter { it.isNotEmpty() }.ifEmpty { DEFAULT_KEYWORDS.map(::fold) }
 
-    /** Why the message is dropped, or null to keep it. */
-    fun dropReason(sender: String?, title: String?, text: String, fromMessagingApp: Boolean): String? {
-        if (fromMessagingApp && isPersonalSender(sender)) return "personal_sender"
+    /** True when the title or the text holds a keyword. */
+    fun keeps(title: String?, text: String): Boolean {
         val folded = fold("${title.orEmpty()} $text")
-        if (folded.none { it in '0'..'9' }) return "no_digits"
-        val hasCode = CODE.containsMatchIn(folded)
-        if (hasCode && otpWords.any { folded.contains(it) } && currencyWords.none { folded.contains(it) }) return "otp"
-        return null
+        return keywords.any { folded.contains(it) }
     }
 
     companion object {
-        /** Four to eight digits standing alone: a one-time code's shape. */
-        private val CODE = Regex("(?<![0-9])[0-9]{4,8}(?![0-9])")
-
-        /** A sender that is a person's phone number: eight digits or more, once spaces and signs are removed. */
-        fun isPersonalSender(sender: String?): Boolean {
-            if (sender.isNullOrBlank()) return false
-            val digits = sender.filterNot { it == ' ' || it == '-' || it == '(' || it == ')' || it == '+' }
-            val ascii = asciiDigits(digits)
-            return ascii.length >= 8 && ascii.all { it in '0'..'9' }
-        }
+        /** The owner's list (2026-11-04), also the server's default (`CAPTURE_KEYWORDS` in api/lib/capture/intake.ts). */
+        val DEFAULT_KEYWORDS = listOf(
+            "transaction", "purchase", "payment", "debit", "credit", "spent",
+            "balance", "withdraw", "deposit", "transfer", "paid", "charge",
+            "received", "pos", "atm", "wallet", "egp", "جم", "عملية",
+            "شراء", "دفع", "خصم", "إضافة", "رصيد", "سحب", "إيداع",
+            "تحويل", "مبلغ", "بطاقة", "حساب", "حوال",
+        )
 
         /** Arabic-Indic and Persian digits as ASCII. */
         fun asciiDigits(value: String): String = buildString(value.length) {
@@ -48,19 +41,18 @@ class CaptureGate(otpWords: Collection<String>, currencyWords: Collection<String
             }
         }
 
-        /** Lower case, ASCII digits and the Arabic letter variants folded, as the server's reader compares words. */
+        /** Lower case, ASCII digits, Arabic letter variants folded and diacritics and tatweel removed, as the server does. */
         fun fold(value: String): String = buildString(value.length) {
             for (char in asciiDigits(value).lowercase()) {
-                append(
-                    when (char) {
-                        'أ', 'إ', 'آ', 'ٱ' -> 'ا'
-                        'ى' -> 'ي'
-                        'ة' -> 'ه'
-                        'ؤ' -> 'و'
-                        'ئ' -> 'ي'
-                        else -> char
-                    },
-                )
+                when (char) {
+                    'أ', 'إ', 'آ', 'ٱ' -> append('ا')
+                    'ى' -> append('ي')
+                    'ة' -> append('ه')
+                    'ؤ' -> append('و')
+                    'ئ' -> append('ي')
+                    in 'ً'..'ْ', 'ـ' -> Unit
+                    else -> append(char)
+                }
             }
         }
     }

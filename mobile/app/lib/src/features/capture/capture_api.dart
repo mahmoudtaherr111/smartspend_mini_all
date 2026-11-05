@@ -17,6 +17,7 @@ final class CaptureServerStatus {
     this.walletTypesEnabled = false,
     this.samples = false,
     this.samplesOffered = false,
+    this.questions = false,
   });
 
   final bool enabled;
@@ -33,6 +34,9 @@ final class CaptureServerStatus {
   /// whether the server offers that at all.
   final bool samples;
   final bool samplesOffered;
+
+  /// The person asked to be asked what a payment filed under "general" was for, after it is saved (decision 0049).
+  final bool questions;
 
   /// New payments counted this month against the plan's limit, and the limit (0 = none).
   final int used;
@@ -269,6 +273,8 @@ class CaptureApi {
           consent is Map<String, Object?> && consent['aiReading'] == true,
       samples: consent is Map<String, Object?> && consent['samples'] == true,
       samplesOffered: map['samplesOffered'] == true,
+      questions:
+          consent is Map<String, Object?> && consent['questions'] == true,
       used: number('used'),
       limit: number('limit'),
       held: number('held'),
@@ -289,6 +295,16 @@ class CaptureApi {
     Procedures.capture.setConsent,
     input: {
       'scope': 'ai_reading',
+      'granted': granted,
+      'textVersion': textVersion,
+    },
+  );
+
+  /// Turns the questions after saving on or off for this person.
+  Future<void> setQuestions(bool granted, String textVersion) => _client.mutate(
+    Procedures.capture.setConsent,
+    input: {
+      'scope': 'purpose_questions',
       'granted': granted,
       'textVersion': textVersion,
     },

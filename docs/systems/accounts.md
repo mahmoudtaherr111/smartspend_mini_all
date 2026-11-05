@@ -192,8 +192,9 @@ Then, per procedure:
 - **Redaction** (`redactSensitiveData`, and `redactWithFindings`, which also returns the card endings it removed):
   card and account digits, IBANs, Egyptian phone numbers, reference numbers, e-mail addresses, one-time codes and the
   names after من، إلى، لـ، to, from or Dear are replaced by markers. Explicit holder labels (باسم، بإسم، بأسم، registered as, to name) are read first and also mask lowercase Latin names, while keeping the label and financial values. Amounts, balances, dates and merchants stay. It
-  runs on a bank message before it is sent to a model ([bank messages](bank-messages.md)) and on the expense lines a
-  report prompt quotes.
+  runs on the expense lines a report prompt quotes. Bank-message capture uses it with `names: false`
+  ([bank messages](bank-messages.md), decision 0049): names stay for the model, identifying numbers are masked, and
+  any leftover run of ten digits becomes a reference marker instead of the message being refused.
 - **Admin answers** select fields from `api/lib/admin-safe-fields.ts`, so credentials and session tokens never leave.
 
 ## Account changes and deletion
@@ -297,8 +298,8 @@ original values in a closure; JSON serialization emits only the redacted text. R
 marker within one call, and no map is shared across calls. Card tails are read through a method returning a copy.
 Arabic and Persian digits are supported in fixed Egyptian phone prefixes as well as the rest of the number.
 An overlong name sets `incompleteName` rather than claiming the entire name was removed. Existing redaction callers
-keep legacy markers; capture's model caller now refuses that incomplete finding. This bounded matcher is not proof
-that an arbitrary unlabelled name has been detected.
+keep legacy markers. Capture asks for no names to be masked, so the incomplete finding does not refuse its messages.
+This bounded matcher is not proof that an arbitrary unlabelled name has been detected.
 
 Capture consent writes now lock the identity row before changing consent, so deletion cannot race a late grant
 into recreating user data. Its transactional reader accepts the existing transaction, avoiding a second connection

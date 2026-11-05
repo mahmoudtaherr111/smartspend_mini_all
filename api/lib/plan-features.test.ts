@@ -59,7 +59,8 @@ describe("the plans screen", () => {
     expect(value("pro", "daily_entries")).toBe("100 في اليوم");
     expect(value("free", "receipts")).toBe(false);
     expect(value("pro", "receipts")).toBe(true);
-    expect(value("free", "bank_messages")).toBeUndefined();
+    expect(value("free", "bank_messages")).toBe("50 عملية في الشهر");
+    expect(buildPlanCatalog({ capture_enabled: "false" }).free.find((row) => row.key === "bank_messages")).toBeUndefined();
   });
 
   it("follows an admin change", () => {

@@ -29,11 +29,11 @@
       "id": "bank-messages",
       "title": "Bank and wallet messages",
       "titleAr": "رسائل البنوك والمحافظ",
-      "summary": "Automatic capture of bank and wallet messages from phones: the catalog of banks, wallets and subscriptions the admin edits, the reader that reads a message without a model, the admin's model for what the reader is unsure of, the intake that merges signals into payments, and the user's answer that writes the ledger.",
+      "summary": "Automatic capture of bank and wallet messages from phones: the phone's keyword filter, the catalog of banks, wallets and subscriptions the admin edits, the model that reads every message with checks that hold for any bank, the intake that merges signals into payments and records them on their own with undo, and the user's answers and questions.",
       "summaryAr": "تسجيل رسايل البنوك والمحافظ من الموبايل: قايمة البنوك والمحافظ والاشتراكات اللي الأدمن بيعدّلها، والقارئ اللي بيقرا الرسالة من غير AI، والموديل اللي الأدمن اختاره للي القارئ مش متأكد منه، والاستلام اللي بيجمع الرسايل في عمليات، وإجابة المستخدم اللي بتكتب في الدفتر.",
-      "clusters": ["capture-ai-reader", "capture-catalog", "capture-intake", "capture-reader", "web-bank-capture"],
+      "clusters": ["capture-ai-reader", "capture-catalog", "capture-intake", "web-bank-capture"],
       "routers": ["capture", "captureAdmin"],
-      "jobs": ["seed-capture-catalog", "capture-ai-sweep", "capture-breaker", "capture-silent-devices"]
+      "jobs": ["seed-capture-catalog", "capture-ai-sweep", "capture-breaker", "capture-silent-devices", "cashflow-cutover"]
     },
     {
       "id": "voice-calls",

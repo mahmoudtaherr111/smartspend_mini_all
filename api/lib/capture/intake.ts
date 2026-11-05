@@ -1,12 +1,12 @@
 /**
- * The intake of captured notifications (decision 0028): what the server does with each signal a phone sends, and
- * how the user's answer becomes a ledger row.
+ * The intake of captured messages (decisions 0028, 0049): what the server does with each signal a phone sends, and
+ * how a reading becomes a ledger row.
  *
- * For now every transaction waits for the user (P1 of the capture plan): a signal that reads as money moving is kept
- * as `review`, the phone shows a notice with "سجّل" and "مش مصروف", and only the user's answer writes the ledger,
- * through the ledger writer. Anything else (a code, an offer, a balance, a personal message) is answered `ignored` and
- * nothing of it is stored. A kept signal holds the text redacted and the reader's fields, read before redaction, for
- * 30 days (`api/jobs/data-retention-job.ts`).
+ * One path: the phone sends what holds a keyword; here a personal sender, a one-time code or a message the user
+ * ignores is dropped and nothing of it is stored; anything else is kept sealed and redacted with one model job
+ * (`ai-queue.ts`). The model's reading is placed by `placeSignal`: joined to a payment another message already
+ * announced, recorded on its own when it is complete, or kept for the user's answer when something is missing.
+ * Kept signals live 30 days (`api/jobs/data-retention-job.ts`).
  */
 import { and, count, desc, eq, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
@@ -30,38 +30,54 @@ import { createLogger } from "../log";
 import { getCaptureCatalog, sourceForPackage, sourceForSender, subscriptionForMerchant, type CaptureCatalog, type CaptureSource } from "./catalog";
 import { CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION, captureConsentsOf } from "./consent";
 import { captureIgnoreRulesOf, isIgnored, isPrivateIdentityIgnored, walletBalanceKind, type CaptureIgnoreRules } from "./markers";
-import { merchantNamesToKeep, redactKeeping } from "./keep-merchants";
 import type { CaptureDevice, CaptureOwner } from "./devices";
 import { matchSignal, MATCH_WINDOWS, type EventKeys, type SignalKeys } from "./events";
 import {
   captureHmac,
   memoryFor,
   memoryKeyOf,
-  notePairConfirmed,
-  pairAutoEnabled,
   rememberFiling,
-  resetPair,
   type Filing,
 } from "./memory";
-import { readMessage } from "./reader/read";
-import type { Reading } from "./reader/types";
-import { prepareCaptureText } from "./privacy";
+import { looksLikeOneTimeCode, prepareCaptureText, type PreparedCaptureText } from "./privacy";
+import { localInstruments } from "./instruments";
+import type { SmsMessageKind } from "../sms-ai-contract";
 import { sealCaptureText } from "./vault";
-import type { CaptureModelReply, CapturePostingProposal } from "./model-contract";
+import { CAPTURE_PROMPT_VERSION, type CaptureFacts, type CapturePostingProposal } from "./model-contract";
 import { financialMovement, type MovementKind } from "../../../contracts/ledger-movement";
-import { captureQualification } from "./model-reader";
 import { adoptEarlierFee, declaredFeeParent } from "./fees";
 import { enqueuePurposeQuestion, needsPurposeQuestion } from "./questions";
 import { contactFromIdentity } from "./identity-links";
 
 const log = createLogger("capture-intake");
 
-/** The phone's first filter (fixed code there, these lists from `/config`). */
-export const CAPTURE_GATE: CaptureGateConfig = {
-  schema: 1,
-  otpWords: ["otp", "code", "passcode", "password", "verification", "كود", "رمز", "كلمة السر", "كلمة المرور", "التحقق", "التفعيل"],
-  currencyWords: ["egp", "l.e", "usd", "eur", "sar", "aed", "$", "جنيه", "ج.م", "جم", "دولار", "يورو", "ريال", "درهم"],
-};
+/** The owner's keywords (2026-11-04): the phone sends a message that holds one (decision 0049). */
+export const CAPTURE_KEYWORDS = [
+  "transaction", "purchase", "payment", "debit", "credit", "spent",
+  "balance", "withdraw", "deposit", "transfer", "paid", "charge",
+  "received", "pos", "atm", "wallet", "egp", "جم", "عملية",
+  "شراء", "دفع", "خصم", "إضافة", "رصيد", "سحب", "إيداع",
+  "تحويل", "مبلغ", "بطاقة", "حساب", "حوال",
+];
+/** Words that name money, for the markers a user picks for iPhone automations (decision 0033). */
+export const CAPTURE_CURRENCY_WORDS = ["egp", "l.e", "usd", "eur", "sar", "aed", "$", "جنيه", "ج.م", "جم", "دولار", "يورو", "ريال", "درهم"];
+
+/** The phone's only filter, sent in `/config`. */
+export const CAPTURE_GATE: CaptureGateConfig = { schema: 2, keywords: CAPTURE_KEYWORDS };
+
+/** Folded as the phone folds (CaptureGate.kt): lower case, ASCII digits, Arabic letter variants, no diacritics. */
+function foldGate(value: string): string {
+  return value.replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660)).replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .toLowerCase().replace(/[أإآٱ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/ؤ/g, "و").replace(/ئ/g, "ي")
+    .replace(/[\u064B-\u0652\u0640]/g, "");
+}
+const FOLDED_KEYWORDS = CAPTURE_KEYWORDS.map(foldGate);
+
+/** The phone's rule, applied again here: an older build or an inbox import may send more than it should. */
+export function holdsCaptureKeyword(title: string | null, text: string): boolean {
+  const folded = foldGate(`${title ?? ""} ${text}`);
+  return FOLDED_KEYWORDS.some((word) => folded.includes(word));
+}
 
 // ─── The server's filter ───
 
@@ -74,47 +90,22 @@ export function isPersonalSender(sender: string | null | undefined): boolean {
 }
 
 export type GateOutcome =
-  | { accept: true; source: CaptureSource | null; reading: Reading }
-  | { accept: false; result: "ignored" | "rejected"; reason: string; source?: CaptureSource | null; reading?: Reading };
+  | { accept: true; source: CaptureSource | null }
+  | { accept: false; result: "ignored" | "rejected"; reason: string };
 
 /**
- * Whether a signal is kept for the user's answer. The phone only drops what is clearly not a bank's (codes, personal
- * senders, apps outside the catalog); the server is strict: the app must be in the catalog, a messaging app's sender
- * must not be a person, and the reader must see money that moved.
+ * Whether a signal goes on to be read. Nothing here reads what the message means: an app notification must come from
+ * an app the catalog lists (the phone listens to no other), an SMS must not come from a person's number, and the text
+ * must hold a keyword. Which bank sent it is looked up for display and for the admin's pause, never required.
  */
-export function gateSignal(signal: CaptureSignal, catalog: CaptureCatalog, receivedAt: Date, modelFirst = false): GateOutcome {
+export function admitSignal(signal: CaptureSignal, catalog: CaptureCatalog): GateOutcome {
   const appSource = signal.app ? sourceForPackage(catalog, signal.app) : null;
-  // An app's own notification comes from an app the catalog lists. An SMS may come through any messaging app (the
-  // phone's default one is not always listed), so it is judged by its sender instead.
   if (signal.channel === "notification" && !appSource) return { accept: false, result: "rejected", reason: "unknown_app" };
-
-  let source = appSource;
   const fromMessagingApp = appSource?.kind === "sms_app" || signal.channel === "sms";
-  if (fromMessagingApp) {
-    if (isPersonalSender(signal.sender)) return { accept: false, result: "ignored", reason: "personal_sender" };
-    source = signal.sender ? sourceForSender(catalog, signal.sender) : null;
-  }
-
-  const reading = readMessage({
-    text: signal.text,
-    title: signal.title ?? signal.sender ?? null,
-    sourceSlug: source?.slug ?? null,
-    sourceKind: source?.kind ?? null,
-    receivedAt,
-  });
-  if (!modelFirst && reading.status === "not_transaction") {
-    // The reading goes back with it: a balance alone still moves the card's wallet (decision 0033).
-    return { accept: false, result: "ignored", reason: reading.reasons[0] ?? reading.kind, source, reading };
-  }
-  // A message the reader could not read an amount from is kept only when a bank of the catalog sent it and the reader
-  // says it is unsure (not "not a transaction"): the model may read it (decision 0031).
-  if (!modelFirst && !reading.amount && !(reading.status === "unsure" && source)) return { accept: false, result: "ignored", reason: "no_amount" };
-  // A messaging app's sender the catalog does not know must show it is the user's account: a card, an account or a
-  // balance. Anyone can send an SMS that says "تم خصم".
-  if (!modelFirst && fromMessagingApp && !source && !reading.card && !reading.account && !reading.balanceAfter) {
-    return { accept: false, result: "ignored", reason: "unknown_sender" };
-  }
-  return { accept: true, source, reading };
+  if (fromMessagingApp && isPersonalSender(signal.sender)) return { accept: false, result: "ignored", reason: "personal_sender" };
+  if (!holdsCaptureKeyword(signal.title ?? null, signal.text)) return { accept: false, result: "ignored", reason: "no_keyword" };
+  const source = fromMessagingApp ? (signal.sender ? sourceForSender(catalog, signal.sender) : null) : appSource;
+  return { accept: true, source };
 }
 
 // ─── What is kept of a reading ───
@@ -124,15 +115,18 @@ interface KeptMoney {
   currency: string;
 }
 
-/** The reader's fields kept with a signal (the `reading` column). No evidence, no message text. */
+/** What is kept with a signal (the `reading` column): the model's checked facts, never message text. */
 export interface SignalReading {
   /** The signal came from an inbox import: its recording posts no notice on the phone. */
   imported?: boolean;
-  captureV4?: { envelope: string; reply?: CaptureModelReply; posting?: CapturePostingProposal; model?: string; provider?: string };
+  /** The sealed message until the model reads it, then the model's facts and the posting they give. */
+  modelRead?: { envelope: string; facts?: CaptureFacts; posting?: CapturePostingProposal; model?: string; provider?: string };
+  /** The SMS sender id ("CIB", "VF-Cash"): a bank's name, never a person's number (those are dropped). */
+  sender?: string | null;
   readerVersion: string;
-  kind: Reading["kind"];
-  direction: Reading["direction"];
-  confidence: Reading["confidence"];
+  kind: SmsMessageKind;
+  direction: "in" | "out" | "internal" | null;
+  confidence: "certain" | "likely" | "unsure";
   amount: KeptMoney | null;
   currencyInferred: boolean;
   amountEgp: KeptMoney | null;
@@ -153,32 +147,42 @@ export interface SignalReading {
   readBy?: "reader" | "model";
 }
 
-const kept = (money: Reading["amount"]): KeptMoney | null => (money ? { value: money.value, currency: money.currency } : null);
+/**
+ * The operation's reference, read from the private markers before anything leaves the server: two messages about one
+ * payment (a fee sent apart, the two legs of an own transfer) share it. A long reference may have been masked as an
+ * account number, so a marker right after a reference word counts too.
+ */
+const REFERENCE_WORD = /(?:\bref(?:erence)?\b|\brrn\b|\btxn\b|transaction (?:id|no|number)|مرجع|رقم العملي[ةه]|رقم المعامل[ةه])\s*(?:no\.?|number|#|id)?\s*[:#.]?\s*$/iu;
+function referenceOf(text: PreparedCaptureText): string | null {
+  const ref = text.markers.find((marker) => marker.kind === "REF")
+    ?? text.markers.find((marker) => marker.kind === "ACCOUNT" && REFERENCE_WORD.test(text.text.slice(Math.max(0, text.text.indexOf(marker.marker) - 30), text.text.indexOf(marker.marker))));
+  const value = ref ? text.localValue(ref.marker) : null;
+  return value ? value.replace(/\s+/g, "").toLowerCase() : null;
+}
 
-export function keepReading(reading: Reading, source: CaptureSource | null): SignalReading {
-  const party = reading.counterparty;
+/** A signal's reading before the model has read it: where it came from and when, nothing it means yet. */
+export function newSignalReading(source: CaptureSource | null, receivedAt: Date, sender: string | null): SignalReading {
   return {
-    readerVersion: reading.readerVersion,
-    kind: reading.kind,
-    direction: reading.direction,
-    confidence: reading.confidence,
-    amount: kept(reading.amount),
-    currencyInferred: reading.amount?.currencyInferred ?? false,
-    amountEgp: kept(reading.amountEgp),
-    fee: kept(reading.fee),
-    balanceAfter: kept(reading.balanceAfter),
-    cardSuffix: reading.card?.suffix ?? null,
-    accountSuffix: reading.account?.suffix ?? null,
-    counterparty: party
-      ? { type: party.type, name: party.name, merchantKey: party.merchantKey, phoneTail: party.phoneTail, ipa: party.ipa }
-      : null,
-    occurredAt: reading.occurredAt.toISOString(),
-    timeFromMessage: reading.occurredAtFrom === "message",
-    missing: reading.missing,
+    readerVersion: `model:${CAPTURE_PROMPT_VERSION}`,
+    kind: "other",
+    direction: null,
+    confidence: "unsure",
+    amount: null,
+    currencyInferred: false,
+    amountEgp: null,
+    fee: null,
+    balanceAfter: null,
+    cardSuffix: null,
+    accountSuffix: null,
+    counterparty: null,
+    occurredAt: receivedAt.toISOString(),
+    timeFromMessage: false,
+    missing: [],
     sourceSlug: source?.slug ?? null,
     sourceName: source ? { ar: source.nameAr, en: source.nameEn } : null,
-    referenceHmac: reading.reference ? captureHmac("reference", reading.reference) : null,
-    readBy: "reader",
+    sender: sender && !isPersonalSender(sender) ? sender.slice(0, 40) : null,
+    referenceHmac: null,
+    readBy: "model",
   };
 }
 
@@ -253,13 +257,13 @@ function kindDefault(reading: SignalReading): KindFiling {
  * then the subscription catalog, then the kind's default.
  */
 export function suggestLedgerEntry(reading: SignalReading, catalog: CaptureCatalog, memory?: Map<string, Filing>): LedgerSuggestion {
-  const posted = reading.captureV4?.posting;
+  const posted = reading.modelRead?.posting;
   const amountEgp = posted?.status === "ready" ? Number(posted.principalEgp) :
     reading.amount?.currency === "EGP" ? reading.amount.value : reading.amountEgp?.currency === "EGP" ? reading.amountEgp.value : null;
   let filing = kindDefault(reading);
   const key = memoryKeyOf(reading.counterparty);
   const remembered = key ? memory?.get(key) : undefined;
-  if (remembered && CATEGORIES.some((item) => item.id === remembered.categoryId && (!reading.captureV4 || item.type === "transfer" || item.type === (reading.direction === "in" ? "income" : "expense")))) {
+  if (remembered && CATEGORIES.some((item) => item.id === remembered.categoryId && (!reading.modelRead || item.type === "transfer" || item.type === (reading.direction === "in" ? "income" : "expense")))) {
     const categoryType = CATEGORIES.find((item) => item.id === remembered.categoryId)?.type;
     const type = categoryType === "income" || categoryType === "transfer" ? categoryType : "expense";
     const direction = type === "transfer" ? (filing.direction ?? (reading.direction === "in" ? "incoming" : "outgoing")) : null;
@@ -276,11 +280,13 @@ export function suggestLedgerEntry(reading: SignalReading, catalog: CaptureCatal
         ? filing
         : { type: "expense", direction: null, categoryId: "miscellaneous", subCategoryId: "general" };
   }
-  if (reading.captureV4?.reply?.category && from === "default") {
-    const category = CATEGORIES.find((item) => item.id === reading.captureV4!.reply!.category);
+  const facts = reading.modelRead?.facts;
+  if (facts?.category && from === "default") {
+    const category = CATEGORIES.find((item) => item.id === facts.category);
     if (category && (category.type === "transfer" || category.type === (reading.direction === "in" ? "income" : "expense"))) {
-      filing = { type: reading.direction === "in" ? "income" : "expense", direction: null, categoryId: category.id,
-        subCategoryId: category.id === filing.categoryId ? filing.subCategoryId : category.subcategories.find((sub) => sub.name_ar === "عام")?.id ?? "" };
+      const sub = category.subcategories.find((item) => item.id === facts.subcategory)?.id
+        ?? (category.id === filing.categoryId ? filing.subCategoryId : category.subcategories.find((item) => item.name_ar === "عام")?.id ?? category.subcategories[0]?.id ?? "");
+      filing = { type: reading.direction === "in" ? "income" : "expense", direction: null, categoryId: category.id, subCategoryId: sub };
       from = "model";
     }
   }
@@ -290,13 +296,8 @@ export function suggestLedgerEntry(reading: SignalReading, catalog: CaptureCatal
 // ─── Recording on its own (decision 0030) ───
 
 export interface AutoPolicy {
-  v4Pairs?: Set<string>;
-  /** "<source>:<kind>" or "*:<kind>" pairs the admin opened for everyone. */
-  pairs: Set<string>;
-  /** Sources never recorded on their own (a bank that changed its messages). */
+  /** Sources never recorded on their own (the admin's pause when a bank's messages go wrong). */
   paused: Set<string>;
-  /** A transfer to a person from this many pounds is always asked about. */
-  personTransferAskAbove: number;
   /** Question notifications a user gets a Cairo day. */
   dailyQuestions: number;
 }
@@ -315,49 +316,26 @@ export function autoPolicyOf(settings: Record<string, string | undefined>): Auto
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
   };
   return {
-    v4Pairs: new Set(settings.capture_financial_version === "cashflow-v1" ? captureQualification(settings as Record<string, string>)?.pairs ?? [] : []),
-    pairs: list(settings.capture_auto_pairs),
     paused: list(settings.capture_paused_sources),
-    personTransferAskAbove: number(settings.capture_p2p_ask_above, 1000),
     dailyQuestions: number(settings.capture_daily_question_notices, 2),
   };
 }
 
-const PERSON_TRANSFERS = new Set(["transfer_out", "wallet_send", "transfer_in", "wallet_receive"]);
-
 /**
- * Whether a new payment is recorded without a question. Only a reading the reader is certain of, in pounds, that is
- * not a possible duplicate, from a source that is not paused, of a pair the admin opened or the user agreed to; a
- * transfer to or from a person at or over the threshold is always asked about.
+ * A complete reading is recorded on its own (decision 0049): an amount in pounds and a direction, from a source the
+ * admin has not paused, and not possibly the same payment as one already recorded (that one asks the user).
  */
-export function mayRecordAlone(input: {
-  policy: AutoPolicy;
-  reading: SignalReading;
-  suggestion: LedgerSuggestion;
-  possibleDuplicate: boolean;
-  userAgreed: boolean;
-}): boolean {
-  const { policy, reading, suggestion } = input;
-  const source = reading.sourceSlug;
-  if (reading.captureV4) {
-    return !!source && !policy.paused.has(source) && reading.captureV4.posting?.status === "ready"
-      && policy.v4Pairs?.has(`${source}:${reading.captureV4.reply?.type}`) === true;
-  }
-  if (!source || reading.confidence !== "certain" || suggestion.amountEgp === null || input.possibleDuplicate) return false;
-  if (policy.paused.has(source)) return false;
-  const opened = policy.pairs.has(`${source}:${reading.kind}`) || policy.pairs.has(`*:${reading.kind}`);
-  if (!opened && !input.userAgreed) return false;
-  if (PERSON_TRANSFERS.has(reading.kind) && reading.counterparty?.type === "person" && suggestion.amountEgp >= policy.personTransferAskAbove) {
-    return false;
-  }
-  return true;
+export function mayRecordAlone(input: { policy: AutoPolicy; reading: SignalReading; possibleDuplicate: boolean }): boolean {
+  const { policy, reading } = input;
+  if (input.possibleDuplicate || (reading.sourceSlug && policy.paused.has(reading.sourceSlug))) return false;
+  return reading.modelRead?.posting?.status === "ready";
 }
 
 /** The notice of a payment recorded on its own: what was recorded, where, and the "undo" button. */
 export function recordedNotice(reading: SignalReading, suggestion: LedgerSuggestion, lang: "ar" | "en"): CaptureNotice {
   const label = KIND_LABELS[reading.kind] ?? { ar: "عملية", en: "Transaction" };
   const party = reading.counterparty?.name ?? (reading.counterparty?.phoneTail ? `••${reading.counterparty.phoneTail}` : null);
-  const pounds = reading.captureV4?.posting?.status === "ready" ? Number(reading.captureV4.posting.totalEgp) : suggestion.amountEgp ?? 0;
+  const pounds = reading.modelRead?.posting?.status === "ready" ? Number(reading.modelRead.posting.totalEgp) : suggestion.amountEgp ?? 0;
   const { category } = taxonomyNames(suggestion.categoryId, suggestion.subCategoryId);
   const provisional = suggestion.from === "default";
   if (lang === "en") {
@@ -525,10 +503,9 @@ export async function releaseHeldEvents(owner: CaptureOwner, now = new Date()): 
       if (!event) return;
       const reading = event.reading as SignalReading | null;
       const policy = autoPolicyOf(settings);
-      if (reading?.captureV4) {
+      if (reading?.modelRead) {
         const consent = await captureConsentsOf(owner, tx, CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION);
-        if (!consent.capture || !consent.aiReading || settings.capture_enabled !== "true" || settings.capture_financial_version !== "cashflow-v1"
-          || !policy.v4Pairs?.has(`${reading.sourceSlug}:${reading.captureV4.reply?.type}`) || policy.paused.has(reading.sourceSlug ?? "")) return;
+        if (!consent.capture || !consent.aiReading || settings.capture_enabled === "false" || settings.capture_financial_version !== "cashflow-v1") return;
       }
       const period = capturePeriod(now);
       if (!event.quotaPeriod) await reserveQuota(tx, owner, period, 0);
@@ -536,10 +513,7 @@ export async function releaseHeldEvents(owner: CaptureOwner, now = new Date()): 
       released++;
       // What the user or the admin let record on its own is recorded now; the rest waits for an answer.
       if (!reading) return;
-      const memoryKey = memoryKeyOf(reading.counterparty);
-      const suggestion = eventSuggestion(event, reading, catalog, await memoryFor(tx, owner, memoryKey ? [memoryKey] : []));
-      const userAgreed = reading.sourceSlug ? await pairAutoEnabled(tx, owner, reading.sourceSlug, reading.kind) : false;
-      if (mayRecordAlone({ policy, reading, suggestion, possibleDuplicate: event.possibleDuplicateOf !== null, userAgreed })) {
+      if (mayRecordAlone({ policy, reading, possibleDuplicate: event.possibleDuplicateOf !== null })) {
         const done = await recordEventInTx(tx, owner, { ...event, status: "review" }, reading, catalog, {}, { auto: true });
         recorded++;
         spending ||= done.spending;
@@ -746,7 +720,7 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
   // Built from what the signal row keeps (its source), so a stored signal gives the same key back.
   const channelKey = channelKeyOf(device.deviceId, input.channel, input.sourceSlug);
   const keys: SignalKeys = {
-    principalEgp: reading.captureV4?.posting?.status === "ready" ? Number(reading.captureV4.posting.principalEgp) : null,
+    principalEgp: reading.modelRead?.posting?.status === "ready" ? Number(reading.modelRead.posting.principalEgp) : null,
     kind: reading.kind,
     sourceSlug: input.sourceSlug,
     channelKey,
@@ -797,14 +771,13 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
     }));
 
   const feeParent = await declaredFeeParent(tx, device, reading);
-  const match = feeParent ? { type: "merge" as const, eventId: feeParent.id, rule: "reference" as const } : matchSignal(keys, candidates, sameText, !!reading.captureV4);
-  const ambiguous = !!reading.captureV4 && match.type === "possible_duplicate";
+  const match = feeParent ? { type: "merge" as const, eventId: feeParent.id, rule: "reference" as const } : matchSignal(keys, candidates, sameText, !!reading.modelRead);
 
   // A new payment counts against the month's limit; over it, it is held (no question, no ledger). A reading the
   // reader is unsure of counts only when the user records it.
   let reservedNow: number | null = null;
   let held = false;
-  if (!ambiguous && match.type !== "merge" && reading.confidence !== "unsure") {
+  if (match.type !== "merge" && reading.confidence !== "unsure") {
     reservedNow = await reserveQuota(tx, device, run.period, run.limit);
     if (reservedNow === null) {
       const [{ heldCount }] = await tx.select({ heldCount: count() }).from(captureEvents).where(and(mineEvents, eq(captureEvents.status, "held")));
@@ -852,7 +825,7 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
     await tx.update(captureSignals).set({ eventId: event.id }).where(eq(captureSignals.id, signalId));
 
     // A later proved own-account leg enriches only the counter link, never the user's amount/category/note.
-    if (reading.captureV4 && match.rule === "own_transfer" && event.status === "recorded" && event.expenseId && event.walletId) {
+    if (reading.modelRead && match.rule === "own_transfer" && event.status === "recorded" && event.expenseId && event.walletId) {
       const suffix = reading.cardSuffix ?? reading.accountSuffix;
       const wallets = suffix ? run.wallets.filter((wallet) => wallet.lastFourDigits?.slice(-3) === suffix.slice(-3)) : [];
       if (wallets.length === 1 && wallets[0].id !== event.walletId) {
@@ -880,7 +853,7 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
   const [created] = await tx.insert(captureEvents).values({
     userId: device.userId,
     userType: device.userType,
-    status: ambiguous ? "waiting" : held ? "held" : "review",
+    status: held ? "held" : "review",
     kind: reading.kind,
     direction: reading.direction,
     amount: String(keys.amount),
@@ -906,7 +879,6 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
   });
   const eventId = Number((created as { insertId?: number }).insertId);
   await tx.update(captureSignals).set({ eventId }).where(eq(captureSignals.id, signalId));
-  if (ambiguous) return { id: input.clientSignalId, result: "queued", eventId, reason: "waiting_duplicate" };
   if (held) {
     const first = await noteHeld(tx, device, run.period);
     return first
@@ -916,11 +888,10 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
 
   const memoryKey = memoryKeyOf(reading.counterparty);
   const suggestion = suggestLedgerEntry(reading, catalog, await memoryFor(tx, device, memoryKey ? [memoryKey] : []));
-  const userAgreed = reading.sourceSlug ? await pairAutoEnabled(tx, device, reading.sourceSlug, reading.kind) : false;
   const nearLimit =
     run.limit > 0 && reservedNow === Math.ceil(run.limit * 0.8) && run.limit - reservedNow > 0 ? nearLimitLine(run.limit - reservedNow, run.lang) : "";
 
-  if (mayRecordAlone({ policy: run.policy, reading, suggestion, possibleDuplicate: match.type === "possible_duplicate", userAgreed })) {
+  if (mayRecordAlone({ policy: run.policy, reading, possibleDuplicate: match.type === "possible_duplicate" })) {
     const [event] = await tx.select().from(captureEvents).where(eq(captureEvents.id, eventId)).limit(1);
     const recorded = await recordEventInTx(tx, device, event, reading, catalog, {}, { auto: true });
     run.recordedAny = true;
@@ -949,7 +920,7 @@ export async function noteWalletBalance(run: IntakeRun, reading: SignalReading, 
   const matches = run.wallets.filter((wallet) => wallet.lastFourDigits && wallet.lastFourDigits.slice(-3) === suffix.slice(-3));
   if (matches.length !== 1) return;
   const reader = transaction ?? getDb();
-  if (reading.captureV4 && !["cash", "bank", "debit"].includes(await walletBalanceKind(run.device, matches[0].id, reader))) return;
+  if (reading.modelRead && !["cash", "bank", "debit"].includes(await walletBalanceKind(run.device, matches[0].id, reader))) return;
   const observedAt = new Date(reading.occurredAt);
   await reader
     .update(userWallets)
@@ -995,10 +966,6 @@ async function queueModelReading(tx: LedgerTx, device: CaptureDevice, input: Sig
 
 export async function ingestSignals(device: CaptureDevice, request: CaptureSignalsRequest, now = new Date()): Promise<CaptureSignalResult[]> {
   const run = await startIntakeRun(device, request.lang, now);
-  const settings = await getSystemSettings();
-  const modelFirst = settings.capture_read_mode === "model_first";
-  // A message the reader is unsure of goes to the admin's model only with the user's consent and the model switched on.
-  const modelReads = settings.sms_ai_enabled !== "false" && (await captureConsentsOf(device)).aiReading;
   const results: CaptureSignalResult[] = [];
   const counts: Record<string, number> = {};
   const mineSignals = and(eq(captureSignals.userId, device.userId), eq(captureSignals.userType, device.userType));
@@ -1012,29 +979,27 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
       if (age > MAX_AGE_MS) return { id: signal.id, result: "rejected", reason: "too_old" };
       if (age < -MAX_AHEAD_MS) return { id: signal.id, result: "rejected", reason: "in_future" };
 
-      const gate = gateSignal(signal, run.catalog, receivedAt, modelFirst);
-      if (!gate.accept) {
-        if (gate.reading?.kind === "balance_only" && gate.source) {
-          const balance = keepReading(gate.reading, gate.source);
-          if (!isIgnored(run.ignore, balance, signal.text)) await noteWalletBalance(run, balance);
-        }
-        return { id: signal.id, result: gate.result, reason: gate.reason };
+      const gate = admitSignal(signal, run.catalog);
+      if (!gate.accept) return { id: signal.id, result: gate.result, reason: gate.reason };
+      const prepared = prepareCaptureText(signal.text);
+      if (!prepared.ok) {
+        const otp = prepared.codes.includes("otp");
+        return { id: signal.id, result: otp ? "ignored" : "rejected", reason: otp ? "otp" : "redaction_failed" };
       }
-      const reading = keepReading(gate.reading, gate.source);
-      // A card or phrase the user asked to ignore (a family member's card): nothing of it is kept.
-      if (isIgnored(run.ignore, reading, signal.text)) return { id: signal.id, result: "ignored", reason: "user_ignored" };
-      const toModel = modelFirst || (modelReads && reading.confidence === "unsure");
-      const privateText = modelFirst ? prepareCaptureText(signal.text) : null;
-      if (privateText && !privateText.ok) return { id: signal.id, result: privateText.codes.includes("otp") ? "ignored" : "rejected", reason: privateText.codes.includes("otp") ? "otp" : "redaction_failed" };
-      if (privateText?.ok) {
-        if (isPrivateIdentityIgnored(run.ignore, privateText.value)) return { id: signal.id, result: "ignored", reason: "user_ignored" };
-        if (signal.imported) reading.imported = true;
-        reading.captureV4 = { envelope: sealCaptureText(privateText.value, { userId: device.userId, userType: device.userType as "oauth" | "local", deviceId: device.deviceId, clientSignalId: signal.id }) };
-        // The shadow is diagnostic only; no stale amount/party drives v4 filing or survives as plaintext identity data.
-        reading.counterparty = null;
+      // A one-time code is never stored or sent to a model, whatever else the message says.
+      if (looksLikeOneTimeCode(prepared.value.text)) return { id: signal.id, result: "ignored", reason: "otp" };
+      if (isPrivateIdentityIgnored(run.ignore, prepared.value) || isIgnored(run.ignore, { cardSuffix: null, accountSuffix: null }, signal.text)) {
+        return { id: signal.id, result: "ignored", reason: "user_ignored" };
       }
-      // Without the model, a message with no amount the reader could read gives the user nothing to answer.
-      if (!reading.amount && !toModel) return { id: signal.id, result: "ignored", reason: "no_amount" };
+
+      const reading = newSignalReading(gate.source, receivedAt, signal.sender ?? null);
+      if (signal.imported) reading.imported = true;
+      const referenceValue = referenceOf(prepared.value);
+      if (referenceValue) reading.referenceHmac = captureHmac("reference", referenceValue);
+      const instrument = localInstruments(prepared.value).find((item) => item.role !== "to");
+      if (instrument?.kind === "card") reading.cardSuffix = instrument.suffix;
+      if (instrument?.kind === "account") reading.accountSuffix = instrument.suffix;
+      reading.modelRead = { envelope: sealCaptureText(prepared.value, { userId: device.userId, userType: device.userType as "oauth" | "local", deviceId: device.deviceId, clientSignalId: signal.id }) };
       const textHmac = textHmacOf(signal);
 
       return getDb().transaction(async (tx) => {
@@ -1056,21 +1021,16 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
           return job.status === "done" ? { id: signal.id, result: "ignored" as const, reason: "model_read" } : { id: signal.id, result: "queued" as const };
         }
 
-        const placing: SignalToPlace = {
+        await queueModelReading(tx, device, {
           clientSignalId: signal.id,
           channel: signal.channel,
           sourceSlug: gate.source?.slug ?? null,
           textHmac,
           receivedAt,
           reading,
-          // Redacted, but the merchant stays (decision 0035): the model and the user's review need it.
-          textRedacted: privateText?.ok ? privateText.value.text : redactKeeping(signal.text, merchantNamesToKeep(signal.text, reading)).text,
-        };
-        if (toModel) {
-          await queueModelReading(tx, device, placing, run.lang, now);
-          return { id: signal.id, result: "queued" as const };
-        }
-        return placeSignal(tx, run, placing);
+          textRedacted: prepared.value.text,
+        }, run.lang, now);
+        return { id: signal.id, result: "queued" as const };
       });
     })();
     const outcome = result.reason ?? result.result;
@@ -1078,7 +1038,6 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
     results.push(result);
   }
 
-  if (run.recordedAny) await afterLedgerWrite(device, { spending: run.spentAny });
   log.info({ event: "capture.signals", userId: device.userId, deviceId: device.deviceId, count: request.signals.length, outcomes: counts }, "Signals taken in");
   return results;
 }
@@ -1087,11 +1046,23 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
 
 /** Where an event would be filed: its first signal's reading, with what other signals added and the user's memory. */
 function eventSuggestion(event: typeof captureEvents.$inferSelect, reading: SignalReading, catalog: CaptureCatalog, memory?: Map<string, Filing>): LedgerSuggestion {
-  if (event.direction === "internal" && !reading.captureV4) {
+  if (event.direction === "internal" && !reading.modelRead) {
     return { type: "transfer", direction: "outgoing", categoryId: "transfer", subCategoryId: "bank_transfer", amountEgp: money(event.amountEgp), from: "default" };
   }
   const suggestion = suggestLedgerEntry(reading, catalog, memory);
   return { ...suggestion, amountEgp: suggestion.amountEgp ?? money(event.amountEgp) };
+}
+
+/**
+ * The ledger row's line, the way a person would say it: "إرسال إلى Sara Mostafa · CIB", "شراء · TALABAT EGYPT ·
+ * WE Pay". The bank's own text never goes into the ledger.
+ */
+function ledgerDescription(reading: SignalReading, party: string | null): string {
+  const toPerson = reading.counterparty?.type === "person";
+  const label = (reading.kind === "transfer_out" || reading.kind === "wallet_send") && toPerson && party ? `إرسال إلى ${party}`
+    : (reading.kind === "transfer_in" || reading.kind === "wallet_receive") && toPerson && party ? `استلام من ${party}`
+      : [KIND_LABELS[reading.kind]?.ar ?? null, party].filter(Boolean).join(" · ");
+  return [label, reading.sourceName?.ar ?? reading.sender ?? null].filter(Boolean).join(" · ");
 }
 
 /**
@@ -1136,12 +1107,12 @@ async function recordEventInTx(
           // Not after the refund: times are kept to the second, and both may carry the same one.
           lte(captureEvents.occurredAt, event.occurredAt),
           gte(captureEvents.amount, event.amount),
-          ...(reading.captureV4 && event.cardSuffix ? [sql`RIGHT(${captureEvents.cardSuffix}, 3) = ${event.cardSuffix.slice(-3)}`] : []),
-          ...(reading.captureV4 && event.sourceSlug ? [eq(captureEvents.sourceSlug, event.sourceSlug)] : []),
+          ...(reading.modelRead && event.cardSuffix ? [sql`RIGHT(${captureEvents.cardSuffix}, 3) = ${event.cardSuffix.slice(-3)}`] : []),
+          ...(reading.modelRead && event.sourceSlug ? [eq(captureEvents.sourceSlug, event.sourceSlug)] : []),
         ),
       )
       .orderBy(desc(captureEvents.occurredAt))
-      .limit(reading.captureV4 ? 2 : 1);
+      .limit(reading.modelRead ? 2 : 1);
     const purchase = purchases.length === 1 ? purchases[0] : null;
     if (purchase) refundOf = { eventId: purchase.eventId, category: purchase.category, subCategory: purchase.subCategory ?? "عام" };
   }
@@ -1151,17 +1122,18 @@ async function recordEventInTx(
     throw new TRPCError({ code: "BAD_REQUEST", message: "الفئة دي مش موجودة" });
   }
   const categoryType = CATEGORIES.find((item) => item.id === categoryId)?.type;
-  const type = refundOf ? "expense" : reading.captureV4 ? (reading.direction === "in" ? "income" : "expense") : categoryType === "income" || categoryType === "transfer" ? categoryType : "expense";
+  const type = refundOf ? "expense" : reading.modelRead && (reading.direction === "in" || reading.direction === "out") ? (reading.direction === "in" ? "income" : "expense")
+    : categoryType === "income" ? "income" : categoryType === "transfer" && !reading.modelRead ? "transfer" : "expense";
   const subCategoryId = choice.subCategoryId ?? (choice.categoryId ? "" : suggestion.subCategoryId);
   const names = refundOf ? { category: refundOf.category, subCategory: refundOf.subCategory } : taxonomyNames(categoryId, subCategoryId);
-  const direction = refundOf ? "incoming" : reading.captureV4 ? (reading.direction === "in" ? "incoming" : "outgoing") : type === "transfer" ? suggestion.direction : null;
+  const direction = refundOf ? "incoming" : reading.modelRead ? (type === "income" ? "incoming" : "outgoing") : type === "transfer" ? suggestion.direction : null;
   const movementKind: MovementKind | undefined = refundOf ? "refund"
     : ["atm_withdrawal", "cash_out", "cash_in", "cash_deposit"].includes(reading.kind) ? "cash_transfer"
-      : reading.kind === "card_payment" ? "card_payment" : reading.captureV4?.reply?.ownership === "own" ? "own_transfer" : undefined;
-  const fee = reading.captureV4?.posting?.status === "ready" ? Number(reading.captureV4.posting.feeEgp) : 0;
+      : reading.kind === "card_payment" ? "card_payment" : reading.modelRead?.facts?.partyType === "own_account" ? "own_transfer" : undefined;
+  const fee = reading.modelRead?.posting?.status === "ready" ? Number(reading.modelRead.posting.feeEgp) : 0;
   const categoryPending = !refundOf && needsPurposeQuestion(reading, suggestion);
   const party = reading.counterparty?.name ?? (reading.counterparty?.phoneTail ? `••${reading.counterparty.phoneTail}` : null);
-  const description = [reading.captureV4 ? KIND_LABELS[reading.kind]?.ar : null, party, reading.sourceName?.ar].filter(Boolean).join(" · ") || names.category;
+  const description = ledgerDescription(reading, party) || names.category;
 
   const [expenseId] = await insertLedgerEntriesInTx(tx, owner, [
     {
@@ -1177,7 +1149,7 @@ async function recordEventInTx(
       source: "sms",
       date: new Date(reading.occurredAt),
       walletId: event.walletId,
-      contactId: reading.captureV4 ? await contactFromIdentity(tx, owner, memoryKey, reading.counterparty?.identityKind) : null,
+      contactId: reading.modelRead ? await contactFromIdentity(tx, owner, memoryKey, reading.counterparty?.identityKind) : null,
       clientRequestId: `cap:e${event.id}`,
       parsedMetadata: {
         ...(direction ? { direction } : {}),
@@ -1186,12 +1158,12 @@ async function recordEventInTx(
           source: reading.sourceSlug,
           kind: reading.kind,
           readerVersion: reading.readerVersion,
-          ...(reading.captureV4 ? { details: { feeEgp: fee, originalAmount: reading.amount, via: reading.captureV4.reply?.via,
-            party: party, partyType: reading.captureV4.reply?.partyType, cardSuffix: reading.cardSuffix, accountSuffix: reading.accountSuffix,
-            recurring: reading.captureV4.reply?.recurring ?? false, memoryKey,
+          ...(reading.modelRead ? { details: { feeEgp: fee, originalAmount: reading.amount, via: reading.modelRead.facts?.method,
+            party: party, partyType: reading.modelRead.facts?.partyType, cardSuffix: reading.cardSuffix, accountSuffix: reading.accountSuffix,
+            recurring: reading.modelRead.facts?.recurring ?? false, memoryKey, balanceAfter: reading.balanceAfter?.value ?? null,
             identityKind: reading.counterparty?.identityKind,
-            categoryPending, promptVersion: "sms-v4" } } : {}),
-          ...(options.auto ? { auto: true, provisional: reading.captureV4 ? categoryPending : suggestion.from === "default" } : {}),
+            categoryPending, promptVersion: CAPTURE_PROMPT_VERSION } } : {}),
+          ...(options.auto ? { auto: true, provisional: reading.modelRead ? categoryPending : suggestion.from === "default" } : {}),
         },
       },
     },
@@ -1212,12 +1184,12 @@ async function recordEventInTx(
   await tx
     .update(captureEvents)
     .set({ status: "recorded", expenseId, autoRecorded: options.auto, linkedEventId: refundOf?.eventId ?? null,
-      reading: reading.captureV4?.posting?.status === "ready" ? { capturePosting: reading.captureV4.posting } : null, resolvedAt: new Date() })
+      reading: reading.modelRead?.posting?.status === "ready" ? { capturePosting: reading.modelRead.posting } : null, resolvedAt: new Date() })
     .where(and(eq(captureEvents.id, event.id), mine));
 
   // The wallet's balance follows the bank's message when the message is newer than what the wallet holds.
   if (event.walletId && event.balanceAfter !== null) {
-    const safeBalance = !reading.captureV4 || ["cash", "bank", "debit"].includes(await walletBalanceKind(owner, event.walletId, tx));
+    const safeBalance = !reading.modelRead || ["cash", "bank", "debit"].includes(await walletBalanceKind(owner, event.walletId, tx));
     if (safeBalance) {
       const occurredAt = new Date(reading.occurredAt);
       await tx
@@ -1328,11 +1300,9 @@ export async function answerEvent(
         outcome = { result: event.status === "recorded" ? "recorded" : "dismissed", expenseId: event.expenseId ?? undefined };
         return;
       }
-      const [signal] = await tx.select({ sourceSlug: captureSignals.sourceSlug }).from(captureSignals).where(eq(captureSignals.id, event.primarySignalId));
       await deleteLedgerEntryInTx(tx, owner, event.expenseId);
       await tx.update(captureEvents).set({ status: "dismissed", quotaPeriod: null, resolvedAt: new Date() }).where(own);
       if (event.quotaPeriod) await releaseQuota(tx, owner, event.quotaPeriod);
-      if (signal?.sourceSlug) await resetPair(tx, owner, signal.sourceSlug, event.kind);
       outcome = { result: "dismissed" };
       wrote = true;
       return;
@@ -1367,10 +1337,6 @@ export async function answerEvent(
     const recorded = await recordEventInTx(tx, owner, event, reading, catalog, answer, { auto: false });
     const memoryKey = memoryKeyOf(reading.counterparty);
     if (memoryKey && recorded.filing) await rememberFiling(tx, owner, memoryKey, recorded.filing);
-    // Recorded as it was read (no amount typed): one more toward offering this bank and kind on its own.
-    if (reading.sourceSlug && reading.confidence === "certain" && answer.amountEgp === undefined) {
-      await notePairConfirmed(tx, owner, reading.sourceSlug, reading.kind);
-    }
     outcome = { result: "recorded", expenseId: recorded.expenseId };
     spending = recorded.spending;
     wrote = true;

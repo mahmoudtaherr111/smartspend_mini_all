@@ -5,8 +5,9 @@ import { isIgnored, markerValue } from "./markers";
 const owner = { userId: 12, userType: "local" };
 
 describe("who capture is open to", () => {
-  it("is closed until the admin opens it, then follows the platforms and the beta list", () => {
-    expect(captureOpenFor({}, owner)).toBe(false);
+  it("is open unless the admin turns it off, and follows the platforms and the beta list", () => {
+    expect(captureOpenFor({}, owner)).toBe(true);
+    expect(captureOpenFor({ capture_enabled: "false" }, owner)).toBe(false);
     expect(captureOpenFor({ capture_enabled: "true" }, owner, "android")).toBe(true);
     expect(captureOpenFor({ capture_enabled: "true", capture_platforms: "android" }, owner, "ios")).toBe(false);
     expect(captureOpenFor({ capture_enabled: "true", capture_beta_users: "oauth:12, local:7" }, owner)).toBe(false);

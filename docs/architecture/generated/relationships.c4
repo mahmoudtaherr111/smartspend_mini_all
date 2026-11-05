@@ -366,7 +366,6 @@ model {
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.auth
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.capture-ai-reader
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.capture-catalog
-  smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.capture-reader
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.classification
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.ledger
@@ -403,8 +402,6 @@ model {
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.in_app_notifications
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.system_settings
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.user_wallets
-  smartspend.api.modules.capture-reader -[imports]-> smartspend.api.modules.arabic-nlp
-  smartspend.api.modules.capture-reader -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.ai-providers
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.arabic-nlp
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.platform
@@ -451,6 +448,7 @@ model {
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.ai-providers
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.api-routers
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.auth
+  smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.capture-intake
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.ledger
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.notifications
@@ -607,6 +605,7 @@ model {
   smartspend.api.scheduler.capture-ai-sweep -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.scheduler.capture-breaker -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.scheduler.capture-silent-devices -[uses]-> smartspend.api.modules.capture-intake
+  smartspend.api.scheduler.cashflow-cutover -[uses]-> smartspend.api.modules.jobs
   smartspend.api.scheduler.classification-log-cleanup -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.scheduler.coaching-reminders -[uses]-> smartspend.api.modules.coaching
   smartspend.api.scheduler.daily-auth-cleanup -[uses]-> smartspend.api.modules.auth

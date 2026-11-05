@@ -14,11 +14,10 @@ import {
 } from "../db/schema";
 import { registerCaptureRoutes } from "../api/capture-v1-routes";
 import { registerCaptureDevice } from "../api/lib/capture/devices";
-import { setCaptureConsent, CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION } from "../api/lib/capture/consent";
+import { setCaptureConsent, CAPTURE_CONSENT_TEXT_VERSION } from "../api/lib/capture/consent";
 import { syncCaptureSeed } from "../api/lib/capture/catalog";
 import { invalidateSettingsCache } from "../api/lib/settings-cache";
-import { checkCaptureReply, proposeCapturePosting, type CaptureModelReply } from "../api/lib/capture/model-contract";
-import { CAPTURE_PROMPT_DIGEST } from "../api/lib/capture/model-reader";
+import { checkCaptureReply, labelAmounts, proposeCapturePosting, type CaptureModelReply } from "../api/lib/capture/model-contract";
 import { drainCaptureModel } from "../api/lib/capture/ai-queue";
 
 const DELAY_MS = Number(process.env.LOAD_MODEL_MS ?? 800);
@@ -27,16 +26,13 @@ const FAIL_RATE = Number(process.env.LOAD_FAIL_RATE ?? 0);
 vi.mock("../api/lib/capture/model-reader", async (original) => ({
   ...(await original<typeof import("../api/lib/capture/model-reader")>()),
   readCaptureWithModel: vi.fn(async (text: { text: string }) => {
-    const amount = /EGP (\d+)/.exec(text.text)?.[1] ?? "1";
     const reply: CaptureModelReply = {
-      state: "done", stateQuote: "Successful purchase", type: "purchase", flow: "out", flowQuote: "Successful purchase",
-      ownership: "unknown", ownershipQuote: null, amount: { value: Number(amount), currency: "EGP", quote: `purchase EGP ${amount}` },
-      egp: null, fee: null, balance: null, limit: null, partyType: "merchant", party: "ZED MARKET", partyQuote: "at ZED MARKET",
-      via: "card", category: "food", recurring: false,
+      status: "completed", kind: "purchase", direction: "out", amount: "N1", amountEgp: null, fee: null, feeIncluded: null, balance: null,
+      party: "ZED MARKET", partyType: "merchant", method: "card", category: "food", subcategory: null, recurring: false,
     };
     await new Promise((resolve) => setTimeout(resolve, DELAY_MS * (0.5 + Math.random())));
     if (Math.random() < FAIL_RATE) return { outcome: "failed" };
-    const check = checkCaptureReply(reply, text.text);
+    const check = checkCaptureReply(reply, labelAmounts(text.text));
     if (!check.ok) return { outcome: "invalid_reply" };
     return { outcome: "read", check, proposal: proposeCapturePosting(check), model: "synthetic-model", provider: "synthetic-a" };
   }),
@@ -51,7 +47,7 @@ const WORKERS = Number(process.env.LOAD_WORKERS ?? 8);
 const FIRST_ID = 89100;
 const owners = Array.from({ length: USERS }, (_, i) => ({ userId: FIRST_ID + i, userType: "local" }));
 const ids = owners.map((owner) => owner.userId);
-const keys = ["capture_enabled", "capture_read_mode", "capture_financial_version", "capture_model_qualified", "capture_monthly_limit_free",
+const keys = ["capture_enabled", "capture_financial_version", "capture_monthly_limit_free",
   "capture_daily_signal_limit", "capture_ai_concurrency"];
 const p95 = (values: number[]) => [...values].sort((a, b) => a - b)[Math.max(0, Math.ceil(values.length * 0.95) - 1)] ?? 0;
 const p50 = (values: number[]) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)] ?? 0;
@@ -74,17 +70,14 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1" && process.env.RUN_CAPTURE
     await syncCaptureSeed();
     await clean();
     for (const [key, value] of Object.entries({
-      capture_enabled: "true", capture_read_mode: "model_first", capture_financial_version: "cashflow-v1",
+      capture_enabled: "true", capture_financial_version: "cashflow-v1",
       capture_monthly_limit_free: "100000", capture_daily_signal_limit: "100000", capture_ai_concurrency: "1000",
-      capture_model_qualified: JSON.stringify({ version: "sms-v4", digest: CAPTURE_PROMPT_DIGEST,
-        routes: [{ slug: "synthetic-a", model: "synthetic-model" }, { slug: "synthetic-b", model: "synthetic-model" }],
-        pairs: ["cib:purchase"], dataProcessingApproved: true }),
     })) await setting(key, value);
     for (const owner of owners) {
       await db.insert(localUsers).values({ id: owner.userId, name: "Load", phone: `synthetic-load-${owner.userId}`, password: "synthetic" });
       const { token } = await registerCaptureDevice(owner, { platform: "android", installationId: `synthetic-load-${owner.userId}` });
       tokens.push(token);
-      for (const scope of ["capture", "ai_reading"] as const) await setCaptureConsent(owner, scope, true, CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION);
+      for (const scope of ["capture", "ai_reading"] as const) await setCaptureConsent(owner, scope, true, CAPTURE_CONSENT_TEXT_VERSION);
     }
   }, 120_000);
   afterAll(async () => {

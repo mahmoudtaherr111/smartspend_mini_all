@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { prepareCaptureText, preparedCapturePrompt, capturePrivateSnapshot, restoreCaptureSnapshot } from "./privacy";
+import { prepareCaptureText, preparedCaptureMessage, capturePrivateSnapshot, restoreCaptureSnapshot } from "./privacy";
 import { sealCaptureText, openCaptureText } from "./vault";
 import { buildKeyRing, sealProviderKey } from "../provider-key-crypto";
 
@@ -11,11 +11,11 @@ describe("durable capture identity vault", () => {
   it("restores numbered local values on another worker without plaintext in the stored envelope", () => {
     const text = prepared();
     const sealed = sealCaptureText(text, scope, ring);
-    expect(sealed).not.toMatch(/TEST PERSON|01012345678/);
+    expect(sealed).not.toMatch(/01012345678/);
     const restored = openCaptureText(sealed, text.text, scope, ring)!;
-    expect(restored.localValue("[PERSON_1]")).toBe("TEST PERSON");
-    expect(JSON.parse(preparedCapturePrompt(restored))).toBe(text.text);
-    expect(JSON.stringify(restored)).not.toMatch(/TEST PERSON|01012345678/);
+    expect(restored.localValue("[PHONE_1]")).toBe("01012345678");
+    expect(preparedCaptureMessage(restored)).toBe(text.text);
+    expect(JSON.stringify(restored)).not.toMatch(/01012345678/);
     expect(sealCaptureText(text, scope, ring)).not.toBe(sealed);
   });
   it.each([{ userType: "local" as const }, { userId: 43 }, { deviceId: 8 }, { clientSignalId: "synthetic_signal_2" }])("rejects a different owner or signal scope %j", (change) => {

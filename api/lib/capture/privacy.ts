@@ -26,17 +26,30 @@ export function capturePrivacyCodes(text: string, incompleteName = false): Captu
 export function prepareCaptureText(text: string): CapturePrivacyResult {
   if (typeof text !== "string" || !text || text.length > CAPTURE_TEXT_MAX) return { ok: false, codes: ["input_size"] };
   if (RESERVED.test(text)) return { ok: false, codes: ["reserved_marker"] };
-  const value = redactWithPrivateTokens(text);
+  // Names stay: the model needs "TALABAT" or "Mona" to tell a shop from a person (decision 0049). Numbers that
+  // identify someone (phones, cards, accounts, references, codes, e-mails, IBANs) never leave the server.
+  const value = redactWithPrivateTokens(text, { names: false });
   const codes = capturePrivacyCodes(value.text, value.incompleteName);
   if (codes.length) return { ok: false, codes };
   issued.add(value);
   return { ok: true, value };
 }
 
-/** Reject a forged object; only locally prepared, immutable text can build this provider payload. */
-export function preparedCapturePrompt(value: PreparedCaptureText): string {
+/** Reject a forged object; only locally prepared, immutable text can build a provider payload. */
+export function preparedCaptureMessage(value: PreparedCaptureText): string {
   if (!value || !issued.has(value)) throw new Error("capture_text_not_prepared");
-  return JSON.stringify(value.text);
+  return value.text;
+}
+
+/**
+ * A one-time code never goes to a model or into storage, wherever the bank put the code (decision 0049): a code word
+ * and a lone 4–8 digit number left after redaction. Run on redacted text, where references are already markers.
+ */
+const CODE_WORDS = /\b(?:otp|one[\s-]?time|passcode|password|verification code|security code|activation code|do not share|don'?t share|never share)\b|(?:كود التحقق|رمز التحقق|كود التفعيل|رمز التفعيل|كلمة السر|كلمة المرور|الرقم السري المؤقت|لا تشارك|متشاركش)/iu;
+export function looksLikeOneTimeCode(redacted: string): boolean {
+  if (/\[OTP_\d+\]/u.test(redacted)) return true;
+  if (!CODE_WORDS.test(redacted)) return false;
+  return /(?<![\d.,*#])\d{4,8}(?!\d|[.,]\d)/u.test(asciiDigits(redacted).replace(/\[[A-Z]+_\d+\]/gu, ""));
 }
 
 const privateSnapshotSchema = z.strictObject({

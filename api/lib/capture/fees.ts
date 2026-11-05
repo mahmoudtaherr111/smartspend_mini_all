@@ -7,6 +7,8 @@ import type { CaptureOwner } from "./devices";
 import type { SignalReading } from "./intake";
 
 type Event = typeof captureEvents.$inferSelect;
+/** A row the model path wrote (sms-v4 or later), whose fee and principal it split itself. */
+const modelWritten = (details: Record<string, unknown>) => details.promptVersion === "sms-v4" || details.promptVersion === "sms-v5";
 const WINDOW = 24 * 3600_000;
 const object = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value)
@@ -36,7 +38,7 @@ export async function declaredFeeParent(
   owner: CaptureOwner,
   reading: SignalReading,
 ): Promise<Event | null> {
-  const posting = reading.captureV4?.posting;
+  const posting = reading.modelRead?.posting;
   if (
     reading.kind !== "fee" ||
     posting?.status !== "ready" ||
@@ -71,7 +73,7 @@ export async function declaredFeeParent(
   const matches = rows.filter((row) => {
     const details = object(object(object(row.metadata).capture).details);
     return (
-      details.promptVersion === "sms-v4" &&
+      modelWritten(details) &&
       typeof details.feeEgp === "number" &&
       details.feeEgp > 0 &&
       details.feeEgp === Number(posting.principalEgp)
@@ -90,7 +92,7 @@ export async function adoptEarlierFee(
   feeEgp: number,
 ): Promise<{ adopted: boolean; quotaPeriod: string | null }> {
   if (
-    !reading.captureV4 ||
+    !reading.modelRead ||
     !parent.referenceHmac ||
     !parent.sourceSlug ||
     feeEgp <= 0
@@ -129,7 +131,7 @@ export async function adoptEarlierFee(
     capture = object(metadata.capture),
     details = object(capture.details);
   if (
-    details.promptVersion !== "sms-v4" ||
+    !modelWritten(details) ||
     capture.eventId !== event.id ||
     financialBucket(row) !== "expense" ||
     Number(row.amount) < 0

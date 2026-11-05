@@ -205,6 +205,7 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
           Text(l10n.captureWaiting(status.waiting), style: muted),
           const _UsageLines(),
           const _AiReadingSwitch(),
+          const _QuestionsSwitch(),
           const _SamplesSwitch(),
           if (status.smsSupported == true) _SmsSection(status: status),
           if (status.lastError == 'offline')
@@ -390,6 +391,52 @@ class _SmsSectionState extends ConsumerState<_SmsSection> {
 }
 
 /// The consent to keep messages with names and numbers hidden, offered only while the admin keeps them (v7 §8).
+/// "Ask me what it was for": after a payment is saved under "general", the app asks once (decision 0049).
+class _QuestionsSwitch extends ConsumerStatefulWidget {
+  const _QuestionsSwitch();
+
+  @override
+  ConsumerState<_QuestionsSwitch> createState() => _QuestionsSwitchState();
+}
+
+class _QuestionsSwitchState extends ConsumerState<_QuestionsSwitch> {
+  bool _busy = false;
+
+  Future<void> _set(CaptureServerStatus server, bool granted) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(captureApiProvider)
+          .setQuestions(granted, server.consentTextVersion);
+      ref.invalidate(captureServerStatusProvider);
+    } on Object {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.captureAiReadingFailed)),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final server = ref.watch(captureServerStatusProvider).value;
+    if (server == null || !server.questionsEnabled) {
+      return const SizedBox.shrink();
+    }
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(l10n.captureQuestionsTitle),
+      subtitle: Text(l10n.captureQuestionsBody),
+      value: server.questions,
+      onChanged: _busy ? null : (granted) => _set(server, granted),
+    );
+  }
+}
+
 class _SamplesSwitch extends ConsumerStatefulWidget {
   const _SamplesSwitch();
 

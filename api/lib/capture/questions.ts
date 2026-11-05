@@ -20,6 +20,7 @@ import { businessDateKey } from "../app-time";
 import { classifyText } from "../classify-text";
 import { getSystemSettings } from "../settings-cache";
 import { idsOfNames, rememberFiling } from "./memory";
+import { CAPTURE_CONSENT_TEXT_VERSION, captureConsentsOf } from "./consent";
 import type { CaptureOwner } from "./devices";
 import type { LedgerSuggestion, SignalReading } from "./intake";
 
@@ -46,10 +47,10 @@ export function needsPurposeQuestion(
   filing: LedgerSuggestion,
 ): boolean {
   if (
-    !reading.captureV4 ||
+    !reading.modelRead ||
     filing.from === "memory" ||
     filing.from === "catalog" ||
-    reading.captureV4.reply?.ownership === "own" ||
+    reading.modelRead.facts?.ownMove === true ||
     [
       "atm_withdrawal",
       "cash_out",
@@ -85,9 +86,11 @@ export async function enqueuePurposeQuestion(
         keys: ["capture_questions_enabled"],
         lock: true,
       })
-    ).capture_questions_enabled !== "true"
+    ).capture_questions_enabled === "false"
   )
     return;
+  // Each user turns the questions on for themselves in capture's settings (decision 0049).
+  if (!(await captureConsentsOf(owner, tx, CAPTURE_CONSENT_TEXT_VERSION)).questions) return;
   const [{ waiting }] = await tx
     .select({ waiting: count() })
     .from(captureQuestions)
@@ -111,8 +114,9 @@ export async function nextPurposeQuestion(
   owner: CaptureOwner,
   now = new Date(),
 ) {
-  if ((await getSystemSettings()).capture_questions_enabled !== "true")
+  if ((await getSystemSettings()).capture_questions_enabled === "false")
     return null;
+  if (!(await captureConsentsOf(owner, undefined, CAPTURE_CONSENT_TEXT_VERSION)).questions) return null;
   return getDb().transaction(async (tx) => {
     await lockLedgerOwner(tx, owner, "NOT_FOUND");
     const day = businessDateKey(now);
@@ -216,7 +220,7 @@ export async function answerPurposeQuestion(
   answer: PurposeAnswer,
   now = new Date(),
 ) {
-  if ((await getSystemSettings()).capture_questions_enabled !== "true")
+  if ((await getSystemSettings()).capture_questions_enabled === "false")
     throw new TRPCError({
       code: "PRECONDITION_FAILED",
       message: "تعديل التصنيف لسه بيتجهز.",

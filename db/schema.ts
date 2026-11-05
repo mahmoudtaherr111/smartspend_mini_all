@@ -1077,7 +1077,7 @@ export const captureConsents = mysqlTable(
     id: int("id").primaryKey().autoincrement(),
     userId: int("user_id").notNull(),
     userType: varchar("user_type", { length: 50 }).notNull(),
-    scope: varchar("scope", { length: 20 }).notNull(), // capture | ai_reading
+    scope: varchar("scope", { length: 20 }).notNull(), // capture | ai_reading | message_samples | purpose_questions
     textVersion: varchar("text_version", { length: 20 }).notNull(),
     grantedAt: datetime("granted_at").notNull().default(sql`CURRENT_TIMESTAMP`),
     revokedAt: datetime("revoked_at"),

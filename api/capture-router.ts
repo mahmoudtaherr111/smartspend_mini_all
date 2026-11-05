@@ -15,7 +15,7 @@ import { router, authedProcedure } from "./middleware";
 import { CAPTURE_ACTIONS, CAPTURE_CONSENT_SCOPES } from "../contracts/capture-intake";
 import { CAPTURE_WALLET_KINDS } from "../contracts/capture";
 import { getCaptureCatalog, sourcesForPhones } from "./lib/capture/catalog";
-import { CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION, CAPTURE_CONSENT_TEXT_VERSION, captureConsentsOf, setCaptureConsent } from "./lib/capture/consent";
+import { CAPTURE_CONSENT_TEXT_VERSION, captureConsentsOf, setCaptureConsent } from "./lib/capture/consent";
 import { listCaptureDevices, registerCaptureDevice, revokeCaptureDevice } from "./lib/capture/devices";
 import { answerEvent, captureLimitOf, captureUsageOf, pendingEvents, releaseHeldEvents } from "./lib/capture/intake";
 import { autoOffers, setPairAuto } from "./lib/capture/memory";
@@ -56,10 +56,11 @@ export const captureRouter = router({
       getSystemSettings(),
       captureUsageOf(ownerOf(ctx), ctx.user!.plan),
     ]);
-    const consentTextVersion = settings.capture_read_mode === "model_first" ? CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION : CAPTURE_CONSENT_TEXT_VERSION;
-    const consent = await captureConsentsOf(ownerOf(ctx), undefined, settings.capture_read_mode === "model_first" ? consentTextVersion : undefined);
-    return { enabled: captureOpenFor(settings, ownerOf(ctx)), mode: settings.capture_read_mode === "model_first" ? "automatic" as const : "legacy" as const,
-      questionsEnabled: settings.capture_questions_enabled === "true",
+    const consentTextVersion = CAPTURE_CONSENT_TEXT_VERSION;
+    const consent = await captureConsentsOf(ownerOf(ctx), undefined, consentTextVersion);
+    return { enabled: captureOpenFor(settings, ownerOf(ctx)), mode: "automatic" as const,
+      // The admin allows questions after saving; each user turns them on for themselves (`purpose_questions`).
+      questionsEnabled: settings.capture_questions_enabled !== "false",
       walletTypesEnabled: settings.capture_financial_version === "cashflow-v1",
       // The samples consent is offered only while the admin keeps samples (v7 §8).
       samplesOffered: settings.capture_samples_enabled === "true",

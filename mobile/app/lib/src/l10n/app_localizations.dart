@@ -209,7 +209,7 @@ abstract class AppLocalizations {
   /// What the person agrees to before capture starts; its version is CAPTURE_CONSENT_TEXT_VERSION on the server.
   ///
   /// In ar, this message translates to:
-  /// **'هنقرا إشعارات تطبيقات البنوك والمحافظ ورسايلها بس. الرسايل الشخصية والأكواد مابتخرجش من موبايلك. الرسالة اللي فيها عملية بتروح للسيرفر عشان يفهمها، وأرقامها بتتخبّى، وبتتمسح بعد 30 يوم. ومفيش عملية بتتسجل غير لما توافق عليها.'**
+  /// **'التطبيق بيبعت لنا بس الرسايل والإشعارات اللي فيها كلام عن فلوس (خصم، تحويل، رصيد، دفع وغيرها) من البنوك والمحافظ ورسايل SMS. الذكاء الاصطناعي بيقرا كل رسالة عشان يعرف المبلغ والنوع ومين الطرف التاني، وأرقام موبايلك وكروتك وحساباتك بتتخبّى قبل ما يشوفها، وأسماء المحلات والناس بتفضل عشان يقدر يصنّفها. أكواد التحقق مابتتحفظش ومابتتقريش. العملية بتتسجل لوحدها ويوصلك إشعار تقدر منه تلغيها، والرسالة بتتمسح بعد 30 يوم.'**
   String get captureConsentBody;
 
   /// No description provided for @captureConsentAgree.
@@ -251,13 +251,13 @@ abstract class AppLocalizations {
   /// No description provided for @captureAiReadingTitle.
   ///
   /// In ar, this message translates to:
-  /// **'خلّي الذكاء الاصطناعي يقرا الرسايل المش واضحة'**
+  /// **'قراءة الرسايل بالذكاء الاصطناعي'**
   String get captureAiReadingTitle;
 
   /// No description provided for @captureAiReadingBody.
   ///
   /// In ar, this message translates to:
-  /// **'لو رسالة بنك ماعرفناش نقرا مبلغها أو نوعها، بنبعتها متخبّي منها أرقامك للذكاء الاصطناعي، وبنسألك قبل ما نسجّل حاجة.'**
+  /// **'هو اللي بيفهم كل رسالة ويسجّلها لوحدها. لو قفلته، رسايل البنك مش هتتسجل.'**
   String get captureAiReadingBody;
 
   /// No description provided for @captureAiReadingFailed.
@@ -265,6 +265,18 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'ماقدرناش نحفظ اختيارك. جرّب تاني.'**
   String get captureAiReadingFailed;
+
+  /// No description provided for @captureQuestionsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لما عملية تتسجل في «عام» أو تحويل لحد، نسألك لما تفتح التطبيق صرفتها في إيه أو بعتها لمين، وإجابتك بتتحفظ للمرة الجاية.'**
+  String get captureQuestionsBody;
+
+  /// No description provided for @captureQuestionsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسألني اتصرفت في إيه'**
+  String get captureQuestionsTitle;
 
   /// No description provided for @captureSmsTitle.
   ///

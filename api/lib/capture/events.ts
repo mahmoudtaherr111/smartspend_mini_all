@@ -139,7 +139,14 @@ export function matchSignal(signal: SignalKeys, events: EventKeys[], sameText: S
     && ((!!signal.cardSuffix && !!event.cardSuffix && cardsAgree(signal.cardSuffix, event.cardSuffix)) || (!!signal.accountSuffix && signal.accountSuffix === event.accountSuffix))
     && signal.direction === event.direction && strictMoney(event) && !conflicts(signal, event);
 
-  // Same-account same-balance evidence is stronger than channel similarity. Never collapse on amount/time alone.
+  // Same-account same-balance evidence is stronger than channel similarity. Never collapse on amount/time alone:
+  // across channels the same money must also name the same card, account or merchant (decision 0049).
+  const corroborated = (event: EventKeys) => (!signal.sourceSlug || !event.sourceSlug || sameSource(event))
+    && (!signal.referenceHmac || !event.referenceHmac || signal.referenceHmac === event.referenceHmac)
+    && ((!!signal.cardSuffix && !!event.cardSuffix && cardsAgree(signal.cardSuffix, event.cardSuffix))
+      || (!!signal.accountSuffix && signal.accountSuffix === event.accountSuffix)
+      || (!!signal.merchantKey && signal.merchantKey === event.merchantKey))
+    && directionsAgree(signal.direction, event.direction) && strictMoney(event) && !conflicts(signal, event);
   if (strict) {
     const repeated = byAge.find((event) => balanceProof(event) && apart(signal.receivedAt, event.firstReceivedAt) <= MATCH_WINDOWS.crossChannel);
     if (repeated) return { type: "merge", eventId: repeated.id, rule: "cross_channel" };
@@ -178,7 +185,7 @@ export function matchSignal(signal: SignalKeys, events: EventKeys[], sameText: S
   // 4. Another channel, the same money, close in time, nothing in conflict, and that channel not on the event yet.
   for (const event of byAge) {
     if (event.channels.includes(signal.channelKey)) continue;
-    if (strict && !balanceProof(event)) continue;
+    if (strict && !balanceProof(event) && !corroborated(event)) continue;
     if (!directionsAgree(signal.direction, event.direction) || !sameMoney(signal, event) || conflicts(signal, event)) continue;
     const window =
       signal.timeFromMessage && sameMinute(signal.occurredAt, event.occurredAt) ? MATCH_WINDOWS.crossChannelSameMinute : MATCH_WINDOWS.crossChannel;

@@ -1,6 +1,6 @@
 # 0035. Captured messages keep their merchant through redaction, admins are alerted in the app, and support sees a user's capture
 
-- Status: accepted. Built in `api/lib/capture/keep-merchants.ts` (`merchantNamesToKeep`, `redactKeeping`), its use
+- Status: the merchant part is superseded by [decision 0049](0049-one-capture-path-model-decides.md), which keeps every name for the model; the alerts and the timeline stand. Built in the merchant keeper (removed with the reader), its use
   in the intake's stored text and the model's prompt, `notifyAdmins`, `checkModelQueue` and `captureTimeline` in
   `api/lib/capture/operations.ts`, `captureAdmin.timeline`, and the «تتبّع مستخدم» card of the console's numbers tab.
 - Decided and recorded: 2026-10-28, from the capture production plan (§16, §19, §21) and known issue 3 of the bank

@@ -47,10 +47,15 @@ export async function captureActivity(owner: CaptureOwner, limit = 30) {
             eq(captureAiJobs.status, "running"),
             and(
               eq(captureAiJobs.status, "done"),
+              // Finished with nothing to show: no money moved (declined, held, not a transaction) or nothing left.
               notInArray(captureAiJobs.outcome, [
                 "not_transaction",
+                "declined",
+                "on_hold",
                 "gone",
                 "read",
+                "recorded",
+                "nothing_to_read",
               ]),
             ),
           ),
@@ -90,7 +95,7 @@ export async function captureActivity(owner: CaptureOwner, limit = 30) {
       .filter(
         (job) =>
           job.status !== "done" ||
-          (job.outcome !== "not_transaction" && job.outcome !== "gone"),
+          !["not_transaction", "declined", "on_hold", "gone", "recorded", "nothing_to_read"].includes(job.outcome ?? ""),
       )
       .map((job) => ({
         key: `job:${job.id}`,
