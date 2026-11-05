@@ -8,10 +8,10 @@ SmartSpend AI is an Arabic-first money app for Egypt. People record spending by 
 Egyptian Arabic, or from receipts (automatic capture of bank and wallet messages is being rebuilt); the API
 turns each sentence into categorized transactions, and an AI Center answers questions about the ledger.
 
-`src/` React + Vite PWA (Capacitor shells in `android/` and `ios/`) · `api/` Hono + tRPC on Node ·
-`db/` Drizzle schema for MySQL · `contracts/` code shared by both · `mobile/` the Flutter app for Android and iOS that will
-replace the Capacitor shells and bring back automatic capture of bank and wallet messages
-(`docs/decisions/0022-flutter-mobile-app.md`).
+`mobile/` the Flutter app for Android and iOS (`docs/decisions/0022-flutter-mobile-app.md`) · `api/` Hono + tRPC on
+Node · `admin/` the admin console, served by the API at `/admin/` · `db/` Drizzle schema for MySQL · `contracts/` code
+shared by the server, the console and the apps. `src/` is the parked website (a PWA with Capacitor shells in
+`android/` and `ios/`): it keeps building and is never deployed, and nothing else may import it (decision 0050).
 
 ## Trust order
 1. The code.
@@ -79,7 +79,8 @@ conflicting, and pre-push refuses a push while a rule is broken. Claude Code and
 | --- | --- |
 | Install (also installs the git hooks) | `npm ci`; architecture tools: `npm run arch:install` |
 | Start a task / check it / publish it to `main` | `npm run sync` / `npm run agent:finish` / `npm run ship` |
-| App in development (Vite on port 3000 with the API from `api/boot.ts`) | `npm run dev` |
+| API and admin console in development (Vite on port 3000: the API from `api/boot.ts`, the console at `/admin/`) | `npm run dev` |
+| The parked website (the PWA in `src/`, decision 0050) in development | `npm run dev:web` |
 | API alone (`api/server.ts`) | `npm run backend:dev` |
 | Types and generated facts | `npm run check` |
 | One test file / tests of the files you changed | `npx vitest run <path>` / `npx vitest related --run <files>` |
@@ -92,7 +93,8 @@ conflicting, and pre-push refuses a push while a rule is broken. Claude Code and
 | The pages as a searchable site for people who do not read code | `npm --prefix docs-site run build` |
 | Architecture map / validation | `npm run arch` / `npm run arch:validate` |
 | Schema change | `npm run db:generate`, review, `npm run db:migrate` (`db:push` only on a throwaway local database); `npm run db:doctor` compares a database with the schema |
-| Production build and start (the Docker image runs `dist/boot.js`) | `npm run build`, `npm start` |
+| Production build and start: the API and the console (the Docker image runs `dist/boot.js`) | `npm run build`, `npm start` |
+| Build of the parked website, never deployed (CI keeps it building) | `npm run build:web`, `npm run test:build:web` |
 | The Flutter app, from `mobile/` (Flutter release pinned in `mobile/pubspec.yaml`) | `flutter pub get`, `dart format .`, `flutter analyze`, then each package's tests (`mobile/README.md`) |
 
 Lint errors that predate the lint rules are frozen in `eslint-suppressions.json`: a new violation fails

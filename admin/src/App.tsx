@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { trpc } from "@/providers/trpc";
+import { trpc } from "@admin/lib/trpc";
 import { Shell } from "./shell/Shell";
 import { SignIn } from "./pages/SignIn";
 import { AiCalls } from "./pages/AiCalls";

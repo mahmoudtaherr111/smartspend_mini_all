@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { trpc } from "@/providers/trpc";
+import { trpc } from "@admin/lib/trpc";
 import { SaveBar } from "./SaveBar";
 import { LoadError, Loading } from "./states";
 

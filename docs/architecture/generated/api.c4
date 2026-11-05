@@ -2957,6 +2957,15 @@ model {
         path '/api/trpc/*'
       }
     }
+    get = endpoint 'GET /' {
+      #http
+      description 'Declared in api/boot.ts.'
+      metadata {
+        file 'api/boot.ts'
+        method 'GET'
+        path '/'
+      }
+    }
     get_admin = endpoint 'GET /admin' {
       #http
       description 'Declared in api/boot.ts.'

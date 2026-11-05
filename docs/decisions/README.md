@@ -63,3 +63,5 @@ A record explains why the code looks the way it does. What the code does today i
 | [0048](0048-direct-sms-samples-and-live-contract-fixes.md) | Direct SMS in its own build, redacted samples with consent, and sms-v4 checks fitted to live model replies |
 
 | [0049](0049-one-capture-path-model-decides.md) | One capture path: the phone sends on keywords, the model decides on labelled numbers, checks that read no words, everything complete recorded on its own |
+
+| [0050](0050-backend-and-console-without-the-website.md) | The server serves the API and the admin console only; the website is parked, and the console has its own styles, kit and client |

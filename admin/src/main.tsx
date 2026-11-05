@@ -4,7 +4,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
-import { trpc } from "@/providers/trpc";
+import { trpc } from "@admin/lib/trpc";
 import App from "./App";
 import "./admin.css";
 

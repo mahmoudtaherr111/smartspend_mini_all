@@ -335,7 +335,7 @@ app.notFound(async (c) => {
       return c.json({ error: "Not Found" }, 404);
     }
   }
-  if (env.NODE_ENV === "production" && !c.req.path.startsWith("/api/")) {
+  if (env.NODE_ENV === "production" && env.SERVE_WEB_APP === "true" && !c.req.path.startsWith("/api/")) {
     try {
       if (!indexHtml) {
         const fs = await import("fs");
@@ -717,16 +717,22 @@ app.post("/api/webhooks/apple-asn", async (c) => {
   return c.json({ ok: true, outcome: result.outcome });
 });
 
-// What search engines read: the public pages, never the signed-in app or the admin console.
+// What search engines read: the public pages, never the signed-in app or the admin console. Without the website
+// there is nothing to index.
 app.get("/sitemap.xml", async (c) => {
+  if (env.SERVE_WEB_APP !== "true") return c.json({ error: "Not Found" }, 404);
   const { buildSitemapXml } = await import("./seo-router");
   return c.body(await buildSitemapXml(), 200, { "content-type": "application/xml; charset=utf-8" });
 });
 app.get("/robots.txt", (c) =>
   c.text(
-    `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ${env.APP_URL.replace(/\/$/, "")}/sitemap.xml\n`,
+    env.SERVE_WEB_APP === "true"
+      ? `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ${env.APP_URL.replace(/\/$/, "")}/sitemap.xml\n`
+      : "User-agent: *\nDisallow: /\n",
   ),
 );
+// The server's own front door when no website is served: what it is, nothing else.
+app.get("/", (c, next) => (env.SERVE_WEB_APP === "true" ? next() : c.json({ service: "smartspend-api", console: "/admin/" })));
 
 // Health check
 app.get("/health", (c) =>
@@ -754,7 +760,7 @@ if (env.NODE_ENV === "production" && isDirectBootEntry) {
     }),
   );
 
-  app.use(
+  if (env.SERVE_WEB_APP === "true") app.use(
     "/*",
     serveStatic({
       root: "./dist/public",

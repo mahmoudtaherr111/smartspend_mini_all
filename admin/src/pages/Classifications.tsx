@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { trpc } from "@/providers/trpc";
+import { Badge } from "@admin/kit/badge";
+import { Button } from "@admin/kit/button";
+import { trpc } from "@admin/lib/trpc";
 import { DECISION, INPUT, MATCH, PARSED_BY, confidenceWords } from "../ui/ai-words";
 import { LoadError, Loading, PageHeader } from "../ui/states";
 import { count, dayTime, money, word } from "../ui/words";

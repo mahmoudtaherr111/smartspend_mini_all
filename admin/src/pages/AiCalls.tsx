@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Switch } from "@/components/ui/switch";
+import { Badge } from "@admin/kit/badge";
+import { Button } from "@admin/kit/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@admin/kit/sheet";
+import { Switch } from "@admin/kit/switch";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../api/router";
-import { trpc } from "@/providers/trpc";
+import { trpc } from "@admin/lib/trpc";
 import { LoadError, Loading, PageHeader } from "../ui/states";
 import { CHANNEL, count, dayTime, usd, word } from "../ui/words";
 

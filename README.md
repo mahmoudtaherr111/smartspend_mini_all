@@ -11,7 +11,7 @@ npm ci
 cp .env.example .env              # fill in the database URL, Google OAuth, JWT_SECRET and GEMINI_API_KEY
 docker compose up -d mysql redis  # local MySQL and Redis
 npm run db:push                   # local development database only
-npm run dev                       # Vite and the API together on http://localhost:3000
+npm run dev                       # the API and the admin console on http://localhost:3000 (/admin/)
 ```
 
 The variables the server requires at boot are listed in [docs/atlas/env.md](docs/atlas/env.md).

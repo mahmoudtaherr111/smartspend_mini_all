@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { trpc } from "@/providers/trpc";
+import { Input } from "@admin/kit/input";
+import { Label } from "@admin/kit/label";
+import { Switch } from "@admin/kit/switch";
+import { trpc } from "@admin/lib/trpc";
 import { SaveBar } from "../ui/SaveBar";
 import { LoadError, Loading, PageHeader } from "../ui/states";
 import { dayTime } from "../ui/words";

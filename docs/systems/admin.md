@@ -11,7 +11,8 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
 ## The new console (admin/)
 The console is moving to a site of its own ([decision 0041](../decisions/0041-separate-admin-console.md)): `admin/`,
 built to `dist/admin` and served by `api/boot.ts` at `/admin` (`/admin` redirects to `/admin/`, every path under it
-opens the console's page, `no-store` and `noindex`). `npm run admin:dev` runs it with the API on port 3100.
+opens the console's page, `no-store` and `noindex`). `npm run dev` (or `admin:dev`) runs it with the API on port 3000. It shares no code with the website in `src/`
+(decision 0050).
 - `admin/src/App.tsx` asks `adminConsole.session` (moderators and admins); anyone else sees the sign-in page, Google
   (`/api/auth/google/start?next=/admin/`) or a phone account, and a signed-in user without the role is told so.
 - «النهارده» (`admin/src/pages/Today.tsx`, `adminConsole.today`): who recorded today, yesterday and this week, sign-ups, the share of

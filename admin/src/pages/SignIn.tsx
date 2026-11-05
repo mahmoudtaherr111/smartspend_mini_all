@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { trpc } from "@/providers/trpc";
+import { Button } from "@admin/kit/button";
+import { Input } from "@admin/kit/input";
+import { Label } from "@admin/kit/label";
+import { trpc } from "@admin/lib/trpc";
 
 /** The console's own door: Google, or a phone account that has the admin role. */
 export function SignIn({ forbidden }: { forbidden: boolean }) {

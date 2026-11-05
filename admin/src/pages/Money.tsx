@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { AdminPlansTab } from "@/components/admin/settings/AdminPlansTab";
-import { trpc } from "@/providers/trpc";
+import { trpc } from "@admin/lib/trpc";
 import { SettingsEditor } from "../ui/SettingsEditor";
 import { LoadError, Loading, PageHeader } from "../ui/states";
 import { STORE, SUBSCRIPTION, count, day, word } from "../ui/words";

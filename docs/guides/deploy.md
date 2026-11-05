@@ -4,12 +4,15 @@ Written from `Dockerfile`, `docker-compose.yml`, `package.json`, `api/boot.ts`, 
 Update this page in the same change when any of them changes.
 
 ## What runs in production
-`npm run build` builds the web app into `dist/public` and bundles `api/boot.ts` into `dist/boot.js`. `npm start` runs
-`node dist/boot.js` with `NODE_ENV=production`: one Node process on `PORT` (default 3000) that serves
+`npm run build` builds the admin console into `dist/admin` and bundles `api/boot.ts` into `dist/boot.js`; the website
+is parked (decision 0050) and not built. `npm start` runs `node dist/boot.js` with `NODE_ENV=production`: one Node
+process on `PORT` (default 3000) that serves
 
 - the API: tRPC, the SMS ingestion sub-app, Google OAuth, the WhatsApp OTP event stream and the Paymob webhook;
 - the live voice WebSocket at /api/voice/v2, after an origin check;
-- the built web app from `dist/public`, answering any other path outside /api/ with index.html;
+- the admin console from `dist/admin` at /admin/;
+- `/` with `{ service, console }`, `robots.txt` refusing every crawler, and 404 for any other path. With
+  `SERVE_WEB_APP=true` and a `npm run build:web` build it serves the website from `dist/public` again;
 - GET /health, which returns `{ status, timestamp }`.
 
 Every route and scheduled job is listed in [entrypoints](../atlas/entrypoints.md).
@@ -18,7 +21,8 @@ The bundle is an ES module, but CommonJS code inside it calls `require`, so the 
 `createRequire`. The banner imports it as `__bannerCreateRequire`: esbuild cannot rename around banner text, and a
 bundled package that imports `createRequire` itself (sharp 0.35 does) would stop the server with a SyntaxError before
 its first request. Sentry and node-cron stay outside the bundle and load from `node_modules`. `npm run test:build`
-starts `dist/boot.js` and `dist/server/server.js` and asks each for /health.
+starts `dist/boot.js` and `dist/server/server.js` and asks each for /health; `npm run test:build:web` checks the
+website's build.
 
 ## Docker
 The image starts from node:22-alpine, matching CI's Node 22 line, runs `npm run build`, and starts `node dist/boot.js`

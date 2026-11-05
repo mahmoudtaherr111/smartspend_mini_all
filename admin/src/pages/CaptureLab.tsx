@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { trpc } from "@/providers/trpc";
+import { Badge } from "@admin/kit/badge";
+import { Button } from "@admin/kit/button";
+import { Input } from "@admin/kit/input";
+import { Textarea } from "@admin/kit/textarea";
+import { trpc } from "@admin/lib/trpc";
 import { PageHeader } from "../ui/states";
 
 // Invented messages in the shapes banks and wallets send; nobody's real data.

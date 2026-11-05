@@ -4,12 +4,14 @@
 model {
   smartspend.api.http.all_trpc_all -[calls]-> smartspend.api.trpc
   smartspend.api.http.all_trpc_all -[uses]-> smartspend.api.modules.api-core
+  smartspend.api.http.get -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.get_auth_google_callback -[uses]-> smartspend.api.modules.api-core
   smartspend.api.http.get_auth_google_callback -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.get_auth_google_start -[uses]-> smartspend.api.modules.api-routers
   smartspend.api.http.get_auth_google_start -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.get_robots_txt -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.get_sitemap_xml -[uses]-> smartspend.api.modules.api-routers
+  smartspend.api.http.get_sitemap_xml -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.get_webhooks_whatsapp -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.get_webhooks_whatsapp -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.http.post_webhooks_apple-asn -[uses]-> smartspend.api.modules.billing

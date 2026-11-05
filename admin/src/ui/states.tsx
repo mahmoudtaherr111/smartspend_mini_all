@@ -1,6 +1,6 @@
 import { AlertTriangle, Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@admin/kit/button";
 
 export function Loading({ full = false }: { full?: boolean }) {
   return (

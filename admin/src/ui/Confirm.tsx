@@ -6,9 +6,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from "@admin/kit/dialog";
+import { Button } from "@admin/kit/button";
+import { Input } from "@admin/kit/input";
 
 /**
  * Asks before a change, saying exactly what will happen. A change that cannot be undone also asks the admin to type

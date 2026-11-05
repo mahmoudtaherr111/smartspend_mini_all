@@ -97,9 +97,9 @@
         "src/pages/Admin.tsx": "9444393be5fa",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-05 143b366b",
-      "arabic": "73cbde3d210d",
-      "arabicChecked": "2026-11-05 143b366b"
+      "checked": "2026-11-05 0c8067ac",
+      "arabic": "8eff1719a3bd",
+      "arabicChecked": "2026-11-05 0c8067ac"
     },
     "ai-center": {
       "files": {
@@ -475,17 +475,18 @@
       "files": {
         "api/app-config-router.ts": "498371446b25",
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
+        "api/boot.ts#GET /": "613133d48b50",
         "api/boot.ts#GET /health": "c7c09b6177c9",
-        "api/boot.ts#GET /robots.txt": "c4dc59fa55af",
-        "api/boot.ts#GET /sitemap.xml": "64c40dc44152",
+        "api/boot.ts#GET /robots.txt": "7089e4cacdb2",
+        "api/boot.ts#GET /sitemap.xml": "4c2af6ff5731",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "1c60a049aa37",
+        "api/boot.ts#rest-of-file": "2be5a0b190c1",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "013fac14e6c9",
         "api/lib/app-time.ts": "7eaf4ab8fae6",
         "api/lib/cache-keys.ts": "89dc693d0c12",
         "api/lib/client-platform.ts": "fe6ce60846a0",
-        "api/lib/env.ts": "89899a5070f2",
+        "api/lib/env.ts": "2a48846c3eee",
         "api/lib/error-logger.ts": "9cb0f25fe459",
         "api/lib/error-reporting.ts": "9891f7185094",
         "api/lib/log.ts": "65a6302d6f7d",
@@ -524,9 +525,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "24dd31475b42"
       },
-      "checked": "2026-11-05 68648bf5",
-      "arabic": "0fa0bb2c9247",
-      "arabicChecked": "2026-11-05 df6216e1"
+      "checked": "2026-11-05 0c8067ac",
+      "arabic": "4862e3a91489",
+      "arabicChecked": "2026-11-05 0c8067ac"
     },
     "voice-calls": {
       "files": {

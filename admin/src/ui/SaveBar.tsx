@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@admin/kit/button";
 
 /**
  * Shown while a page has unsaved changes: how many, and the two ways out. Leaving the page with changes asks first,

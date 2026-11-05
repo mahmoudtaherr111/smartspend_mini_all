@@ -12,7 +12,7 @@ storage, the contracts shared with the web app, and the retention job that prune
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Server | `api/boot.ts` | The Hono app: middleware, Google OAuth start and callback, the OTP stream, the Paymob webhook, `/api/trpc/*`, `/health`, the admin console at `/admin` (`dist/admin`), the static files and the live-call WebSocket (`/api/voice/v2`) in production, and the cron registrations |
+| Server | `api/boot.ts` | The Hono app: middleware, Google OAuth start and callback, the OTP stream, the Paymob webhook, `/api/trpc/*`, `/health`, the admin console at `/admin` (`dist/admin`), the live-call WebSocket (`/api/voice/v2`) in production, and the cron registrations. The website is parked (decision 0050): only with `SERVE_WEB_APP=true` does it serve `dist/public`, the sitemap and an indexable `robots.txt`; otherwise `/` answers `{ service, console }` and crawlers are refused |
 | Standalone entry | `api/server.ts` | The same app served on its own, for deploying the API apart from the web app |
 | Request context | `api/context.ts` | Resolves `ctx.user` from the Bearer header, the `smartspend_token`/`local_session` cookie or the `google_session` cookie, and the client IP |
 | Builders | `api/middleware.ts` | The procedure builders, their rate limits and their role and plan checks |

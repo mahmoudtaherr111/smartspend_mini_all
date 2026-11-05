@@ -13,6 +13,7 @@ Solid arrows: calls and uses. Thick arrows: writes a table. Dotted arrows: reads
 ```mermaid
 flowchart LR
   subgraph g_api["API, routes and jobs"]
+    http__["GET /"]
     http__api_trpc["ALL /api/trpc/*"]
     http__health["GET /health"]
     http__robots_txt["GET /robots.txt"]
@@ -120,9 +121,11 @@ flowchart LR
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
   sys_notifications[["Notifications and WhatsApp (system)"]]
   sys_voice_calls[["Live voice assistant (system)"]]
+  http__ --> mod_platform
   http__api_trpc --> mod_api_core
   http__robots_txt --> mod_platform
   http__sitemap_xml --> mod_api_routers
+  http__sitemap_xml --> mod_platform
   job_data_retention_lifecycle --> mod_jobs
   mod_api_core --> mod_api_routers
   mod_api_core --> mod_contracts
@@ -296,6 +299,7 @@ flowchart LR
 
 | Entry point | Kind | Declared in |
 | --- | --- | --- |
+| `GET /` | http | `api/boot.ts` |
 | `ALL /api/trpc/*` | trpc | `api/boot.ts` |
 | `GET /health` | http | `api/boot.ts` |
 | `GET /robots.txt` | http | `api/boot.ts` |
@@ -437,6 +441,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | `S3_ENDPOINT` | no | `api/services/storage/s3-driver.ts` |
 | `SENTRY_DSN` | yes | `api/lib/error-reporting.ts` |
 | `SENTRY_TRACES_SAMPLE_RATE` | yes | `api/lib/error-reporting.ts` |
+| `SERVE_WEB_APP` | yes | `api/boot.ts` |
 | `SLOW_QUERY_THRESHOLD_MS` | yes | `api/queries/connection.ts` |
 | `STORAGE_DRIVER` | no | `api/services/storage/index.ts` |
 | `STORAGE_PUBLIC_URL` | no | `api/services/storage/s3-driver.ts` |
@@ -448,10 +453,11 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>50 files and declarations</summary>
+<details><summary>51 files and declarations</summary>
 
 - `api/app-config-router.ts`
 - `api/boot.ts#ALL /api/trpc/*`
+- `api/boot.ts#GET /`
 - `api/boot.ts#GET /health`
 - `api/boot.ts#GET /robots.txt`
 - `api/boot.ts#GET /sitemap.xml`

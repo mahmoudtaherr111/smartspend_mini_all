@@ -24,6 +24,7 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 
 | Method | Path | Kind | Declared in | Depends on | Reads | Writes |
 | --- | --- | --- | --- | --- | --- | --- |
+| GET | `/` | http | `api/boot.ts` | `api/lib/env.ts` | — | — |
 | GET | `/admin` | http | `api/boot.ts` | — | — | — |
 | GET | `/api/auth/google/callback` | http | `api/boot.ts` | `api/context.ts`, `api/lib/env.ts`, `api/router.ts` | — | — |
 | GET | `/api/auth/google/start` | http | `api/boot.ts` | `api/auth-router.ts`, `api/lib/env.ts` | — | — |
@@ -35,7 +36,7 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 | POST | `/api/webhooks/whatsapp` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/whatsapp/outbox.ts`, `api/lib/whatsapp/webhook.ts` | — | — |
 | GET | `/health` | http | `api/boot.ts` | — | — | — |
 | GET | `/robots.txt` | http | `api/boot.ts` | `api/lib/env.ts` | — | — |
-| GET | `/sitemap.xml` | http | `api/boot.ts` | `api/seo-router.ts` | — | — |
+| GET | `/sitemap.xml` | http | `api/boot.ts` | `api/lib/env.ts`, `api/seo-router.ts` | — | — |
 
 ## WebSocket upgrades
 

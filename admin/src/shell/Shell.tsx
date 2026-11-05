@@ -20,8 +20,8 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { trpc } from "@/providers/trpc";
+import { Button } from "@admin/kit/button";
+import { trpc } from "@admin/lib/trpc";
 
 interface Area {
   to: string;

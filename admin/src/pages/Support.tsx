@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { trpc } from "@/providers/trpc";
+import { Badge } from "@admin/kit/badge";
+import { Button } from "@admin/kit/button";
+import { Textarea } from "@admin/kit/textarea";
+import { trpc } from "@admin/lib/trpc";
 import { LoadError, Loading, PageHeader } from "../ui/states";
 import { TICKET, dayTime, word } from "../ui/words";
 

@@ -7,7 +7,7 @@ import { NotificationsTab } from "@/components/admin/NotificationsTab";
 import { AdminCaptureTab } from "@/components/admin/capture/AdminCaptureTab";
 import { AdminKeysTab } from "@/components/admin/settings/AdminKeysTab";
 import { AiCommandCenter } from "@/components/admin/ai-center/AiCommandCenter";
-import { Button } from "@/components/ui/button";
+import { Button } from "@admin/kit/button";
 import { SettingsEditor } from "../ui/SettingsEditor";
 import { PageHeader } from "../ui/states";
 

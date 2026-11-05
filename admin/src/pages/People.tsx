@@ -1,9 +1,9 @@
 import { useDeferredValue, useState } from "react";
 import { Link } from "react-router-dom";
 import { Search } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { trpc } from "@/providers/trpc";
+import { Badge } from "@admin/kit/badge";
+import { Input } from "@admin/kit/input";
+import { trpc } from "@admin/lib/trpc";
 import { LoadError, Loading, PageHeader } from "../ui/states";
 import { ACCOUNT, PLAN, ROLE, day, word } from "../ui/words";
 

@@ -56,6 +56,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `REDIS_URL` | no | — | `api/lib/redis-client.ts` |
 | `SENTRY_DSN` | no | — | `api/lib/error-reporting.ts` |
 | `SENTRY_TRACES_SAMPLE_RATE` | no | `0.1` | `api/lib/error-reporting.ts` |
+| `SERVE_WEB_APP` | no | `false` | `api/boot.ts` |
 | `SLOW_QUERY_THRESHOLD_MS` | no | `100` | `api/queries/connection.ts` |
 | `TRUSTED_PROXY_HEADER` | no | `x-forwarded-for` | `api/lib/get-client-ip.ts` |
 | `TRUSTED_PROXY_IPS` | no | — | `api/lib/get-client-ip.ts` |

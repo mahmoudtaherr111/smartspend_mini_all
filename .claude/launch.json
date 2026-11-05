@@ -79,13 +79,13 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": [
         "cross-env",
-        "ENABLE_CRONS=false",
+        "ENABLE_CRONS=true",
         "vite",
         "--config",
         "admin/vite.config.ts",
         "--host"
       ],
-      "port": 3100
+      "port": 3000
     }
   ]
 }

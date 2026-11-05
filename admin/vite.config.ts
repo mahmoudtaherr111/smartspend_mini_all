@@ -1,19 +1,27 @@
 import devServer from "@hono/vite-dev-server";
 import path from "path";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
+import { createOriginPolicy } from "../api/lib/origin-policy";
+import { voiceDevServer } from "../scripts/vite-voice";
 
 const root = path.resolve(import.meta.dirname, "..");
+const originPolicy = createOriginPolicy({ ...loadEnv("development", root, ""), NODE_ENV: "development" });
 
-// The admin console is its own small site: no service worker, no install, no offline. The server serves the build at
-// /admin (api/boot.ts), so it runs without the web app. `npm run admin:dev` mounts the same API on port 3100.
+// The development server of the product without the website (decision 0050): the API (`api/boot.ts`, with the voice
+// call's WebSocket) and the admin console at /admin, on port 3000 where the phone apps' debug builds look.
+// `npm run dev`. The server serves the console's build at /admin in production.
 export default defineConfig({
   root: import.meta.dirname,
   base: "/admin/",
   envDir: root,
   // Its own dependency cache: sharing the web app's makes two dev servers invalidate each other in a reload loop.
   cacheDir: path.join(root, "node_modules/.vite-admin"),
-  plugins: [devServer({ entry: path.join(root, "api/boot.ts"), exclude: [/^\/(?!api\/).*/] }), react()],
+  plugins: [
+    devServer({ entry: path.join(root, "api/boot.ts"), exclude: [/^\/(?!api\/).*/] }),
+    voiceDevServer(originPolicy.isAllowedWebSocketOrigin),
+    react(),
+  ],
   css: { postcss: root },
   resolve: {
     alias: {
@@ -24,7 +32,7 @@ export default defineConfig({
       db: path.join(root, "db"),
     },
   },
-  server: { port: 3100, strictPort: true },
+  server: { port: 3000, strictPort: true },
   build: {
     outDir: path.join(root, "dist/admin"),
     emptyOutDir: true,

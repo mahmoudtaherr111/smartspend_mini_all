@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Button } from "@/components/ui/button";
-import { trpc } from "@/providers/trpc";
+import { Button } from "@admin/kit/button";
+import { trpc } from "@admin/lib/trpc";
 import { LoadError, Loading, PageHeader } from "../ui/states";
 import { PLATFORM, SOURCE, STORE, SUBSCRIPTION, count, word } from "../ui/words";
 

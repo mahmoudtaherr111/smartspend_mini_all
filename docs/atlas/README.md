@@ -32,7 +32,7 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 | — queries | 115 |
 | — mutations | 163 |
 | Procedure builders | 14 |
-| HTTP routes (outside tRPC) | 11 |
+| HTTP routes (outside tRPC) | 12 |
 | WebSocket upgrade prefixes | 2 |
 | Scheduled jobs | 21 |
 | Browser routes | 18 |
@@ -40,7 +40,7 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 | Runtime source files | 526 |
 | Clusters | 46 |
 | External systems in use | 18 |
-| Validated server env vars | 62 |
+| Validated server env vars | 63 |
 | Systems | 13 |
 
 ## Generator warnings

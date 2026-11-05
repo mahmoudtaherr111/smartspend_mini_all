@@ -2,12 +2,12 @@ import { useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { trpc } from "@/providers/trpc";
+import { Badge } from "@admin/kit/badge";
+import { Button } from "@admin/kit/button";
+import { Input } from "@admin/kit/input";
+import { Label } from "@admin/kit/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@admin/kit/select";
+import { trpc } from "@admin/lib/trpc";
 import { Confirm } from "../ui/Confirm";
 import { LoadError, Loading } from "../ui/states";
 import {

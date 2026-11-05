@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { CheckCircle2, CircleAlert, KeyRound, MessageSquare, Sparkles, XCircle } from "lucide-react";
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import { trpc } from "@/providers/trpc";
+import { Button } from "@admin/kit/button";
+import { trpc } from "@admin/lib/trpc";
 import { LoadError, Loading, PageHeader } from "../ui/states";
 
 const n = (value: number | null | undefined) => (value === null || value === undefined ? "—" : value.toLocaleString("en-US"));

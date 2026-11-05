@@ -85,6 +85,11 @@ const envSchema = z.object({
     .default(10),
   LOGIN_ACCOUNT_MAX_FAILURES: z.coerce.number().int().min(3).max(20).default(5),
   LOGIN_PAIR_MAX_FAILURES: z.coerce.number().int().min(3).max(20).default(5),
+  /**
+   * The website (the PWA in `src/`, built to `dist/public`) is parked (decision 0050): the server serves the phone
+   * apps' API and the admin console only. "true" serves a website build again.
+   */
+  SERVE_WEB_APP: z.enum(["true", "false"]).default("false"),
   /** Background jobs are opt-in in development and explicit in production. */
   ENABLE_CRONS: z.enum(["true", "false"]).optional(),
   REDIS_URL: z.string().optional(),

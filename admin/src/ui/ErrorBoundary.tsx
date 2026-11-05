@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@admin/kit/button";
 
 /**
  * A page that breaks shows what happened and the way back instead of a blank screen. After a deploy, an open tab can
