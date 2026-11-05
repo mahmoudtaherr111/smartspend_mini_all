@@ -1,51 +1,18 @@
-# SmartSpend AI — Native Device Prerequisites & Hardware Capabilities
+# Mobile device capabilities
 
-This document outlines the hardware capabilities, platform permissions, and fallback mechanisms implemented across SmartSpend AI mobile clients (`CAP-04`, `CAP-06`, `SEC-F3`, `GAP-03..05`).
+This guide describes the Flutter app in `mobile/`. Check the platform manifests and feature code when changing a
+permission; a declaration alone does not establish that a feature works on a device.
 
----
+| Capability | Current implementation | If unavailable |
+| --- | --- | --- |
+| Bank and wallet messages | Android's notification listener receives notifications from supported apps after the user enables access. The separate SMS build declares `RECEIVE_SMS` and `READ_SMS`; the store build does not. iOS capture is not implemented. | Enter the transaction manually. See [bank messages](../systems/bank-messages.md) for consent, filtering and server processing. |
+| App lock | `mobile/packages/device_lock` uses native biometrics when available and enrolled. The app PIN uses a random salt and an HMAC key in the Keystore or Keychain (`mobile/app/lib/src/features/lock/lock_store.dart`). | Use the app PIN; the lock screen offers sign-out if the PIN is forgotten. |
+| Receipt | `receipt_image_service.dart` opens the system camera or gallery picker; iOS declares camera and photo-library usage descriptions. | Choose an existing image or enter the transaction manually. |
+| Voice recording | Android declares `RECORD_AUDIO`; iOS declares microphone usage. `audio_recorder_service.dart` records to a temporary file for speech-to-text. | Type the entry instead. |
 
-## 1. Hardware Capability Matrix & Fallback Behaviors
+The Flutter AI Center's live call is disabled (`liveCallsEnabled` in `ai_center_screen.dart`): microphone and speaker
+audio are not yet connected. Do not treat the call screen or a manifest comment as evidence of a working background
+microphone service. The parked website's voice call is described separately in [live voice assistant](../systems/voice-calls.md).
 
-| Capability | Android Permission | iOS Capability / Permission | Fallback Behavior | Architecture Reference |
-| :--- | :--- | :--- | :--- | :--- |
-| `sms_bank_capture` | `RECEIVE_SMS` / `BIND_NOTIFICATION_LISTENER_SERVICE` | `N/A (Notification Extension)` / Shortcuts App Intent | `manual_entry` | `CAP-04`, `CAP-06`, `mobile/packages/bank_capture` |
-| `biometric_lock` | `USE_BIOMETRIC` (BiometricPrompt) | `NSFaceIDUsageDescription` (LocalAuthentication) | `pin_prompt` | `SEC-F3`, `mobile/packages/device_lock` |
-| `receipt_camera` | `CAMERA` | `NSCameraUsageDescription` | `gallery_upload` / `manual_entry` | `GAP-03..05`, `mobile/app/lib/src/features/ledger/receipts` |
-| `microphone` | `RECORD_AUDIO` / `FOREGROUND_SERVICE_MICROPHONE` | `NSMicrophoneUsageDescription` | `text_chat` | `AI-09`, `GAP-06`, `mobile/app/lib/src/features/ai` |
-
----
-
-## 2. Capability Details & Implementation
-
-### 2.1 SMS Bank & Wallet Capture (`sms_bank_capture`)
-- **Android**:
-  - Requires `android.permission.RECEIVE_SMS` and optional Notification Listener Service (`android.permission.BIND_NOTIFICATION_LISTENER_SERVICE`) to intercept incoming transactional messages from Egyptian banks (e.g. CIB, NBE, Banque Misr, QNB, AlexBank) and mobile wallets (Vodafone Cash, InstaPay, Orange Money, Etisalat Cash).
-  - All parsing is performed on-device via regex rules in `mobile/packages/bank_capture`.
-- **iOS**:
-  - iOS sandboxing prohibits direct SMS intercept without user-configured automation. Handled via Apple Shortcuts App Intent or Notification Service Extension (`N/A (Notification Extension)`).
-- **Graceful Fallback (`manual_entry`)**:
-  - If permissions are denied or unsupported on the device, the app falls back to `manual_entry` where users enter expenses via natural language text or voice in the Quick Record screen.
-
-### 2.2 Biometric Lock (`biometric_lock`)
-- **Android**:
-  - Requires `android.permission.USE_BIOMETRIC`. Invokes Android `BiometricPrompt` supporting Class 3 (Strong) biometrics (Fingerprint, Face Unlock).
-- **iOS**:
-  - Requires `NSFaceIDUsageDescription` in `Info.plist`. Invokes Apple `LocalAuthentication` framework for Face ID and Touch ID.
-- **Graceful Fallback (`pin_prompt`)**:
-  - When biometric authentication is unavailable, hardware is un-enrolled, or user declines biometrics, the app falls back to `pin_prompt` (secure 6-digit application PIN with cryptographic salt and PBKDF2 verification).
-
-### 2.3 Receipt Camera (`receipt_camera`)
-- **Android**:
-  - Requires `android.permission.CAMERA`. Utilizes camera sensor for capturing physical paper receipts.
-- **iOS**:
-  - Requires `NSCameraUsageDescription`.
-- **Graceful Fallback**:
-  - Users can select existing images from their photo gallery (`gallery_upload`) or type expense details manually.
-
-### 2.4 Microphone for Voice Intake (`microphone`)
-- **Android**:
-  - Requires `android.permission.RECORD_AUDIO` and `android.permission.FOREGROUND_SERVICE_MICROPHONE`.
-- **iOS**:
-  - Requires `NSMicrophoneUsageDescription`.
-- **Graceful Fallback**:
-  - Users can type their expenses or financial questions directly into the AI Center chat interface (`text_chat`).
+For Android build variants and release artifacts, see [deployment](deploy.md#mobile) and
+`.github/workflows/android-release.yml`. Device behaviour still needs testing on real hardware.

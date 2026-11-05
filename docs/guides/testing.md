@@ -20,7 +20,7 @@ and `.github/workflows/ci.yml`.
 The benchmark's other commands (calibration, live providers, freezing a new baseline) are in `api/lib/AGENTS.md`.
 `npm run qa:ai-center` seeds a QA user in the database `DATABASE_URL` names, runs the AI Center kernel over a fixed set
 of questions and rewrites `docs/reports/AI_CENTER_QA_RUNNER_LAST_RESULT.md`; it needs MySQL and is not part of CI.
-`bench:classify` rewrites the reports in `docs/reports/`; on your machine, `git checkout -- docs/reports` afterwards.
+`bench:classify` can rewrite reports in `docs/reports/`. Inspect the changes afterwards and preserve any existing work before reverting generated reports.
 
 ## Rules for tests
 - Test the code the product runs: import the module, or render the component. A test that defines its own

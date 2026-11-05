@@ -62,8 +62,8 @@ For production servers, use `docker-compose.prod.yml`. It provides a hardened, p
 | proxy | Nginx 1.27-alpine | `80:80`, `443:443` | Reverse proxy terminating TLS; routes `/api/voice/v2` with WebSocket upgrade and `/api/admin/events` with SSE buffering disabled |
 | app | built from Dockerfile | `127.0.0.1:3000:3000` | Single-replica cron runner (`ENABLE_CRONS=true`); loopback-bound; healthcheck on `/health` |
 | mysql | MySQL 8.4 | `127.0.0.1:3308:3306` | Loopback-bound; `--innodb-buffer-pool-size=3G`; internal backend network |
-| redis | Redis 7.4-alpine | `127.0.0.1:6379:6379` | Loopback-bound; `--maxmemory 1gb --maxmemory-policy allkeys-lru`; AOF persistence |
-| certbot | Certbot latest | volume mounted | Automatic Let's Encrypt TLS certificate renewal (12-hour daemon loop) |
+| redis | Redis 7.4-alpine | `127.0.0.1:6379:6379` | Loopback-bound; `--maxmemory 1gb --maxmemory-policy volatile-lru`; AOF persistence |
+| certbot | Certbot latest | volume mounted | Runs a renewal loop every 12 hours while the container is running; `restart: "no"` |
 
 Start production stack: `docker compose -f docker-compose.prod.yml up -d --build`.
 Full operational runbook, server hardening, and deployment procedures: see [VPS Move Plan](vps-move-plan.md).
@@ -71,11 +71,11 @@ Full operational runbook, server hardening, and deployment procedures: see [VPS 
 ### Disaster Recovery & Backup Scripts (`scripts/vps/`)
 Production operational and disaster recovery tooling is located in `scripts/vps/`:
 - `scripts/load/day-one.ts`: The day-one load test (1,000 people, 100 at once, reads and saves, no model calls) on a throwaway database on port 3399.
-- `scripts/ops/backup-restore-check.sh`: Loads a dump into a scratch database and compares every table's row count, to prove a backup restores.
-- `scripts/vps/backup.sh`: Transactional `mysqldump` with `--single-transaction --quick --routines --triggers --events --hex-blob --default-character-set=utf8mb4`, Redis BGSAVE snapshot, gzip compression, JSON metadata with SHA-256 checksum, and automatic 30-day rotation.
-- `scripts/vps/restore.sh`: Gzip integrity verification, SHA-256 validation against metadata, automated pre-restore safety snapshot (`pre_restore_*.sql.gz`), database restoration, container restart, and `/health` HTTP 200 verification.
-- `scripts/vps/rollback.sh`: Zero-loss rollback supporting Git ref checkout, pre-migration database snapshot restore, and health verification.
-- `scripts/vps/preflight.sh`: Pre-migration verification enforcing three gates: `databaseHealthy`, `backupSnapshotTaken` (<15m), and `journalValid` (`npm run db:doctor -- --strict`).
+- `scripts/ops/backup-restore-check.sh`: Dumps the live database into a scratch database and compares table row counts; it does not test an existing backup archive.
+- `scripts/vps/backup.sh`: MySQL dump, gzip and SHA-256 metadata, best-effort Redis snapshot and rotation of old MySQL archives. Redis snapshot failure does not fail the backup.
+- `scripts/vps/restore.sh`: Checks gzip and, if metadata exists, its checksum; attempts a pre-restore dump, restores MySQL, then restarts the app and checks `/health` if its container exists. The pre-restore dump can fail without stopping the restore.
+- `scripts/vps/rollback.sh`: Optionally restores a snapshot and checks out a Git ref, rebuilds the app and checks health. Restoring an older snapshot can lose subsequent writes.
+- `scripts/vps/preflight.sh`: Checks MySQL health, the age of a backup file and `npm run db:doctor -- --strict`; it does not validate that the backup can be restored.
 
 
 ## Database
@@ -105,7 +105,7 @@ template. Decide these explicitly in production:
 | `FRONTEND_URL`, `ALLOWED_ORIGINS` | Further exact origins allowed to call the API and open the voice WebSocket. |
 | `TRUST_PROXY`, `TRUSTED_PROXY_IPS`, `TRUSTED_PROXY_HEADER` | Client IPs behind a reverse proxy. Without them per-IP limits see the proxy's address; the server logs a warning. |
 | `REDIS_URL` | Shared rate limits and caches. Without Redis in production, the cache helpers in `api/lib/redis-client.ts` fall back to memory only when `AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION` is true, and rate limits fall back to per-process memory with a warning. |
-| `ENABLE_CRONS` | Scheduled jobs run only where it is true. `.env.example` sets false and compose does not override it; without it nothing expires subscriptions, builds monthly reports, applies retention, reconciles rollups or deletes expired sessions. Each job takes a MySQL advisory lock, so enabling it on several instances is safe. |
+| `ENABLE_CRONS` | Scheduled jobs run only where it is true. `.env.example` sets false and development compose does not override it; production compose sets it to true; without it nothing expires subscriptions, builds monthly reports, applies retention, reconciles rollups or deletes expired sessions. Each job takes a MySQL advisory lock, so enabling it on several instances is safe. |
 | `PAYMOB_API_KEY`, `PAYMOB_INTEGRATION_ID`, `PAYMOB_IFRAME_ID`, `PAYMOB_HMAC_SECRET` | Payments. The webhook answers 503 when `PAYMOB_HMAC_SECRET` is empty, in every environment, so set it wherever Paymob is set up. |
 | `BILLING_SIMULATE` | Accepts demo transaction ids in upgrades. Never true in production. |
 | `TURNSTILE_SECRET_KEY`, `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile in front of the WhatsApp verification code. In production the code request is refused without the secret, and Cloudflare's test values are not accepted; the site key is built into the web app and shows the widget on the sign-up form. |
@@ -119,15 +119,13 @@ cache and the phone-change codes (`api/AGENTS.md`, rule 6). Sign-up verification
 live in `whatsapp_otp_codes`, and an event stream on another instance than the WhatsApp client learns from the
 database within a few seconds.
 
-## API and web app deployed separately
+## Standalone API and parked website
 - API: `npm run backend:build` bundles `api/server.ts` into `dist/server/server.js` with the same banner and the same
   packages left outside, and `npm run backend:start` runs it
   (the script uses POSIX shell syntax for `NODE_ENV`). It loads `.env`, registers the same routes and jobs, serves the voice
   WebSocket, and does not serve the web app. Add the web app's origin to `FRONTEND_URL` or `ALLOWED_ORIGINS`.
-- Web app: copy `.env.frontend.example` to `.env.local`, set `VITE_API_URL` to the API origin, and run
-  `npm run frontend:build`; upload `dist/public` to any static host. `npm run frontend:dev` runs Vite on port 5173 and proxies
-  /api to `VITE_API_URL`. The website's session is a `SameSite=Lax` cookie, so the API must be on the same site as the web
-  app (for example `app.example.com` and `api.example.com`); a browser does not send it to another site.
+- The website is parked and not deployed (decision 0050). Its separate `frontend:dev` and `frontend:build` scripts remain
+  for development. If it is brought back, review the API origin and its `SameSite=Lax` session cookie before deploying it.
 
 ## Mobile
 - `android/` and `ios/` are Capacitor apps around the built web app.
