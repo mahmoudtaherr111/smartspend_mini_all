@@ -24,7 +24,7 @@ flowchart LR
     job_cashflow_cutover["Job · cashflow-cutover"]
     job_cashflow_cutover_at_boot["Job · cashflow-cutover-at-boot"]
     job_seed_capture_catalog["Job · seed-capture-catalog"]
-    router_captureAdmin["captureAdmin API · 10 procedures"]
+    router_captureAdmin["captureAdmin API · 11 procedures"]
     router_capture["capture API · 21 procedures"]
   end
   subgraph g_modules["Code modules"]
@@ -134,7 +134,7 @@ flowchart LR
 | --- | --- | --- |
 | `capture-ai-reader` — Message model reading | How capture reads a message (decision 0049): the code labels every amount in the redacted message and the model names which label is the amount, the fee, the balance and the pound value, with the status, kind, direction, the other side, the method and a category; checks that read no words keep it honest, and a pure function gives the posting in pounds. The transport asks the admin's routes for bank messages or the server's Gemini key, behind the switch, durable reservations and cost caps; the privacy gate hides identifying numbers and drops one-time codes before anything is stored or sent; the vault seals the private values to the signal. With the admin switch and the user's consent, each reading's redacted text and facts are kept as a sample (decision 0048). A live benchmark scores the same path on a case file without printing message text. | 7 |
 | `capture-catalog` — Capture catalog | The banks, wallets, payment networks, fintech and messaging apps whose notifications are read, and the subscriptions recognised in card charges: the shipped seed, the per-process copy that reloads on an admin change, and the lookups by Android app, SMS sender and merchant name. | 3 |
-| `capture-intake` — Capture intake | Where captured bank and wallet messages come in and become ledger rows (decisions 0028, 0049): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config with the phone's keyword list, notices and their acknowledgement, a notification's button, heartbeats), the server's admission (a listed app, no personal sender, a keyword) before every message is sealed with one model job, the worker that reads each job with the model and places the reading, the rules that merge the signals of one payment into one event and link a fee sent apart (decision 0029), recording every complete reading on its own with undo, the user's memory of where each merchant and person is filed (decision 0030), optional questions after saving for users who turn them on, the monthly limit with the payments held over it, the breaker that pauses a bank whose recordings are taken back, the admin's bulk undo and the numbers, phone health and deleting the user's data. | 17 |
+| `capture-intake` — Capture intake | Where captured bank and wallet messages come in and become ledger rows (decisions 0028, 0049): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config with the phone's keyword list, notices and their acknowledgement, a notification's button, heartbeats), the server's admission (a listed app, no personal sender, a keyword) before every message is sealed with one model job, the worker that reads each job with the model and places the reading, the rules that merge the signals of one payment into one event and link a fee sent apart (decision 0029), recording every complete reading on its own with undo, the user's memory of where each merchant and person is filed (decision 0030), optional questions after saving for users who turn them on, the monthly limit with the payments held over it, the breaker that pauses a bank whose recordings are taken back, the admin's bulk undo and the numbers, phone health and deleting the user's data. The admin's simulator sends a typed message through the same path into the admin's own ledger. | 18 |
 | `web-bank-capture` — Automatic bank capture activity | User-facing automatic capture activity, processing states, undo and optional purpose questions after a movement has been saved. | 1 |
 
 ## API procedures
@@ -170,6 +170,7 @@ flowchart LR
 | `captureAdmin.saveSubscription` | mutation | `adminProcedure` | `subscription_catalog` | `subscription_catalog` | `Admin`, `More` |
 | `captureAdmin.setSourceStatus` | mutation | `adminProcedure` | `capture_sources` | `capture_sources` | `Admin`, `More` |
 | `captureAdmin.setSubscriptionStatus` | mutation | `adminProcedure` | `subscription_catalog` | `subscription_catalog` | `Admin`, `More` |
+| `captureAdmin.simulate` | mutation | `adminProcedure` | — | — | — |
 | `captureAdmin.syncSeed` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
 | `captureAdmin.timeline` | query | `adminProcedure` | — | — | `Admin`, `More` |
 
@@ -237,7 +238,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/bank-messages.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>37 files and declarations</summary>
+<details><summary>38 files and declarations</summary>
 
 - `api/boot.ts#job:capture-ai-sweep`
 - `api/boot.ts#job:capture-breaker`
@@ -273,6 +274,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/capture/schema-state.ts`
 - `api/lib/capture/seed-sources.ts`
 - `api/lib/capture/seed-subscriptions.ts`
+- `api/lib/capture/simulator.ts`
 - `api/lib/capture/vault.ts`
 - `api/lib/sms-ai-contract.ts`
 - `src/components/bank-capture/CaptureOverview.tsx`

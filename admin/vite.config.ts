@@ -11,6 +11,8 @@ export default defineConfig({
   root: import.meta.dirname,
   base: "/admin/",
   envDir: root,
+  // Its own dependency cache: sharing the web app's makes two dev servers invalidate each other in a reload loop.
+  cacheDir: path.join(root, "node_modules/.vite-admin"),
   plugins: [devServer({ entry: path.join(root, "api/boot.ts"), exclude: [/^\/(?!api\/).*/] }), react()],
   css: { postcss: root },
   resolve: {

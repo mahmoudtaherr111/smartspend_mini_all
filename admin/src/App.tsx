@@ -14,6 +14,7 @@ import { People } from "./pages/People";
 import { Support } from "./pages/Support";
 import { Person } from "./pages/Person";
 import { Today } from "./pages/Today";
+import { CaptureLab } from "./pages/CaptureLab";
 import { ErrorBoundary } from "./ui/ErrorBoundary";
 import { Loading } from "./ui/states";
 
@@ -51,6 +52,9 @@ export default function App() {
             )}
             {isAdmin && (
               <Route path="/bank-messages" element={<BankMessages />} />
+            )}
+            {isAdmin && (
+              <Route path="/bank-messages/lab" element={<CaptureLab />} />
             )}
             {isAdmin && <Route path="/ai/rules" element={<Rules />} />}
             {isAdmin && <Route path="/ai/setup" element={<AiSetup />} />}

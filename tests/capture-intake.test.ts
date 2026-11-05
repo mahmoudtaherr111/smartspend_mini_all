@@ -21,6 +21,7 @@ import { runSilentDevices } from "../api/lib/capture/care";
 import { applyBulkUndo, captureFunnel, captureTimeline, checkModelQueue, notifyAdmins, previewBulkUndo, runCaptureBreaker } from "../api/lib/capture/operations";
 import { stateDel } from "../api/lib/redis-client";
 import { checkCaptureReply, labelAmounts, proposeCapturePosting, type CaptureModelReply } from "../api/lib/capture/model-contract";
+import { simulateCaptureMessage } from "../api/lib/capture/simulator";
 
 // The model, answered here from the invented messages' own shape: no network.
 const model = vi.hoisted(() => ({ fail: 0, calls: 0 }));
@@ -482,6 +483,17 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")("capture from a phone to 
     expect(await sameIdOtherKind.pending()).toHaveLength(0);
     await revokeCaptureDevice(owner, deviceId);
     expect((await post("/api/capture/v1/signals", { signals: [purchase("signal-buy-06")] })).status).toBe(401);
+  });
+
+  it("runs the admin's simulated message through the same path into the admin's own ledger", async () => {
+    const result = await simulateCaptureMessage(owner, { text: "تم خصم 75 جنيه من بطاقتك رقم 4321 عند SPINNEYS", sender: "CIB", channel: "sms" });
+    expect(result.admission).toEqual({ result: "queued", reason: null });
+    expect(result.reading?.facts).toMatchObject({ status: "completed", amount: { value: 75 } });
+    expect(result.ledger).toMatchObject({ type: "expense", amount: "75.00", description: "شراء · SPINNEYS · البنك التجاري الدولي" });
+    expect(result.redacted).not.toContain("4321");
+    // A message the phone would never send is shown as such.
+    expect((await simulateCaptureMessage(owner, { text: "هتيجي امتى النهارده؟", sender: "CIB", channel: "sms" })).admission).toEqual({ result: "ignored", reason: "no_keyword" });
+    expect(await db.select().from(captureDevices).where(and(mine(captureDevices), eq(captureDevices.installationId, "admin-message-simulator")))).toHaveLength(1);
   });
 
   it("refuses without consent, while switched off, and without a device token", async () => {

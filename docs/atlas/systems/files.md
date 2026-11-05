@@ -78,6 +78,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/capture/schema-state.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/seed-sources.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/seed-subscriptions.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/simulator.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/vault.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/category-registry.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/classification-cache.ts` | [expense-capture](expense-capture.md) |

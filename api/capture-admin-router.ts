@@ -28,6 +28,7 @@ import {
 } from "./lib/capture/catalog";
 import { BULK_UNDO_MAX, applyBulkUndo, captureFunnel, captureTimeline, previewBulkUndo } from "./lib/capture/operations";
 import { db } from "./queries/connection";
+import { simulateCaptureMessage } from "./lib/capture/simulator";
 
 const idInput = z.object({ id: z.number().int().positive() });
 
@@ -233,5 +234,22 @@ export const captureAdminRouter = router({
         },
       });
       return { ...preview, removed, max: BULK_UNDO_MAX };
+    }),
+
+  /**
+   * Sends one message through capture as a phone would, into the signed-in admin's own ledger, and returns each step
+   * (decision 0049). For testing without a phone; nothing is written for anyone else.
+   */
+  simulate: adminProcedure
+    .input(z.object({
+      text: z.string().trim().min(3).max(2000),
+      sender: z.string().trim().max(64).nullish(),
+      channel: z.enum(["sms", "notification"]).default("sms"),
+      app: z.string().trim().max(128).nullish(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const owner = { userId: ctx.user!.id, userType: ctx.user!.type };
+      await logAdminAction(ctx, { action: "capture.simulate", targetType: "user", targetId: `${owner.userType}:${owner.userId}` });
+      return simulateCaptureMessage(owner, input);
     }),
 });

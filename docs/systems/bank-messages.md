@@ -27,6 +27,7 @@ Android captures SMS (the SMS build) and bank and wallet app notifications; iPho
 | Devices, consent, care | `api/lib/capture/devices.ts`, `api/lib/capture/consent.ts`, `api/lib/capture/care.ts`, `api/lib/capture/access.ts` | Device tokens, what the user agreed to, phone health, deleting the user's data, who capture is open to |
 | Admin | `api/capture-admin-router.ts`, `api/lib/capture/operations.ts`, the console's رسايل البنوك section and `src/components/admin/settings/AdminCaptureSection.tsx` | The catalog, the numbers, the breaker, the bulk undo, the switches |
 | The app's screens | `mobile/app/lib/src/features/capture/`, `mobile/app/lib/src/features/more/bank_capture_card.dart` | Turning capture on, SMS permission and import, the switches (AI reading, questions, samples), what waits for the user |
+| Simulator | `api/lib/capture/simulator.ts#simulateCaptureMessage`, `captureAdmin.simulate`, the console page «تجربة رسايل البنك» (`admin/src/pages/CaptureLab.tsx`) | Sends a typed message through the production path into the signed-in admin's own ledger, with a simulator device and that admin's consents, and shows each step: admission, the redacted text, the model's facts, the outcome, the row and the phone's notice |
 | Benchmark | `api/qa/capture-benchmark.ts` (`npm run bench:capture`), the frozen set `api/qa/fixtures/capture-heldout-v9.json` | Scores the production reading path with a real model on a case file, printing no message text |
 
 ## The path, step by step

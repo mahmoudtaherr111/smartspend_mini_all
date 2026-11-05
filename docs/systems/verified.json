@@ -97,9 +97,9 @@
         "src/pages/Admin.tsx": "9444393be5fa",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-05 df6216e1",
-      "arabic": "c184cbe7c1f6",
-      "arabicChecked": "2026-11-05 df6216e1"
+      "checked": "2026-11-05 143b366b",
+      "arabic": "73cbde3d210d",
+      "arabicChecked": "2026-11-05 143b366b"
     },
     "ai-center": {
       "files": {
@@ -195,7 +195,7 @@
         "api/boot.ts#job:cashflow-cutover": "a4ba7ab5395f",
         "api/boot.ts#job:cashflow-cutover-at-boot": "99f3f9121b27",
         "api/boot.ts#job:seed-capture-catalog": "c2080520b0f3",
-        "api/capture-admin-router.ts": "2f6bf9be58c6",
+        "api/capture-admin-router.ts": "5de6a1e67b0f",
         "api/capture-router.ts": "b311feac0069",
         "api/capture-v1-routes.ts": "3d346a26bb14",
         "api/jobs/cashflow-cutover-job.ts": "7f6adefe9122",
@@ -223,13 +223,14 @@
         "api/lib/capture/schema-state.ts": "f35686735395",
         "api/lib/capture/seed-sources.ts": "693b8813dd6c",
         "api/lib/capture/seed-subscriptions.ts": "706a9d802a32",
+        "api/lib/capture/simulator.ts": "12f6211f1f47",
         "api/lib/capture/vault.ts": "fae7d2695222",
         "api/lib/sms-ai-contract.ts": "34562a4b9e0c",
         "src/components/bank-capture/CaptureOverview.tsx": "30e973b0cfd2"
       },
-      "checked": "2026-11-05 68648bf5",
-      "arabic": "43cd34189611",
-      "arabicChecked": "2026-11-05 df6216e1"
+      "checked": "2026-11-05 143b366b",
+      "arabic": "0699ae8412d6",
+      "arabicChecked": "2026-11-05 143b366b"
     },
     "billing": {
       "files": {

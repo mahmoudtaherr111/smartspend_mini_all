@@ -1480,7 +1480,7 @@ model {
       }
     }
     captureAdmin = router 'captureAdmin' {
-      description 'api/capture-admin-router.ts — 10 procedures.'
+      description 'api/capture-admin-router.ts — 11 procedures.'
       metadata {
         file 'api/capture-admin-router.ts'
       }
@@ -1558,6 +1558,16 @@ model {
         #mutation #admin
         technology 'adminProcedure'
         description 'mutation · adminProcedure'
+        metadata {
+          file 'api/capture-admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      simulate = procedure 'captureAdmin.simulate' {
+        #mutation #admin #uncalled
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/capture-admin-router.ts'
           builder 'adminProcedure'

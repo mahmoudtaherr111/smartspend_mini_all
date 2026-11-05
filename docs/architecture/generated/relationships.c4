@@ -1036,6 +1036,8 @@ model {
   smartspend.api.trpc.captureAdmin.setSubscriptionStatus -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.captureAdmin.setSubscriptionStatus -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.captureAdmin.setSubscriptionStatus -[writes]-> smartspend.mysql.subscription_catalog
+  smartspend.api.trpc.captureAdmin.simulate -[uses]-> smartspend.api.modules.capture-intake
+  smartspend.api.trpc.captureAdmin.simulate -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.captureAdmin.syncSeed -[uses]-> smartspend.api.modules.capture-catalog
   smartspend.api.trpc.captureAdmin.syncSeed -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.captureAdmin.timeline -[uses]-> smartspend.api.modules.capture-intake
