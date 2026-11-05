@@ -13,7 +13,7 @@ keeps the documentation true without anyone updating it by hand. It is written f
 - Rules are checks in `scripts/knowledge/`, so breaking one fails a command instead of hiding in a document.
 - Regeneration and checks run on their own at the moments work changes hands: when a session starts, when an
   agent ends a turn, when anyone commits, merges or pushes, and when main changes.
-- Every commit names the tool that made it (an `Agent:` trailer), so `npm run changes` can report who
+- Commits get an `Agent:` trailer when the hook can identify the tool, so `npm run changes` can report who
   changed what without anyone keeping a log.
 
 ## A task, step by step
@@ -24,7 +24,7 @@ keeps the documentation true without anyone updating it by hand. It is written f
 4. Finish: `npm run agent:finish` regenerates `docs/atlas`, `docs/architecture/generated` and the mobile
    procedure catalog (`mobile/packages/smartspend_api/lib/src/generated`), then checks the architecture rules,
    the hand-written documents, the flows and the system explanations, and prints the tests for the changed files.
-5. Commit the code together with the regenerated files, then `npm run ship`: it refuses uncommitted changes,
+5. Commit the code together with the regenerated files, then `npm run ship`: it refuses uncommitted tracked changes,
    merges `origin/main` again and pushes the branch to `main`. When `main` moved in the meantime, it merges
    and pushes again.
 

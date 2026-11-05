@@ -17,7 +17,7 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
 | Destinations | `contracts/notification-types.ts#NOTIFICATION_TYPES`, `resolveNotificationTarget` | Each type and the page it opens; old stored destinations repaired |
 | Notification center | `src/components/NotificationBell.tsx`, `src/components/notifications/NotificationList.tsx`, `src/pages/Notifications.tsx`, `profile.getInAppNotifications`, `profile.markInAppNotificationRead`, `profile.markAllInAppNotificationsRead` | The bell with the unread count, the list in a sheet and on `/notifications`, marking one or all read |
 | Settings | `src/components/notifications/NotificationSettings.tsx` | This device's push state and the budget-alerts switch |
-| WhatsApp Cloud API | `api/lib/whatsapp/` | Meta's official API: the client, the templates we submit, the signed webhook, and the outbox every message goes through ([decision 0038](../decisions/0038-whatsapp-cloud-api.md)) |
+| WhatsApp Cloud API | `api/lib/whatsapp/` | Meta's official API: the client, the templates we submit, the signed webhook, and the outbox for verification and queued messages ([decision 0038](../decisions/0038-whatsapp-cloud-api.md)) |
 | WhatsApp admin | `api/admin-whatsapp-router.ts`, `src/components/admin/AdminWhatsAppTab.tsx` | Delivery counts and consent, templates, direct messages, template broadcasts to people who agreed, the verification switch |
 | Templates admin | the notification procedures of `api/admin-router.ts`, `src/components/admin/NotificationsTab.tsx` | Creating, scheduling and switching templates, running the activity check at once, logs and device statistics; see [admin](admin.md) |
 
@@ -28,10 +28,9 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
   in `api/notification-engine.ts`, with `VAPID_SUBJECT`). A single send deletes a token Firebase
   reports as unregistered, and Web Push deletes a subscription reported gone; batches pace themselves, Firebase in large
   chunks with a pause and Web Push a few devices at a time.
-- Both carry the same content (`fcmMessage`, `legacyPayload`): title and body, the app icon (`/icon-192.png`), an
-  alpha-only badge (`/badge-96.png`, what Android shows in the status bar), the type as `tag` so a newer one of the same
-  type replaces the older, `dir` and `lang` from the user's language, and the destination with the type in `data`. No
-  large image.
+- Both carry the title, body, type and destination (`fcmMessage`, `legacyPayload`). The web payload includes the app
+  icon, badge, language and type tag. FCM also sets native Android channel, icon, priority, TTL and collapse key, and
+  APNs priority, expiry and collapse headers. The type-specific values come from `getNotificationChannelConfig`.
 - The destination always comes from `contracts/notification-types.ts`: budgets open the statistics at the budgets
   (`/dashboard?tab=stats#budget`), a plan ending and the streak open `/pro`, the activity reminders the record tab,
   coach reminders `/plan`, the passkey suggestion Settings › Security, and anything else the notification center.
@@ -48,7 +47,7 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
 | `subscription_ending`, from `runRenewalReminders` in the job `daily-subscription-expiry` | daily at 06:00 | a subscriber whose plan ends in three days, and again on its last day, unless a paid renewal runs past it ([Plans and payments](billing.md)) |
 | `budget_exceeded`, from `checkUserBudgetExceeded` | after an item is saved ([Recording spending](expense-capture.md)) | a user without budgets whose spending in this Cairo calendar month passed the monthly income in the profile; once a month |
 | `manual_scheduled` templates, from `processScheduledNotifications` in the job `scheduled-notifications` | every minute, for active templates whose send time has passed | one user, or every user filtered by plan and a minimum number of transactions; the template is then switched off |
-| `inactivity_reminder`, from `checkAndTriggerSmartActivityNotifications` in the job `smart-activity-notifications` | daily at 20:00 Cairo time | users with a streak of at least 2 whose last recorded day was 12 to 36 hours ago; once a day |
+| `inactivity_reminder`, from `checkAndTriggerSmartActivityNotifications` in the job `smart-activity-notifications` | daily at 20:00 Cairo time | users whose streak meets the template threshold (default 1) and last recorded 12 to 36 hours ago; once a day |
 | `pro_conversion_streak` | the same run | Free users with a streak of at least 4 who recorded in the last 36 hours; once a week |
 | `dormant_reactivation` | the same run | users whose last recorded day was 7 to 8 days ago; once a week |
 | Admin pushes, `admin.sendPushNotification` | on demand, though no screen calls it | everyone, Free users, paying users or one user; push only |
@@ -77,16 +76,22 @@ runs; a stored template still holding the previous default title and body is upd
 - Settings › Notifications shows whether this device gets them (on, off, blocked by the browser, or iPhone where
   only the Home-Screen app can) and the budget-alerts switch.
 
+## Push in the Flutter app
+`mobile/app/lib/src/features/notifications/push_notification_service.dart` initializes Firebase, uses an existing
+permission or requests it from notification settings, registers and refreshes the FCM token, and maps notification
+taps to app routes. Delivery depends on Firebase configuration and platform permissions; the code alone does not prove
+end-to-end delivery on a device.
+
 ## WhatsApp
-Every message goes through Meta's Cloud API and the outbox below. The unofficial client and its session on disk are
-gone. Verification codes are sent in Meta's authentication template and typed back ([accounts](accounts.md),
+Messages use Meta's Cloud API. Verification and queued messages use the outbox below; an admin direct text sends
+through the client first, then writes its log (`api/admin-whatsapp-router.ts`). The unofficial client is gone. Verification codes are sent in Meta's authentication template and typed back ([accounts](accounts.md),
 [decision 0038](../decisions/0038-whatsapp-cloud-api.md)). The monthly report of [insights](insights.md) is queued only
 for people whose `whatsapp_contacts` row holds their reports consent, and an admin broadcast
 (`adminWhatsapp.broadcastTemplate`) sends an approved template only to people who agreed to that kind and did not opt out.
 
 ## WhatsApp on Meta's Cloud API
 The owner chose Meta's official WhatsApp Business Platform ([decision 0038](../decisions/0038-whatsapp-cloud-api.md)).
-It does nothing until the owner sets the keys.
+Sending needs the Cloud API token and phone-number id; webhook and template operations need their own configuration.
 - **Configuration** (`api/lib/env.ts`): `WHATSAPP_CLOUD_ACCESS_TOKEN` and `WHATSAPP_CLOUD_PHONE_NUMBER_ID` to send,
   `WHATSAPP_CLOUD_WABA_ID` for templates, `WHATSAPP_CLOUD_APP_SECRET` and `WHATSAPP_CLOUD_VERIFY_TOKEN` for the webhook,
   `WHATSAPP_CLOUD_API_VERSION` (default `v23.0`). `whatsAppConfig()` is null until the first two are set.
@@ -102,7 +107,7 @@ It does nothing until the owner sets the keys.
   verify token; a POST is handled only when `X-Hub-Signature-256` is the app secret's HMAC-SHA256 of the raw body, and
   without a secret nothing is. `parseWebhook` reads statuses (with Meta's failure code and pricing category) and
   messages people send, by Meta's business-scoped user id when the person hides their number behind a username.
-- **Outbox** (`api/lib/whatsapp/outbox.ts`, table `whatsapp_messages`): every message we send is a row with its
+- **Outbox** (`api/lib/whatsapp/outbox.ts`, table `whatsapp_messages`): outbox messages have a row with their
   purpose, template, non-secret parameters and status — never its text or a verification code. `sendMessageNow` sends a
   code in the request that asks for it; `enqueueMessage` queues the rest for the protected job `whatsapp-outbox`
   (every minute), which claims each row, sends it, and retries what may pass after 1, 5, 30, 120 and 720 minutes before
@@ -143,9 +148,9 @@ Checked against the code; each one names where it lives.
    recorded gets none.
 3. **Gap.** A default template an admin edited keeps its old text, which may still carry emoji or the old Pro upsell's 30% discount
    that checkout never gives ([billing](billing.md)); unedited ones were replaced.
-4. **Gap.** A device cannot be removed from the web, and nothing prunes `in_app_notifications` or `notification_logs`
-   apart from account deletion. Bell items keep no type, so the icon is read
-   from the destination; the Capacitor shells have no native push (no channels or small icon of their own).
+4. **Gap.** A device cannot be removed from the web, and the retention job does not prune `in_app_notifications`.
+   It prunes `notification_logs` older than 90 days when enabled (`api/jobs/data-retention-job.ts`). Bell items keep no
+   type, so the icon is read from the destination; the Capacitor shells have no native push of their own.
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): phone verification and the passkey suggestion.

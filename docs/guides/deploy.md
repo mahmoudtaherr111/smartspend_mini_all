@@ -8,7 +8,7 @@ Update this page in the same change when any of them changes.
 is parked (decision 0050) and not built. `npm start` runs `node dist/boot.js` with `NODE_ENV=production`: one Node
 process on `PORT` (default 3000) that serves
 
-- the API: tRPC, the SMS ingestion sub-app, Google OAuth, the WhatsApp OTP event stream and the Paymob webhook;
+- the API: tRPC, the SMS ingestion sub-app, Google OAuth, the WhatsApp and Paymob webhooks;
 - the live voice WebSocket at /api/voice/v2, after an origin check;
 - the admin console from `dist/admin` at /admin/;
 - `/` with `{ service, console }`, `robots.txt` refusing every crawler, and 404 for any other path. With
@@ -59,7 +59,7 @@ For production servers, use `docker-compose.prod.yml`. It provides a hardened, p
 
 | Service | Image | Ports / Network | Notes |
 | --- | --- | --- | --- |
-| proxy | Nginx 1.27-alpine | `80:80`, `443:443` | Reverse proxy terminating TLS; routes `/api/voice/v2` with WebSocket upgrade and `/api/admin/events` with SSE buffering disabled |
+| proxy | Nginx 1.27-alpine | `80:80`, `443:443` | Reverse proxy terminating TLS; configures WebSocket upgrade for `/api/voice/v2` and a buffering-disabled location for `/api/admin/events` |
 | app | built from Dockerfile | `127.0.0.1:3000:3000` | Single-replica cron runner (`ENABLE_CRONS=true`); loopback-bound; healthcheck on `/health` |
 | mysql | MySQL 8.4 | `127.0.0.1:3308:3306` | Loopback-bound; `--innodb-buffer-pool-size=3G`; internal backend network |
 | redis | Redis 7.4-alpine | `127.0.0.1:6379:6379` | Loopback-bound; `--maxmemory 1gb --maxmemory-policy volatile-lru`; AOF persistence |
@@ -109,15 +109,15 @@ template. Decide these explicitly in production:
 | `PAYMOB_API_KEY`, `PAYMOB_INTEGRATION_ID`, `PAYMOB_IFRAME_ID`, `PAYMOB_HMAC_SECRET` | Payments. The webhook answers 503 when `PAYMOB_HMAC_SECRET` is empty, in every environment, so set it wherever Paymob is set up. |
 | `BILLING_SIMULATE` | Accepts demo transaction ids in upgrades. Never true in production. |
 | `TURNSTILE_SECRET_KEY`, `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile in front of the WhatsApp verification code. In production the code request is refused without the secret, and Cloudflare's test values are not accepted; the site key is built into the web app and shows the widget on the sign-up form. |
-| `JWT_SECRET` | Signs sessions. While `AI_GATEWAY_SECRET` is unset it also seals the provider keys saved in the admin console, and rotating it then loses them. Any non-empty value passes validation, so generate a long random one. |
+| `JWT_SECRET` | Signs sessions. While `AI_GATEWAY_SECRET` is unset it also seals the provider keys saved in the admin console, and rotating it then loses them. Production requires at least 32 characters; generate a long random value. |
 | `AI_GATEWAY_SECRET`, `AI_GATEWAY_SECRET_PREVIOUS` | Seal the provider keys saved in the admin console. Set `AI_GATEWAY_SECRET` before rotating `JWT_SECRET`: at the next boot every stored key moves to it, and the providers tab shows which secret each key is on. To rotate it, put the old value in `AI_GATEWAY_SECRET_PREVIOUS` and the new one in `AI_GATEWAY_SECRET`, deploy, and remove the old value once no key shows it. |
 | `SENTRY_DSN` | Optional error reporting. |
 
 ## More than one instance
-State kept in process memory does not cross processes: the classification result cache, muscle memory, the settings
-cache and the phone-change codes (`api/AGENTS.md`, rule 6). Sign-up verification over WhatsApp does: its challenges
-live in `whatsapp_otp_codes`, and an event stream on another instance than the WhatsApp client learns from the
-database within a few seconds.
+State kept in process memory does not cross processes: the classification result cache, muscle memory and the
+settings cache (`api/AGENTS.md`, rule 6). Phone challenges for sign-up, WhatsApp sign-in and phone changes are
+stored in `whatsapp_otp_codes`, so replicas share their state. Meta sends the code and the person types it back
+(`api/services/phone-challenge.ts`); only its HMAC is stored.
 
 ## Standalone API and parked website
 - API: `npm run backend:build` bundles `api/server.ts` into `dist/server/server.js` with the same banner and the same

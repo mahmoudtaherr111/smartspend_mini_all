@@ -18,7 +18,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 7 | — | 1 | 7 | 1 |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 16 | **1** | — | 7 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-05 df6216e1 | 2026-11-03 ff028180 | 2 | — | — | 2 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 4 | — | — | 3 | 1 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-04 4def5707 | 2026-11-05 08b37c7f | 4 | — | — | 3 | 1 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-05 0c8067ac | 2026-11-05 0c8067ac | 4 | — | — | 6 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 8 | — | — | 3 | 4 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-05 0c8067ac | 2026-11-05 0c8067ac | 5 | — | — | — | 7 |
@@ -99,7 +99,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
 - The logging reminder reaches whoever last recorded 12 to 36 hours ago, so someone who signed up and never recorded gets none.
 - A default template an admin edited keeps its old text, which may still carry emoji or the old Pro upsell's 30% discount that checkout never gives ([billing](billing.md)); unedited ones were replaced.
-- A device cannot be removed from the web, and nothing prunes `in_app_notifications` or `notification_logs` apart from account deletion. Bell items keep no type, so the icon is read from the destination; the Capacitor shells have no native push (no channels or small icon of their own).
+- A device cannot be removed from the web, and the retention job does not prune `in_app_notifications`. It prunes `notification_logs` older than 90 days when enabled (`api/jobs/data-retention-job.ts`). Bell items keep no type, so the icon is read from the destination; the Capacitor shells have no native push of their own.
 
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
 - `logAdminAction` in `api/lib/admin-audit.ts` records actions in `admin_audit_logs` and the audit tab shows them, but not every procedure of `api/admin-router.ts` calls it yet, and a failed write of the trail does not stop the action.
