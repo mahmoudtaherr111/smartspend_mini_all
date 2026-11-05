@@ -166,6 +166,7 @@ model {
   smartspend.api.modules.ai-providers -[reads]-> smartspend.mysql.ai_models
   smartspend.api.modules.ai-providers -[reads]-> smartspend.mysql.ai_providers
   smartspend.api.modules.ai-providers -[reads]-> smartspend.mysql.ai_token_ledgers
+  smartspend.api.modules.ai-providers -[uses]-> anthropic
   smartspend.api.modules.ai-providers -[uses]-> deepseek
   smartspend.api.modules.ai-providers -[uses]-> fireworks
   smartspend.api.modules.ai-providers -[uses]-> gemini
@@ -205,6 +206,7 @@ model {
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.arabic-nlp
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.auth
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.billing
+  smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.capture-ai-reader
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.capture-catalog
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.capture-intake
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.classification
@@ -908,6 +910,30 @@ model {
   smartspend.api.trpc.ai.speechToText -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.ai.speechToText -[uses]-> smartspend.api.modules.voice
   smartspend.api.trpc.ai.speechToText -[writes]-> smartspend.mysql.voice_usage
+  smartspend.api.trpc.aiSetup.discover -[reads]-> smartspend.mysql.ai_providers
+  smartspend.api.trpc.aiSetup.discover -[uses]-> smartspend.api.modules.ai-providers
+  smartspend.api.trpc.aiSetup.overview -[reads]-> smartspend.mysql.ai_models
+  smartspend.api.trpc.aiSetup.overview -[reads]-> smartspend.mysql.ai_providers
+  smartspend.api.trpc.aiSetup.overview -[uses]-> smartspend.api.modules.ai-providers
+  smartspend.api.trpc.aiSetup.overview -[uses]-> smartspend.api.modules.capture-ai-reader
+  smartspend.api.trpc.aiSetup.overview -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.aiSetup.overview -[uses]-> smartspend.shared.contracts
+  smartspend.api.trpc.aiSetup.removeModel -[uses]-> smartspend.api.modules.ai-providers
+  smartspend.api.trpc.aiSetup.removeModel -[uses]-> smartspend.api.modules.security
+  smartspend.api.trpc.aiSetup.removeModel -[writes]-> smartspend.mysql.ai_models
+  smartspend.api.trpc.aiSetup.reorder -[reads]-> smartspend.mysql.ai_models
+  smartspend.api.trpc.aiSetup.reorder -[reads]-> smartspend.mysql.ai_providers
+  smartspend.api.trpc.aiSetup.reorder -[uses]-> smartspend.api.modules.ai-providers
+  smartspend.api.trpc.aiSetup.reorder -[uses]-> smartspend.api.modules.security
+  smartspend.api.trpc.aiSetup.reorder -[writes]-> smartspend.mysql.ai_models
+  smartspend.api.trpc.aiSetup.saveModel -[reads]-> smartspend.mysql.ai_models
+  smartspend.api.trpc.aiSetup.saveModel -[reads]-> smartspend.mysql.ai_providers
+  smartspend.api.trpc.aiSetup.saveModel -[uses]-> smartspend.api.modules.ai-providers
+  smartspend.api.trpc.aiSetup.saveModel -[uses]-> smartspend.api.modules.security
+  smartspend.api.trpc.aiSetup.saveModel -[writes]-> smartspend.mysql.ai_models
+  smartspend.api.trpc.aiSetup.test -[reads]-> smartspend.mysql.ai_models
+  smartspend.api.trpc.aiSetup.test -[reads]-> smartspend.mysql.ai_providers
+  smartspend.api.trpc.aiSetup.test -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.analytics.getAllUserStats -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.analytics.getAllUserStats -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.analytics.getAllUserStats -[reads]-> smartspend.mysql.users

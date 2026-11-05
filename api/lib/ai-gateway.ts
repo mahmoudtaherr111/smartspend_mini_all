@@ -10,6 +10,7 @@
  */
 
 import { GoogleGenerativeAI, GoogleGenerativeAIAbortError } from "@google/generative-ai";
+import { callClaude, claudeTurns, listClaudeModels } from "./anthropic-client";
 import { db } from "../queries/connection";
 import { aiProviders, aiModels, users, localUsers } from "../../db/schema";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
@@ -251,6 +252,62 @@ interface CachedModelRoute {
 }
 
 let _gatewayRouteCache: Map<string, CachedModelRoute> = new Map();
+/** Every model of each `purpose:tier`, in the order they are asked: the first answers, the rest take over. */
+let _routeLists: Map<string, CachedModelRoute[]> = new Map();
+
+/** What ordering a model row needs; `ai_models` rows have it. */
+export interface RoutableModel {
+  id: number;
+  providerId: number;
+  purposes: unknown;
+  allowedTiers: unknown;
+  isDefaultForPurpose: boolean;
+  sortOrder: number;
+}
+
+/**
+ * The models of each purpose and plan, in the order the server asks them: a model the admin marked as the default
+ * first (rows written before the console ordered models), then the admin's order (`sort_order`), then the connector's
+ * priority. One order across purposes, so a model ranked above another is above it wherever both serve.
+ */
+export function sortRouteModels<T extends RoutableModel>(models: T[], providerPriority: Map<number, number>): T[] {
+  return [...models].sort(
+    (a, b) =>
+      Number(b.isDefaultForPurpose) - Number(a.isDefaultForPurpose) ||
+      a.sortOrder - b.sortOrder ||
+      (providerPriority.get(a.providerId) ?? 0) - (providerPriority.get(b.providerId) ?? 0) ||
+      a.id - b.id,
+  );
+}
+
+/**
+ * The one order after the admin reorders one list: the models of that list take the places they held, in the order
+ * given, and every other model stays where it was, so every other list keeps its own order.
+ */
+export function applyListOrder<T extends { id: number }>(global: T[], ids: number[]): T[] {
+  const byId = new Map(global.map((model) => [model.id, model]));
+  const wanted = new Set(ids);
+  const queue = [...ids];
+  return global.map((model) => (wanted.has(model.id) ? byId.get(queue.shift()!)! : model));
+}
+
+export function orderRouteModels<T extends RoutableModel>(models: T[], providerPriority: Map<number, number>): Map<string, T[]> {
+  const sorted = sortRouteModels(models, providerPriority);
+  const lists = new Map<string, T[]>();
+  for (const model of sorted) {
+    const purposes = Array.isArray(model.purposes) ? (model.purposes as string[]) : [];
+    const tiers = Array.isArray(model.allowedTiers) ? (model.allowedTiers as string[]) : [];
+    for (const purpose of purposes) {
+      for (const tier of tiers) {
+        const key = `${purpose}:${tier}`;
+        const list = lists.get(key);
+        if (list) list.push(model);
+        else lists.set(key, [model]);
+      }
+    }
+  }
+  return lists;
+}
 let _lastCacheUpdate = 0;
 const CACHE_TTL_MS = 60_000; // 1 minute TTL
 /** Moved by `invalidateAiConfig` on any process, so every process reloads within ten seconds of an admin change. */
@@ -285,6 +342,7 @@ export async function refreshGatewayCache(): Promise<void> {
 
     if (!activeProviders.length) {
       _gatewayRouteCache.clear();
+      _routeLists.clear();
       _lastCacheUpdate = Date.now();
       routesGeneration.loaded(generation);
       return;
@@ -297,12 +355,10 @@ export async function refreshGatewayCache(): Promise<void> {
       .where(and(inArray(aiModels.providerId, providerIds), eq(aiModels.isActive, true)));
 
     const newMap = new Map<string, CachedModelRoute>();
+    const entries = new Map<number, CachedModelRoute>();
     for (const model of activeModels) {
       const provider = activeProviders.find((p) => p.id === model.providerId);
       if (!provider) continue;
-
-      const purposes = Array.isArray(model.purposes) ? (model.purposes as string[]) : [];
-      const tiers = Array.isArray(model.allowedTiers) ? (model.allowedTiers as string[]) : [];
 
       const routeEntry: CachedModelRoute = {
         provider: {
@@ -324,20 +380,19 @@ export async function refreshGatewayCache(): Promise<void> {
           supportsReasoning: Boolean(model.supportsReasoning),
         },
       };
-
+      entries.set(model.id, routeEntry);
       // Index by explicit modelId
       newMap.set(`model:${model.modelId}`, routeEntry);
-
-      // Index by purpose × tier
-      for (const purpose of purposes) {
-        for (const tier of tiers) {
-          const key = `route:${purpose}:${tier}`;
-          if (model.isDefaultForPurpose || !newMap.has(key)) {
-            newMap.set(key, routeEntry);
-          }
-        }
-      }
     }
+
+    const priorities = new Map(activeProviders.map((provider) => [provider.id, provider.priority]));
+    const newLists = new Map<string, CachedModelRoute[]>();
+    for (const [key, models] of orderRouteModels(activeModels.filter((model) => entries.has(model.id)), priorities)) {
+      const list = models.map((model) => entries.get(model.id)!);
+      newLists.set(key, list);
+      newMap.set(`route:${key}`, list[0]);
+    }
+    _routeLists = newLists;
 
     _gatewayRouteCache = newMap;
     _lastCacheUpdate = Date.now();
@@ -356,10 +411,10 @@ export async function refreshGatewayCache(): Promise<void> {
  * through `system_settings` and a provider list written into the code. Adding OpenRouter
  * or DeepSeek from the dashboard changed rows in a table and nothing else.
  *
- * The routes come back ordered by provider priority, and `preferred` is the model the
- * admin marked as the default for that purpose and tier — so choosing a model in the
- * dashboard chooses the model that actually answers, within ten seconds on every process
- * (`invalidateAiConfig`), or the one-minute cache lifetime without Redis.
+ * The routes come back in the order the admin set in the console (`orderRouteModels`), and
+ * `preferred` is the first of them — so choosing a model in the console chooses the model
+ * that actually answers, within ten seconds on every process (`invalidateAiConfig`), or the
+ * one-minute cache lifetime without Redis.
  */
 export interface AdminRouteSet {
   preferred: AdminRoute | null;
@@ -395,32 +450,18 @@ export async function resolveAdminRoutes(
     suppressReasoning: entry.model.supportsReasoning,
   });
 
+  // The admin's models for this purpose and THIS plan, in the admin's order. A model for another plan is never a
+  // fallback: a free user is not answered by a model the admin kept for Pro. A route with no usable key is not a
+  // route either: a key no configured secret opens comes back empty (and is reported when the providers load).
   const seen = new Set<string>();
   const routes: AdminRoute[] = [];
-  const preferredEntry = _gatewayRouteCache.get(`route:${purpose}:${tier}`);
-  // A route with no usable key is not a route. A key no configured secret opens comes back
-  // empty (and is reported when the providers load), and offering that provider anyway spends
-  // a request to learn what we already know — while pushing the working provider down the
-  // queue behind it.
-  const preferred =
-    preferredEntry && preferredEntry.provider.apiKey ? toRoute(preferredEntry, 0) : null;
-  if (preferred) {
-    routes.push(preferred);
-    seen.add(`${preferred.slug}:${preferred.model}`);
-  }
-
-  // Every other model the admin allowed for THIS purpose becomes a fallback, in cache
-  // order — which refreshGatewayCache built from `ai_providers.priority`. Models scoped
-  // to other purposes stay out: an OCR model is not a spare classifier.
-  let priority = 1;
-  for (const [key, entry] of _gatewayRouteCache) {
-    if (!key.startsWith(`route:${purpose}:`)) continue;
+  for (const entry of _routeLists.get(`${purpose}:${tier}`) ?? []) {
     const dedupeKey = `${entry.provider.slug}:${entry.model.modelId}`;
-    if (seen.has(dedupeKey)) continue;
-    if (!entry.provider.apiKey) continue;
+    if (seen.has(dedupeKey) || !entry.provider.apiKey) continue;
     seen.add(dedupeKey);
-    routes.push(toRoute(entry, priority++));
+    routes.push(toRoute(entry, routes.length));
   }
+  const preferred = routes[0] ?? null;
 
   return { preferred, routes };
 }
@@ -433,6 +474,20 @@ export async function discoverRemoteModels(
   protocol: string = "openai",
 ): Promise<DiscoveredModel[]> {
   const cleanUrl = baseUrl.replace(/\/+$/, "");
+
+  if (protocol === "anthropic") {
+    const models = await listClaudeModels(apiKey, baseUrl).catch((error: unknown) => {
+      // The same "(status)" shape as the other providers, which the console reads the status from.
+      const status = (error as { status?: number }).status ?? 0;
+      throw new Error(`Anthropic API Error (${status}): ${String((error as Error)?.message || error).slice(0, 300)}`);
+    });
+    return models.map((model) => ({
+      id: model.id,
+      name: model.name,
+      description: "",
+      contextWindow: model.contextWindow,
+    }));
+  }
 
   if (protocol === "gemini") {
     const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
@@ -575,6 +630,36 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
     // Thinking is billed as output and reported apart from the answer.
     reasoningTokens = (result.response.usageMetadata as { thoughtsTokenCount?: number } | undefined)?.thoughtsTokenCount || 0;
     cachedTokens = (result.response.usageMetadata as any)?.cachedContentTokenCount || 0;
+  } else if (protocol === "anthropic") {
+    // Claude through Anthropic's SDK (anthropic-client.ts); tools are not offered here, as on the Gemini path.
+    const deadline = params.deadlineMs ? startedAt + params.deadlineMs : Number.POSITIVE_INFINITY;
+    const timeoutMs = Math.max(1, Math.min(params.attemptTimeoutMs ?? 45_000, deadline - Date.now(), 45_000));
+    const { system, turns } = claudeTurns([
+      ...(params.systemPrompt ? [{ role: "system", content: params.systemPrompt }] : []),
+      ...params.messages,
+    ]);
+    const result = await callClaude({
+      apiKey,
+      baseUrl,
+      model: modelId,
+      system,
+      messages: turns.length ? turns : [{ role: "user", content: params.userQuery || "تحليل البيانات" }],
+      maxTokens: Math.min(params.maxTokens || 2048, 8192),
+      timeoutMs,
+    }).catch((error: unknown) => {
+      const status = (error as { status?: number }).status;
+      throw new TRPCError({
+        code: status === 429 ? "TOO_MANY_REQUESTS" : "INTERNAL_SERVER_ERROR",
+        message: `خطأ من مزود الذكاء الاصطناعي (${status ?? "network"})`,
+        cause: error,
+      });
+    });
+    text = result.text;
+    finishReason = result.stopReason ?? "stop";
+    promptTokens = result.promptTokens;
+    completionTokens = result.completionTokens;
+    reasoningTokens = result.reasoningTokens;
+    cachedTokens = result.cachedTokens;
   } else {
     // OpenAI Compatible standard (OpenRouter, DeepSeek, Groq, Fireworks, NVIDIA, Together, Ollama)
     const url = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;

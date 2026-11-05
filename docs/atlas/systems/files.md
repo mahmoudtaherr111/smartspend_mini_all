@@ -13,6 +13,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/admin-whatsapp-router.ts` | [notifications](notifications.md) |
 | `api/ads-router.ts` | [admin](admin.md) |
 | `api/ai-router.ts` | [ai-platform](ai-platform.md): `ai.getUserLimits` · [expense-capture](expense-capture.md): `ai.learnWord`, `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText` · [insights](insights.md): `ai.compareMonths`, `ai.generateMonthlyInsights`, `ai.generateYearlyInsights`, `ai.getCachedMonthlyInsights` · rest of the file: [ai-platform](ai-platform.md), [expense-capture](expense-capture.md), [insights](insights.md) |
+| `api/ai-setup-router.ts` | [admin](admin.md) |
 | `api/analytics-router.ts` | [admin](admin.md) |
 | `api/app-config-router.ts` | [platform](platform.md) |
 | `api/auth-router.ts` | [accounts](accounts.md) |
@@ -49,6 +50,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/amount-linker.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/amount-roles.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/anonymizer.ts` | [accounts](accounts.md) |
+| `api/lib/anthropic-client.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/app-time.ts` | [platform](platform.md) |
 | `api/lib/arabic-number-parser.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/arabic-token-match.ts` | [expense-capture](expense-capture.md) |

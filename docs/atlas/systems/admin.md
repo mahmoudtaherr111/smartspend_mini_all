@@ -25,6 +25,7 @@ flowchart LR
     router_adminConsole["adminConsole API · 8 procedures"]
     router_admin["admin API · 57 procedures"]
     router_ads["ads API · 8 procedures"]
+    router_aiSetup["aiSetup API · 6 procedures"]
     router_analytics["analytics API · 4 procedures"]
     router_export["export API · 1 procedure"]
     router_seo["seo API · 4 procedures"]
@@ -56,6 +57,7 @@ flowchart LR
   ext_openrouter{{"OpenRouter"}}
   sys_accounts[["Accounts, sign-in and security (system)"]]
   sys_ai_platform[["AI providers and usage limits (system)"]]
+  sys_bank_messages[["Bank and wallet messages (system)"]]
   sys_expense_capture[["Recording spending (system)"]]
   sys_insights[["Reports, insights and the smart profile (system)"]]
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
@@ -103,6 +105,12 @@ flowchart LR
   router_ads ==> tbl_ad_clicks
   router_ads ==> tbl_ad_impressions
   router_ads ==> tbl_ads
+  router_aiSetup --> sys_accounts
+  router_aiSetup --> sys_ai_platform
+  router_aiSetup --> sys_bank_messages
+  router_aiSetup --> sys_platform
+  router_aiSetup -.-> tbl_ai_providers
+  router_aiSetup ==> tbl_ai_models
   router_analytics --> sys_money
   router_analytics --> sys_platform
   router_analytics -.-> tbl_local_users
@@ -212,6 +220,12 @@ flowchart LR
 | `ads.recordImpression` | mutation | `publicProcedure` | `ad_impressions` | `ad_impressions`, `ads` | `App shell` |
 | `ads.stats` | query | `adminProcedure` | `ads` | — | `Admin`, `More` |
 | `ads.update` | mutation | `adminProcedure` | — | `ads` | `Admin`, `More` |
+| `aiSetup.discover` | mutation | `adminProcedure` | `ai_providers` | — | — |
+| `aiSetup.overview` | query | `adminProcedure` | `ai_models`, `ai_providers` | — | — |
+| `aiSetup.removeModel` | mutation | `adminProcedure` | — | `ai_models` | — |
+| `aiSetup.reorder` | mutation | `adminProcedure` | `ai_models`, `ai_providers` | `ai_models` | — |
+| `aiSetup.saveModel` | mutation | `adminProcedure` | `ai_models`, `ai_providers` | `ai_models` | — |
+| `aiSetup.test` | mutation | `adminProcedure` | `ai_models`, `ai_providers` | — | — |
 | `analytics.getAllUserStats` | query | `adminProcedure` | `expenses`, `local_users`, `users` | — | — |
 | `analytics.getDashboardStats` | query | `adminProcedure` | `expenses`, `local_users`, `users` | — | — |
 | `analytics.getMyAnalytics` | query | `authedProcedure` | `user_analytics` | — | — |
@@ -245,8 +259,8 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ad_impressions` | E | `ads.delete`, `ads.recordImpression` | `ads.list`, `ads.recordImpression` |
 | `admin_audit_logs` | B | — | `admin.getAuditLogs` |
 | `ads` | A | `ads.click`, `ads.create`, `ads.delete`, `ads.impression`, `ads.recordImpression`, `ads.update` | `admin.triggerBackupDemo`, `ads.list`, `ads.stats` |
-| `ai_models` | A | `admin.deleteAiProvider`, `admin.saveAiModels` | `admin.getAiModels`, `admin.saveAiModels` |
-| `ai_providers` | A | `admin.addAiProvider`, `admin.checkProviderHealth`, `admin.deleteAiProvider`, `admin.updateAiProvider` | `admin.checkProviderHealth`, `admin.getAiProviders` |
+| `ai_models` | A | `admin.deleteAiProvider`, `admin.saveAiModels`, `aiSetup.removeModel`, `aiSetup.reorder`, `aiSetup.saveModel` | `admin.getAiModels`, `admin.saveAiModels`, `aiSetup.overview`, `aiSetup.reorder`, `aiSetup.saveModel`, `aiSetup.test` |
+| `ai_providers` | A | `admin.addAiProvider`, `admin.checkProviderHealth`, `admin.deleteAiProvider`, `admin.updateAiProvider` | `admin.checkProviderHealth`, `admin.getAiProviders`, `aiSetup.discover`, `aiSetup.overview`, `aiSetup.reorder`, `aiSetup.saveModel`, `aiSetup.test` |
 | `ai_token_ledgers` | E | — | `admin.getAiTelemetryOverview`, `admin.getAiTokenLedger`, `admin.getUserAiQuota`, `adminConsole.aiCalls`, `adminConsole.person`, `adminConsole.today` |
 | `api_key_errors` | E | — | `adminConsole.today` |
 | `capture_devices` | A | — | `adminConsole.person` |
@@ -292,11 +306,12 @@ _None._
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/admin.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>36 files and declarations</summary>
+<details><summary>37 files and declarations</summary>
 
 - `api/admin-console-router.ts`
 - `api/admin-router.ts`
 - `api/ads-router.ts`
+- `api/ai-setup-router.ts`
 - `api/analytics-router.ts`
 - `api/boot.ts#GET /admin`
 - `api/export-router.ts#export.allUsers`

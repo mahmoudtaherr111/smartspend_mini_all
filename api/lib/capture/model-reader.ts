@@ -8,7 +8,7 @@ import { recordAiLedger } from "../ai-ledger";
 import { costAtRates, ratesFor } from "../ai-pricing";
 import { asPlan, estimateTokensFromText } from "../ai-usage-policy";
 import { env } from "../env";
-import { executeLlmChain, LlmChainError, type LlmAttempt, type LlmRoute, type StructuredSchema } from "../llm-router";
+import { asLlmProtocol, executeLlmChain, LlmChainError, type LlmAttempt, type LlmRoute, type StructuredSchema } from "../llm-router";
 import { mapModelName } from "../model-mapper";
 import { getSystemSettings } from "../settings-cache";
 import { reserveCaptureCall, settleCaptureCall } from "./admission";
@@ -48,7 +48,7 @@ export async function captureRoutes(plan: ReturnType<typeof asPlan>): Promise<Ll
     const model = route.protocol === "gemini" ? mapModelName(route.model) : route.model;
     if (seen.has(`${route.slug}:${model}`)) return [];
     seen.add(`${route.slug}:${model}`);
-    return [{ ...route, protocol: route.protocol === "gemini" ? "gemini" as const : "openai" as const, model }];
+    return [{ ...route, protocol: asLlmProtocol(route.protocol), model }];
   });
   if (routes.length) return routes;
   const key = (await getSystemSettings()).ai_api_key || env.GEMINI_API_KEY;

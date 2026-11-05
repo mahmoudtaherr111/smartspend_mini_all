@@ -38,6 +38,8 @@ export const BUILTIN_BASE_URLS: Record<string, string> = {
   nvidia: "https://integrate.api.nvidia.com/v1",
   deepseek: "https://api.deepseek.com/v1",
   openrouter: "https://openrouter.ai/api/v1",
+  // Spoken through Anthropic's SDK (anthropic-client.ts), not the OpenAI shape.
+  anthropic: "https://api.anthropic.com",
 };
 
 export interface ChainKeys {

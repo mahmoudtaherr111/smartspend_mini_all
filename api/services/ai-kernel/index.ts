@@ -1,5 +1,6 @@
 import { logAITrace } from "./ai-trace-logger";
 import { callChatCompletionAPI, type ChatMessage } from "../../lib/deepseek-client";
+import { callClaude, claudeTurns } from "../../lib/anthropic-client";
 import { getCacheRuntimeStatus } from "../../lib/redis-client";
 import { validateNumbersAgainstFacts } from "../ai-cost-policy";
 import { buildContextPack, estimateTokens } from "./context-packer";
@@ -122,8 +123,40 @@ export interface AIKernelActiveConfig {
   baseUrl: string;
   model: string;
   maxTokens?: number;
+  /** `anthropic` for a Claude connector; anything else speaks the OpenAI chat shape. */
+  protocol?: string;
   /** Models to ask, in order, when the one above fails (an account suspended, a key out of quota). */
-  fallbacks?: Array<{ apiKey: string; baseUrl: string; model: string }>;
+  fallbacks?: Array<{ apiKey: string; baseUrl: string; model: string; protocol?: string }>;
+}
+
+/** One answer from a chat model, whichever protocol its connector speaks. */
+async function callChatModel(
+  candidate: { apiKey: string; baseUrl: string; model: string; protocol?: string },
+  messages: ChatMessage[],
+  maxTokens: number,
+): Promise<Awaited<ReturnType<typeof callChatCompletionAPI>>> {
+  if (candidate.protocol !== "anthropic") {
+    return callChatCompletionAPI(candidate.baseUrl, candidate.apiKey, {
+      model: candidate.model,
+      messages,
+      tool_choice: "none",
+      max_tokens: maxTokens,
+      temperature: 0.35,
+    });
+  }
+  const { system, turns } = claudeTurns(messages);
+  const result = await callClaude({ apiKey: candidate.apiKey, baseUrl: candidate.baseUrl, model: candidate.model, system, messages: turns, maxTokens, timeoutMs: 45_000 });
+  // A refusal or a cut answer is not an answer; the next model of the chain is asked.
+  if (result.stopReason === "refusal" || !result.text.trim()) throw new Error(`claude_no_answer:${result.stopReason}`);
+  return {
+    text: result.text,
+    toolCalls: null,
+    tokensUsed: result.promptTokens + result.completionTokens + result.reasoningTokens,
+    promptTokens: result.promptTokens,
+    completionTokens: result.completionTokens + result.reasoningTokens,
+    model: result.model,
+    finishReason: result.stopReason ?? "stop",
+  };
 }
 
 /** Said when a figure was counted from part of a period too busy to read in full (the finance layer's row limit). */
@@ -1237,13 +1270,7 @@ export async function runAIKernelActive(
       let answeredBy = config.baseUrl;
       for (const [index, candidate] of candidates.entries()) {
         try {
-          llm = await callChatCompletionAPI(candidate.baseUrl, candidate.apiKey, {
-            model: candidate.model,
-            messages,
-            tool_choice: "none",
-            max_tokens: maxOutputTokens,
-            temperature: 0.35,
-          });
+          llm = await callChatModel(candidate, messages, maxOutputTokens);
           answeredBy = candidate.baseUrl;
           break;
         } catch (error) {

@@ -1600,15 +1600,15 @@ export const adminRouter = router({
         apiKey: z.string().min(1),
         /** Required only for a provider the product does not ship a URL for. */
         baseUrl: z.string().optional(),
-        protocol: z.enum(["openai", "gemini"]).optional(),
+        protocol: z.enum(["openai", "gemini", "anthropic"]).optional(),
       }),
     )
     .mutation(async ({ input }) => {
       const protocol =
-        input.protocol || (input.provider === "gemini" ? "gemini" : "openai");
+        input.protocol || (input.provider === "gemini" ? "gemini" : input.provider === "anthropic" ? "anthropic" : "openai");
       const baseUrl = input.baseUrl || BUILTIN_BASE_URLS[input.provider] || "";
 
-      if (protocol !== "gemini" && !baseUrl) {
+      if (protocol === "openai" && !baseUrl) {
         return {
           valid: false,
           status: 0,

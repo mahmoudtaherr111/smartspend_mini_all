@@ -171,9 +171,10 @@
     {
       "id": "ai-providers",
       "title": "AI provider access",
-      "description": "Provider clients, the provider registry, model name mapping, routing and fallback chains, what each call cost and its row in the AI cost ledger, and the sealing of the provider keys saved in the admin console, which move to a new secret on their own.",
+      "description": "Provider clients (Claude through Anthropic's SDK, Gemini through Google's, the rest over the OpenAI shape), the provider registry, model name mapping, routing and fallback chains in the order the admin set, what each call cost and its row in the AI cost ledger, and the sealing of the provider keys saved in the admin console, which move to a new secret on their own.",
       "paths": [
         "api/lib/ai-gateway.ts",
+        "api/lib/anthropic-client.ts",
         "api/lib/ai-pricing.ts",
         "api/lib/ai-ledger.ts",
         "api/lib/embedding-provider.ts",

@@ -29,8 +29,8 @@ Users, credentials, settings, providers, templates, categories
 | Table | Export | Columns | Indexes | Owner pair | Relations | Read by | Written by |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `ads` | `ads` | 16 | 2 | — | `clicks → ad_clicks` | `api/admin-router.ts`, `api/ads-router.ts` | `api/ads-router.ts` |
-| `ai_models` | `aiModels` | 18 | 3 | — | `provider → ai_providers` | `api/admin-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/ai-pricing.ts` | `api/admin-router.ts` |
-| `ai_providers` | `aiProviders` | 13 | 2 | — | `ledgers → ai_token_ledgers`, `models → ai_models` | `api/admin-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/ai-pricing.ts` | `api/admin-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/provider-health.ts` |
+| `ai_models` | `aiModels` | 18 | 3 | — | `provider → ai_providers` | `api/admin-router.ts`, `api/ai-setup-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/ai-pricing.ts` | `api/admin-router.ts`, `api/ai-setup-router.ts` |
+| `ai_providers` | `aiProviders` | 13 | 2 | — | `ledgers → ai_token_ledgers`, `models → ai_models` | `api/admin-router.ts`, `api/ai-setup-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/ai-pricing.ts` | `api/admin-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/provider-health.ts` |
 | `business_categories` | `businessCategories` | 12 | 1 | — | `business → user_businesses` | `api/ai-router.ts`, `api/business-router.ts`, `api/expense-router.ts` | `api/business-router.ts`, `api/services/user-purge-service.ts` |
 | `capture_consents` | `captureConsents` | 7 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/consent.ts`, `api/lib/capture/operations.ts` | `api/lib/capture/care.ts`, `api/lib/capture/consent.ts`, `api/services/user-purge-service.ts` |
 | `capture_devices` | `captureDevices` | 16 | 3 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-console-router.ts`, `api/lib/capture/care.ts`, `api/lib/capture/devices.ts`, `api/lib/capture/operations.ts` | `api/lib/capture/care.ts`, `api/lib/capture/devices.ts`, `api/services/user-purge-service.ts` |

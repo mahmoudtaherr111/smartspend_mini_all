@@ -3,6 +3,7 @@ import { runRuleEngine, SUB_CATEGORY_MAP } from "./rule-engine";
 import { CATEGORY_DICTIONARY } from "./lexicon/dictionary";
 import { normalizeTransactionTaxonomyList, taxonomyVersion } from "./category-registry";
 import {
+  asLlmProtocol,
   executeLlmChain,
   LlmChainError,
   type LlmAttempt,
@@ -1795,10 +1796,7 @@ async function classifyAdmittedEvents(
         },
         dbRoutes: adminRoutes.routes.map((route) => ({
           slug: route.slug,
-          protocol:
-            route.protocol === "gemini"
-              ? ("gemini" as const)
-              : ("openai" as const),
+          protocol: asLlmProtocol(route.protocol),
           baseUrl: route.baseUrl,
           apiKey: route.apiKey,
           model: route.model,

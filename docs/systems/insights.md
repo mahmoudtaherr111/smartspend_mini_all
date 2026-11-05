@@ -45,7 +45,10 @@ spending, and the people they deal with. Classification prompts read the same pr
    limit. The admin's report settings (`ai_response_length`, `ai_focus`, `ai_system_prompt`,
    `ai_advanced_instructions`, `ai_report_structure_override`) apply only when the facts pack failed; with facts, a
    short fixed prompt is used. A user whose `ai_tokens_used` reached the plan's limit gets the basic report.
-6. **The model call.** One call to NVIDIA, Fireworks, Groq or Gemini, with the facts block (or the server summary
+6. **The model call.** When the admin gave models to «التقارير الشهرية» in the console, they are asked in the
+   console's order through `executeLlmChain` (`resolveAdminRoutes("report", plan)`, a Claude connector included), and
+   the next answers when one fails; without them, one call to NVIDIA, Fireworks, Groq or Gemini by the settings above,
+   with the facts block (or the server summary
    when the facts failed), the user's name, the salary day and the financial month, asking for JSON with the text,
    alerts, personality and a data table. Tokens are recorded (`trackTokens`), a cost metric is written, and the call goes to the [AI cost ledger](ai-platform.md#how-a-call-is-recorded) with its input and output split.
 7. **Basic report.** When no model is used or its reply is not JSON, the server writes the text itself from the

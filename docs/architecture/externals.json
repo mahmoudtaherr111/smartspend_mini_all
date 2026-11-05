@@ -23,6 +23,13 @@
       "packages": ["@google/generative-ai"],
       "hosts": ["generativelanguage.googleapis.com"]
     },
+    {
+      "id": "anthropic",
+      "title": "Anthropic Claude API",
+      "kind": "ai-provider",
+      "packages": ["@anthropic-ai/sdk"],
+      "hosts": ["api.anthropic.com"]
+    },
     { "id": "groq", "title": "Groq", "kind": "ai-provider", "packages": ["groq-sdk"], "hosts": ["api.groq.com"] },
     { "id": "fireworks", "title": "Fireworks AI", "kind": "ai-provider", "hosts": ["api.fireworks.ai"] },
     { "id": "nvidia", "title": "NVIDIA NIM", "kind": "ai-provider", "hosts": ["integrate.api.nvidia.com"] },

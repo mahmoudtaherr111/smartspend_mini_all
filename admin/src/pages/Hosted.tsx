@@ -4,10 +4,7 @@ import { AdminRulesTab } from "@/components/admin/AdminRulesTab";
 import { AdminWhatsAppTab } from "@/components/admin/AdminWhatsAppTab";
 import { ClarificationsTab } from "@/components/admin/ClarificationsTab";
 import { NotificationsTab } from "@/components/admin/NotificationsTab";
-import { AdminKeysTab } from "@/components/admin/settings/AdminKeysTab";
-import { AiCommandCenter } from "@/components/admin/ai-center/AiCommandCenter";
 import { Button } from "@admin/kit/button";
-import { SettingsEditor } from "../ui/SettingsEditor";
 import { PageHeader } from "../ui/states";
 
 // Areas whose screens moved into the new console whole: they keep their own controls, each under a plain name and a
@@ -103,33 +100,3 @@ export function Rules() {
   );
 }
 
-export function AiSetup() {
-  return (
-    <div>
-      <PageHeader
-        title="إعداد الذكاء"
-        description="أنهي موديل يشتغل في كل وظيفة، والاحتياطي بتاعه، وحدود كل مستخدم، ومعمل تجرب فيه جملة. ومفاتيح السيرفر القديمة لحد ما تتنقل كلها للموصلات."
-      />
-      <Sections
-        sections={[
-          {
-            id: "models",
-            label: "الموديلات والوظائف",
-            hint: "حدد لكل وظيفة (التصنيف، الشات، التقارير، رسايل البنوك) الموديل الأساسي والاحتياطي.",
-            body: <AiCommandCenter />,
-          },
-          {
-            id: "keys",
-            label: "مفاتيح السيرفر",
-            hint: "مفاتيح قديمة بتستخدمها التقارير والصوت لحد ما الوظايف دي تتنقل للموصلات. الموصلات هي المكان الأساسي للمفاتيح الجديدة.",
-            body: (
-              <SettingsEditor>
-                {(props) => <AdminKeysTab {...props} />}
-              </SettingsEditor>
-            ),
-          },
-        ]}
-      />
-    </div>
-  );
-}

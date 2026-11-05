@@ -282,7 +282,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `api-core` — API server core | Hono app and server entry points, request context, tRPC procedure builders and the root router. | 5 |
-| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 27 |
+| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 28 |
 | `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 16 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
 | `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 7 |
@@ -417,7 +417,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | `DATABASE_URL` | yes | `api/queries/connection.ts` |
 | `ENABLE_CRONS` | yes | `api/boot.ts` |
 | `FIREWORKS_API_KEY` | yes | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
-| `GEMINI_API_KEY` | yes | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/system-settings-registry.ts` |
+| `GEMINI_API_KEY` | yes | `api/admin-router.ts`, `api/ai-router.ts`, `api/ai-setup-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_FREE` | yes | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_PRO` | yes | `api/ai-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_REPORTS` | yes | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |

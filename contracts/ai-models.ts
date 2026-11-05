@@ -7,7 +7,7 @@
 export const AI_ROUTED_PURPOSES = [
   { id: "classification", label: "تصنيف المصاريف" },
   { id: "chat", label: "الشات" },
-  { id: "report", label: "التقارير وأداة التفكير في المكالمة" },
+  { id: "report", label: "التقارير الشهرية" },
   { id: "embedding", label: "البحث بالمعنى (Embeddings)" },
   // Only the models assigned here read bank messages; with none, the server's Gemini key does (decision 0025).
   { id: "sms", label: "قراءة رسايل البنوك والمحافظ" },
@@ -19,8 +19,8 @@ export const AI_PLAN_TIERS = ["free", "pro", "ultra"] as const;
 
 /**
  * Published paid-tier prices, USD per million text tokens, output including thinking. Google's page, checked
- * 2026-09-25 (https://ai.google.dev/gemini-api/docs/pricing); 3.8 Flash's rates double on 2027-01-01. Any other model
- * is priced by the admin in the console.
+ * 2026-09-25 (https://ai.google.dev/gemini-api/docs/pricing); 3.8 Flash's rates double on 2027-01-01. Claude's from
+ * Anthropic. Any other model is priced by the admin in the console.
  */
 export const PUBLISHED_RATES: Record<string, { input: number; output: number; cached?: number }> = {
   "gemini-3.8-flash": { input: 0.75, output: 3.75, cached: 0.075 },
@@ -28,4 +28,10 @@ export const PUBLISHED_RATES: Record<string, { input: number; output: number; ca
   "gemini-3.5-flash-lite": { input: 0.3, output: 2.5, cached: 0.02 },
   "gemini-3.1-flash-lite": { input: 0.25, output: 1.5, cached: 0.0125 },
   "gemini-embedding-2": { input: 0.2, output: 0 },
+  // Anthropic's published prices for the current Claude models, checked 2026-11-05. Haiku 5.5 is $0.50 / $2.50 for a
+  // prompt over 100K tokens; this app's prompts are far below that.
+  "claude-haiku-5-5": { input: 0.1, output: 0.5 },
+  "claude-sonnet-5-5": { input: 2, output: 10, cached: 0.2 },
+  "claude-opus-5-5": { input: 4, output: 20, cached: 0.2 },
+  "claude-fable-5-1": { input: 10, output: 50, cached: 0.25 },
 };

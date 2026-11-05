@@ -22,8 +22,14 @@
  * a transaction is. This file moves strings to a provider and back.
  */
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Anthropic, callClaude, type ClaudeResult } from "./anthropic-client";
 
-export type LlmProtocol = "openai" | "gemini";
+export type LlmProtocol = "openai" | "gemini" | "anthropic";
+
+/** A connector's stored protocol as one the router speaks; anything unknown is OpenAI-compatible. */
+export function asLlmProtocol(protocol: string | null | undefined): LlmProtocol {
+  return protocol === "gemini" || protocol === "anthropic" ? protocol : "openai";
+}
 
 /** One provider+model the router may try. */
 export interface LlmRoute {
@@ -688,6 +694,76 @@ async function callGemini(
   return { text, finishReason, ...usage };
 }
 
+/**
+ * Claude, through Anthropic's SDK (`anthropic-client.ts`). The SDK's typed errors carry the HTTP status, so they map
+ * onto the same failure kinds as every other provider; a refusal is an answer this route cannot give, and the chain
+ * moves on.
+ */
+async function callAnthropic(
+  route: LlmRoute,
+  req: LlmRequest,
+  withSchema: boolean,
+): Promise<AdapterResult> {
+  const timeout = Math.min(route.timeoutMs ?? Infinity, req.timeoutMs ?? 30_000);
+  let result: ClaudeResult;
+  try {
+    result = await withTimeout(
+      callClaude({
+        apiKey: route.apiKey,
+        baseUrl: route.baseUrl,
+        model: route.model,
+        system: req.systemPrompt,
+        messages: [{ role: "user", content: req.userPrompt }],
+        maxTokens: req.maxOutputTokens,
+        ...(withSchema && req.schema ? { schema: req.schema } : {}),
+        timeoutMs: timeout,
+      }),
+      timeout,
+      route.slug,
+    );
+  } catch (err) {
+    throw anthropicFailure(err, route.slug);
+  }
+
+  const usage: Usage = {
+    promptTokens: result.promptTokens,
+    // Thinking is billed as output, as every other adapter counts it.
+    completionTokens: result.completionTokens + result.reasoningTokens,
+    cachedTokens: result.cachedTokens,
+    totalTokens: result.promptTokens + result.completionTokens + result.reasoningTokens,
+  };
+  const finishReason = result.stopReason ?? undefined;
+  if (finishReason === "max_tokens" || finishReason === "model_context_window_exceeded") {
+    throw new ProviderError("truncated", `${route.slug} stopped at the output limit after ${usage.completionTokens} tokens`, undefined, usage, undefined, finishReason);
+  }
+  if (finishReason === "refusal") {
+    throw new ProviderError("empty_response", `${route.slug} declined to answer`, undefined, usage, undefined, finishReason);
+  }
+  if (!result.text.trim()) {
+    throw new ProviderError("empty_response", `${route.slug} returned no content`, undefined, usage, undefined, finishReason);
+  }
+  return { text: result.text, finishReason, ...usage };
+}
+
+/** The SDK's error classes, read as the router's failure kinds. */
+function anthropicFailure(err: unknown, slug: string): ProviderError {
+  if (err instanceof ProviderError) return err;
+  if (err instanceof Anthropic.APIConnectionTimeoutError) return new ProviderError("timeout", `${slug} timed out`);
+  if (err instanceof Anthropic.APIConnectionError) return new ProviderError("network", `${slug}: ${err.message}`);
+  if (err instanceof Anthropic.APIError && err.status) {
+    const headers = err.headers as Headers | undefined;
+    return new ProviderError(
+      classifyHttpStatus(err.status),
+      `${slug} ${err.status}: ${err.message.slice(0, 300)}`,
+      err.status,
+      undefined,
+      parseRetryAfter(headers?.get?.("retry-after") ?? null),
+    );
+  }
+  const { kind, message } = classifyThrownError(err);
+  return new ProviderError(kind, message);
+}
+
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(
@@ -872,7 +948,7 @@ export async function executeLlmChain(
       if (!withSchema) degradedSchema = true;
 
       try {
-        const call = route.protocol === "gemini" ? callGemini : callOpenAICompatible;
+        const call = route.protocol === "gemini" ? callGemini : route.protocol === "anthropic" ? callAnthropic : callOpenAICompatible;
         const prompted = req.promptFor ? { ...shaped, ...req.promptFor(route) } : shaped;
         const result = await call(route, prompted, withSchema);
 

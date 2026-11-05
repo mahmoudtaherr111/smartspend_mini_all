@@ -18,6 +18,7 @@ type Protocol = "openai" | "gemini" | "anthropic";
 
 // Services the console knows how to reach; "other" takes any OpenAI-compatible address.
 const SERVICES: { slug: string; name: string; baseUrl: string; protocol: Protocol; keyHint: string }[] = [
+  { slug: "anthropic", name: "Claude (Anthropic)", baseUrl: "https://api.anthropic.com", protocol: "anthropic", keyHint: "من platform.claude.com، صفحة API keys" },
   { slug: "gemini", name: "Google Gemini", baseUrl: "https://generativelanguage.googleapis.com/v1beta", protocol: "gemini", keyHint: "من aistudio.google.com" },
   { slug: "openrouter", name: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1", protocol: "openai", keyHint: "من openrouter.ai/keys" },
   { slug: "groq", name: "Groq", baseUrl: "https://api.groq.com/openai/v1", protocol: "openai", keyHint: "من console.groq.com" },
@@ -131,7 +132,7 @@ export function Connectors() {
                 <div className="mt-3">
                   <div className="text-sm font-semibold">الموديلات المفعّلة ({own.length})</div>
                   {own.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">مفيش موديلات متحددة للموصل ده، فمش هيستخدم في أي حاجة لحد ما تحدد. <Link className="underline" to="/legacy">حدد الموديلات</Link></p>
+                    <p className="text-sm text-muted-foreground">مفيش موديلات متحددة للموصل ده، فمش هيستخدم في أي حاجة لحد ما تحدد. <Link className="underline" to="/ai/setup">حدد الموديلات</Link></p>
                   ) : (
                     <ul className="mt-1 divide-y text-sm">
                       {own.map((model) => {
@@ -229,7 +230,7 @@ function AddConnector({ open, onOpenChange, onAdded }: { open: boolean; onOpenCh
           <Button
             disabled={!key || !target.baseUrl || validate.isPending}
             variant="outline"
-            onClick={() => validate.mutate({ provider: target.slug, apiKey: key, baseUrl: target.baseUrl, protocol: target.protocol === "anthropic" ? undefined : target.protocol })}
+            onClick={() => validate.mutate({ provider: target.slug, apiKey: key, baseUrl: target.baseUrl, protocol: target.protocol })}
           >
             {validate.isPending ? "بيجرب…" : "جرّب المفتاح"}
           </Button>

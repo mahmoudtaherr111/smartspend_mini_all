@@ -34,6 +34,7 @@ flowchart LR
     tbl_users[("users")]
     tbl_voice_usage[("voice_usage")]
   end
+  ext_anthropic{{"Anthropic Claude API"}}
   ext_deepseek{{"DeepSeek API"}}
   ext_fireworks{{"Fireworks AI"}}
   ext_gemini{{"Google Gemini API"}}
@@ -48,6 +49,7 @@ flowchart LR
   mod_ai_governance ==> tbl_local_users
   mod_ai_governance ==> tbl_user_analytics
   mod_ai_governance ==> tbl_users
+  mod_ai_providers --> ext_anthropic
   mod_ai_providers --> ext_deepseek
   mod_ai_providers --> ext_fireworks
   mod_ai_providers --> ext_gemini
@@ -75,7 +77,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `ai-governance` — AI usage and cost governance | Per-plan token limits and per-request caps, burst counting, AI cost metrics and the admin cost overview, and the check of model-written numbers against facts. | 4 |
-| `ai-providers` — AI provider access | Provider clients, the provider registry, model name mapping, routing and fallback chains, what each call cost and its row in the AI cost ledger, and the sealing of the provider keys saved in the admin console, which move to a new secret on their own. | 14 |
+| `ai-providers` — AI provider access | Provider clients (Claude through Anthropic's SDK, Gemini through Google's, the rest over the OpenAI shape), the provider registry, model name mapping, routing and fallback chains in the order the admin set, what each call cost and its row in the AI cost ledger, and the sealing of the provider keys saved in the admin console, which move to a new secret on their own. | 15 |
 
 ## API procedures
 
@@ -106,6 +108,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 | System | Kind | Modules |
 | --- | --- | --- |
+| Anthropic Claude API | ai-provider | `ai-providers` |
 | DeepSeek API | ai-provider | `ai-providers` |
 | Fireworks AI | ai-provider | `ai-providers` |
 | Google Gemini API | ai-provider | `ai-providers` |
@@ -133,7 +136,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/ai-platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>20 files and declarations</summary>
+<details><summary>21 files and declarations</summary>
 
 - `api/ai-router.ts#ai.getUserLimits`
 - `api/ai-router.ts#rest-of-file`
@@ -142,6 +145,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/ai-pricing.ts`
 - `api/lib/ai-provider-registry.ts`
 - `api/lib/ai-usage-policy.ts`
+- `api/lib/anthropic-client.ts`
 - `api/lib/deepseek-client.ts`
 - `api/lib/embedding-provider.ts`
 - `api/lib/feature-switches.ts`

@@ -1,5 +1,6 @@
 import { router } from "./middleware";
 import { adminConsoleRouter } from "./admin-console-router";
+import { aiSetupRouter } from "./ai-setup-router";
 import { appConfigRouter } from "./app-config-router";
 import { authRouter } from "./auth-router";
 import { localAuthRouter } from "./local-auth-router";
@@ -29,6 +30,7 @@ import { captureAdminRouter } from "./capture-admin-router";
 
 export const appRouter = router({
   adminConsole: adminConsoleRouter,
+  aiSetup: aiSetupRouter,
   appConfig: appConfigRouter,
   auth: authRouter,
   localAuth: localAuthRouter,

@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 76 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 77 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 18 | — | — | 1 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-05 389cc707 | 2026-11-05 389cc707 | 8 | — | — | 5 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-05 f7bb4b83 | 2026-11-04 4def5707 | 18 | — | — | 1 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-05 f7bb4b83 | 2026-11-05 389cc707 | 8 | — | — | 5 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 10 | — | — | 4 | 2 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 6 | — | — | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 9 | — | 2 | 3 | 3 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 6 | — | — | 2 | 2 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 9 | — | 2 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 7 | — | 1 | 7 | 1 |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 16 | **1** | — | 7 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-05 df6216e1 | 2026-11-03 ff028180 | 2 | — | — | 2 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-04 4def5707 | 2026-11-05 08b37c7f | 4 | — | — | 3 | 1 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-05 389cc707 | 2026-11-05 389cc707 | 4 | — | — | 6 | 1 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-05 0c8067ac | 2026-11-05 0c8067ac | 5 | — | — | — | 7 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 4 | — | — | 6 | 1 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 10 | — | — | 3 | 5 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-05 f7bb4b83 | 2026-11-05 0c8067ac | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 7 | — | — | 3 | 1 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 
 
 Every system's explanation names at least one test.
 
-## What is waiting (76 issue(s))
+## What is waiting (77 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -112,14 +112,14 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
 - Two accountings remain: the `ai_cost_*` events of `recordAICostMetric` estimate tokens on their own and the screen that would show them is not mounted ([admin](admin.md)); the ledger is the priced one.
 - Speech-to-text reports one token count, so its row is priced at the model's text input rate although the input is audio, and models the admin adds without a price are recorded as unpriced until a price is entered.
-- `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` — the dot on each provider's card — is only ever written by the breaker during real traffic ([admin](admin.md)).
+- Nobody has called Claude with a real key from this code yet: the adapter is tested against recorded response shapes, and a call with an invented key reached Anthropic and came back as `auth`.
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - `/ultra` sends anyone not on Ultra to the plans page itself, while the page tells the reader it is protected by `UltraFeatureRoute`. Both gates in gate components are unused, so the plan is checked on the server only.
 - The Capacitor shells (`android/`, `ios/`) serve the build from `https://localhost` and call the API on another site, where a `SameSite=Lax` cookie is not sent, so they cannot keep a session since the website stopped holding the token. The Flutter app replaces them (decision 0022); until they are retired they only reach the sign-in screen.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (26)
+### Debt (27)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - **Clarifications save immediately with undo (Decision 0039).** A clarification saves as soon as it is answered; the saved items are shown afterwards with an immediate "تراجع" (Undo) banner rather than requiring a blocking confirmation modal. This design eliminates friction during frequent Egyptian micro-transaction and voice recording; undo and post-save edits remain instant and safe. Questions stored before the source was kept save a spoken sentence as `manual`.
@@ -158,6 +158,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `api/lib/ai-provider-registry.ts` carries a model catalogue with tiers, purposes and prices, "last verified" in a comment, and nothing reads it: `isKnownModel`, `getModelEntry`, `listModels`, `resolveApiKey` and the per-plan defaults have no caller, and only `DEPRECATED_MODEL_MAP` is used. Model defaults live a second time in `api/lib/model-mapper.ts` and a third time in the fixed lists of `admin.getAvailableModels`.
 - The breaker is per process, so during an outage each replica learns on its own that a provider is down.
 - The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat, report and voice paths do not. The running token count and its event are written by four copies of the same code (`trackTokens` in `api/ai-router.ts`, `trackAiTokens` in `api/lib/ai-usage-policy.ts`, and one each in `api/image-router.ts` and `api/goals-router.ts`).
+- **Limit.** A model has one place in one order and serves the cross product of its purposes and plans: a model ranked above another is above it in every list both are in, and a model cannot serve one purpose for Free and another for Pro only. The same model id under two connectors is two rows.
 
 **Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
 - Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8): `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and public URL; `GROQ_API_KEY` in `api/ai-router.ts`, `GEMINI_API_KEY` in `api/lib/ai-gateway.ts`, and `NODE_ENV` in `api/chat-router.ts`, `api/local-auth-router.ts` and `api/middleware.ts` are read directly too.

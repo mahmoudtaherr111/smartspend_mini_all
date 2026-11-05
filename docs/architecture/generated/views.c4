@@ -27,6 +27,11 @@ views {
     include *
   }
 
+  view router_aiSetup of smartspend.api.trpc.aiSetup {
+    title 'tRPC router · aiSetup'
+    include *
+  }
+
   view router_analytics of smartspend.api.trpc.analytics {
     title 'tRPC router · analytics'
     include *

@@ -66,6 +66,7 @@
     "ledger:cashflow": "tsx scripts/agent/cashflow-ledger.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.5.0",
     "@capacitor/app": "^8.0.0",
     "@capacitor/core": "^8.4.1",
     "@capacitor/haptics": "^8.0.2",

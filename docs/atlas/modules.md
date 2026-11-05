@@ -9,7 +9,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | Cluster | Title | Files | Depends on | Used by | External systems referenced |
 | --- | --- | --- | --- | --- | --- |
 | `api-core` | API server core | 5 | `ai-memory`, `ai-providers`, `api-routers`, `auth`, `billing`, `capture-catalog`, `capture-intake`, `coaching`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `api-routers` | — |
-| `api-routers` | tRPC routers and HTTP sub-apps | 27 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq` |
+| `api-routers` | tRPC routers and HTTP sub-apps | 28 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq` |
 | `auth` | Authentication and sessions | 6 | `capture-intake`, `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `capture-intake`, `jobs` | `google-oauth` |
 | `security` | Request security | 12 | `database`, `platform` | `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `capture-intake` | `turnstile` |
 | `platform` | Platform services | 12 | `contracts`, `database` | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `database`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
@@ -23,11 +23,11 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `notifications` | Notifications | 2 | `contracts`, `database`, `ledger`, `platform` | `api-core`, `api-routers`, `jobs`, `ledger` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 4 | `database`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
 | `voice` | Voice | 39 | `ai-actions`, `ai-insights`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
-| `ai-providers` | AI provider access | 14 | `ai-governance`, `contracts`, `database`, `platform` | `ai-governance`, `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `capture-ai-reader`, `classification`, `jobs`, `ledger`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
+| `ai-providers` | AI provider access | 15 | `ai-governance`, `contracts`, `database`, `platform` | `ai-governance`, `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `capture-ai-reader`, `classification`, `jobs`, `ledger`, `receipt-parsing`, `voice` | `anthropic`, `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 4 | `ai-providers`, `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-routers`, `capture-ai-reader`, `jobs` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `capture-intake`, `classification`, `coaching`, `receipt-parsing`, `voice` | — |
 | `capture-intake` | Capture intake | 18 | `arabic-nlp`, `auth`, `capture-ai-reader`, `capture-catalog`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `security` | `accounts`, `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `jobs`, `ledger` | — |
-| `capture-ai-reader` | Message model reading | 7 | `ai-governance`, `ai-providers`, `capture-intake`, `classification`, `contracts`, `database`, `platform`, `security` | `capture-intake` | `gemini` |
+| `capture-ai-reader` | Message model reading | 7 | `ai-governance`, `ai-providers`, `capture-intake`, `classification`, `contracts`, `database`, `platform`, `security` | `api-routers`, `capture-intake` | `gemini` |
 | `capture-catalog` | Capture catalog | 3 | `contracts`, `database`, `platform` | `api-core`, `api-routers`, `capture-intake` | — |
 | `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
 | `classification-qa` | Classification benchmark helpers | 2 | `classification` | — | — |
@@ -59,6 +59,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 
 | System | Title | Kind | Clusters | Files |
 | --- | --- | --- | --- | --- |
+| `anthropic` | Anthropic Claude API | ai-provider | `ai-providers` | `api/lib/anthropic-client.ts`, `api/lib/llm-provider-chain.ts` |
 | `capacitor` | Capacitor native shell | native-runtime | `web-hooks`, `web-lib`, `web-shell`, `web-voice-call` | `src/hooks/useHaptics.ts`, `src/hooks/useNativeThemeSync.ts`, `src/hooks/useVirtualKeyboard.ts`, `src/lib/back-button-manager.ts`, `src/lib/voice/call-controller.ts`, `src/pwa/register-sw.ts` |
 | `deepseek` | DeepSeek API | ai-provider | `ai-providers` | `api/lib/llm-provider-chain.ts` |
 | `firebase` | Firebase | push | `notifications`, `web-hooks`, `web-shell` | `api/services/firebase.ts`, `src/hooks/usePushNotifications.ts`, `src/pwa/firebase.ts` |
@@ -103,6 +104,7 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 | `api/admin-whatsapp-router.ts` | `api-core`, `database`, `platform`, `security`, `whatsapp` | — | `local_users`, `users`, `whatsapp_contacts`, `whatsapp_messages` | `system_settings`, `whatsapp_messages` |
 | `api/ads-router.ts` | `api-core`, `database`, `platform`, `security` | — | `ad_impressions`, `ads` | `ad_clicks`, `ad_impressions`, `ads` |
 | `api/ai-router.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `arabic-nlp`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `security`, `voice` | `gemini`, `groq` | `ai_summaries`, `business_categories`, `expenses`, `local_users`, `pending_clarifications`, `user_businesses`, `user_dictionaries`, `users`, `voice_usage` | `ai_summaries`, `classification_logs`, `monthly_behavior_snapshots`, `pending_clarifications`, `user_dictionaries`, `voice_usage` |
+| `api/ai-setup-router.ts` | `ai-providers`, `api-core`, `capture-ai-reader`, `contracts`, `database`, `platform`, `security` | — | `ai_models`, `ai_providers` | `ai_models` |
 | `api/analytics-router.ts` | `api-core`, `database`, `ledger`, `platform` | — | `expenses`, `local_users`, `user_analytics`, `users` | `user_analytics` |
 | `api/app-config-router.ts` | `ai-governance`, `api-core`, `platform` | — | — | — |
 | `api/auth-router.ts` | `api-core`, `auth`, `database`, `platform` | `google-oauth` | `users` | `users` |
@@ -345,7 +347,7 @@ Live voice calls in api/services/voice: the ticket and the /api/voice/v2 gateway
 
 ### `ai-providers` — AI provider access
 
-Provider clients, the provider registry, model name mapping, routing and fallback chains, what each call cost and its row in the AI cost ledger, and the sealing of the provider keys saved in the admin console, which move to a new secret on their own.
+Provider clients (Claude through Anthropic's SDK, Gemini through Google's, the rest over the OpenAI shape), the provider registry, model name mapping, routing and fallback chains in the order the admin set, what each call cost and its row in the AI cost ledger, and the sealing of the provider keys saved in the admin console, which move to a new secret on their own.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -353,11 +355,12 @@ Provider clients, the provider registry, model name mapping, routing and fallbac
 | `api/lib/ai-ledger.ts` | `database`, `platform` | — | `ai_token_ledgers` | `ai_token_ledgers` |
 | `api/lib/ai-pricing.ts` | `contracts`, `database`, `platform` | — | `ai_models`, `ai_providers` | — |
 | `api/lib/ai-provider-registry.ts` | — | — | — | — |
+| `api/lib/anthropic-client.ts` | — | `anthropic` | — | — |
 | `api/lib/deepseek-client.ts` | — | — | — | — |
 | `api/lib/embedding-provider.ts` | `platform` | `gemini` | — | — |
 | `api/lib/fireworks-client.ts` | — | `fireworks` | — | — |
 | `api/lib/groq-client.ts` | — | `groq` | — | — |
-| `api/lib/llm-provider-chain.ts` | — | `deepseek`, `fireworks`, `groq`, `nvidia`, `openrouter` | — | — |
+| `api/lib/llm-provider-chain.ts` | — | `anthropic`, `deepseek`, `fireworks`, `groq`, `nvidia`, `openrouter` | — | — |
 | `api/lib/llm-router.ts` | — | `gemini` | — | — |
 | `api/lib/model-mapper.ts` | `contracts` | — | — | — |
 | `api/lib/nvidia-client.ts` | — | `nvidia` | — | — |

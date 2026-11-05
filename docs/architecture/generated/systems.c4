@@ -2,6 +2,13 @@
 // The hand-written model sits one folder up: spec.c4, context.c4, views.c4 and flows/.
 
 model {
+  anthropic = external 'Anthropic Claude API' {
+    technology 'ai-provider'
+    metadata {
+      packages '@anthropic-ai/sdk'
+      hosts 'api.anthropic.com'
+    }
+  }
   capacitor = external 'Capacitor native shell' {
     technology 'native-runtime'
     metadata {

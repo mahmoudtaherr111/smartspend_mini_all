@@ -993,6 +993,72 @@ model {
         }
       }
     }
+    aiSetup = router 'aiSetup' {
+      description 'api/ai-setup-router.ts — 6 procedures.'
+      metadata {
+        file 'api/ai-setup-router.ts'
+      }
+      discover = procedure 'aiSetup.discover' {
+        #mutation #admin #uncalled
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/ai-setup-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      overview = procedure 'aiSetup.overview' {
+        #query #admin #uncalled
+        technology 'adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/ai-setup-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
+      }
+      removeModel = procedure 'aiSetup.removeModel' {
+        #mutation #admin #uncalled
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/ai-setup-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      reorder = procedure 'aiSetup.reorder' {
+        #mutation #admin #uncalled
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/ai-setup-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      saveModel = procedure 'aiSetup.saveModel' {
+        #mutation #admin #uncalled
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/ai-setup-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      test = procedure 'aiSetup.test' {
+        #mutation #admin #uncalled
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/ai-setup-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+    }
     analytics = router 'analytics' {
       description 'api/analytics-router.ts — 4 procedures.'
       metadata {

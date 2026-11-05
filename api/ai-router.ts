@@ -71,6 +71,8 @@ import {
 } from "./lib/model-mapper";
 import { callFireworksAPI } from "./lib/fireworks-client";
 import { callNvidiaAPI } from "./lib/nvidia-client";
+import { resolveAdminRoutes } from "./lib/ai-gateway";
+import { asLlmProtocol, executeLlmChain, type LlmRoute } from "./lib/llm-router";
 import {
   assertAiBudget,
   asPlan,
@@ -2241,7 +2243,13 @@ ${prevTotal > 0 ? `تغير إجمالي المصاريف عن الشهر الس
         return Number.isFinite(parsed) ? parsed : undefined;
       };
 
-      if (modelName !== "backend" && (aiModel || reportProvider === "groq" || isGroqModel(modelName))) {
+      // The admin's report models from the console, in its order. With none, the report settings below answer as they did.
+      const reportTier = ctx.user.plan === "ultra" ? "ultra" : ctx.user.plan === "pro" ? "pro" : "free";
+      const adminReportRoutes: LlmRoute[] = basicReportReason === "tokens"
+        ? []
+        : ((await resolveAdminRoutes("report", reportTier).catch(() => null))?.routes ?? []).map((route) => ({ ...route, protocol: asLlmProtocol(route.protocol) }));
+
+      if (adminReportRoutes.length || (modelName !== "backend" && (aiModel || reportProvider === "groq" || isGroqModel(modelName)))) {
         try {
           const planId = asPlan(ctx.user.plan);
           const reportCostPolicy = resolveAICostPolicy({
@@ -2358,7 +2366,24 @@ ${personalizedSummaryForAI}
             // What the report's one model call used, split so it is priced at the provider's input and output rates.
             let usage = { prompt: 0, completion: 0, cached: 0 };
             let reportSlug = "gemini";
-            if (reportProvider === "nvidia" || isNvidiaModel(modelName)) {
+            if (adminReportRoutes.length) {
+              const answer = await executeLlmChain(adminReportRoutes, {
+                systemPrompt: aiSystemPrompt,
+                userPrompt: prompt,
+                maxOutputTokens: capRequestOutputTokens(
+                  ctx.user.plan,
+                  "report",
+                  Math.min(reportTargetWords * 4, reportCostPolicy.maxOutputTokens),
+                ),
+                timeoutMs: 60_000,
+                deadlineMs: 120_000,
+              });
+              raw = answer.text.replace(/```json?/g, "").replace(/```/g, "").trim();
+              tokens = answer.totalTokens;
+              usage = { prompt: answer.promptTokens, completion: answer.completionTokens, cached: answer.cachedTokens };
+              reportSlug = answer.route.slug;
+              modelName = answer.route.model;
+            } else if (reportProvider === "nvidia" || isNvidiaModel(modelName)) {
               reportSlug = "nvidia";
               const res = await callNvidiaAPI(
                 nvidiaApiKey || reportApiKey,

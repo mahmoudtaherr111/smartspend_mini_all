@@ -91,6 +91,7 @@ import type {
 import { displayFinanceCategory } from "./services/finance-semantic-layer/category-matcher";
 import { createLogger } from "./lib/log";
 import { providerSlugForBaseUrl, recordAiLedger } from "./lib/ai-ledger";
+import { ANTHROPIC_DEFAULT_BASE_URL } from "./lib/anthropic-client";
 import { resolveAdminRoutes } from "./lib/ai-gateway";
 import { env } from "./lib/env";
 import { defaultGeminiModelForPlan, mapModelName } from "./lib/model-mapper";
@@ -105,7 +106,7 @@ const log = createLogger("chat");
 const GEMINI_OPENAI_BASE =
   "https://generativelanguage.googleapis.com/v1beta/openai";
 
-type ChatModel = { apiKey: string; baseUrl: string; model: string };
+type ChatModel = { apiKey: string; baseUrl: string; model: string; protocol?: string };
 
 /**
  * The chat's models, in the order to ask them: the models the admin assigned to "chat" in the console for this plan,
@@ -120,12 +121,13 @@ async function chatModels(
   const routes = await resolveAdminRoutes("chat", tier).catch(() => null);
   const models: ChatModel[] = (routes?.routes ?? [])
     .filter(
-      (route) => route.protocol === "openai" || route.protocol === "gemini",
+      (route) => route.protocol === "openai" || route.protocol === "gemini" || route.protocol === "anthropic",
     )
     .map((route) => ({
       apiKey: route.apiKey,
-      baseUrl: route.protocol === "gemini" ? GEMINI_OPENAI_BASE : route.baseUrl,
-      model: mapModelName(route.model.replace(/^models\//, "")),
+      baseUrl: route.protocol === "gemini" ? GEMINI_OPENAI_BASE : route.protocol === "anthropic" ? route.baseUrl || ANTHROPIC_DEFAULT_BASE_URL : route.baseUrl,
+      model: route.protocol === "anthropic" ? route.model : mapModelName(route.model.replace(/^models\//, "")),
+      protocol: route.protocol,
     }));
   const chatbotKey = s.chatbot_api_key || s.fireworks_api_key || "";
   if (chatbotKey) {
@@ -147,6 +149,7 @@ async function chatModels(
 
 async function loadChatConfig(plan: string): Promise<{
   fallbacks: ChatModel[];
+  protocol?: string;
   apiKey: string;
   baseUrl: string;
   model: string;
@@ -162,6 +165,7 @@ async function loadChatConfig(plan: string): Promise<{
 
   return {
     fallbacks,
+    protocol: first?.protocol,
     apiKey: first?.apiKey ?? "",
     baseUrl: first?.baseUrl ?? GEMINI_OPENAI_BASE,
     model: first?.model ?? "",
@@ -1019,6 +1023,7 @@ export const chatRouter = router({
             apiKey: config.apiKey,
             baseUrl: config.baseUrl,
             model: config.model,
+            protocol: config.protocol,
             fallbacks: config.fallbacks,
             maxTokens: effectiveMaxTokens,
           }).catch((error: unknown) => {

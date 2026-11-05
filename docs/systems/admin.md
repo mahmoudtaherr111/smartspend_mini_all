@@ -33,10 +33,20 @@ opens the console's page, `no-store` and `noindex`). `npm run dev` (or `admin:de
   with each item's category and the reason in plain words, from the evidence's match kind
   (`admin/src/ui/ai-words.ts`), the agreeing and disagreeing resolvers, the candidates, the confidence, the decision
   and whether the person corrected it.
-- «الموصلات» (`admin/src/pages/Connectors.tsx`) adds a provider from a short list of known services or any
-  OpenAI-compatible address after testing the key (`admin.validateApiKey`), pauses, re-keys, checks the health of all
-  (`admin.checkProviderHealth`, which had no screen) and removes them, shows each provider's models, purposes and
-  prices, and lists unresolved key errors. Assigning models to purposes is on «إعداد الذكاء».
+- «الموصلات» (`admin/src/pages/Connectors.tsx`) adds a provider from a short list of known services (Claude first,
+  then Gemini, OpenRouter, Groq, DeepSeek, Fireworks, NVIDIA) or any OpenAI-compatible address after testing the key
+  (`admin.validateApiKey`, which lists the models the key reaches), pauses, re-keys, checks the health of all
+  (`admin.checkProviderHealth`) and removes them, shows each provider's models, purposes and prices, and lists
+  unresolved key errors.
+- «إعداد الذكاء» (`admin/src/pages/ai/`, `aiSetup.*` in `api/ai-setup-router.ts`): «الوظايف» shows, for each purpose
+  and plan, the models in the order the server asks them (the first answers, the next takes over), what answers when
+  there is none (the server's Gemini key, or a red line when there is no key either), moves a model up or down
+  (`aiSetup.reorder`, one order shared by every purpose) and calls a model once for real (`aiSetup.test`: the reply, the
+  time and the cost, or the failure in words). «الموديلات» lists each connector's models, adds one from the list the
+  connector's saved key reaches (`aiSetup.discover`) with the published price filled in, edits its purposes, plans,
+  price and switch (`aiSetup.saveModel`) and removes it (`aiSetup.removeModel`). «تحويل الصوت لكلام» sets the voice-note
+  model per plan and its fallback, and «مفاتيح السيرفر» the server's own keys, both through `admin.updateSettings`. The
+  previous screen's RAG fields and processing mode were dropped: nothing reads them.
 - «النمو» (`admin/src/pages/Growth.tsx`, `adminConsole.growth`): per Cairo day, who recorded and who signed up; the
   share of new accounts that recorded within 24 hours; weekly cohorts of the last six weeks and the share of each
   that recorded in each later week; how operations were recorded (by source); people per platform in the last 7 days
@@ -57,9 +67,8 @@ opens the console's page, `no-store` and `noindex`). `npm run dev` (or `admin:de
   or in grace, before the store's share; active subscriptions by store; subscriptions started this month and those
   that expired or were refunded this month; the latest 40 with names; and the plan limits (`AdminPlansTab`).
 - Screens of the previous console that moved whole live in `admin/src/pages/Hosted.tsx`, each under a plain title and
-  a sentence per section: «إعداد الذكاء» (`AiCommandCenter`, where models are assigned to purposes, and the server keys
-  of `AdminKeysTab`), «القاموس والأسئلة» (`AdminRulesTab`, `ClarificationsTab`), «رسايل البنوك» (`AdminCaptureTab`)
-  and «التواصل والإعلانات» (`NotificationsTab`, `AdminWhatsAppTab`, `AdminAdsTab`).
+  a sentence per section: «القاموس والأسئلة» (`AdminRulesTab`, `ClarificationsTab`) and «التواصل والإعلانات»
+  (`NotificationsTab`, `AdminWhatsAppTab`, `AdminAdsTab`).
 - Settings sections are hosted by `admin/src/ui/SettingsEditor.tsx`: the saved values with the admin's edits on top,
   only changed keys sent to `admin.updateSettings`, and the same save bar. `updateSettings` keeps only registry keys,
   so `tests/knowledge/settings-read.test.ts` fails when a screen edits a key outside the registry, or when a registry

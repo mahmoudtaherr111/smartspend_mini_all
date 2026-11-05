@@ -115,6 +115,7 @@ export function providerSlugForBaseUrl(baseUrl: string): string {
   if (host.includes("deepseek")) return "deepseek";
   if (host.includes("openrouter")) return "openrouter";
   if (host.includes("generativelanguage.googleapis")) return "gemini";
+  if (host.includes("anthropic")) return "anthropic";
   if (host.includes("openai")) return "openai";
   if (host.includes("groq")) return "groq";
   if (host.includes("nvidia")) return "nvidia";

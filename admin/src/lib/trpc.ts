@@ -1,4 +1,5 @@
 import { createTRPCReact } from "@trpc/react-query";
+import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../api/router";
 
 /**
@@ -6,3 +7,5 @@ import type { AppRouter } from "../../../api/router";
  * website (`src/`) is part of the console (decision 0050).
  */
 export const trpc = createTRPCReact<AppRouter>();
+
+export type RouterOutputs = inferRouterOutputs<AppRouter>;

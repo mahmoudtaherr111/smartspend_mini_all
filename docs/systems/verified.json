@@ -61,8 +61,9 @@
     "admin": {
       "files": {
         "api/admin-console-router.ts": "376d69f09ad6",
-        "api/admin-router.ts": "d84a7b207611",
+        "api/admin-router.ts": "fbc87b22e971",
         "api/ads-router.ts": "ace6b064f74c",
+        "api/ai-setup-router.ts": "5c77cfe36acb",
         "api/analytics-router.ts": "5fd34da40d33",
         "api/boot.ts#GET /admin": "ecbf724126aa",
         "api/export-router.ts#export.allUsers": "c142aeea8326",
@@ -97,14 +98,14 @@
         "src/pages/Admin.tsx": "9444393be5fa",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-05 389cc707",
-      "arabic": "633486f681aa",
-      "arabicChecked": "2026-11-05 389cc707"
+      "checked": "2026-11-05 f7bb4b83",
+      "arabic": "e664f55132be",
+      "arabicChecked": "2026-11-05 f7bb4b83"
     },
     "ai-center": {
       "files": {
         "api/boot.ts#job:memory-embedding-backfill": "85d55cd9dc11",
-        "api/chat-router.ts": "5055d0a4213d",
+        "api/chat-router.ts": "a0afce43793f",
         "api/services/action-runtime/artifacts.ts": "5292dfe6dc80",
         "api/services/action-runtime/confirmation-phrases.ts": "ecf79bb5cfe7",
         "api/services/action-runtime/extended-actions.ts": "c66ee40d0a11",
@@ -117,7 +118,7 @@
         "api/services/ai-kernel/clarification-machine.ts": "f60b0eef67f7",
         "api/services/ai-kernel/context-packer.ts": "001bd02b4cbe",
         "api/services/ai-kernel/data-need-compiler.ts": "6cef352b4fb5",
-        "api/services/ai-kernel/index.ts": "bda95b484015",
+        "api/services/ai-kernel/index.ts": "8db19bbe8d0e",
         "api/services/ai-kernel/intent-router.ts": "4e034212c0a2",
         "api/services/ai-kernel/response-normalizer.ts": "f377c8f16290",
         "api/services/ai-kernel/retrieval-policy.ts": "a62a9621df27",
@@ -156,26 +157,27 @@
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "05db1979579d"
       },
-      "checked": "2026-11-04 4def5707",
-      "arabic": "3af71d75d228",
-      "arabicChecked": "2026-11-04 4def5707"
+      "checked": "2026-11-05 f7bb4b83",
+      "arabic": "b288d5c0471a",
+      "arabicChecked": "2026-11-05 f7bb4b83"
     },
     "ai-platform": {
       "files": {
         "api/ai-router.ts#ai.getUserLimits": "85e198fa737d",
-        "api/ai-router.ts#rest-of-file": "fdff02729ef4",
-        "api/lib/ai-gateway.ts": "db17fb645f84",
-        "api/lib/ai-ledger.ts": "6793f09293f3",
+        "api/ai-router.ts#rest-of-file": "007fc7fe1fe2",
+        "api/lib/ai-gateway.ts": "8c9597ab30f2",
+        "api/lib/ai-ledger.ts": "ccf8de3f1eb5",
         "api/lib/ai-pricing.ts": "23f9d247a58d",
         "api/lib/ai-provider-registry.ts": "da1562b6acdf",
         "api/lib/ai-usage-policy.ts": "c638486f2242",
+        "api/lib/anthropic-client.ts": "17aa68662180",
         "api/lib/deepseek-client.ts": "25b94e78c4ee",
         "api/lib/embedding-provider.ts": "72fa42725bca",
         "api/lib/feature-switches.ts": "2bc21c37fb32",
         "api/lib/fireworks-client.ts": "0ff5cda683b6",
         "api/lib/groq-client.ts": "bdb495a8b189",
-        "api/lib/llm-provider-chain.ts": "fb82931289a2",
-        "api/lib/llm-router.ts": "50dbff568ca4",
+        "api/lib/llm-provider-chain.ts": "bda53b1b4999",
+        "api/lib/llm-router.ts": "cec4926b4034",
         "api/lib/model-mapper.ts": "bd0773702045",
         "api/lib/nvidia-client.ts": "63815969f5a6",
         "api/lib/provider-health.ts": "56a6f6eb8217",
@@ -183,9 +185,9 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "3185b204f24e"
       },
-      "checked": "2026-11-05 df6216e1",
-      "arabic": "2b1f6b50f951",
-      "arabicChecked": "2026-11-05 df6216e1"
+      "checked": "2026-11-05 f7bb4b83",
+      "arabic": "813c53b8df7b",
+      "arabicChecked": "2026-11-05 f7bb4b83"
     },
     "bank-messages": {
       "files": {
@@ -215,7 +217,7 @@
         "api/lib/capture/markers.ts": "3c5fbf495715",
         "api/lib/capture/memory.ts": "6dab8103c402",
         "api/lib/capture/model-contract.ts": "eb21555b5850",
-        "api/lib/capture/model-reader.ts": "35357eed14e8",
+        "api/lib/capture/model-reader.ts": "1180d7f8bfc9",
         "api/lib/capture/operations.ts": "166e0fb5bd16",
         "api/lib/capture/privacy.ts": "b7b6abc9101c",
         "api/lib/capture/questions.ts": "e4c3b030f8af",
@@ -228,7 +230,7 @@
         "api/lib/sms-ai-contract.ts": "34562a4b9e0c",
         "src/components/bank-capture/CaptureOverview.tsx": "30e973b0cfd2"
       },
-      "checked": "2026-11-05 389cc707",
+      "checked": "2026-11-05 f7bb4b83",
       "arabic": "ea8b2a5fb37a",
       "arabicChecked": "2026-11-05 389cc707"
     },
@@ -261,7 +263,7 @@
         "api/ai-router.ts#ai.parseExpense": "c8f5ae781196",
         "api/ai-router.ts#ai.parseVoiceExpense": "a2da9c226247",
         "api/ai-router.ts#ai.speechToText": "a7448c0e2eb7",
-        "api/ai-router.ts#rest-of-file": "fdff02729ef4",
+        "api/ai-router.ts#rest-of-file": "007fc7fe1fe2",
         "api/boot.ts#job:classification-log-cleanup": "4b85025f200f",
         "api/expense-router.ts#expense.answerClarification": "300ac1ab436c",
         "api/expense-router.ts#expense.batchCreate": "4366144509ed",
@@ -317,7 +319,7 @@
         "api/lib/refund-context.ts": "655d8c4d3225",
         "api/lib/relationship-normalizer.ts": "be8cc3a84254",
         "api/lib/rule-engine.ts": "2e45d76c66a7",
-        "api/lib/smart-pipeline.ts": "a17d9217e04a",
+        "api/lib/smart-pipeline.ts": "0e6935d0d413",
         "api/lib/stt-corrections.ts": "2becb68a8fbe",
         "api/lib/taxonomy-adapter.ts": "fd63a36d2f25",
         "api/lib/taxonomy-ssot.ts": "fb99f8118120",
@@ -329,17 +331,17 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-11-04 4def5707",
+      "checked": "2026-11-05 f7bb4b83",
       "arabic": "1c65bb1b1634",
       "arabicChecked": "2026-11-04 4def5707"
     },
     "insights": {
       "files": {
         "api/ai-router.ts#ai.compareMonths": "c66fc3390521",
-        "api/ai-router.ts#ai.generateMonthlyInsights": "5c31ddc4ce51",
+        "api/ai-router.ts#ai.generateMonthlyInsights": "7a0a987072b9",
         "api/ai-router.ts#ai.generateYearlyInsights": "935b893e6244",
         "api/ai-router.ts#ai.getCachedMonthlyInsights": "95b28ed6f694",
-        "api/ai-router.ts#rest-of-file": "fdff02729ef4",
+        "api/ai-router.ts#rest-of-file": "007fc7fe1fe2",
         "api/boot.ts#job:monthly-behavior-snapshots": "1a1a7ff4d857",
         "api/boot.ts#job:monthly-report-generation": "60a67c71d204",
         "api/export-router.ts#export.monthlyReportHtml": "335e0925b0ca",
@@ -364,9 +366,9 @@
         "api/services/user-profile-service.ts": "620d598615c2",
         "src/components/insights/AIInsights.tsx": "3be01c23f12c"
       },
-      "checked": "2026-11-04 4def5707",
-      "arabic": "60402dc9a410",
-      "arabicChecked": "2026-11-04 4def5707"
+      "checked": "2026-11-05 f7bb4b83",
+      "arabic": "2e2041ed05c5",
+      "arabicChecked": "2026-11-05 f7bb4b83"
     },
     "money": {
       "files": {
@@ -496,7 +498,7 @@
         "api/lib/system-settings-registry.ts": "417bfcb7fc23",
         "api/middleware.ts": "e82907a611a2",
         "api/queries/connection.ts": "49fd2ab76893",
-        "api/router.ts": "d748ca88b929",
+        "api/router.ts": "b0795d9392ff",
         "api/server.ts#rest-of-file": "e728f2d81677",
         "api/services/scheduler-lock.ts": "861ab6f129a3",
         "api/services/storage/avatar-service.ts": "d0562e7ea889",
@@ -505,7 +507,7 @@
         "api/services/storage/s3-driver.ts": "93478c2f095d",
         "api/services/storage/types.ts": "766de83090e8",
         "contracts/account-deletion.ts": "6fcd736f6cae",
-        "contracts/ai-models.ts": "7eeda8042bd8",
+        "contracts/ai-models.ts": "9aadc5f8e728",
         "contracts/capture-intake.ts": "a034a66af1ac",
         "contracts/capture.ts": "fabd04c9d7ac",
         "contracts/categories.ts": "aca28dd35f9b",
@@ -525,7 +527,7 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "24dd31475b42"
       },
-      "checked": "2026-11-05 0c8067ac",
+      "checked": "2026-11-05 f7bb4b83",
       "arabic": "4862e3a91489",
       "arabicChecked": "2026-11-05 0c8067ac"
     },

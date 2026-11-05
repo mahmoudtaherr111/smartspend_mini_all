@@ -28,7 +28,8 @@ facts.
 `chat.sendMessage` refuses when an admin stopped the chat (`ai_off_chat`, `api/lib/feature-switches.ts`) and reads its configuration from system settings (`loadChatConfig`). The chat must be enabled for the
 plan (`chatbot_enabled_<plan>`), and the user's messages today must be under `chatbot_daily_limit_<plan>`, counted per
 Cairo business day. The model is asked in this order (`chatModels`): the models the admin assigned to "chat" in the
-console for the user's plan, then the older chatbot settings when they hold a key (`chatbot_api_key`, else
+console for the user's plan, in the console's order (a Claude connector through Anthropic's SDK,
+`callChatModel` in `api/services/ai-kernel/index.ts`; the others through the OpenAI shape), then the older chatbot settings when they hold a key (`chatbot_api_key`, else
 `fireworks_api_key`, with `chatbot_base_url` and `chatbot_model`, Fireworks and a DeepSeek model by default), then
 Google's Gemini (the plan's default through Google's OpenAI-compatible endpoint); when one fails, the kernel asks the
 next (`AIKernelActiveConfig.fallbacks`). The length of a model reply is capped by the
