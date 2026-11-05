@@ -67,6 +67,7 @@ Reads and writes cover the job body in `api/boot.ts` plus the `api/jobs/` module
 | `monthly-behavior-snapshots` | `0 1 1 * *` | `api/jobs/monthly-behavior-job.ts` | `expenses`, `user_profiles` | — |
 | `monthly-report-generation` | `0 2 1 * *` | `api/jobs/monthly-report-job.ts` | `local_users`, `monthly_reports`, `users`, `whatsapp_contacts` | `monthly_reports` |
 | `nightly-rollup-reconciliation` | `0 4 * * *` | `api/jobs/rollup-reconciliation-job.ts` | `expense_daily_rollups`, `expenses` | — |
+| `ops-watch` | `*/15 * * * *` | `api/services/admin-alerts.ts` | — | — |
 | `scheduled-notifications` | `* * * * *` | `api/notification-engine.ts` | — | — |
 | `seed-capture-catalog` | once at boot | `api/lib/capture/catalog.ts` | — | — |
 | `seed-default-templates` | once at boot | `api/notification-engine.ts` | — | — |

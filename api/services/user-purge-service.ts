@@ -34,6 +34,7 @@ import {
   pushSubscriptions,
   referrals,
   sessions,
+  supportAssignments,
   supportTickets,
   userAnalytics,
   userBudgets,
@@ -165,6 +166,22 @@ export async function purgeUserData(
 
   await tx.delete(userProfiles).where(userScope(userProfiles, userId, userType));
   await tx.delete(userAnalytics).where(userScope(userAnalytics, userId, userType));
+  // A ticket's assignment goes with the ticket, and a staff member's assignments go with the staff member. Before
+  // migration 0049 the table does not exist; that must not stop an account from being deleted.
+  try {
+    await tx.delete(supportAssignments).where(
+      or(
+        and(eq(supportAssignments.staffId, userId), eq(supportAssignments.staffType, userType)),
+        inArray(
+          supportAssignments.ticketId,
+          tx.select({ id: supportTickets.id }).from(supportTickets).where(userScope(supportTickets, userId, userType)),
+        ),
+      ),
+    );
+  } catch (error) {
+    const code = (error as { code?: string; cause?: { code?: string } })?.cause?.code ?? (error as { code?: string })?.code;
+    if (code !== "ER_NO_SUCH_TABLE") throw error;
+  }
   await tx.delete(supportTickets).where(userScope(supportTickets, userId, userType));
   await tx.delete(proSubscriptions).where(userScope(proSubscriptions, userId, userType));
   await tx.delete(storePurchases).where(userScope(storePurchases, userId, userType));

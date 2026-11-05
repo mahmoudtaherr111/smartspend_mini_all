@@ -205,7 +205,9 @@ Then, per procedure:
 - `purgeUserData` first locks the identity row, which delayed memory writers also lock; it deletes, inside the caller's transaction, every user-owned row (conversations and memory, the ledger,
   goals, contacts, sessions, passkeys, the profile, logs, voice usage and live calls with their incidents, the capture
   devices, consents, signals, events, monthly use, memory and pairs, the model's queue, the redacted message samples, the cards and phrases it ignores, the
-  WhatsApp messages sent to them and their WhatsApp consents, and referrals)
+  WhatsApp messages sent to them and their WhatsApp consents, and referrals, and the assignments of their support
+  tickets and, for a staff member, the tickets given to them; before migration 0049 there is no assignment table and
+  that step is skipped)
   and then the identity row. `admin.deleteUser`, `localAuth.deleteUser` and `profile.deleteMyAccount` call it, then
   drop the cached principal (`invalidatePrincipal`), so a session resolved before the deletion stops answering at once;
   `tests/knowledge/architecture.test.ts` fails when a user-owned table is left out.

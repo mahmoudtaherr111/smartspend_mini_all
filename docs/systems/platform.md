@@ -15,7 +15,9 @@ storage, the contracts shared with the web app, and the retention job that prune
 | Server | `api/boot.ts` | The Hono app: middleware, Google OAuth start and callback, the OTP stream, the Paymob webhook, `/api/trpc/*`, `/health`, the admin console at `/admin` (`dist/admin`), the live-call WebSocket (`/api/voice/v2`) in production, and the cron registrations. The website is parked (decision 0050): only with `SERVE_WEB_APP=true` does it serve `dist/public`, the sitemap and an indexable `robots.txt`; otherwise `/` answers `{ service, console }` and crawlers are refused |
 | Standalone entry | `api/server.ts` | The same app served on its own, for deploying the API apart from the web app |
 | Request context | `api/context.ts` | Resolves `ctx.user` from the Bearer header, the `smartspend_token`/`local_session` cookie or the `google_session` cookie, and the client IP |
-| Builders | `api/middleware.ts` | The procedure builders, their rate limits and their role and plan checks |
+| Builders | `api/middleware.ts` | The procedure builders, their rate limits and their role and plan checks; every mutation through `adminProcedure` or `moderatorProcedure` reaches the audit log (`auditStaffMutations`): a procedure that wrote its own entry marks `ctx.audit`, any other is recorded by its path and whether it succeeded, never by its input |
+| Server status | `api/services/server-status.ts`, `adminConsole.status` | The database and its pending migrations (the build's journal against `__drizzle_migrations`), Redis, whether jobs ran in the last 10 minutes, Firebase, WhatsApp, object storage, Sentry, Turnstile, the secrets production should have, the AI connectors and the number of admins, each `ok`, `warn` or `fail`; the console's «حالة السيرفر» words them |
+| Admin alerts | `api/services/admin-alerts.ts` | `notifyAdmins` (an in-app notification to every admin, once per quiet period), the 15-minute `ops-watch` job and the admin's alert list |
 | Root router | `api/router.ts` | Mounts every `*-router.ts` under its name |
 | Environment | `api/lib/env.ts` | One Zod schema parsed at import (`parseServerEnv`): the server refuses to start without the required values, or in production with `JWT_SECRET`, `AI_GATEWAY_SECRET` or `RATE_LIMIT_KEY_SECRET` under 32 characters |
 | Database | `api/queries/connection.ts`, `db/schema.ts`, `db/relations.ts`, `db/table-classes.ts` | The MySQL pool with slow-query logging, the Drizzle schema, the relations that stand in for foreign keys, and every table's storage class |
@@ -115,7 +117,10 @@ run to `scheduled_job_runs` (start, duration, `ok` or `failed` with the error's 
 the host), kept 14 days; a write that fails, as before migration 0048 is applied, never fails the job and is logged once
 (`job_runs.write_failed`). Every process registers the schedules (`registerJobSchedule`), crons on or off, so
 `adminConsole.jobs` can name what should run whichever process answers. A job counts as late when its last success is
-older than twice its interval, at least an hour, counted from the first recorded run. The hours are Cairo time: node-cron
+older than twice its interval, at least an hour, counted from the first recorded run. `ops-watch` (every 15 minutes)
+tells the admins in the app about a late job (once per 6 hours), a failed one (once an hour) and a server check that
+fails on two passes in a row (once per 6 hours), so a Redis or database a moment from connected after a restart wakes
+nobody; the console's «النهارده» lists the alerts. The hours are Cairo time: node-cron
 schedules each job in `APP_TIMEZONE`, not the server's clock. The list, with each schedule, is in
 [docs/atlas/entrypoints.md](../atlas/entrypoints.md). In short: session, challenge and phone-code cleanup
 (daily), classification logs (Sundays), scheduled notifications (every minute) and the smart activity check
@@ -178,7 +183,8 @@ Checked against the code; each one names where it lives.
    print `error.message` as text print provider, socket and storage errors today, or failed reads whose values
    are ids and dates (`api/ai-router.ts`,
    `api/services/storage/s3-driver.ts`); moving a file to `createLogger()` removes the difference.
-8. **Gap.** Nothing alerts anyone when a job is late or failing: «التشغيل» shows it, and only to an admin who looks.
+8. **Gap.** The only alert channel is the in-app notification: an admin who opens neither the app nor the console
+   learns nothing, and there is no e-mail or chat channel yet.
 
 ## Voice capacity settings
 The settings registry defines `voice_standard_input_tpm`, `voice_standard_reserved_tpm`, `voice_ultra_input_tpm` and `voice_ultra_reserved_tpm`. Admission reads them through the shared settings accessor, combines them with per-model seat caps, and reserves 20% headroom. Values are editable in the admin voice section and require review against the active project’s AI Studio limits; an estimate is not a guarantee for unlimited conversation context.

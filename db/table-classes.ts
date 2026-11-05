@@ -67,6 +67,7 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   expense_categories: "A",
   user_wallets: "A",
   support_tickets: "A",
+  support_assignments: "A",
   discount_codes: "A",
   ads: "A",
   referrals: "A",

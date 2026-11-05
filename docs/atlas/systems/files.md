@@ -17,7 +17,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/analytics-router.ts` | [admin](admin.md) |
 | `api/app-config-router.ts` | [platform](platform.md) |
 | `api/auth-router.ts` | [accounts](accounts.md) |
-| `api/boot.ts` | [accounts](accounts.md): `GET /api/auth/google/callback`, `GET /api/auth/google/start`, `job:daily-auth-cleanup` · [admin](admin.md): `GET /admin` · [ai-center](ai-center.md): `job:memory-embedding-backfill` · [bank-messages](bank-messages.md): `job:capture-ai-sweep`, `job:capture-breaker`, `job:capture-silent-devices`, `job:cashflow-cutover`, `job:cashflow-cutover-at-boot`, `job:seed-capture-catalog` · [billing](billing.md): `POST /api/webhooks/apple-asn`, `POST /api/webhooks/google-play`, `POST /api/webhooks/paymob`, `job:daily-subscription-expiry` · [expense-capture](expense-capture.md): `job:classification-log-cleanup` · [insights](insights.md): `job:monthly-behavior-snapshots`, `job:monthly-report-generation` · [money](money.md): `job:coaching-reminders`, `job:nightly-rollup-reconciliation`, `job:taxonomy-migration` · [notifications](notifications.md): `GET /api/webhooks/whatsapp`, `POST /api/webhooks/whatsapp`, `job:scheduled-notifications`, `job:seed-default-templates`, `job:smart-activity-notifications`, `job:whatsapp-outbox` · [platform](platform.md): `ALL /api/trpc/*`, `GET /`, `GET /health`, `GET /robots.txt`, `GET /sitemap.xml`, `job:data-retention-lifecycle` · [voice-calls](voice-calls.md): `job:voice-call-memory`, `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
+| `api/boot.ts` | [accounts](accounts.md): `GET /api/auth/google/callback`, `GET /api/auth/google/start`, `job:daily-auth-cleanup` · [admin](admin.md): `GET /admin` · [ai-center](ai-center.md): `job:memory-embedding-backfill` · [bank-messages](bank-messages.md): `job:capture-ai-sweep`, `job:capture-breaker`, `job:capture-silent-devices`, `job:cashflow-cutover`, `job:cashflow-cutover-at-boot`, `job:seed-capture-catalog` · [billing](billing.md): `POST /api/webhooks/apple-asn`, `POST /api/webhooks/google-play`, `POST /api/webhooks/paymob`, `job:daily-subscription-expiry` · [expense-capture](expense-capture.md): `job:classification-log-cleanup` · [insights](insights.md): `job:monthly-behavior-snapshots`, `job:monthly-report-generation` · [money](money.md): `job:coaching-reminders`, `job:nightly-rollup-reconciliation`, `job:taxonomy-migration` · [notifications](notifications.md): `GET /api/webhooks/whatsapp`, `POST /api/webhooks/whatsapp`, `job:scheduled-notifications`, `job:seed-default-templates`, `job:smart-activity-notifications`, `job:whatsapp-outbox` · [platform](platform.md): `ALL /api/trpc/*`, `GET /`, `GET /health`, `GET /robots.txt`, `GET /sitemap.xml`, `job:data-retention-lifecycle`, `job:ops-watch` · [voice-calls](voice-calls.md): `job:voice-call-memory`, `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
 | `api/budget-router.ts` | [money](money.md) |
 | `api/business-router.ts` | [money](money.md) |
 | `api/capture-admin-router.ts` | [bank-messages](bank-messages.md) |
@@ -191,6 +191,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/action-runtime/index.ts` | [ai-center](ai-center.md) |
 | `api/services/action-runtime/types.ts` | [ai-center](ai-center.md) |
 | `api/services/adaptive-question-engine.ts` | [insights](insights.md) |
+| `api/services/admin-alerts.ts` | [platform](platform.md) |
 | `api/services/ai-cost-analytics.ts` | [ai-platform](ai-platform.md) |
 | `api/services/ai-cost-policy.ts` | [ai-platform](ai-platform.md) |
 | `api/services/ai-kernel/agent-planner.ts` | [ai-center](ai-center.md) |
@@ -250,6 +251,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/pro-report-engine.ts` | [insights](insights.md) |
 | `api/services/report-personalization-engine.ts` | [insights](insights.md) |
 | `api/services/scheduler-lock.ts` | [platform](platform.md) |
+| `api/services/server-status.ts` | [platform](platform.md) |
 | `api/services/site-guide/embedding.ts` | [ai-center](ai-center.md) |
 | `api/services/site-guide/index.ts` | [ai-center](ai-center.md) |
 | `api/services/site-guide/knowledge-base.ts` | [ai-center](ai-center.md) |

@@ -149,4 +149,23 @@ export const AUDIT_ACTION: Record<string, string> = {
   SYNC_CAPTURE_SEED: "حدّث قايمة البنوك",
   RESTORE_CAPTURE_SEED: "رجّع قايمة البنوك الأصلية",
   DATABASE_BACKUP_EXPORTED: "نزّل نسخة الإعدادات",
+  CLOSE_SUPPORT_TICKET: "قفل تذكرة",
+  // Changes recorded by the staff middleware by their procedure, for procedures that write no entry of their own.
+  "aiSetup.discover": "جاب قايمة موديلات موصل",
+  "aiSetup.test": "جرّب موديل",
+  "localAuth.deleteUser": "مسح حساب برقم تليفون",
+  "localAuth.updateRole": "غيّر صلاحية حساب برقم تليفون",
+  "admin.validateApiKey": "جرّب مفتاح",
+  "admin.checkProviderHealth": "فحص الموصلات",
+  "admin.triggerActivityCheck": "شغّل فحص النشاط",
+  "admin.triggerBackupDemo": "نزّل نسخة الإعدادات",
+  "admin.discoverProviderModels": "جاب قايمة موديلات",
+  "adminWhatsapp.syncTemplates": "بعت قوالب واتساب لـ Meta",
+  "seo.upsert": "عدّل صفحة SEO",
+  "seo.delete": "مسح صفحة SEO",
 };
+
+/** An audit action in words: a known one by name, a procedure by its path. */
+export function auditAction(action: string): string {
+  return AUDIT_ACTION[action] ?? (action.includes(".") ? `نفّذ ${action}` : action);
+}

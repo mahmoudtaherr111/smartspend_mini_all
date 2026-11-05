@@ -24,6 +24,7 @@ model {
   smartspend.api.modules.accounts -[imports]-> smartspend.api.modules.capture-intake
   smartspend.api.modules.accounts -[reads]-> smartspend.mysql.chat_conversations
   smartspend.api.modules.accounts -[reads]-> smartspend.mysql.local_users
+  smartspend.api.modules.accounts -[reads]-> smartspend.mysql.support_tickets
   smartspend.api.modules.accounts -[reads]-> smartspend.mysql.user_businesses
   smartspend.api.modules.accounts -[reads]-> smartspend.mysql.users
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.ad_clicks
@@ -76,6 +77,7 @@ model {
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.scheduled_cashflows
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.sessions
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.store_purchases
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.support_assignments
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.support_tickets
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.user_analytics
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.user_budgets
@@ -256,6 +258,7 @@ model {
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.sessions
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.store_purchases
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.subscription_catalog
+  smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.support_assignments
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.support_tickets
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.system_settings
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.user_analytics
@@ -307,6 +310,7 @@ model {
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.seo_pages
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.store_purchases
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.subscription_catalog
+  smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.support_assignments
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.support_tickets
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.system_settings
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.user_analytics
@@ -551,13 +555,22 @@ model {
   smartspend.api.modules.notifications -[writes]-> smartspend.mysql.notification_logs
   smartspend.api.modules.notifications -[writes]-> smartspend.mysql.notification_templates
   smartspend.api.modules.notifications -[writes]-> smartspend.mysql.push_subscriptions
+  smartspend.api.modules.platform -[imports]-> smartspend.api.modules.ai-providers
+  smartspend.api.modules.platform -[imports]-> smartspend.api.modules.notifications
+  smartspend.api.modules.platform -[imports]-> smartspend.api.modules.storage
+  smartspend.api.modules.platform -[imports]-> smartspend.api.modules.whatsapp
   smartspend.api.modules.platform -[imports]-> smartspend.shared.contracts
+  smartspend.api.modules.platform -[reads]-> smartspend.mysql.ai_providers
   smartspend.api.modules.platform -[reads]-> smartspend.mysql.api_key_errors
+  smartspend.api.modules.platform -[reads]-> smartspend.mysql.in_app_notifications
+  smartspend.api.modules.platform -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.platform -[reads]-> smartspend.mysql.scheduled_job_runs
   smartspend.api.modules.platform -[reads]-> smartspend.mysql.system_settings
+  smartspend.api.modules.platform -[reads]-> smartspend.mysql.users
   smartspend.api.modules.platform -[uses]-> sentry
   smartspend.api.modules.platform -[uses]-> smartspend.redis
   smartspend.api.modules.platform -[writes]-> smartspend.mysql.api_key_errors
+  smartspend.api.modules.platform -[writes]-> smartspend.mysql.in_app_notifications
   smartspend.api.modules.platform -[writes]-> smartspend.mysql.scheduled_job_runs
   smartspend.api.modules.platform -[writes]-> smartspend.mysql.user_analytics
   smartspend.api.modules.receipt-parsing -[imports]-> smartspend.api.modules.ai-providers
@@ -624,6 +637,7 @@ model {
   smartspend.api.scheduler.monthly-behavior-snapshots -[uses]-> smartspend.api.modules.jobs
   smartspend.api.scheduler.monthly-report-generation -[uses]-> smartspend.api.modules.jobs
   smartspend.api.scheduler.nightly-rollup-reconciliation -[uses]-> smartspend.api.modules.jobs
+  smartspend.api.scheduler.ops-watch -[uses]-> smartspend.api.modules.platform
   smartspend.api.scheduler.scheduled-notifications -[uses]-> smartspend.api.modules.notifications
   smartspend.api.scheduler.seed-capture-catalog -[uses]-> smartspend.api.modules.capture-catalog
   smartspend.api.scheduler.seed-default-templates -[uses]-> smartspend.api.modules.notifications
@@ -769,6 +783,7 @@ model {
   smartspend.api.trpc.adminConsole.aiCalls -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.adminConsole.aiCalls -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.adminConsole.aiCalls -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.adminConsole.alerts -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminConsole.classifications -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.adminConsole.classifications -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.adminConsole.classifications -[reads]-> smartspend.mysql.users
@@ -780,6 +795,7 @@ model {
   smartspend.api.trpc.adminConsole.growth -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.adminConsole.growth -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminConsole.jobs -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.adminConsole.markAlertsRead -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminConsole.money -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.adminConsole.money -[reads]-> smartspend.mysql.store_purchases
   smartspend.api.trpc.adminConsole.money -[reads]-> smartspend.mysql.users
@@ -796,6 +812,11 @@ model {
   smartspend.api.trpc.adminConsole.person -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminConsole.searchPeople -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.adminConsole.searchPeople -[reads]-> smartspend.mysql.users
+  smartspend.api.trpc.adminConsole.settingsCatalog -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.adminConsole.status -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.adminConsole.supportTeam -[reads]-> smartspend.mysql.local_users
+  smartspend.api.trpc.adminConsole.supportTeam -[reads]-> smartspend.mysql.support_assignments
+  smartspend.api.trpc.adminConsole.supportTeam -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.adminConsole.today -[reads]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.trpc.adminConsole.today -[reads]-> smartspend.mysql.api_key_errors
   smartspend.api.trpc.adminConsole.today -[reads]-> smartspend.mysql.expenses
@@ -1368,10 +1389,13 @@ model {
   smartspend.api.trpc.session.revokeMine -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.session.stats -[reads]-> smartspend.mysql.sessions
   smartspend.api.trpc.session.trackEvent -[writes]-> smartspend.mysql.user_analytics
+  smartspend.api.trpc.support.assign -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.support.assign -[reads]-> smartspend.mysql.support_tickets
+  smartspend.api.trpc.support.assign -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.support.assign -[uses]-> smartspend.api.modules.security
-  smartspend.api.trpc.support.assign -[writes]-> smartspend.mysql.support_tickets
+  smartspend.api.trpc.support.assign -[writes]-> smartspend.mysql.support_assignments
   smartspend.api.trpc.support.close -[reads]-> smartspend.mysql.support_tickets
+  smartspend.api.trpc.support.close -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.support.close -[writes]-> smartspend.mysql.support_tickets
   smartspend.api.trpc.support.create -[writes]-> smartspend.mysql.support_tickets
   smartspend.api.trpc.support.getById -[reads]-> smartspend.mysql.support_tickets

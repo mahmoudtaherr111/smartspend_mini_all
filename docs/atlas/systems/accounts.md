@@ -89,6 +89,7 @@ flowchart LR
     tbl_scheduled_cashflows[("scheduled_cashflows")]
     tbl_sessions[("sessions")]
     tbl_store_purchases[("store_purchases")]
+    tbl_support_assignments[("support_assignments")]
     tbl_support_tickets[("support_tickets")]
     tbl_user_analytics[("user_analytics")]
     tbl_user_budgets[("user_budgets")]
@@ -167,6 +168,7 @@ flowchart LR
   mod_accounts ==> tbl_scheduled_cashflows
   mod_accounts ==> tbl_sessions
   mod_accounts ==> tbl_store_purchases
+  mod_accounts ==> tbl_support_assignments
   mod_accounts ==> tbl_support_tickets
   mod_accounts ==> tbl_user_analytics
   mod_accounts ==> tbl_user_budgets
@@ -364,7 +366,8 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `scheduled_cashflows` | C | `accounts` | — |
 | `sessions` | D | `accounts`, `auth` | `auth`, `session.listAll`, `session.listMine`, `session.stats` |
 | `store_purchases` | A | `accounts` | — |
-| `support_tickets` | A | `accounts` | — |
+| `support_assignments` | A | `accounts` | — |
+| `support_tickets` | A | `accounts` | `accounts` |
 | `user_analytics` | E | `accounts`, `session.trackEvent` | — |
 | `user_budgets` | C | `accounts` | — |
 | `user_businesses` | A | `accounts` | `accounts`, `security` |

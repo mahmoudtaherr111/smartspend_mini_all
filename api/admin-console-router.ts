@@ -10,6 +10,7 @@ import {
   localUsers,
   sessions,
   storePurchases,
+  supportAssignments,
   supportTickets,
   userAnalytics,
   users,
@@ -20,8 +21,11 @@ import { dailyAiCapUsd } from "./lib/feature-switches";
 import { businessMonthRange, startOfBusinessDay } from "./lib/app-time";
 import { getCacheRuntimeStatus } from "./lib/redis-client";
 import { getSystemSettings } from "./lib/settings-cache";
+import { SETTINGS } from "./lib/system-settings-registry";
 import { adminProcedure, moderatorProcedure, router } from "./middleware";
+import { listAdminAlerts, markAdminAlertsRead } from "./services/admin-alerts";
 import { loadJobOverview } from "./services/job-runs";
+import { loadServerStatus } from "./services/server-status";
 import { db } from "./queries/connection";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -44,6 +48,8 @@ const distinctRecorders = sql<number>`COUNT(DISTINCT CONCAT(${expenses.userType}
 export const adminConsoleRouter = router({
   // Who is signed in to the console, and what they may open: moderators answer support only.
   session: moderatorProcedure.query(({ ctx }) => ({
+    id: ctx.user.id,
+    type: ctx.user.type,
     name: ctx.user.name ?? "",
     role: ctx.user.role,
   })),
@@ -595,6 +601,48 @@ export const adminConsoleRouter = router({
   // latest subscriptions with who holds them.
   /** The background jobs: what should run, when each last ran, and what failed in the last day. */
   jobs: adminProcedure.query(() => loadJobOverview()),
+
+  /**
+   * Every setting the server knows (the registry), with its default, so the console can edit any of them. A secret's
+   * default is never sent, only whether there is one.
+   */
+  settingsCatalog: adminProcedure.query(() =>
+    SETTINGS.map((def) => {
+      const value = typeof def.default === "function" ? def.default() : def.default;
+      return { key: def.key, secret: Boolean(def.secret), default: def.secret ? "" : value, hasDefault: Boolean(value) };
+    }),
+  ),
+
+  /**
+   * The support team (admins and moderators) and who holds each ticket. Before migration 0049 there are no
+   * assignments to read, and the page says so instead of failing.
+   */
+  supportTeam: moderatorProcedure.query(async () => {
+    const [google, phone] = await Promise.all([
+      db.select({ id: users.id, name: users.name, role: users.role }).from(users).where(inArray(users.role, ["admin", "moderator"])),
+      db.select({ id: localUsers.id, name: localUsers.name, role: localUsers.role }).from(localUsers).where(inArray(localUsers.role, ["admin", "moderator"])),
+    ]);
+    const staff = [
+      ...google.map((row) => ({ ...row, type: "oauth" as const })),
+      ...phone.map((row) => ({ ...row, type: "local" as const })),
+    ];
+    try {
+      const assignments = await db.select().from(supportAssignments).orderBy(desc(supportAssignments.assignedAt)).limit(1000);
+      return { staff, assignments, ready: true };
+    } catch {
+      return { staff, assignments: [], ready: false };
+    }
+  }),
+
+  /** The signed-in admin's alerts (late jobs, failing checks, stopped banks), newest first. */
+  alerts: adminProcedure.query(({ ctx }) => listAdminAlerts(ctx.user)),
+  markAlertsRead: adminProcedure.mutation(async ({ ctx }) => {
+    await markAdminAlertsRead(ctx.user);
+    return { ok: true };
+  }),
+
+  /** Whether this server is ready: its database, migrations, cache, jobs and every outside service it depends on. */
+  status: adminProcedure.query(() => loadServerStatus()),
 
   money: adminProcedure.query(async () => {
     const monthStart = businessMonthRange().start;

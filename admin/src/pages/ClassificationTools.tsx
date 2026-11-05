@@ -2,8 +2,10 @@ import { useState } from "react";
 import { CATEGORIES } from "@contracts/categories";
 import { Button } from "@admin/kit/button";
 import { Input } from "@admin/kit/input";
+import { Switch } from "@admin/kit/switch";
 import { trpc } from "@admin/lib/trpc";
 import { DECISION, PARSED_BY } from "../ui/ai-words";
+import { SettingsEditor } from "../ui/SettingsEditor";
 import { word } from "../ui/words";
 
 const categoryName = (categoryId?: string, subId?: string) => {
@@ -83,5 +85,52 @@ export function TrySentence() {
         </div>
       )}
     </section>
+  );
+}
+
+const PARSER_SWITCHES: [string, string, string][] = [
+  ["parser_fast_decomposition_enabled", "تقسيم الجملة الطويلة لعمليات", "«عيش ب 20 وأوبر ب 85» تبقى عمليتين."],
+  ["parser_person_memory_enabled", "ذاكرة الأشخاص", "يسأل مين الشخص أول مرة، وبعدها يفتكره."],
+  ["parser_local_verifier_enabled", "المراجعة الأخيرة قبل الحفظ", "تتأكد من الأرقام والفئات والتكرار من غير ذكاء اصطناعي."],
+];
+
+const PARSER_THRESHOLDS: [string, string, string][] = [
+  ["parser_auto_save_threshold", "يتحفظ لوحده لو متأكد قد", "أقل من كده بيتعرض للمراجعة."],
+  ["parser_review_threshold", "يتعرض للمراجعة لو متأكد قد", "أقل من كده بيسأل المستخدم."],
+  ["parser_escalate_threshold", "يسأل الذكاء الاصطناعي لو القواعد متأكدة أقل من", "أعلى = بيسأل الموديل أكتر، وبيكلّف أكتر."],
+];
+
+/** How sure the parser must be to save on its own, to show a review, or to ask a model, and its three local steps. */
+export function ParserSettings() {
+  return (
+    <details className="mb-4 rounded-xl border p-4">
+      <summary className="cursor-pointer font-bold">إعدادات الفهم</summary>
+      <SettingsEditor>
+        {({ formData, updateField }) => (
+          <div className="mt-3 grid gap-4 md:grid-cols-2">
+            <div className="space-y-3">
+              {PARSER_THRESHOLDS.map(([key, label, hint]) => (
+                <label key={key} className="block space-y-1 text-sm">
+                  <span className="font-semibold">{label}</span>
+                  <span className="flex items-center gap-2">
+                    <Input dir="ltr" inputMode="numeric" className="w-24" value={formData[key] ?? ""} onChange={(e) => updateField(key, String(Math.min(100, Number(e.target.value.replace(/\D/g, "") || 0))))} />
+                    <span>%</span>
+                  </span>
+                  <span className="block text-xs text-muted-foreground">{hint}</span>
+                </label>
+              ))}
+            </div>
+            <ul className="divide-y">
+              {PARSER_SWITCHES.map(([key, label, hint]) => (
+                <li key={key} className="flex items-center justify-between gap-4 py-2">
+                  <div><div className="text-sm font-semibold">{label}</div><div className="text-xs text-muted-foreground">{hint}</div></div>
+                  <Switch checked={formData[key] !== "false"} aria-label={label} onCheckedChange={(on) => updateField(key, String(on))} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </SettingsEditor>
+    </details>
   );
 }

@@ -102,7 +102,28 @@ opens the console's page, `no-store` and `noindex`). `npm run dev` (or `admin:de
   numbers, and a reply within the 24-hour window; and the sponsored card's campaigns with views, presses and their
   rate. `adminWhatsapp.broadcastTemplate` has no screen on purpose: the three templates are transactional.
 - «سجل الأدمن» (`admin/src/pages/Audit.tsx`, `admin.getAuditLogs`): every audit entry, filtered by action and Cairo
-  day, 50 a page, each action in words (`AUDIT_ACTION` in `admin/src/ui/words.ts`); «التشغيل» shows the last 30.
+  day, 50 a page, each action in words (`auditAction` in `admin/src/ui/words.ts`); «التشغيل» shows the last 30. Every
+  staff mutation is in it: one without an entry of its own is recorded by `api/middleware.ts` by its procedure and
+  whether it succeeded (it caught `localAuth.deleteUser` and `localAuth.updateRole`, which wrote none), and an admin
+  closing a ticket writes `CLOSE_SUPPORT_TICKET`.
+- «حالة السيرفر» (`admin/src/pages/Status.tsx`, `adminConsole.status`): each outside system and setting the server
+  needs, green, amber or red, with what it means for the app and what to set ([platform](platform.md)), refreshed every
+  minute; a red one also appears on «النهارده».
+- «كل الإعدادات» (`admin/src/pages/AllSettings.tsx`, `adminConsole.settingsCatalog`): every key of the registry (193),
+  searchable, by group, with its default and a reset to it, the right control for its value (a switch, a number, a
+  choice for the settings that take a few values, a masked field for a secret) and the page that explains it; the 42
+  settings no other page edits carry Arabic words. `capture_financial_version` is shown and never edited: the cutover
+  sets it. `admin/src/pages/AllSettings.test.ts` fails on a label for a key the server does not have.
+- «النهارده» also lists the admin's alerts (`adminConsole.alerts`, `adminConsole.markAlertsRead`), a red server check
+  and the late or failing jobs.
+- «الدعم»: an admin gives a ticket to an admin or support moderator, or takes it back (`support.assign`, by id and
+  account type, refusing anyone without a staff role; the ticket keeps its status), and «اللي معايا» shows one's own
+  (`adminConsole.supportTeam`). Assignments live in `support_assignments` (migration 0049) apart from the ticket, so
+  tickets read and write as before until it is applied; the page then hides the assignment controls.
+- «التصنيف وسببه» carries «إعدادات الفهم»: the auto-save, review and model thresholds and the three local steps of the
+  parser. «الفلوس» carries the dollar rate the AI cost's EGP column uses (`usd_to_egp_rate`).
+- Pages load on demand (`React.lazy` in `admin/src/App.tsx`), and the console's Tailwind (`admin/tailwind.config.cjs`)
+  scans only `admin/`: the first load is a 193 kB script and a 37 kB stylesheet instead of 460 kB and 219 kB.
 - No screen of the previous console is mounted any more: `admin/` imports nothing from `src/`, and
   `tests/knowledge/architecture.test.ts` (`console-and-server-without-website`) fails if it, or `api/`, does.
 - Settings sections are hosted by `admin/src/ui/SettingsEditor.tsx`: the saved values with the admin's edits on top,
@@ -215,18 +236,17 @@ Checked against the code; each one names where it lives.
    not every procedure of `api/admin-router.ts` calls it yet, and a failed write of the trail does not stop the action.
 2. **Gap.** Nothing backs up the database from the console; `admin.triggerBackupDemo` (settings with secrets masked,
    onboarding questions and ads) has no screen.
-3. **Gap.** `support.assign` has no screen, so tickets cannot be given to one person of the team.
-4. **Gap.** No screen edits SEO pages (`seo.upsert`, `seo.list` and `seo.delete` have no caller); the sitemap is served
+3. **Gap.** No screen edits SEO pages (`seo.upsert`, `seo.list` and `seo.delete` have no caller); the sitemap is served
    at `/sitemap.xml` from the app's address.
-5. **Gap.** Ads show only in the mobile app (`mobile/app/lib/src/features/ads/sponsored_card.dart`), which records
+4. **Gap.** Ads show only in the mobile app (`mobile/app/lib/src/features/ads/sponsored_card.dart`), which records
    impressions and clicks; the website shows none.
-6. **Gap.** Procedures without a screen: `admin.sendPushNotification` (web push only), `admin.getAiTokenLedger`,
+5. **Gap.** Procedures without a screen: `admin.sendPushNotification` (web push only), `admin.getAiTokenLedger`,
    `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.updateUserPlan` (the console uses the
    `V2` one), `admin.getAICostOverview`, `admin.getAIClassificationStats`, `admin.getVoiceUsageStats`,
    `admin.getUserAiQuota`, `admin.getUserSmartProfile`, `admin.listAllUsers`, `admin.listSubscriptionsAdmin`,
    `admin.listStorePurchasesAdmin`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getActivityLog`,
    `admin.getUserSessions`, `admin.discoverProviderModels`, `admin.saveAiModels`, the discount codes (store billing has
-   none), `support.getById`, `support.assign` and every statistic of `analytics`. The console's own procedures cover
+   none), `support.getById` and every statistic of `analytics`. The console's own procedures cover
    what these showed.
 
 ## Voice capacity and release controls

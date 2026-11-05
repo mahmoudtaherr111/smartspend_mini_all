@@ -1,5 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { Context } from "./context";
+import { logAdminAction } from "./lib/admin-audit";
 import { noteAppSeen } from "./lib/client-platform";
 import { getIncomingHeader } from "./lib/get-client-ip";
 import { createRateLimiter } from "./lib/rate-limit";
@@ -82,21 +83,45 @@ export const aiProcedure = authedProcedure.use(async ({ ctx, next }) => {
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
 
-// Moderator: can view everything except delete users/remove admin
-export const moderatorProcedure = authedProcedure.use(async ({ ctx, next }) => {
-  if (ctx.user.role !== "admin" && ctx.user.role !== "moderator") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "مش مسموحلك تدخل هنا" });
+/**
+ * Every change made with staff rights reaches the audit log. A procedure that writes its own, richer entry
+ * (`logAdminAction`) marks the request and this adds nothing; any other mutation is recorded by its path and whether it
+ * succeeded, never by its input, which can hold keys and personal data. A refused or failed change is recorded too.
+ */
+const auditStaffMutations = t.middleware(async ({ ctx, next, type, path }) => {
+  if (type !== "mutation") return next();
+  const audit = { written: false };
+  const result = await next({ ctx: { ...ctx, audit } });
+  if (!audit.written) {
+    await logAdminAction(ctx, {
+      action: path,
+      targetType: "procedure",
+      targetId: path,
+      details: result.ok ? null : { failed: true, code: result.error.code },
+    });
   }
-  return next({ ctx: { ...ctx, user: ctx.user } });
+  return result;
 });
 
+// Moderator: can view everything except delete users/remove admin
+export const moderatorProcedure = authedProcedure
+  .use(async ({ ctx, next }) => {
+    if (ctx.user.role !== "admin" && ctx.user.role !== "moderator") {
+      throw new TRPCError({ code: "FORBIDDEN", message: "مش مسموحلك تدخل هنا" });
+    }
+    return next({ ctx: { ...ctx, user: ctx.user } });
+  })
+  .use(auditStaffMutations);
+
 // Admin: full access
-export const adminProcedure = authedProcedure.use(async ({ ctx, next }) => {
-  if (ctx.user.role !== "admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "الصفحة دي للأدمن بس" });
-  }
-  return next({ ctx: { ...ctx, user: ctx.user } });
-});
+export const adminProcedure = authedProcedure
+  .use(async ({ ctx, next }) => {
+    if (ctx.user.role !== "admin") {
+      throw new TRPCError({ code: "FORBIDDEN", message: "الصفحة دي للأدمن بس" });
+    }
+    return next({ ctx: { ...ctx, user: ctx.user } });
+  })
+  .use(auditStaffMutations);
 
 // Pro subscription required (pro, ultra, or admin bypass)
 export const proProcedure = authedProcedure.use(async ({ ctx, next }) => {

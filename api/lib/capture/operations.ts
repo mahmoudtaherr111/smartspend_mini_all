@@ -13,15 +13,12 @@ import {
   captureEvents,
   captureMarkers,
   captureUsage,
-  inAppNotifications,
-  localUsers,
   systemSettings,
-  users,
 } from "../../../db/schema";
 import { getDb } from "../../queries/connection";
+import { notifyAdmins } from "../../services/admin-alerts";
 import { afterLedgerWrite, deleteLedgerEntryInTx, lockLedgerOwner } from "../../services/ledger-writer";
 import { createLogger } from "../log";
-import { stateGet, stateSet } from "../redis-client";
 import { getSystemSettings, invalidateSettingsCache } from "../settings-cache";
 import { autoPolicyOf, releaseQuota } from "./intake";
 
@@ -76,24 +73,8 @@ export async function runCaptureBreaker(now = new Date()): Promise<string[]> {
   return trips;
 }
 
-/**
- * Tells every admin, in the app (decision 0035). There is no other alert channel yet; `dedupeKey` keeps the same alert
- * to once an hour across replicas.
- */
-export async function notifyAdmins(title: string, body: string, dedupeKey?: string): Promise<number> {
-  if (dedupeKey) {
-    const key = `capture:alert:${dedupeKey}`;
-    if (await stateGet(key)) return 0;
-    await stateSet(key, 3600, "1");
-  }
-  const db = getDb();
-  const admins = [
-    ...(await db.select({ userId: users.id }).from(users).where(eq(users.role, "admin"))).map((row) => ({ userId: row.userId, userType: "oauth" })),
-    ...(await db.select({ userId: localUsers.id }).from(localUsers).where(eq(localUsers.role, "admin"))).map((row) => ({ userId: row.userId, userType: "local" })),
-  ];
-  if (admins.length > 0) await db.insert(inAppNotifications).values(admins.map((admin) => ({ ...admin, title, body, actionUrl: "/admin" })));
-  return admins.length;
-}
+/** Admin alerts moved to `api/services/admin-alerts.ts`; capture's callers keep this name. */
+export { notifyAdmins };
 
 /** The model's queue has a job waiting longer than this: the worker or the provider is stuck. */
 export const QUEUE_STALL_MS = 5 * 60 * 1000;

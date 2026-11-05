@@ -167,7 +167,7 @@
       "clusters": ["api-core", "api-routers", "platform", "database", "contracts", "jobs", "storage"],
       "routers": ["appConfig"],
       "routes": ["GET /", "GET /health", "GET /robots.txt", "GET /sitemap.xml", "ALL /api/trpc/*"],
-      "jobs": ["data-retention-lifecycle"]
+      "jobs": ["data-retention-lifecycle", "ops-watch"]
     },
     {
       "id": "web-app",

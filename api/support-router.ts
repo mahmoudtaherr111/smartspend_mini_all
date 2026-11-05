@@ -7,7 +7,7 @@ import {
 } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
-import { supportTickets, users, localUsers, inAppNotifications } from "../db/schema";
+import { supportAssignments, supportTickets, users, localUsers, inAppNotifications } from "../db/schema";
 import { logAdminAction } from "./lib/admin-audit";
 import { eq, desc, and, sql, count, inArray } from "drizzle-orm";
 
@@ -223,42 +223,45 @@ export const supportRouter = router({
     }),
 
   // ─── Assign Ticket ───
+  /**
+   * Gives a ticket to one admin or support moderator, by id and account type (an id alone can name two people), or
+   * takes it back with `staffId: null`. The assignee must hold a staff role.
+   */
   assign: adminProcedure
     .input(
       z.object({
-        id: z.number(),
-        moderatorId: z.number(),
+        id: z.number().int().positive(),
+        staffId: z.number().int().positive().nullable(),
+        staffType: z.enum(["oauth", "local"]).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const ticket = await db
-        .select()
-        .from(supportTickets)
-        .where(eq(supportTickets.id, input.id))
-        .limit(1);
-      if (!ticket[0]) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "التذكرة غير موجودة",
-        });
-      }
+      // The ticket keeps its status: one given to someone is still waiting for its reply.
+      const [ticket] = await db.select({ id: supportTickets.id }).from(supportTickets).where(eq(supportTickets.id, input.id)).limit(1);
+      if (!ticket) throw new TRPCError({ code: "NOT_FOUND", message: "التذكرة غير موجودة" });
 
-      await db
-        .update(supportTickets)
-        .set({ assignedTo: input.moderatorId, status: "in_progress" })
-        .where(eq(supportTickets.id, input.id));
+      if (input.staffId === null) {
+        await db.delete(supportAssignments).where(eq(supportAssignments.ticketId, input.id));
+      } else {
+        if (!input.staffType) throw new TRPCError({ code: "BAD_REQUEST", message: "نوع حساب الشخص ناقص" });
+        const table = input.staffType === "oauth" ? users : localUsers;
+        const [staff] = await db.select({ role: table.role }).from(table).where(eq(table.id, input.staffId)).limit(1);
+        if (!staff || (staff.role !== "admin" && staff.role !== "moderator")) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "الشخص ده مش من فريق الدعم" });
+        }
+        await db
+          .insert(supportAssignments)
+          .values({ ticketId: input.id, staffId: input.staffId, staffType: input.staffType })
+          .onDuplicateKeyUpdate({ set: { staffId: input.staffId, staffType: input.staffType, assignedAt: new Date() } });
+      }
 
       await logAdminAction(ctx, {
         action: "ASSIGN_SUPPORT_TICKET",
         targetType: "support_ticket",
         targetId: String(input.id),
-        details: {
-          ticketSubject: ticket[0].subject,
-          moderatorId: input.moderatorId,
-        },
+        details: input.staffId === null ? { unassigned: true } : { staff: `${input.staffType}:${input.staffId}` },
       });
-
-      return { success: true, message: "تم تعيين التذكرة" };
+      return { success: true };
     }),
 
   // ─── Close Ticket ───
@@ -291,6 +294,10 @@ export const supportRouter = router({
         .update(supportTickets)
         .set({ status: "closed" })
         .where(eq(supportTickets.id, input.id));
+      // A ticket closed by staff is a staff change; the owner closing their own is not.
+      if (ctx.user.role === "admin") {
+        await logAdminAction(ctx, { action: "CLOSE_SUPPORT_TICKET", targetType: "support_ticket", targetId: input.id });
+      }
       return { success: true };
     }),
 });

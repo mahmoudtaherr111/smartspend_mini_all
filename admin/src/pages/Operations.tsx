@@ -8,7 +8,7 @@ import { trpc } from "@admin/lib/trpc";
 import { SaveBar } from "../ui/SaveBar";
 import { Jobs } from "./Jobs";
 import { LoadError, Loading, PageHeader } from "../ui/states";
-import { AUDIT_ACTION, dayTime } from "../ui/words";
+import { auditAction, dayTime } from "../ui/words";
 
 // Each AI feature an admin can stop for everyone (api/lib/feature-switches.ts), in the words of the app.
 const SWITCHES = [
@@ -129,7 +129,7 @@ export function Operations() {
             {audit.data.logs.map((log: { id: number; action: string; adminName?: string; targetType: string | null; targetId: string | null; createdAt: string | Date }) => (
               <li key={log.id} className="flex flex-wrap justify-between gap-2 py-2">
                 <span>
-                  <b>{log.adminName || "أدمن"}</b> {AUDIT_ACTION[log.action] ?? log.action}
+                  <b>{log.adminName || "أدمن"}</b> {auditAction(log.action)}
                   {log.targetId && log.targetType !== "system_settings" ? <span className="text-muted-foreground"> ({log.targetId})</span> : null}
                 </span>
                 <span className="text-xs text-muted-foreground">{dayTime(log.createdAt)}</span>

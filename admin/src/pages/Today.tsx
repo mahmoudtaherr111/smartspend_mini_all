@@ -33,6 +33,32 @@ function Metric({ label, value, note, tone = "neutral" }: { label: string; value
   );
 }
 
+/** What the server told the admins (late jobs, failing checks, stopped banks), newest first; opening marks them read. */
+function Alerts() {
+  const utils = trpc.useUtils();
+  const alerts = trpc.adminConsole.alerts.useQuery(undefined, { refetchInterval: 60_000 });
+  const read = trpc.adminConsole.markAlertsRead.useMutation({ onSuccess: () => void utils.adminConsole.alerts.invalidate() });
+  const rows = alerts.data ?? [];
+  if (!rows.length) return null;
+  const unread = rows.filter((row) => !row.isRead).length;
+  return (
+    <section className="mt-6 rounded-xl border bg-background p-4" aria-labelledby="alerts">
+      <div className="flex items-center justify-between gap-2">
+        <h2 id="alerts" className="font-bold">التنبيهات{unread ? ` (${unread} جديد)` : ""}</h2>
+        {unread > 0 && <Button size="sm" variant="ghost" disabled={read.isPending} onClick={() => read.mutate()}>اتقرت كلها</Button>}
+      </div>
+      <ul className="mt-2 divide-y text-sm">
+        {rows.slice(0, 8).map((row) => (
+          <li key={row.id} className={`py-2 ${row.isRead ? "text-muted-foreground" : ""}`}>
+            <div className="flex flex-wrap justify-between gap-2"><b>{row.title}</b><span className="text-xs text-muted-foreground">{ago(row.createdAt)}</span></div>
+            <div>{row.body}</div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function Task({ icon, text, action }: { icon: ReactNode; text: string; action?: ReactNode }) {
   return (
     <li className="flex items-center gap-3 border-b py-3 last:border-b-0">
@@ -46,6 +72,8 @@ function Task({ icon, text, action }: { icon: ReactNode; text: string; action?: 
 /** The home page: what happened today, what needs the admin, and whether the system is really up. */
 export function Today() {
   const today = trpc.adminConsole.today.useQuery(undefined, { refetchInterval: 60_000 });
+  const jobs = trpc.adminConsole.jobs.useQuery(undefined, { refetchInterval: 60_000 });
+  const status = trpc.adminConsole.status.useQuery(undefined, { refetchInterval: 5 * 60_000 });
 
   if (today.isLoading) return <Loading />;
   if (!today.data) return <LoadError message="ماقدرناش نجيب أرقام النهارده." onRetry={() => today.refetch()} />;
@@ -95,6 +123,29 @@ export function Today() {
         key="cost"
         icon={<CircleAlert className="size-5 text-amber-600" aria-hidden />}
         text={`تكلفة الذكاء النهارده وصلت ${Math.round(costShare * 100)}% من السقف. لو وصلت 100% المساعد هيقف لحد نص الليل.`}
+      />,
+    );
+  }
+
+  const brokenChecks = (status.data?.checks ?? []).filter((check) => check.state === "fail");
+  if (brokenChecks.length) {
+    tasks.unshift(
+      <Task
+        key="status"
+        icon={<XCircle className="size-5 text-red-600" aria-hidden />}
+        text={`${brokenChecks.length} حاجة واقفة في السيرفر`}
+        action={<Button asChild size="sm" variant="outline"><Link to="/status">شوف إيه</Link></Button>}
+      />,
+    );
+  }
+  const troubled = (jobs.data?.jobs ?? []).filter((job) => job.late || job.lastStatus === "failed");
+  if (troubled.length) {
+    tasks.push(
+      <Task
+        key="jobs"
+        icon={<CircleAlert className="size-5 text-amber-600" aria-hidden />}
+        text={`${troubled.length} مهمة في الخلفية متأخرة أو بتقع`}
+        action={<Button asChild size="sm" variant="outline"><Link to="/operations">افتح التشغيل</Link></Button>}
       />,
     );
   }
@@ -154,6 +205,8 @@ export function Today() {
           <p className="py-3 text-sm text-muted-foreground">مفيش حاجة مستنياك دلوقتي.</p>
         )}
       </section>
+
+      <Alerts />
 
       <section className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border bg-background p-4 text-sm" aria-label="حالة السيستم">
         {up(d.health.database, "قاعدة البيانات")}

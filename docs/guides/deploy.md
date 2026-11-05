@@ -84,7 +84,8 @@ The schema is `db/schema.ts`. `npm run db:generate` writes SQL migrations to `db
 or a CI job before starting a new version. `npm run db:push` is only for a throwaway local database.
 A new version may ship ahead of its migration only where the code says it can wait: migration 0048
 (`scheduled_job_runs`) is one, as jobs run as before and «التشغيل» in the console says the table is missing until it is
-applied.
+applied. Migration 0049 (`support_assignments`) can wait the same way: until it is applied, tickets work and only
+assigning them is unavailable. The console's «حالة السيرفر» lists any migration this build has and the database lacks.
 
 `npm run db:doctor` reads the database in `DATABASE_URL` and prints how it differs from `db/schema.ts` and which
 migrations it has recorded; it changes nothing. Run it before the first `npm run db:migrate` on an existing database:

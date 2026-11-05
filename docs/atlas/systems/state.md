@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 77 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 76 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-05 f7bb4b83 | 2026-11-04 4def5707 | 18 | — | — | 1 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-05 f7bb4b83 | 2026-11-05 389cc707 | 8 | — | — | 5 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-05 ed33efe8 | 2026-11-05 ed33efe8 | 8 | — | — | 5 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 6 | — | — | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-05 5af36e21 | 2026-11-05 f7bb4b83 | 9 | — | 2 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-05 5af36e21 | 2026-11-05 df6216e1 | 7 | — | 1 | 7 | 1 |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 16 | **1** | — | 7 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-05 ed33efe8 | 2026-11-05 ed33efe8 | 16 | **1** | — | 7 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-05 df6216e1 | 2026-11-03 ff028180 | 2 | — | — | 2 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-04 4def5707 | 2026-11-05 08b37c7f | 4 | — | — | 3 | 1 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-05 aa6f9b19 | 2026-11-05 aa6f9b19 | 7 | — | — | 6 | — |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-05 ed33efe8 | 2026-11-05 ed33efe8 | 7 | — | — | 5 | — |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 10 | — | — | 3 | 5 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-05 aa6f9b19 | 2026-11-05 aa6f9b19 | 5 | — | — | 1 | 7 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-05 ed33efe8 | 2026-11-05 ed33efe8 | 5 | — | — | 1 | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 7 | — | — | 3 | 1 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 
 
 Every system's explanation names at least one test.
 
-## What is waiting (77 issue(s))
+## What is waiting (76 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -47,7 +47,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
 - The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 
-### Gaps (47)
+### Gaps (46)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and The website has no receipt capture. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
@@ -104,10 +104,9 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
 - `logAdminAction` in `api/lib/admin-audit.ts` records actions in `admin_audit_logs` and the audit tab shows them, but not every procedure of `api/admin-router.ts` calls it yet, and a failed write of the trail does not stop the action.
 - Nothing backs up the database from the console; `admin.triggerBackupDemo` (settings with secrets masked, onboarding questions and ads) has no screen.
-- `support.assign` has no screen, so tickets cannot be given to one person of the team.
 - No screen edits SEO pages (`seo.upsert`, `seo.list` and `seo.delete` have no caller); the sitemap is served at `/sitemap.xml` from the app's address.
 - Ads show only in the mobile app (`mobile/app/lib/src/features/ads/sponsored_card.dart`), which records impressions and clicks; the website shows none.
-- Procedures without a screen: `admin.sendPushNotification` (web push only), `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.updateUserPlan` (the console uses the `V2` one), `admin.getAICostOverview`, `admin.getAIClassificationStats`, `admin.getVoiceUsageStats`, `admin.getUserAiQuota`, `admin.getUserSmartProfile`, `admin.listAllUsers`, `admin.listSubscriptionsAdmin`, `admin.listStorePurchasesAdmin`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getActivityLog`, `admin.getUserSessions`, `admin.discoverProviderModels`, `admin.saveAiModels`, the discount codes (store billing has none), `support.getById`, `support.assign` and every statistic of `analytics`. The console's own procedures cover what these showed.
+- Procedures without a screen: `admin.sendPushNotification` (web push only), `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.updateUserPlan` (the console uses the `V2` one), `admin.getAICostOverview`, `admin.getAIClassificationStats`, `admin.getVoiceUsageStats`, `admin.getUserAiQuota`, `admin.getUserSmartProfile`, `admin.listAllUsers`, `admin.listSubscriptionsAdmin`, `admin.listStorePurchasesAdmin`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getActivityLog`, `admin.getUserSessions`, `admin.discoverProviderModels`, `admin.saveAiModels`, the discount codes (store billing has none), `support.getById` and every statistic of `analytics`. The console's own procedures cover what these showed.
 
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
 - Two accountings remain: the `ai_cost_*` events of `recordAICostMetric` estimate tokens on their own and the screen that would show them is not mounted ([admin](admin.md)); the ledger is the priced one.
@@ -115,7 +114,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Nobody has called Claude with a real key from this code yet: the adapter is tested against recorded response shapes, and a call with an invented key reached Anthropic and came back as `auth`.
 
 **Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
-- Nothing alerts anyone when a job is late or failing: «التشغيل» shows it, and only to an admin who looks.
+- The only alert channel is the in-app notification: an admin who opens neither the app nor the console learns nothing, and there is no e-mail or chat channel yet.
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - `/ultra` sends anyone not on Ultra to the plans page itself, while the page tells the reader it is protected by `UltraFeatureRoute`. Both gates in gate components are unused, so the plan is checked on the server only.

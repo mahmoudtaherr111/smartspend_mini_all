@@ -374,6 +374,22 @@ export const supportTickets = mysqlTable(
   ],
 );
 
+/**
+ * Who on the team handles a ticket: the staff member's id with its account type, since a Google and a phone account
+ * can share an id (`support_tickets.assigned_to` holds an id alone and is not used). Kept apart from the ticket so
+ * that reading or writing tickets never depends on this table existing.
+ */
+export const supportAssignments = mysqlTable(
+  "support_assignments",
+  {
+    ticketId: int("ticket_id").primaryKey(),
+    staffId: int("staff_id").notNull(),
+    staffType: varchar("staff_type", { length: 50 }).notNull(),
+    assignedAt: datetime("assigned_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [index("support_assignments_staff_idx").on(t.staffId, t.staffType)],
+);
+
 // ─── Discount Codes ───
 export const discountCodes = mysqlTable("discount_codes", {
   id: int("id").primaryKey().autoincrement(),

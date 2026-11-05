@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import {
+  Activity,
   Banknote,
   BookOpen,
   Brain,
@@ -16,6 +17,7 @@ import {
   Menu,
   Plug,
   Receipt,
+  Settings2,
   ScrollText,
   Users,
   X,
@@ -124,6 +126,20 @@ const AREAS: Area[] = [
     label: "التشغيل",
     hint: "إيقاف الميزات، السقف، التحديثات، السجل",
     icon: SlidersHorizontal,
+    adminOnly: true,
+  },
+  {
+    to: "/settings",
+    label: "كل الإعدادات",
+    hint: "أي إعداد في السيرفر، مباشرةً",
+    icon: Settings2,
+    adminOnly: true,
+  },
+  {
+    to: "/status",
+    label: "حالة السيرفر",
+    hint: "قاعدة البيانات والمهام والخدمات",
+    icon: Activity,
     adminOnly: true,
   },
   {

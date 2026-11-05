@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { trpc } from "@admin/lib/trpc";
+import { Input } from "@admin/kit/input";
+import { SettingsEditor } from "../ui/SettingsEditor";
 import { LoadError, Loading, PageHeader } from "../ui/states";
 import { STORE, SUBSCRIPTION, count, day, word } from "../ui/words";
 
@@ -119,6 +121,17 @@ export function Money() {
         </>
       )}
 
+      <section className="mt-6 rounded-xl border p-4">
+        <SettingsEditor>
+          {({ formData, updateField }) => (
+            <label className="block space-y-1 text-sm">
+              <span className="font-semibold">سعر الدولار بالجنيه</span>
+              <Input dir="ltr" inputMode="decimal" className="w-32" value={formData.usd_to_egp_rate ?? ""} onChange={(e) => updateField("usd_to_egp_rate", e.target.value.replace(/[^\d.]/g, ""))} />
+              <span className="block text-xs text-muted-foreground">تكلفة الذكاء الاصطناعي بالجنيه في «نداءات الذكاء» بتتحسب بيه. غيّره لما السعر يتغير.</span>
+            </label>
+          )}
+        </SettingsEditor>
+      </section>
       <p className="mt-6 text-sm text-muted-foreground">
         مميزات كل باقة وحدودها والمكالمة الصوتية في صفحة <Link className="underline" to="/plans">الباقات والحدود</Link>.
       </p>

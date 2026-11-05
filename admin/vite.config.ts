@@ -1,6 +1,8 @@
 import devServer from "@hono/vite-dev-server";
 import path from "path";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "tailwindcss";
+import autoprefixer from "autoprefixer";
 import { defineConfig, loadEnv } from "vite";
 import { createOriginPolicy } from "../api/lib/origin-policy";
 import { voiceDevServer } from "../scripts/vite-voice";
@@ -22,7 +24,8 @@ export default defineConfig({
     voiceDevServer(originPolicy.isAllowedWebSocketOrigin),
     react(),
   ],
-  css: { postcss: root },
+  // The console's own Tailwind config scans only admin/, so the website's classes stay out of its stylesheet.
+  css: { postcss: { plugins: [tailwindcss({ config: path.join(import.meta.dirname, "tailwind.config.cjs") }), autoprefixer()] } },
   resolve: {
     alias: {
       "@admin": path.resolve(import.meta.dirname, "src"),

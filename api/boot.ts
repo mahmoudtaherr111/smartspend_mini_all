@@ -36,6 +36,7 @@ import {
   checkAndTriggerSmartActivityNotifications,
 } from "./notification-engine";
 import { registerJobSchedule } from "./services/job-runs";
+import { watchOperations } from "./services/admin-alerts";
 import { withScheduledJobLock } from "./services/scheduler-lock";
 import { syncCaptureSeed } from "./lib/capture/catalog";
 import { registerCaptureRoutes } from "./capture-v1-routes";
@@ -106,6 +107,11 @@ if (cronsEnabled) {
 }
 
 // Cron job to clean up sessions and expiring WebAuthn challenges daily.
+// Late or failing jobs and failing server checks reach the admins in the app, each once per quiet period.
+scheduleProtectedJob("*/15 * * * *", "ops-watch", async () => {
+  await watchOperations();
+});
+
 scheduleProtectedJob("0 0 * * *", "daily-auth-cleanup", async () => {
   const now = new Date();
   await Promise.all([

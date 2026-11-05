@@ -12,10 +12,12 @@ export interface AdminAuditEntry {
 }
 
 export async function logAdminAction(
-  ctx: { user?: { id: number; type: string } | null; ip?: string },
+  ctx: { user?: { id: number; type: string } | null; ip?: string; audit?: { written: boolean } },
   entry: AdminAuditEntry,
 ): Promise<void> {
   if (!ctx.user || !entry.action || !entry.targetType) return;
+  // The staff middleware (api/middleware.ts) then adds no second, poorer entry for the same request.
+  if (ctx.audit) ctx.audit.written = true;
 
   try {
     await db.insert(adminAuditLogs).values({

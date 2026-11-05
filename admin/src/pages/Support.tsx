@@ -28,6 +28,21 @@ export function Support({ isAdmin }: { isAdmin: boolean }) {
   const [openId, setOpenId] = useState<number | null>(null);
   const [reply, setReply] = useState("");
   const tickets = trpc.support.listAll.useQuery({ status: view, page: 1, limit: 50 });
+  const team = trpc.adminConsole.supportTeam.useQuery();
+  const me = trpc.adminConsole.session.useQuery(undefined, { staleTime: Infinity });
+  const [mineOnly, setMineOnly] = useState(false);
+  const assign = trpc.support.assign.useMutation({
+    onSuccess: () => { toast.success("اتحفظ"); void utils.adminConsole.supportTeam.invalidate(); void utils.support.listAll.invalidate(); },
+    onError: (error) => toast.error(error.message),
+  });
+  const holder = (ticketId: number) => {
+    const row = team.data?.assignments.find((item) => item.ticketId === ticketId);
+    return row ? team.data?.staff.find((person) => person.id === row.staffId && person.type === row.staffType) ?? null : null;
+  };
+  const isMine = (ticketId: number) => {
+    const person = holder(ticketId);
+    return !!person && person.id === me.data?.id && person.type === me.data?.type;
+  };
   const respond = trpc.support.respond.useMutation({
     onSuccess: () => {
       toast.success("الرد اتبعت، وهيوصله إشعار في التطبيق");
@@ -52,6 +67,9 @@ export function Support({ isAdmin }: { isAdmin: boolean }) {
             {option.label}
           </Button>
         ))}
+        {team.data?.ready && (
+          <Button size="sm" variant={mineOnly ? "secondary" : "ghost"} aria-pressed={mineOnly} onClick={() => setMineOnly(!mineOnly)}>اللي معايا</Button>
+        )}
       </div>
       {tickets.isLoading ? (
         <Loading />
@@ -64,6 +82,7 @@ export function Support({ isAdmin }: { isAdmin: boolean }) {
       ) : (
         <ul className="space-y-3">
           {[...tickets.data.list]
+            .filter((ticket) => !mineOnly || isMine(ticket.id))
             .sort((a, b) => (view === "open" ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() : 0))
             .map((ticket) => (
               <li key={ticket.id} className="rounded-xl border bg-background p-4">
@@ -80,7 +99,20 @@ export function Support({ isAdmin }: { isAdmin: boolean }) {
                       {ticket.status === "open" && <span className="text-amber-700 dark:text-amber-400"> · مستني {waited(ticket.createdAt)}</span>}
                     </p>
                   </div>
-                  <Badge variant={ticket.status === "open" ? "destructive" : "outline"}>{word(TICKET, ticket.status)}</Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {team.data?.ready && (isAdmin ? (
+                      <select aria-label="مين ماسكها" className="h-8 rounded-md border bg-background px-2 text-xs" disabled={assign.isPending}
+                        value={holder(ticket.id) ? `${holder(ticket.id)!.type}:${holder(ticket.id)!.id}` : ""}
+                        onChange={(e) => {
+                          const [type, id] = e.target.value.split(":");
+                          assign.mutate(e.target.value ? { id: ticket.id, staffId: Number(id), staffType: type as "oauth" | "local" } : { id: ticket.id, staffId: null });
+                        }}>
+                        <option value="">محدش ماسكها</option>
+                        {team.data.staff.map((person) => <option key={`${person.type}:${person.id}`} value={`${person.type}:${person.id}`}>{person.name || "من غير اسم"}{person.role === "moderator" ? " (دعم)" : ""}</option>)}
+                      </select>
+                    ) : holder(ticket.id) && <span className="text-xs text-muted-foreground">{isMine(ticket.id) ? "معاك إنت" : `مع ${holder(ticket.id)!.name}`}</span>)}
+                    <Badge variant={ticket.status === "open" ? "destructive" : "outline"}>{word(TICKET, ticket.status)}</Badge>
+                  </div>
                 </div>
                 <p className="mt-3 whitespace-pre-wrap text-sm">{ticket.message}</p>
                 {ticket.response && (

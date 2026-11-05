@@ -3,7 +3,7 @@ import { Button } from "@admin/kit/button";
 import { Input } from "@admin/kit/input";
 import { trpc } from "@admin/lib/trpc";
 import { LoadError, Loading, PageHeader } from "../ui/states";
-import { AUDIT_ACTION, cairoInputToIso, dayTime } from "../ui/words";
+import { AUDIT_ACTION, auditAction, cairoInputToIso, dayTime } from "../ui/words";
 
 const PAGE = 50;
 
@@ -56,7 +56,7 @@ export function Audit() {
             {log.data.logs.map((row) => (
               <li key={row.id} className="flex flex-wrap items-start justify-between gap-2 p-3 text-sm">
                 <div className="min-w-0">
-                  <div><b>{row.adminName}</b> {AUDIT_ACTION[row.action] ?? row.action}{row.targetId && row.targetType !== "system_settings" ? <span className="text-muted-foreground"> · {row.targetType} {row.targetId}</span> : null}</div>
+                  <div><b>{row.adminName}</b> {auditAction(row.action)}{row.targetId && row.targetType !== "system_settings" ? <span className="text-muted-foreground"> · {row.targetType} {row.targetId}</span> : null}</div>
                   {details(row.details) && <div className="text-xs text-muted-foreground" dir="auto">{details(row.details)}</div>}
                 </div>
                 <span className="text-xs text-muted-foreground">{dayTime(row.createdAt)}</span>

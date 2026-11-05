@@ -70,7 +70,9 @@
         "api/lib/app-time.ts",
         "api/lib/error-logger.ts",
         "api/services/scheduler-lock.ts",
-        "api/services/job-runs.ts"
+        "api/services/job-runs.ts",
+        "api/services/server-status.ts",
+        "api/services/admin-alerts.ts"
       ]
     },
     {

@@ -580,11 +580,21 @@ model {
       }
     }
     adminConsole = router 'adminConsole' {
-      description 'api/admin-console-router.ts — 9 procedures.'
+      description 'api/admin-console-router.ts — 14 procedures.'
       metadata {
         file 'api/admin-console-router.ts'
       }
       aiCalls = procedure 'adminConsole.aiCalls' {
+        #query #admin #uncalled
+        technology 'adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/admin-console-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
+      }
+      alerts = procedure 'adminConsole.alerts' {
         #query #admin #uncalled
         technology 'adminProcedure'
         description 'query · adminProcedure · no caller in src/'
@@ -624,6 +634,16 @@ model {
           procedureKind 'query'
         }
       }
+      markAlertsRead = procedure 'adminConsole.markAlertsRead' {
+        #mutation #admin #uncalled
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/admin-console-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
       money = procedure 'adminConsole.money' {
         #query #admin #uncalled
         technology 'adminProcedure'
@@ -655,6 +675,36 @@ model {
         }
       }
       session = procedure 'adminConsole.session' {
+        #query #moderator #uncalled
+        technology 'moderatorProcedure'
+        description 'query · moderatorProcedure · no caller in src/'
+        metadata {
+          file 'api/admin-console-router.ts'
+          builder 'moderatorProcedure'
+          procedureKind 'query'
+        }
+      }
+      settingsCatalog = procedure 'adminConsole.settingsCatalog' {
+        #query #admin #uncalled
+        technology 'adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/admin-console-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
+      }
+      status = procedure 'adminConsole.status' {
+        #query #admin #uncalled
+        technology 'adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/admin-console-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
+      }
+      supportTeam = procedure 'adminConsole.supportTeam' {
         #query #moderator #uncalled
         technology 'moderatorProcedure'
         description 'query · moderatorProcedure · no caller in src/'
@@ -3263,6 +3313,14 @@ model {
       description 'Scheduled in api/boot.ts.'
       metadata {
         schedule '0 4 * * *'
+        file 'api/boot.ts'
+      }
+    }
+    ops-watch = job 'ops-watch' {
+      technology 'cron */15 * * * *'
+      description 'Scheduled in api/boot.ts.'
+      metadata {
+        schedule '*/15 * * * *'
         file 'api/boot.ts'
       }
     }

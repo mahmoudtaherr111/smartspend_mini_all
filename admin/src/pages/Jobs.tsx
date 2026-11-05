@@ -4,6 +4,7 @@ import { dayTime } from "../ui/words";
 
 /** What each background job does, in words; a job missing here shows its own name. */
 const JOB: Record<string, string> = {
+  "ops-watch": "تنبيه الأدمنز بالمتأخر والواقف",
   "daily-auth-cleanup": "تنضيف الجلسات والأكواد القديمة",
   "classification-log-cleanup": "تنضيف سجل التصنيف",
   "coaching-reminders": "تذكيرات المدرب",

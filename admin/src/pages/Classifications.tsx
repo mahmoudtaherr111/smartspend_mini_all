@@ -5,7 +5,7 @@ import { Button } from "@admin/kit/button";
 import { trpc } from "@admin/lib/trpc";
 import { DECISION, INPUT, MATCH, PARSED_BY, confidenceWords } from "../ui/ai-words";
 import { LoadError, Loading, PageHeader } from "../ui/states";
-import { Quality, TrySentence } from "./ClassificationTools";
+import { ParserSettings, Quality, TrySentence } from "./ClassificationTools";
 import { count, dayTime, money, word } from "../ui/words";
 
 const FILTERS = [
@@ -51,6 +51,7 @@ export function Classifications() {
 
       <Quality days={days} />
       <TrySentence />
+      <ParserSettings />
 
       {logs.isLoading ? (
         <Loading />

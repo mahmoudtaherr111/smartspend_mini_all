@@ -16,6 +16,7 @@
       "@admin/*": ["./admin/src/*"]
     },
     "moduleResolution": "bundler",
+    "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": false,
     "moduleDetection": "force",
