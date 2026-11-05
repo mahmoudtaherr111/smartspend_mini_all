@@ -5,7 +5,6 @@ import {
   BookOpen,
   Brain,
   Building2,
-  FlaskConical,
   ChartLine,
   Cpu,
   Home,
@@ -100,17 +99,11 @@ const AREAS: Area[] = [
   {
     to: "/bank-messages",
     label: "رسايل البنوك",
-    hint: "البنوك اللي بنفهمها ونسبة الفهم",
+    hint: "جرّب رسالة، والأرقام، والبنوك، والإعدادات",
     icon: Building2,
     adminOnly: true,
   },
-  {
-    to: "/bank-messages/lab",
-    label: "تجربة رسايل البنك",
-    hint: "ابعت رسالة كأنها من موبايلك وشوف اتسجلت إزاي",
-    icon: FlaskConical,
-    adminOnly: true,
-  },
+
   {
     to: "/communications",
     label: "التواصل والإعلانات",
@@ -157,7 +150,7 @@ export function Shell({
         <NavLink
           key={area.to}
           to={area.to}
-          end={area.to === "/" || area.to === "/bank-messages"}
+          end={area.to === "/"}
           onClick={() => setOpen(false)}
           className={({ isActive }) =>
             `flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${

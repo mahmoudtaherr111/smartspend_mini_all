@@ -4,7 +4,6 @@ import { AdminRulesTab } from "@/components/admin/AdminRulesTab";
 import { AdminWhatsAppTab } from "@/components/admin/AdminWhatsAppTab";
 import { ClarificationsTab } from "@/components/admin/ClarificationsTab";
 import { NotificationsTab } from "@/components/admin/NotificationsTab";
-import { AdminCaptureTab } from "@/components/admin/capture/AdminCaptureTab";
 import { AdminKeysTab } from "@/components/admin/settings/AdminKeysTab";
 import { AiCommandCenter } from "@/components/admin/ai-center/AiCommandCenter";
 import { Button } from "@admin/kit/button";
@@ -73,18 +72,6 @@ export function Communications() {
           },
         ]}
       />
-    </div>
-  );
-}
-
-export function BankMessages() {
-  return (
-    <div>
-      <PageHeader
-        title="رسايل البنوك والمحافظ"
-        description="البنوك والمحافظ اللي التطبيق بيفهم رسايلها، ونسبة اللي اتفهم، والرسايل اللي محتاجة مراجعة."
-      />
-      <AdminCaptureTab />
     </div>
   );
 }

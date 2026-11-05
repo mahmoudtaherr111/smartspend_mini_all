@@ -7,14 +7,14 @@ import { AiCalls } from "./pages/AiCalls";
 import { Classifications } from "./pages/Classifications";
 import { Connectors } from "./pages/Connectors";
 import { Growth } from "./pages/Growth";
-import { AiSetup, BankMessages, Communications, Rules } from "./pages/Hosted";
+import { AiSetup, Communications, Rules } from "./pages/Hosted";
+import { BankMessages } from "./pages/bank/BankMessages";
 import { Money } from "./pages/Money";
 import { Operations } from "./pages/Operations";
 import { People } from "./pages/People";
 import { Support } from "./pages/Support";
 import { Person } from "./pages/Person";
 import { Today } from "./pages/Today";
-import { CaptureLab } from "./pages/CaptureLab";
 import { ErrorBoundary } from "./ui/ErrorBoundary";
 import { Loading } from "./ui/states";
 
@@ -52,9 +52,6 @@ export default function App() {
             )}
             {isAdmin && (
               <Route path="/bank-messages" element={<BankMessages />} />
-            )}
-            {isAdmin && (
-              <Route path="/bank-messages/lab" element={<CaptureLab />} />
             )}
             {isAdmin && <Route path="/ai/rules" element={<Rules />} />}
             {isAdmin && <Route path="/ai/setup" element={<AiSetup />} />}

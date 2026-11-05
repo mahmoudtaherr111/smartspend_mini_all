@@ -97,9 +97,9 @@
         "src/pages/Admin.tsx": "9444393be5fa",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-05 0c8067ac",
-      "arabic": "8eff1719a3bd",
-      "arabicChecked": "2026-11-05 0c8067ac"
+      "checked": "2026-11-05 389cc707",
+      "arabic": "633486f681aa",
+      "arabicChecked": "2026-11-05 389cc707"
     },
     "ai-center": {
       "files": {
@@ -228,9 +228,9 @@
         "api/lib/sms-ai-contract.ts": "34562a4b9e0c",
         "src/components/bank-capture/CaptureOverview.tsx": "30e973b0cfd2"
       },
-      "checked": "2026-11-05 143b366b",
-      "arabic": "0699ae8412d6",
-      "arabicChecked": "2026-11-05 143b366b"
+      "checked": "2026-11-05 389cc707",
+      "arabic": "ea8b2a5fb37a",
+      "arabicChecked": "2026-11-05 389cc707"
     },
     "billing": {
       "files": {
