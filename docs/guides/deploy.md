@@ -127,3 +127,19 @@ database within a few seconds.
 
 ## Mobile
 - `android/` and `ios/` are Capacitor apps around the built web app.
+- `mobile/` is the Flutter app. `.github/workflows/android-release.yml` (a `v*.*.*` tag or a manual run) builds the
+  store bundle and APKs, which request no SMS permission, and the SMS build (`--android-project-arg=smartspend.sms=true`,
+  artifact `smartspend-sms-apk`) for sideloading until Google Play approves the SMS declaration. Both call
+  `https://api.smartspend.app`.
+
+## Bank-message capture in production
+Decision 0049; the system is [bank and wallet messages](../systems/bank-messages.md).
+- Nothing to switch on: `capture_enabled` and `capture_questions_enabled` are on unless an admin sets them to `false`.
+- On the replica with `ENABLE_CRONS=true`, boot runs the `cashflow-cutover` job, then every ten minutes until it is
+  active. On a new database it activates at once; with legacy rows it cannot resolve it alerts the admins, and
+  `npm run ledger:cashflow` (from a checkout with dev dependencies, not the image) shows them.
+- The model is the admin's route for the `sms` purpose in the AI providers screen; without one, the server's
+  `GEMINI_API_KEY`. Use a paid tier that does not train on requests: messages carry names. Set a second provider with
+  its prices so an outage of one is covered.
+- Before opening to people, score real messages on a private machine: `npm run bench:capture -- --cases <file.json>`
+  (keys from the environment, or `DOTENV_CONFIG_PATH=<.env>`). It prints case ids and totals, never message text.

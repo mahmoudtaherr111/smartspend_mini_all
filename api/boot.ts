@@ -92,7 +92,8 @@ if (cronsEnabled) {
     await syncCaptureSeed();
   }).catch((err) => createLogger("boot").error({ err, event: "capture.seed.failed" }, "Capture catalog seed failed"));
   // The ledger's two-kind cutover runs at once on a new database, so capture records from the first message.
-  void withScheduledJobLock("cashflow-cutover", async () => {
+  // Its own lock name: the migration and the activation hold their own row and flag locks either way.
+  void withScheduledJobLock("cashflow-cutover-at-boot", async () => {
     await runCashflowCutoverJob();
   }).catch((err) => createLogger("boot").error({ err, event: "cashflow.cutover_failed" }, "Cashflow cutover failed"));
 } else {

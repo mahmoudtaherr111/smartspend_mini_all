@@ -606,6 +606,7 @@ model {
   smartspend.api.scheduler.capture-breaker -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.scheduler.capture-silent-devices -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.scheduler.cashflow-cutover -[uses]-> smartspend.api.modules.jobs
+  smartspend.api.scheduler.cashflow-cutover-at-boot -[uses]-> smartspend.api.modules.jobs
   smartspend.api.scheduler.classification-log-cleanup -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.scheduler.coaching-reminders -[uses]-> smartspend.api.modules.coaching
   smartspend.api.scheduler.daily-auth-cleanup -[uses]-> smartspend.api.modules.auth

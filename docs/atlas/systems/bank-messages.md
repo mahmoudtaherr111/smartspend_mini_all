@@ -22,6 +22,7 @@ flowchart LR
     job_capture_breaker["Job · capture-breaker"]
     job_capture_silent_devices["Job · capture-silent-devices"]
     job_cashflow_cutover["Job · cashflow-cutover"]
+    job_cashflow_cutover_at_boot["Job · cashflow-cutover-at-boot"]
     job_seed_capture_catalog["Job · seed-capture-catalog"]
     router_captureAdmin["captureAdmin API · 10 procedures"]
     router_capture["capture API · 21 procedures"]
@@ -69,6 +70,7 @@ flowchart LR
   job_capture_breaker --> mod_capture_intake
   job_capture_silent_devices --> mod_capture_intake
   job_cashflow_cutover --> sys_platform
+  job_cashflow_cutover_at_boot --> sys_platform
   job_seed_capture_catalog --> mod_capture_catalog
   mod_capture_ai_reader --> ext_gemini
   mod_capture_ai_reader --> mod_capture_intake
@@ -178,8 +180,8 @@ flowchart LR
 | `capture-ai-sweep` | job, `* * * * *` | `api/boot.ts` |
 | `capture-breaker` | job, `*/15 * * * *` | `api/boot.ts` |
 | `capture-silent-devices` | job, `0 11 * * *` | `api/boot.ts` |
-| `cashflow-cutover` | job, once at boot | `api/boot.ts` |
 | `cashflow-cutover` | job, `*/10 * * * *` | `api/boot.ts` |
+| `cashflow-cutover-at-boot` | job, once at boot | `api/boot.ts` |
 | `seed-capture-catalog` | job, once at boot | `api/boot.ts` |
 
 ## Data
@@ -235,12 +237,13 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/bank-messages.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>36 files and declarations</summary>
+<details><summary>37 files and declarations</summary>
 
 - `api/boot.ts#job:capture-ai-sweep`
 - `api/boot.ts#job:capture-breaker`
 - `api/boot.ts#job:capture-silent-devices`
 - `api/boot.ts#job:cashflow-cutover`
+- `api/boot.ts#job:cashflow-cutover-at-boot`
 - `api/boot.ts#job:seed-capture-catalog`
 - `api/capture-admin-router.ts`
 - `api/capture-router.ts`

@@ -55,8 +55,8 @@ Reads and writes cover the job body in `api/boot.ts` plus the `api/jobs/` module
 | `capture-ai-sweep` | `* * * * *` | `api/lib/capture/ai-queue.ts`, `api/lib/capture/operations.ts` | — | — |
 | `capture-breaker` | `*/15 * * * *` | `api/lib/capture/operations.ts` | — | — |
 | `capture-silent-devices` | `0 11 * * *` | `api/lib/capture/care.ts` | — | — |
-| `cashflow-cutover` | once at boot | `api/jobs/cashflow-cutover-job.ts` | — | — |
 | `cashflow-cutover` | `*/10 * * * *` | `api/jobs/cashflow-cutover-job.ts` | — | — |
+| `cashflow-cutover-at-boot` | once at boot | `api/jobs/cashflow-cutover-job.ts` | — | — |
 | `classification-log-cleanup` | `0 3 * * 0` | — | — | `classification_logs` |
 | `coaching-reminders` | `*/5 * * * *` | `api/services/coach/plans.ts` | — | — |
 | `daily-auth-cleanup` | `0 0 * * *` | `api/lib/access-control.ts`, `api/services/phone-challenge.ts` | — | `auth_challenges` |

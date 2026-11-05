@@ -11,7 +11,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 18 | — | — | 1 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 8 | — | — | 5 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-05 68648bf5 | 2026-11-05 df6216e1 | 8 | — | — | 5 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 6 | — | — | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 9 | — | 2 | 3 | 3 |
@@ -21,7 +21,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 4 | — | — | 3 | 1 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 4 | — | — | 6 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 5 | — | — | — | 7 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-05 68648bf5 | 2026-11-05 df6216e1 | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 7 | — | — | 3 | 1 |
 
 
