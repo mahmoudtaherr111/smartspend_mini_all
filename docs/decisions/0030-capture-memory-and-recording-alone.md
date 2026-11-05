@@ -1,6 +1,6 @@
 # 0030. Captured payments are recorded on their own only for pairs the admin opens or the user agrees to, filed from the user's own memory
 
-- Status: accepted. Built in `api/lib/capture/memory.ts` (memory and pairs), `api/lib/capture/intake.ts`
+- Status: partially superseded by [decision 0049](0049-one-capture-path-model-decides.md): automatic recording no longer requires an approved pair. Memory and other parts remain. Built in `api/lib/capture/memory.ts` (memory and pairs), `api/lib/capture/intake.ts`
   (`mayRecordAlone`, `recordedNotice`, the shared `recordEventInTx`, "undo"), the admin section
   `src/components/admin/settings/AdminCaptureSection.tsx`, tables `capture_memory` and `capture_user_pairs` (migration
   0035).

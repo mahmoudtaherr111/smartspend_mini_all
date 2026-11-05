@@ -1,7 +1,7 @@
 # 0048: Direct SMS in its own build, redacted samples, and sms-v4 checks fitted to real model replies
 
 Date: 2026-11-04
-Status: accepted; built behind switches, nothing enabled in production
+Status: partially superseded by [decision 0049](0049-one-capture-path-model-decides.md): sms-v4 was replaced and capture switches default on. The separate SMS build and consented samples remain; check deployment settings for their current state.
 
 ## Context
 The owner chose to read bank SMS directly with Google Play's "SMS-based money management" declaration (plan v6),

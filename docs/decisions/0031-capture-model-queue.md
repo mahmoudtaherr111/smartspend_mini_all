@@ -1,6 +1,6 @@
 # 0031. The model reads captured messages the reader is unsure of, from a queue, with the user's consent, and only asks
 
-- Status: accepted. Built in `api/lib/capture/ai-queue.ts` (the queue and worker, `readingFromModel`,
+- Status: partially superseded by [decision 0049](0049-one-capture-path-model-decides.md): the model reads every admitted message, and complete readings can be recorded. The queue remains. Built in `api/lib/capture/ai-queue.ts` (the queue and worker, `readingFromModel`,
   `takeCaptureNotices`), `api/lib/capture/intake.ts` (`placeSignal`, the queued path), the route
   `GET /api/capture/v1/notices`, the protected job `capture-ai-sweep`, table `capture_ai_jobs` (migration 0036),
   `NoticeWorker` on Android and the consent switch on the app's capture card.

@@ -2,7 +2,7 @@
 
 Date: 2026-11-04
 
-Status: accepted; deployment guarded, production cutover pending
+Status: accepted; the cutover procedure is superseded by [decision 0049](0049-one-capture-path-model-decides.md), which runs it at boot and retries. Check the deployment for its current cutover state.
 
 ## Context
 A transfer-shaped loan must enter the owner's requested spending/income totals while own-account movement must

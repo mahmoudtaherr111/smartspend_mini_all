@@ -1,7 +1,8 @@
 # SmartSpend AI
 
 An Arabic-first personal finance app for Egypt. People record spending by typing or speaking Egyptian
-Arabic, forward bank and wallet notifications from their phone, and ask an AI Center questions about their money.
+Arabic or receipts and ask an AI Center questions about their money. Android bank-message capture is being rebuilt;
+see [bank messages](docs/systems/bank-messages.md) for its current capabilities and limits.
 
 > دليل المشروع بالعربي: [docs/ar/README.md](docs/ar/README.md)
 
@@ -28,10 +29,11 @@ The variables the server requires at boot are listed in [docs/atlas/env.md](docs
 | The Flutter app for Android and iOS | [mobile/README.md](mobile/README.md) |
 
 ## Repository layout
-- `src/` web app (React, Vite, PWA)
+- `src/` parked website (React, Vite, PWA); built in CI but not deployed by the default production build
+- `admin/` standalone admin console served at `/admin/`
 - `api/` server (Hono and tRPC)
 - `db/` Drizzle schema, relations and migrations for MySQL
-- `contracts/` code shared by the web app and the server
+- `contracts/` code shared by the server and clients
 - `android/`, `ios/` Capacitor shells of the web app
 - `mobile/` Flutter app for Android and iOS ([decision 0022](docs/decisions/0022-flutter-mobile-app.md),
   [mobile/README.md](mobile/README.md))

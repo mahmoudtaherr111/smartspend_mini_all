@@ -1,8 +1,6 @@
 # 0026. Bank and wallet messages are read by code first; the model reads only what the code is unsure of
 
 - Status: superseded by [decision 0049](0049-one-capture-path-model-decides.md): the rule reader was removed on 2026-11-05 and the model reads every message.
-  Not yet connected to message intake: the old intake is being removed and the new one (signals, events, Android
-  capture) follows, per the capture plan.
 - Decided and recorded: 2026-10-20.
 
 ## Context

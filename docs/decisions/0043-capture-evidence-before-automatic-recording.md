@@ -1,6 +1,6 @@
 # 0043. Evidence-grounded capture before automatic recording
 
-- Status: accepted; sms-v4 contract and offline evaluation implemented, runtime migration pending.
+- Status: partially superseded by [decision 0049](0049-one-capture-path-model-decides.md): sms-v4 and its word-based evidence checks were removed from the runtime. The financial outcomes remain relevant.
 - Date: 2026-11-03.
 
 ## Context

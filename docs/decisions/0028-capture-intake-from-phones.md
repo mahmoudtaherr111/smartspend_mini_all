@@ -1,6 +1,6 @@
 # 0028. Phones send captured notifications with a device token to `/api/capture/v1`, and the user confirms each one first
 
-- Status: accepted. The server side is built: `contracts/capture-intake.ts`, `api/capture-v1-routes.ts`,
+- Status: partially superseded by [decision 0049](0049-one-capture-path-model-decides.md): complete readings can be recorded without prior confirmation. The server side is built: `contracts/capture-intake.ts`, `api/capture-v1-routes.ts`,
   `api/lib/capture/{devices,consent,intake}.ts`, the `capture.*` procedures in `api/capture-router.ts` and the
   tables `capture_devices`, `capture_consents`, `capture_signals` (migration 0031). The Android capture is built in
   `mobile/packages/bank_capture` with the app's screens in `mobile/app/lib/src/features/capture/`; iPhone capture

@@ -32,16 +32,16 @@ A record explains why the code looks the way it does. What the code does today i
 | [0023](0023-mobile-app-lock.md) | The mobile app lock: a 6-digit PIN checked by a phone-held key, biometrics bound to the Keystore or Keychain |
 | [0024](0024-capture-catalog.md) | The capture catalog: banks, wallets and subscriptions are confirmed data the admin edits |
 | [0025](0025-bank-message-model-through-admin-gateway.md) | Bank-message model calls go through the admin gateway, redacted, budgeted, switchable and capped in USD |
-| [0026](0026-message-reader-before-the-model.md) | Bank and wallet messages are read by code first; the model reads only what the code is unsure of |
+| [0026](0026-message-reader-before-the-model.md) | Code-first bank-message reader (superseded by 0049) |
 | [0027](0027-one-ledger-writer.md) | One ledger writer: rows of `expenses` are added, changed and removed through `api/services/ledger-writer.ts` |
-| [0028](0028-capture-intake-from-phones.md) | Phones send captured notifications with a device token to `/api/capture/v1`, and the user confirms each one first |
+| [0028](0028-capture-intake-from-phones.md) | Device-token capture intake (confirmation requirement superseded by 0049) |
 | [0029](0029-one-payment-one-event.md) | One payment, one event: captured signals are merged by rules that never merge on a guess |
-| [0030](0030-capture-memory-and-recording-alone.md) | Captured payments are recorded on their own only for pairs the admin opens or the user agrees to, filed from the user's own memory |
-| [0031](0031-capture-model-queue.md) | The model reads captured messages the reader is unsure of, from a queue, with the user's consent, and only asks |
+| [0030](0030-capture-memory-and-recording-alone.md) | Capture memory and automatic recording (pair requirement superseded by 0049) |
+| [0031](0031-capture-model-queue.md) | Capture model queue (model selection and ask-only behaviour superseded by 0049) |
 | [0032](0032-capture-breaker-and-bulk-undo.md) | A bank whose recordings are taken back stops recording on its own, and the admin can undo a bank's recordings in bulk |
 | [0033](0033-capture-access-and-ignore-lists.md) | Capture opens per platform and beta list, refuses old builds, caps phones and daily signals, and honours what the user ignores |
 | [0034](0034-capture-care-for-the-user.md) | Capture looks after the user: phone health, the upgrade notice, wallet suggestions and deleting their data |
-| [0035](0035-capture-merchants-alerts-timeline.md) | Captured messages keep their merchant through redaction, admins are alerted in the app, and support sees a user's capture |
+| [0035](0035-capture-merchants-alerts-timeline.md) | Capture merchant handling, alerts and support timeline (merchant handling superseded by 0049) |
 | [0036](0036-google-sign-in-nonce.md) | Google sign-in from the app is bound to one sign-in by a nonce the app makes and the server spends once |
 | [0037](0037-website-session-cookie-only.md) | The website's session is the HttpOnly cookie alone: the website never stores, reads or sends a token |
 | [0038](0038-whatsapp-cloud-api.md) | WhatsApp goes through Meta's official Cloud API, every message through a persistent outbox |
@@ -50,17 +50,17 @@ A record explains why the code looks the way it does. What the code does today i
 
 | [0042](0042-no-codes-until-store-offers.md) | Remove discount and referral code entry points until store offers can be honoured |
 
-| [0043](0043-capture-evidence-before-automatic-recording.md) | Ground capture facts in source evidence and evaluate the automatic-recording contract before connecting the runtime |
+| [0043](0043-capture-evidence-before-automatic-recording.md) | Evidence-grounded capture contract (sms-v4 superseded by 0049) |
 
 | [0044](0044-durable-capture-worker-and-admission.md) | Bind queued identity maps cryptographically and reserve capture-only costs and capacity before HTTP |
 
-| [0045](0045-versioned-ledger-cashflow.md) | Separate a row's financial meaning from its type and gate the income-or-spending cutover behind a versioned migration |
+| [0045](0045-versioned-ledger-cashflow.md) | Versioned ledger cashflow (cutover procedure superseded by 0049) |
 
 | [0046](0046-atomic-capture-bundles.md) | File a captured payment, its fee and its quota in one transaction, and keep later user edits |
 
 | [0047](0047-post-save-feedback-and-explicit-wallet-semantics.md) | Optional purpose questions after saving, renewed automatic consent, and explicit wallet kinds |
 
-| [0048](0048-direct-sms-samples-and-live-contract-fixes.md) | Direct SMS in its own build, redacted samples with consent, and sms-v4 checks fitted to live model replies |
+| [0048](0048-direct-sms-samples-and-live-contract-fixes.md) | Direct SMS and consented samples (sms-v4 and switch defaults superseded by 0049) |
 
 | [0049](0049-one-capture-path-model-decides.md) | One capture path: the phone sends on keywords, the model decides on labelled numbers, checks that read no words, everything complete recorded on its own |
 
