@@ -128,7 +128,7 @@ export default function Home() {
   const planQuery = trpc.pro.myPlan.useQuery(undefined, { staleTime: 60_000 });
   const businessQuery = trpc.business.get.useQuery(undefined, {
     staleTime: 60_000,
-    enabled: planQuery.data?.features.business === true,
+    enabled: planQuery.data?.features?.business === true,
   });
   const hasBusiness = !!businessQuery.data?.business;
   const [businessMode, setBusinessMode] = useState(false);

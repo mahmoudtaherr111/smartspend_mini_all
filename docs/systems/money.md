@@ -266,8 +266,9 @@ business mode:
 A plan without the feature is told on the first screen of Settings → business: `pro.myPlan` returns `features.business`
 from the same settings the server gate reads, and `src/components/settings/BusinessSettingsView.tsx` shows the lock and a
 link to the plans instead of the setup steps, without calling `business.get`. A FORBIDDEN answer from `business.get` (the
-plan changed meanwhile) locks it too. The home screen (`src/pages/Home.tsx`) also asks for the business only when the plan
-includes it, so a free account sends no request the server refuses.
+plan changed meanwhile) locks it too, and an answer without `features` (an older server) leaves the decision to
+`business.get`. The home screen (`src/pages/Home.tsx`) also asks for the business only when the plan includes it, so a
+free account sends no request the server refuses; without `features` it asks for none.
 
 ## People
 - `profile.listContacts` counts each person's items from `expenses` and filters personal, business or silenced people.

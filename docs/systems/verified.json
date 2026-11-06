@@ -47,14 +47,14 @@
         "src/components/profile/ProfileFieldInput.tsx": "1254997bba32",
         "src/components/profile/ProfileScreen.tsx": "b036bd03fb96",
         "src/components/profile/UserAvatar.tsx": "a6445444d011",
-        "src/components/settings/BusinessSettingsView.tsx": "f7a2a79e2046",
+        "src/components/settings/BusinessSettingsView.tsx": "63e6258ac37f",
         "src/components/settings/LanguageSettings.tsx": "2e84329609e6",
         "src/components/settings/PeopleSettingsView.tsx": "fe994df04b34",
         "src/pages/AuthCallback.tsx": "6ca3f9321f43",
         "src/pages/Login.tsx": "721a99583418",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-11-06 897d57b3",
+      "checked": "2026-11-06 1a0229e7",
       "arabic": "de22d765e943",
       "arabicChecked": "2026-11-05 ed33efe8"
     },
@@ -439,13 +439,13 @@
         "src/components/seasons/SeasonsPanel.tsx": "4c118a1dc96e",
         "src/components/wallets/DigitalBankingSuite.tsx": "f85cc994994f",
         "src/components/wallets/WalletBalanceKind.tsx": "1d043328f186",
-        "src/pages/Home.tsx": "f21694b7caf2",
+        "src/pages/Home.tsx": "08e7152d69fc",
         "src/pages/PlanPage.tsx": "107068a002b0",
         "src/pages/WalletsPage.tsx": "a1964708847b"
       },
-      "checked": "2026-11-06 897d57b3",
-      "arabic": "45192e70e15a",
-      "arabicChecked": "2026-11-06 897d57b3"
+      "checked": "2026-11-06 1a0229e7",
+      "arabic": "a90fe408248e",
+      "arabicChecked": "2026-11-06 1a0229e7"
     },
     "notifications": {
       "files": {

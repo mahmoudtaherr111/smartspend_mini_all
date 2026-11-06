@@ -64,7 +64,9 @@ interface CategoryDraft {
 
 export function BusinessSettingsView({ onBack }: { onBack: () => void }) {
   const planQuery = trpc.pro.myPlan.useQuery();
-  const planLocked = planQuery.data ? !planQuery.data.features.business : false;
+  // An answer without the plan's features (an older server) locks nothing here; business.get decides.
+  const planFeatures = planQuery.data?.features;
+  const planLocked = planFeatures ? !planFeatures.business : false;
   const businessQuery = trpc.business.get.useQuery(undefined, {
     // If the plan cannot be read, ask anyway and let the server decide.
     enabled: !planLocked && (planQuery.data !== undefined || planQuery.isError),
