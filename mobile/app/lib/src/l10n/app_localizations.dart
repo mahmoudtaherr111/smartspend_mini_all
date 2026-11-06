@@ -3080,6 +3080,48 @@ abstract class AppLocalizations {
   /// **'اتدفع (دوس للإلغاء)'**
   String get calPaidTapToUndo;
 
+  /// No description provided for @calPaidOrNot.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتدفع ولا لأ؟'**
+  String get calPaidOrNot;
+
+  /// No description provided for @calWeCouldnTUndoIt.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نلغي الدفع. جرّب تاني.'**
+  String get calWeCouldnTUndoIt;
+
+  /// No description provided for @calMoreOptions.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيارات تانية'**
+  String get calMoreOptions;
+
+  /// No description provided for @calStopThisCommitment.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقّف الالتزام ده'**
+  String get calStopThisCommitment;
+
+  /// No description provided for @calStopCommitmentP0Explained.
+  ///
+  /// In ar, this message translates to:
+  /// **'«{p0}» مش هيظهر في مواعيدك تاني ومش هيتخصم من المتاح. اللي اتدفع قبل كده هيفضل متسجل زي ما هو.'**
+  String calStopCommitmentP0Explained(String p0);
+
+  /// No description provided for @calStop.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقّف'**
+  String get calStop;
+
+  /// No description provided for @calWeCouldnTStopIt.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نوقفه. جرّب تاني.'**
+  String get calWeCouldnTStopIt;
+
   /// No description provided for @calActiveSavingPlan.
   ///
   /// In ar, this message translates to:
@@ -3271,12 +3313,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'يوم الميعاد'**
   String get calDueDay;
-
-  /// No description provided for @calDayP0.
-  ///
-  /// In ar, this message translates to:
-  /// **'يوم {p0}'**
-  String calDayP0(String p0);
 
   /// No description provided for @calRepeats.
   ///

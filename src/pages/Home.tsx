@@ -123,8 +123,12 @@ export default function Home() {
       : undefined;
 
   // Business Mode State
+  // Business mode is a plan feature: ask for the business only when the plan includes it, so a plan
+  // without it sends no request the server is bound to refuse.
+  const planQuery = trpc.pro.myPlan.useQuery(undefined, { staleTime: 60_000 });
   const businessQuery = trpc.business.get.useQuery(undefined, {
     staleTime: 60_000,
+    enabled: planQuery.data?.features?.business === true,
   });
   const hasBusiness = !!businessQuery.data?.business;
   const [businessMode, setBusinessMode] = useState(false);

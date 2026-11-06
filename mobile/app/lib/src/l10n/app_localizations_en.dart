@@ -1769,7 +1769,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String calDueOnDayP0(String p0) {
-    return 'Due on day $p0';
+    return 'Due $p0';
   }
 
   @override
@@ -1777,6 +1777,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calPaidTapToUndo => 'Paid (tap to undo)';
+
+  @override
+  String get calPaidOrNot => 'Paid or not?';
+
+  @override
+  String get calWeCouldnTUndoIt => 'We couldn\'t undo the payment. Try again.';
+
+  @override
+  String get calMoreOptions => 'More options';
+
+  @override
+  String get calStopThisCommitment => 'Stop this commitment';
+
+  @override
+  String calStopCommitmentP0Explained(String p0) {
+    return '“$p0” won\'t show in your due dates or come off what\'s left any more. What was already paid stays recorded.';
+  }
+
+  @override
+  String get calStop => 'Stop';
+
+  @override
+  String get calWeCouldnTStopIt => 'We couldn\'t stop it. Try again.';
 
   @override
   String get calActiveSavingPlan => 'Active saving plan';
@@ -1874,11 +1897,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calDueDay => 'Due day';
-
-  @override
-  String calDayP0(String p0) {
-    return 'Day $p0';
-  }
 
   @override
   String get calRepeats => 'Repeats';

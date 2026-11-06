@@ -1,81 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smartspend_app/src/features/calendar/calendar_grid.dart';
+import 'package:smartspend_app/src/features/calendar/calendar_models.dart';
 import 'package:smartspend_app/src/features/calendar/calendar_screen.dart';
 import 'package:smartspend_app/src/features/calendar/day_transactions_sheet.dart';
 
+import 'support/sample_calendar.dart';
 import 'support/sample_month.dart';
 import 'support/test_app.dart';
 
 void _answerCalendarData(FakeApi api, {int? salaryDay}) {
   api.answer('localAuth.me', (_) => phoneUser());
-  api.answer(
-    'profile.getSmartProfile',
-    (_) => {
-      'financialInfo': {
-        if (salaryDay != null) ...{
-          'hasFixedSalary': true,
-          'salaryDay': salaryDay,
-        },
-      },
-    },
-  );
-  api.answer(
-    'coach.overview',
-    (_) => {
-      'position': {
-        'untilIsPayday': true,
-        'until': '2026-10-25',
-        'days': 6,
-        'wallets': {'count': 1, 'total': 12000},
-        'duesKnown': 3000,
-        'freeBeforeIncome': 9000,
-        'incomeConfirmed': 0,
-        'incomeEstimated': 0,
-      },
-      'cashflows': [
-        {
-          'id': 101,
-          'title': 'إيجار الشقة',
-          'kind': 'rent',
-          'direction': 'out',
-          'amount': 2500,
-          'dueDay': 1,
-          'recurrence': 'monthly',
-          'status': 'due',
-        },
-        {
-          'id': 102,
-          'title': 'فاتورة الكهرباء',
-          'kind': 'bill',
-          'direction': 'out',
-          'amount': 350,
-          'dueDay': 15,
-          'recurrence': 'monthly',
-          'status': 'paid',
-        },
-      ],
-      'plan': {
-        'id': 1,
-        'title': 'خطة توفير مصاريف المدارس',
-        'goal': 'توفير 5000 ج.م قبل نهاية الشهر',
-        'steps': [
-          {
-            'id': 201,
-            'title': 'تقليل الأكل برة',
-            'status': 'pending',
-            'remindAt': null,
-          },
-          {
-            'id': 202,
-            'title': 'شراء مستلزمات بالجملة',
-            'status': 'done',
-            'remindAt': null,
-          },
-        ],
-      },
-    },
-  );
+  answerSampleCalendar(api, salaryDay: salaryDay);
   api.answer(
     'expense.getMonthlyStats',
     (_) => {
@@ -91,20 +27,6 @@ void _answerCalendarData(FakeApi api, {int? salaryDay}) {
       ],
     },
   );
-  api.answer(
-    'coach.paymentSuggestions',
-    (_) => [
-      {
-        'id': 501,
-        'amount': 2500,
-        'category': 'إيجار',
-        'description': 'تحويل إيجار الشقة',
-        'date': '2026-10-01T10:00:00Z',
-      },
-    ],
-  );
-  api.answer('coach.settle', (_) => {'success': true});
-  api.answer('coach.setStepStatus', (_) => {'success': true});
   answerSampleMonth(api);
 }
 
@@ -200,11 +122,210 @@ void main() {
     expect(find.textContaining('عمليات ممكن تكون هي:'), findsOneWidget);
     expect(find.text('أكد الدفع'), findsOneWidget);
 
-    // Tap confirm settle
+    // The suggestions are asked for this due date.
+    expect(api.lastInput('coach.paymentSuggestions'), {
+      'cashflowId': 101,
+      'dueDay': '2026-11-01',
+    });
+
+    // Tap confirm settle: paid off the records, for what is owed on that date.
     await tester.tap(find.text('أكد الدفع'));
     await tester.pumpAndSettle();
 
-    expect(api.lastInput('coach.settle') != null, isTrue);
+    expect(api.lastInput('coach.settle'), {
+      'cashflowId': 101,
+      'dueDay': '2026-11-01',
+      'amount': 2500,
+    });
+  });
+
+  testWidgets('Picking a suggestion links that payment to the due date', (
+    tester,
+  ) async {
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final api = FakeApi();
+    await _openCalendar(tester, api);
+    await tester.drag(_calendarScroll(tester), const Offset(0, -200));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('ادفع').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('تحويل إيجار الشقة'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('أكد الدفع'));
+    await tester.pumpAndSettle();
+
+    expect(api.lastInput('coach.settle'), {
+      'cashflowId': 101,
+      'dueDay': '2026-11-01',
+      'expenseId': 501,
+      'amount': 2500,
+    });
+  });
+
+  testWidgets('Adding a commitment sends a first due date and the amount', (
+    tester,
+  ) async {
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final api = FakeApi();
+    await _openCalendar(tester, api);
+
+    await tester.tap(find.byTooltip('ضيف التزام أو دخل'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'الاسم (زي: إيجار الشقة)'),
+      'قسط الموبايل',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'المبلغ (اختياري لو بيتغير)'),
+      '850',
+    );
+    // The first due date starts on the server's day.
+    expect(find.text('19 أكتوبر 2026'), findsOneWidget);
+    await tester.tap(find.text('احفظ'));
+    await tester.pumpAndSettle();
+
+    expect(api.lastInput('coach.addCashflow'), {
+      'title': 'قسط الموبايل',
+      'kind': 'bill',
+      'direction': 'out',
+      'amount': 850,
+      'startDay': '2026-10-19',
+      'recurrence': 'monthly',
+    });
+  });
+
+  testWidgets('A commitment with no known amount sends the amount as null', (
+    tester,
+  ) async {
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final api = FakeApi();
+    await _openCalendar(tester, api);
+
+    await tester.tap(find.byTooltip('ضيف التزام أو دخل'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'الاسم (زي: إيجار الشقة)'),
+      'فاتورة المية',
+    );
+    await tester.tap(find.text('احفظ'));
+    await tester.pumpAndSettle();
+
+    final input = api.lastInput('coach.addCashflow')! as Map<String, Object?>;
+    expect(input.containsKey('amount'), isTrue);
+    expect(input['amount'], isNull);
+    expect(input['startDay'], '2026-10-19');
+  });
+
+  testWidgets('Undoing a paid date unlinks its payment', (tester) async {
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final api = FakeApi();
+    await _openCalendar(tester, api);
+    await tester.drag(_calendarScroll(tester), const Offset(0, -200));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('اتدفع (دوس للإلغاء)'));
+    await tester.pumpAndSettle();
+
+    expect(api.lastInput('coach.unsettle'), {'settlementId': 77});
+  });
+
+  testWidgets('Stopping a commitment ends it after the user confirms', (
+    tester,
+  ) async {
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final api = FakeApi();
+    await _openCalendar(tester, api);
+    await tester.drag(_calendarScroll(tester), const Offset(0, -200));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('اختيارات تانية').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('وقّف الالتزام ده'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('«إيجار الشقة»'), findsOneWidget);
+    await tester.tap(find.text('وقّف'));
+    await tester.pumpAndSettle();
+
+    expect(api.lastInput('coach.updateCashflow'), {
+      'id': 101,
+      'status': 'ended',
+    });
+  });
+
+  testWidgets('A step reminder is set for 9:00 tomorrow on the server day', (
+    tester,
+  ) async {
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final api = FakeApi();
+    await _openCalendar(tester, api);
+    await tester.drag(_calendarScroll(tester), const Offset(0, -600));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('شغّل تذكير').first);
+    await tester.pumpAndSettle();
+
+    expect(api.lastInput('coach.setReminder'), {
+      'stepId': 201,
+      'at': '2026-10-20T09:00',
+    });
+  });
+
+  test('The overview reads the server answer as it is', () {
+    final overview = CoachOverviewData.fromJson(sampleCoachOverview());
+
+    expect(overview.today, '2026-10-19');
+    expect(overview.due.map((item) => item.dueDay), [
+      '2026-10-15',
+      '2026-11-01',
+    ]);
+    final electricity = overview.due.first;
+    expect(electricity.isPaid, isTrue);
+    expect(electricity.settlements.single.id, 77);
+    expect(electricity.settlements.single.amount, 350);
+    final rent = overview.due.last;
+    expect(rent.cashflowId, 101);
+    expect(rent.remaining, 2500);
+    expect(rent.settlements, isEmpty);
+    expect(overview.position.unknownBalanceAge, isFalse);
+    expect(overview.plan!.steps.first.hasReminder, isFalse);
+
+    final withUndated = sampleCoachOverview();
+    (withUndated['position']! as Map<String, Object?>)['wallets'] = {
+      'total': 0,
+      'count': 1,
+      'oldestObservedDay': null,
+      'unknownAge': 1,
+    };
+    expect(
+      CoachOverviewData.fromJson(withUndated).position.unknownBalanceAge,
+      isTrue,
+    );
+  });
+
+  test('Day keys move on calendar days', () {
+    expect(addDaysToDayKey('2026-10-31', 1), '2026-11-01');
+    expect(addDaysToDayKey('2026-12-31', 1), '2027-01-01');
+    expect(addDaysToDayKey('2028-02-28', 1), '2028-02-29');
+    expect(addDaysToDayKey('not a day', 1), isNull);
   });
 
   testWidgets('Tapping a day in the grid opens DayTransactionsSheet', (

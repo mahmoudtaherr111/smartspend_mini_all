@@ -10,13 +10,13 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-05 f7bb4b83 | 2026-11-04 4def5707 | 18 | — | — | 1 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-06 897d57b3 | 2026-11-06 897d57b3 | 18 | — | — | 1 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-05 ed33efe8 | 2026-11-05 ed33efe8 | 8 | — | — | 5 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 6 | — | — | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-05 5af36e21 | 2026-11-05 f7bb4b83 | 9 | — | 2 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-05 5af36e21 | 2026-11-05 df6216e1 | 7 | — | 1 | 7 | 1 |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-05 ed33efe8 | 2026-11-05 ed33efe8 | 16 | **1** | — | 7 | — |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-06 1a0229e7 | 2026-11-06 1a0229e7 | 7 | — | 1 | 7 | 1 |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-06 1a0229e7 | 2026-11-05 ed33efe8 | 16 | **1** | — | 7 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-05 df6216e1 | 2026-11-03 ff028180 | 2 | — | — | 2 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-04 4def5707 | 2026-11-05 08b37c7f | 4 | — | — | 3 | 1 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-05 ed33efe8 | 2026-11-05 ed33efe8 | 7 | — | — | 5 | — |
@@ -50,7 +50,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 ### Gaps (46)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
-- `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and The website has no receipt capture. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
+- `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app (a corrected category is learned by `expense.update` through `recordCorrection`, not by `ai.learnWord`), and The website has no receipt capture. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - iPhone capture is not built: iOS gives apps no SMS. Nothing has run on a real phone: this machine cannot run an Android emulator, so the path was proved from the phone's HTTP calls to the ledger with a real model.

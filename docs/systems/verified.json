@@ -47,14 +47,14 @@
         "src/components/profile/ProfileFieldInput.tsx": "1254997bba32",
         "src/components/profile/ProfileScreen.tsx": "b036bd03fb96",
         "src/components/profile/UserAvatar.tsx": "a6445444d011",
-        "src/components/settings/BusinessSettingsView.tsx": "ced2674cdee4",
+        "src/components/settings/BusinessSettingsView.tsx": "63e6258ac37f",
         "src/components/settings/LanguageSettings.tsx": "2e84329609e6",
         "src/components/settings/PeopleSettingsView.tsx": "fe994df04b34",
         "src/pages/AuthCallback.tsx": "6ca3f9321f43",
         "src/pages/Login.tsx": "721a99583418",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-11-05 ed33efe8",
+      "checked": "2026-11-06 1a0229e7",
       "arabic": "de22d765e943",
       "arabicChecked": "2026-11-05 ed33efe8"
     },
@@ -327,13 +327,13 @@
         "api/lib/unified-normalizer.ts": "bfd4f91bfd4b",
         "api/lib/voice-intake-gate.ts": "0a8bf7293a27",
         "api/services/parser-trace.ts": "aa8b5bad3877",
-        "src/components/expenses/ExpenseForm.tsx": "7ca3f4fa3af2",
+        "src/components/expenses/ExpenseForm.tsx": "9aa3dce6b603",
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-11-05 f7bb4b83",
-      "arabic": "1c65bb1b1634",
-      "arabicChecked": "2026-11-04 4def5707"
+      "checked": "2026-11-06 897d57b3",
+      "arabic": "ca0afe8c44cf",
+      "arabicChecked": "2026-11-06 897d57b3"
     },
     "insights": {
       "files": {
@@ -439,13 +439,13 @@
         "src/components/seasons/SeasonsPanel.tsx": "4c118a1dc96e",
         "src/components/wallets/DigitalBankingSuite.tsx": "f85cc994994f",
         "src/components/wallets/WalletBalanceKind.tsx": "1d043328f186",
-        "src/pages/Home.tsx": "925a6a0147e5",
+        "src/pages/Home.tsx": "08e7152d69fc",
         "src/pages/PlanPage.tsx": "107068a002b0",
         "src/pages/WalletsPage.tsx": "a1964708847b"
       },
-      "checked": "2026-11-05 5af36e21",
-      "arabic": "24d840e68d75",
-      "arabicChecked": "2026-11-05 df6216e1"
+      "checked": "2026-11-06 1a0229e7",
+      "arabic": "a90fe408248e",
+      "arabicChecked": "2026-11-06 1a0229e7"
     },
     "notifications": {
       "files": {

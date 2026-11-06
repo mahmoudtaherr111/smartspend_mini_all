@@ -140,8 +140,7 @@ class CalendarScreen extends ConsumerWidget {
 
                   // Commitments & Expected Income (CAL-03, CAL-04)
                   overviewAsync.when(
-                    data: (overview) =>
-                        _CommitmentsSection(cashflow: overview.cashflows),
+                    data: (overview) => _CommitmentsSection(due: overview.due),
                     loading: () => const SizedBox.shrink(),
                     error: (_, _) => const SizedBox.shrink(),
                   ),
@@ -504,11 +503,12 @@ class _CalendarSection extends StatelessWidget {
   }
 }
 
-/// Commitments & Income section (CAL-03, CAL-04).
+/// Commitments & Income section (CAL-03, CAL-04): the due dates `coach.overview` lists, 45 days either side of
+/// today, each with the status the server gave it.
 class _CommitmentsSection extends ConsumerWidget {
-  const _CommitmentsSection({required this.cashflow});
+  const _CommitmentsSection({required this.due});
 
-  final List<CashflowItem> cashflow;
+  final List<CashflowItem> due;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -537,7 +537,7 @@ class _CommitmentsSection extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: SmartSpendSpacing.xs),
-        if (cashflow.isEmpty)
+        if (due.isEmpty)
           Container(
             padding: const EdgeInsets.all(SmartSpendSpacing.lg),
             decoration: BoxDecoration(
@@ -555,40 +555,105 @@ class _CommitmentsSection extends ConsumerWidget {
             ),
           )
         else
-          ...cashflow.map((item) => _CommitmentCard(item: item)),
+          ...due.map(
+            (item) => _CommitmentCard(
+              key: ValueKey('due-${item.cashflowId}-${item.dueDay}'),
+              item: item,
+            ),
+          ),
       ],
     );
   }
 }
 
+/// «16 أكتوبر» for a Cairo day key; the key itself when it is not one.
+String _dueDayLabel(BuildContext context, String dayKey) {
+  final match = RegExp(r'^\d{4}-(\d{2})-(\d{2})$').firstMatch(dayKey);
+  if (match == null) return dayKey;
+  final month = int.parse(match.group(1)!);
+  final day = int.parse(match.group(2)!);
+  if (month < 1 || month > 12) return dayKey;
+  return '$day ${DateWords.of(context).months[month - 1]}';
+}
+
 class _CommitmentCard extends ConsumerWidget {
-  const _CommitmentCard({required this.item});
+  const _CommitmentCard({super.key, required this.item});
 
   final CashflowItem item;
+
+  /// Unlinks every payment of this due date; the recorded payments themselves stay as they are.
+  Future<void> _undoPaid(BuildContext context, WidgetRef ref) async {
+    final failed = AppLocalizations.of(context).calWeCouldnTUndoIt;
+    try {
+      final api = ref.read(calendarApiProvider);
+      for (final settlement in item.settlements) {
+        await api.unsettle(settlement.id);
+      }
+    } on Object {
+      if (context.mounted) showSmartSpendNotice(context, failed);
+    }
+    ref.invalidate(coachOverviewProvider);
+  }
+
+  /// Ends the whole commitment after the user confirms: it stops showing and stops counting; what was paid stays.
+  Future<void> _stop(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.calStopThisCommitment),
+        content: Text(l10n.calStopCommitmentP0Explained(item.title)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.appCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(dialogContext).colorScheme.error,
+            ),
+            child: Text(l10n.calStop),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref
+          .read(calendarApiProvider)
+          .updateCashflow(id: item.cashflowId, status: 'ended');
+    } on Object {
+      if (context.mounted) {
+        showSmartSpendNotice(context, l10n.calWeCouldnTStopIt);
+      }
+    }
+    ref.invalidate(coachOverviewProvider);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
-
-    final isPaid = item.status == 'paid';
-    final isPartial = item.status == 'partial';
-    final isOverdue = item.status == 'overdue';
+    final l10n = AppLocalizations.of(context);
 
     Color statusColor;
     String statusLabel;
-    if (isPaid) {
+    if (item.isPaid) {
       statusColor = colors.accent;
-      statusLabel = AppLocalizations.of(context).calPaid;
-    } else if (isPartial) {
+      statusLabel = l10n.calPaid;
+    } else if (item.isPartial) {
       statusColor = colors.warning;
-      statusLabel = AppLocalizations.of(context).calPartlyPaid;
-    } else if (isOverdue) {
+      statusLabel = l10n.calPartlyPaid;
+    } else if (item.isOverdue) {
       statusColor = colors.danger;
-      statusLabel = AppLocalizations.of(context).calOverdue;
+      statusLabel = l10n.calOverdue;
+    } else if (item.isUnconfirmed) {
+      statusColor = colors.mutedForeground;
+      statusLabel = l10n.calPaidOrNot;
     } else {
       statusColor = colors.mutedForeground;
-      statusLabel = AppLocalizations.of(context).calDue;
+      statusLabel = l10n.calDue;
     }
 
     return Container(
@@ -603,10 +668,10 @@ class _CommitmentCard extends ConsumerWidget {
           CircleAvatar(
             backgroundColor: colors.background,
             child: Icon(
-              item.direction == 'in'
+              item.isIncome
                   ? Icons.arrow_downward_rounded
                   : Icons.arrow_upward_rounded,
-              color: item.direction == 'in' ? colors.accent : colors.foreground,
+              color: item.isIncome ? colors.accent : colors.foreground,
               size: 20,
             ),
           ),
@@ -642,10 +707,7 @@ class _CommitmentCard extends ConsumerWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
-                      item.dueDay == null
-                          ? '—'
-                          : AppLocalizations.of(context)
-                                .calDueOnDayP0('${item.dueDay}'),
+                      l10n.calDueOnDayP0(_dueDayLabel(context, item.dueDay)),
                       style: textTheme.labelSmall?.copyWith(
                         color: colors.mutedForeground,
                       ),
@@ -666,13 +728,20 @@ class _CommitmentCard extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    if (item.isPartial && item.remaining != null)
+                      Text(
+                        l10n.appP0Left(moneyText(context, item.remaining!)),
+                        style: textTheme.labelSmall?.copyWith(
+                          color: colors.mutedForeground,
+                        ),
+                      ),
                   ],
                 ),
               ],
             ),
           ),
           const SizedBox(width: SmartSpendSpacing.sm),
-          if (!isPaid)
+          if (!item.isPaid)
             OutlinedButton(
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(48, 36),
@@ -681,18 +750,30 @@ class _CommitmentCard extends ConsumerWidget {
                 ),
               ),
               onPressed: () => SettleCommitmentSheet.show(context, item: item),
-              child: Text(AppLocalizations.of(context).calSettle),
+              child: Text(l10n.calSettle),
             )
           else
             IconButton(
               icon: const Icon(Icons.check_circle_rounded),
               color: colors.accent,
-              tooltip: AppLocalizations.of(context).calPaidTapToUndo,
-              onPressed: () async {
-                await ref.read(calendarApiProvider).unsettle(item.id);
-                ref.invalidate(coachOverviewProvider);
-              },
+              tooltip: l10n.calPaidTapToUndo,
+              onPressed: item.settlements.isEmpty
+                  ? null
+                  : () => _undoPaid(context, ref),
             ),
+          PopupMenuButton<String>(
+            tooltip: l10n.calMoreOptions,
+            icon: Icon(Icons.more_vert_rounded, color: colors.mutedForeground),
+            onSelected: (value) {
+              if (value == 'stop') _stop(context, ref);
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'stop',
+                child: Text(l10n.calStopThisCommitment),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -817,19 +898,17 @@ class _StepTile extends ConsumerWidget {
           // Cairo reminder button (CAL-05)
           IconButton(
             icon: Icon(
-              step.remindAt != null
+              step.hasReminder
                   ? Icons.alarm_on_rounded
                   : Icons.alarm_add_rounded,
               size: 20,
-              color: step.remindAt != null
-                  ? colors.accent
-                  : colors.mutedForeground,
+              color: step.hasReminder ? colors.accent : colors.mutedForeground,
             ),
-            tooltip: step.remindAt != null
+            tooltip: step.hasReminder
                 ? AppLocalizations.of(context).calReminderOn
                 : AppLocalizations.of(context).calTurnOnAReminder,
             onPressed: () async {
-              if (step.remindAt != null) {
+              if (step.hasReminder) {
                 await ref.read(calendarApiProvider).cancelReminder(step.id);
                 if (context.mounted) {
                   showSmartSpendNotice(
@@ -838,21 +917,16 @@ class _StepTile extends ConsumerWidget {
                   );
                 }
               } else {
-                // Schedule Cairo reminder at 9:00 AM next day
-                final remindDate = DateTime.now().add(const Duration(days: 1));
-                final cairoReminder = DateTime(
-                  remindDate.year,
-                  remindDate.month,
-                  remindDate.day,
-                  9,
-                  0,
-                );
+                // 9:00 tomorrow on Cairo's clock: the day comes from the server (mobile rule 8), the phone's
+                // clock only until the server has answered.
+                final today =
+                    ref.read(coachOverviewProvider).value?.today ??
+                    dayKeyOf(DateTime.now());
+                final tomorrow = addDaysToDayKey(today, 1);
+                if (tomorrow == null) return;
                 await ref
                     .read(calendarApiProvider)
-                    .setReminder(
-                      stepId: step.id,
-                      scheduledAt: cairoReminder.toIso8601String(),
-                    );
+                    .setReminder(stepId: step.id, at: '${tomorrow}T09:00');
                 if (context.mounted) {
                   showSmartSpendNotice(
                     context,

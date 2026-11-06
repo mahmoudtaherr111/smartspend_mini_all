@@ -222,7 +222,7 @@ _None._
 | `image.parseReceipt` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
-| `pro.myPlan` | useQuery | `src/components/expenses/ExpenseForm.tsx` |
+| `pro.myPlan` | useQuery | `src/components/expenses/ExpenseForm.tsx`, `src/pages/Home.tsx` |
 | `profile.dismissOnboarding` | useMutation | `src/components/OnboardingCard.tsx` |
 | `profile.getNextOnboardingQuestion` | useQuery, utils.invalidate | `src/components/OnboardingCard.tsx` |
 | `profile.getSmartProfile` | useQuery, utils.invalidate | `src/components/OnboardingCard.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/pages/Home.tsx` |
@@ -363,7 +363,7 @@ _None._
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
 | `pro.cancel` | useMutation | `src/hooks/usePro.ts` |
 | `pro.createCheckoutSession` | useMutation | `src/hooks/usePro.ts` |
-| `pro.myPlan` | useQuery, utils.invalidate | `src/hooks/usePro.ts` |
+| `pro.myPlan` | useQuery, utils.invalidate | `src/components/settings/BusinessSettingsView.tsx`, `src/hooks/usePro.ts` |
 | `pro.planCatalog` | useQuery | `src/pages/Pro.tsx` |
 | `pro.upgrade` | useMutation | `src/hooks/usePro.ts` |
 | `profile.addContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
@@ -470,6 +470,7 @@ _None._
 | `expense.getMonthlyStats` | useQuery | `src/components/settings/BusinessSettingsView.tsx` |
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
+| `pro.myPlan` | useQuery | `src/components/settings/BusinessSettingsView.tsx` |
 | `profile.addContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteMyAccount` | useMutation | `src/components/profile/ProfileScreen.tsx` |
@@ -544,6 +545,4 @@ _None._
 
 These files create a tRPC mutation hook but never use the variable it is assigned to, so no request is sent. They are not counted as callers anywhere in the atlas.
 
-| Procedure | File |
-| --- | --- |
-| `ai.learnWord` | `src/components/expenses/ExpenseForm.tsx` |
+_None._

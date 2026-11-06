@@ -28,7 +28,10 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
   String _direction = 'out'; // 'out' = commitment, 'in' = income
   String _kind = 'bill';
   String _recurrence = 'monthly';
-  int _dueDay = 1;
+
+  /// The first (or only) due date, a Cairo day key; today on the server's clock until the user picks one.
+  late String _startDay =
+      ref.read(coachOverviewProvider).value?.today ?? dayKeyOf(DateTime.now());
   bool _submitting = false;
   String? _error;
 
@@ -57,6 +60,27 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
     _titleController.dispose();
     _amountController.dispose();
     super.dispose();
+  }
+
+  /// «16 أكتوبر 2026» for a day key.
+  String _dayLabel(String dayKey) {
+    final day = DateTime.tryParse(dayKey);
+    return day == null ? dayKey : DateWords.of(context).date(day);
+  }
+
+  Future<void> _pickStartDay() async {
+    final today =
+        DateTime.tryParse(ref.read(coachOverviewProvider).value?.today ?? '') ??
+        DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.tryParse(_startDay) ?? today,
+      firstDate: DateTime(today.year - 5),
+      lastDate: DateTime(today.year + 5, 12, 31),
+    );
+    if (picked != null && mounted) {
+      setState(() => _startDay = dayKeyOf(picked));
+    }
   }
 
   Future<void> _submit() async {
@@ -91,7 +115,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
             kind: _kind,
             direction: _direction,
             amount: amount,
-            dueDay: _dueDay,
+            startDay: _startDay,
             recurrence: _recurrence,
           );
       ref.invalidate(coachOverviewProvider);
@@ -210,26 +234,18 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
           Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField<int>(
-                  initialValue: _dueDay,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context).calDueDay,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                    ),
-                  ),
-                  items: List.generate(
-                    31,
-                    (i) => DropdownMenuItem(
-                      value: i + 1,
-                      child: Text(
-                        AppLocalizations.of(context).calDayP0('${i + 1}'),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(SmartSpendRadii.md),
+                  onTap: _pickStartDay,
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).calDueDay,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                       ),
                     ),
+                    child: Text(_dayLabel(_startDay)),
                   ),
-                  onChanged: (val) {
-                    if (val != null) setState(() => _dueDay = val);
-                  },
                 ),
               ),
               const SizedBox(width: SmartSpendSpacing.md),
@@ -305,16 +321,30 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
   @override
   void initState() {
     super.initState();
-    _amountController.text = widget.item.amount?.toString() ?? '';
+    // What is still owed on this date: the whole amount, or the rest after a partial payment.
+    _amountController.text = _plain(
+      widget.item.remaining ?? widget.item.amount,
+    );
     _suggestionsFuture = ref
         .read(calendarApiProvider)
-        .getPaymentSuggestions(widget.item.id);
+        .getPaymentSuggestions(
+          cashflowId: widget.item.cashflowId,
+          dueDay: widget.item.dueDay,
+        );
   }
 
   @override
   void dispose() {
     _amountController.dispose();
     super.dispose();
+  }
+
+  /// "2500" or "2500.5": a number as the amount field holds it, without grouping; empty for none.
+  static String _plain(num? amount) {
+    if (amount == null) return '';
+    return amount == amount.roundToDouble()
+        ? amount.toInt().toString()
+        : amount.toString();
   }
 
   Future<void> _settle() async {
@@ -330,7 +360,8 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
       await ref
           .read(calendarApiProvider)
           .settle(
-            cashflowId: widget.item.id,
+            cashflowId: widget.item.cashflowId,
+            dueDay: widget.item.dueDay,
             expenseId: _selectedExpenseId,
             amount: amount,
           );
@@ -368,10 +399,13 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
                           .calSettleP0(widget.item.title),
                       style: textTheme.titleMedium,
                     ),
-                    if (widget.item.amount != null)
+                    if ((widget.item.remaining ?? widget.item.amount) != null)
                       Text(
                         AppLocalizations.of(context).calAmountDueP0(
-                          moneyText(context, widget.item.amount!),
+                          moneyText(
+                            context,
+                            (widget.item.remaining ?? widget.item.amount)!,
+                          ),
                         ),
                         style: textTheme.bodySmall?.copyWith(
                           color: colors.mutedForeground,
@@ -445,7 +479,13 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
                             _selectedExpenseId = null;
                           } else {
                             _selectedExpenseId = s.id;
-                            _amountController.text = s.amount.toString();
+                            // What is left of the payment, up to what is owed on this date.
+                            final owed = widget.item.remaining;
+                            _amountController.text = _plain(
+                              owed != null && owed < s.available
+                                  ? owed
+                                  : s.available,
+                            );
                           }
                         });
                       },

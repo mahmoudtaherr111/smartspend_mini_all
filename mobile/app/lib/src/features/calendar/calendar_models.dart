@@ -33,56 +33,111 @@ final class CalendarDayCell {
   final double intensity; // 0.0 to 1.0 relative to month max daily spend
 }
 
-/// A commitment or recurring cashflow item (CAL-03, CAL-04).
-final class CashflowItem {
-  const CashflowItem({
+/// One payment linked to one due date (`cashflow_settlements`), as `coach.overview` lists it under `settlements`.
+final class CashflowSettlement {
+  const CashflowSettlement({
     required this.id,
-    required this.kind,
-    required this.title,
-    this.amount,
-    this.dueDate,
-    this.dueDay,
-    this.direction = 'out',
-    this.recurrence = 'monthly',
-    this.status = 'due',
-    this.paidAmount,
-    this.contactName,
-    this.contactId,
+    required this.cashflowId,
+    required this.dueDay,
+    required this.amount,
+    this.expenseId,
+    this.source = 'linked',
   });
 
-  factory CashflowItem.fromJson(Map<String, Object?> json) {
-    return CashflowItem(
+  factory CashflowSettlement.fromJson(Map<String, Object?> json) {
+    return CashflowSettlement(
       id: (json['id'] as num?)?.toInt() ?? 0,
-      kind: json['kind'] as String? ?? 'other',
-      title: json['title'] as String? ?? '',
-      amount: readAmount(json['amount']),
-      dueDate: json['dueDate'] as String?,
-      dueDay: (json['dueDay'] as num?)?.toInt(),
-      direction: json['direction'] as String? ?? 'out',
-      recurrence: json['recurrence'] as String? ?? 'monthly',
-      status: json['status'] as String? ?? 'due',
-      paidAmount: readAmount(json['paidAmount']),
-      contactName: json['contactName'] as String?,
-      contactId: (json['contactId'] as num?)?.toInt(),
+      cashflowId: (json['cashflowId'] as num?)?.toInt() ?? 0,
+      dueDay: json['dueDay'] as String? ?? '',
+      amount: readAmount(json['amount']) ?? 0,
+      expenseId: (json['expenseId'] as num?)?.toInt(),
+      source: json['source'] as String? ?? 'linked',
     );
   }
 
   final int id;
+  final int cashflowId;
+
+  /// The Cairo day key of the due date it pays: "2026-11-01".
+  final String dueDay;
+  final num amount;
+
+  /// The recorded payment; null when the user said it was paid without recording it.
+  final int? expenseId;
+
+  /// 'linked' (a recorded payment) | 'declared' (paid off the records).
+  final String source;
+}
+
+/// One due date of a commitment or expected income, as `coach.overview` lists it under `due` (CAL-03, CAL-04).
+/// The server decides its status and what is left; the app only shows them (mobile rule 8).
+final class CashflowItem {
+  const CashflowItem({
+    required this.cashflowId,
+    required this.dueDay,
+    required this.kind,
+    required this.title,
+    this.amount,
+    this.paid = 0,
+    this.remaining,
+    this.direction = 'out',
+    this.certainty = 'confirmed',
+    this.status = 'due',
+    this.contactName,
+    this.contactId,
+    this.settlements = const [],
+  });
+
+  factory CashflowItem.fromJson(
+    Map<String, Object?> json, {
+    List<CashflowSettlement> settlements = const [],
+  }) {
+    return CashflowItem(
+      cashflowId: (json['cashflowId'] as num?)?.toInt() ?? 0,
+      dueDay: json['dueDay'] as String? ?? '',
+      kind: json['kind'] as String? ?? 'other',
+      title: json['title'] as String? ?? '',
+      amount: readAmount(json['amount']),
+      paid: readAmount(json['paid']) ?? 0,
+      remaining: readAmount(json['remaining']),
+      direction: json['direction'] as String? ?? 'out',
+      certainty: json['certainty'] as String? ?? 'confirmed',
+      status: json['status'] as String? ?? 'due',
+      contactName: json['contactName'] as String?,
+      contactId: (json['contactId'] as num?)?.toInt(),
+      settlements: settlements,
+    );
+  }
+
+  /// The commitment (`scheduled_cashflows.id`) this due date belongs to.
+  final int cashflowId;
+
+  /// The Cairo day key of the due date: "2026-11-01".
+  final String dueDay;
   final String kind;
   final String title;
+
+  /// What is due on this date; null when the amount is not known.
   final num? amount;
-  final String? dueDate;
-  final int? dueDay;
+  final num paid;
+
+  /// What is still owed on this date; null when the amount is not known.
+  final num? remaining;
   final String direction; // 'in' | 'out'
-  final String recurrence; // 'monthly' | 'weekly' | 'yearly' | 'once'
+  final String certainty; // 'confirmed' | 'estimated'
   final String status; // 'paid' | 'partial' | 'due' | 'overdue' | 'unconfirmed'
-  final num? paidAmount;
   final String? contactName;
   final int? contactId;
+
+  /// The payments linked to this due date.
+  final List<CashflowSettlement> settlements;
 
   bool get isOverdue => status == 'overdue';
   bool get isPaid => status == 'paid';
   bool get isPartial => status == 'partial';
+
+  /// A date before the commitment was added: the app asks whether it was paid; it is never owed.
+  bool get isUnconfirmed => status == 'unconfirmed';
   bool get isIncome => direction == 'in';
 }
 
@@ -109,11 +164,14 @@ final class PlanStep {
   final int id;
   final String title;
   final String status; // 'pending' | 'done' | 'skipped'
-  final String? reminderStatus; // 'scheduled' | 'cancelled' | 'none'
+  final String? reminderStatus; // 'scheduled' | 'sent' | 'cancelled' | 'none'
   final String? remindAt;
 
   bool get isDone => status == 'done';
   bool get isSkipped => status == 'skipped';
+
+  /// A cancelled or delivered reminder keeps its time on the server, so the status says whether one is waiting.
+  bool get hasReminder => reminderStatus == 'scheduled';
 }
 
 /// The user's active financial plan (CAL-06).
@@ -188,7 +246,8 @@ final class CashPosition {
       freeBeforeIncome: readAmount(json['freeBeforeIncome']) ?? 0,
       incomeConfirmed: readAmount(json['incomeConfirmed']) ?? 0,
       incomeEstimated: readAmount(json['incomeEstimated']) ?? 0,
-      unknownBalanceAge: wallets['unknownAge'] == true,
+      // The number of wallets whose balance has no known date.
+      unknownBalanceAge: ((wallets['unknownAge'] as num?) ?? 0) > 0,
       unknownAmounts: titles(duesUnknown),
       undatedItems: titles(undated),
     );
@@ -210,31 +269,54 @@ final class CashPosition {
   final String undatedItems;
 }
 
-/// Full overview returned by `coach.overview`.
+/// Full overview returned by `coach.overview`: `today` (the Cairo day), `due` (the due dates 45 days either side,
+/// each with its status), `settlements` (what paid them), `position` and `plan`.
 final class CoachOverviewData {
   const CoachOverviewData({
     required this.position,
-    this.cashflows = const [],
+    this.today,
+    this.due = const [],
     this.plan,
   });
 
   factory CoachOverviewData.fromJson(Map<String, Object?> json) {
     final posRaw = json['position'] as Map<String, Object?>? ?? const {};
-    final cfRaw = json['cashflows'] as List<Object?>? ?? const [];
+    final dueRaw = json['due'] as List<Object?>? ?? const [];
+    final settlementsRaw = json['settlements'] as List<Object?>? ?? const [];
     final planRaw = json['plan'] as Map<String, Object?>?;
 
+    final settlements = [
+      for (final item in settlementsRaw)
+        if (item is Map<String, Object?>) CashflowSettlement.fromJson(item),
+    ];
     return CoachOverviewData(
       position: CashPosition.fromJson(posRaw),
-      cashflows: [
-        for (final item in cfRaw)
-          if (item is Map<String, Object?>) CashflowItem.fromJson(item),
+      today: json['today'] as String?,
+      due: [
+        for (final item in dueRaw)
+          if (item is Map<String, Object?>)
+            CashflowItem.fromJson(
+              item,
+              settlements: [
+                for (final settlement in settlements)
+                  if (settlement.cashflowId ==
+                          (item['cashflowId'] as num?)?.toInt() &&
+                      settlement.dueDay == item['dueDay'])
+                    settlement,
+              ],
+            ),
       ],
       plan: planRaw != null ? ActivePlan.fromJson(planRaw) : null,
     );
   }
 
   final CashPosition position;
-  final List<CashflowItem> cashflows;
+
+  /// The server's Cairo day ("2026-11-06"); null until the server has answered.
+  final String? today;
+
+  /// Due dates in the server's order (by date).
+  final List<CashflowItem> due;
   final ActivePlan? plan;
 }
 
@@ -246,12 +328,14 @@ final class PaymentSuggestionItem {
     required this.category,
     this.description,
     required this.date,
-  });
+    num? available,
+  }) : available = available ?? amount;
 
   factory PaymentSuggestionItem.fromJson(Map<String, Object?> json) {
     return PaymentSuggestionItem(
       id: (json['id'] as num?)?.toInt() ?? 0,
       amount: readAmount(json['amount']) ?? 0,
+      available: readAmount(json['available']),
       category: json['category'] as String? ?? '',
       description: json['description'] as String?,
       date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
@@ -260,7 +344,29 @@ final class PaymentSuggestionItem {
 
   final int id;
   final num amount;
+
+  /// What is left of the payment after its links to other due dates.
+  final num available;
   final String category;
   final String? description;
   final DateTime date;
 }
+
+/// The Cairo day key [days] after [dayKey] ("2026-11-06" → "2026-11-07"), counted on UTC dates so no
+/// daylight-saving change can shift it. Null when [dayKey] is not a day key.
+String? addDaysToDayKey(String? dayKey, int days) {
+  final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(dayKey ?? '');
+  if (match == null) return null;
+  final day = DateTime.utc(
+    int.parse(match.group(1)!),
+    int.parse(match.group(2)!),
+    int.parse(match.group(3)!) + days,
+  );
+  return dayKeyOf(day);
+}
+
+/// "2026-11-06" for a calendar date.
+String dayKeyOf(DateTime day) =>
+    '${day.year.toString().padLeft(4, '0')}-'
+    '${day.month.toString().padLeft(2, '0')}-'
+    '${day.day.toString().padLeft(2, '0')}';

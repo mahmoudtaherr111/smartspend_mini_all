@@ -972,6 +972,20 @@
   },
   "calSettle": "ادفع",
   "calPaidTapToUndo": "اتدفع (دوس للإلغاء)",
+  "calPaidOrNot": "اتدفع ولا لأ؟",
+  "calWeCouldnTUndoIt": "ماقدرناش نلغي الدفع. جرّب تاني.",
+  "calMoreOptions": "اختيارات تانية",
+  "calStopThisCommitment": "وقّف الالتزام ده",
+  "calStopCommitmentP0Explained": "«{p0}» مش هيظهر في مواعيدك تاني ومش هيتخصم من المتاح. اللي اتدفع قبل كده هيفضل متسجل زي ما هو.",
+  "@calStopCommitmentP0Explained": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "calStop": "وقّف",
+  "calWeCouldnTStopIt": "ماقدرناش نوقفه. جرّب تاني.",
   "calActiveSavingPlan": "خطة التوفير الحالية",
   "calEndThePlan": "خلّص الخطة",
   "calPlanSteps": "خطوات الخطة:",
@@ -1004,14 +1018,6 @@
   "calAmountOptionalIfItChanges": "المبلغ (اختياري لو بيتغير)",
   "calKind": "النوع",
   "calDueDay": "يوم الميعاد",
-  "calDayP0": "يوم {p0}",
-  "@calDayP0": {
-    "placeholders": {
-      "p0": {
-        "type": "String"
-      }
-    }
-  },
   "calRepeats": "التكرار",
   "calSave": "احفظ",
   "calWeCouldnTRecordThe": "ما عرفناش نسجل الدفع. جرّب تاني.",

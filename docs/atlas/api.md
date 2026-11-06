@@ -392,7 +392,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `pro.cancel` | mutation | `authedProcedure` | no | — | `pro_subscriptions` | — | `src/hooks/usePro.ts` |
 | `pro.createCheckoutSession` | mutation | `authedProcedure` | yes | — | — | `api/lib/env.ts`, `api/lib/paymob.ts`, `contracts/plans.ts` | `src/hooks/usePro.ts` |
 | `pro.listSubscriptions` | query | `adminProcedure` | yes | `pro_subscriptions` | — | — | — |
-| `pro.myPlan` | query | `authedProcedure` | no | `local_users`, `pro_subscriptions`, `store_purchases`, `users` | `pro_subscriptions`, `store_purchases` | `api/lib/access-control.ts`, `api/lib/plan-catalog.ts`, `api/lib/settings-cache.ts`, `contracts/plan-features.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/hooks/usePro.ts` |
+| `pro.myPlan` | query | `authedProcedure` | no | `local_users`, `pro_subscriptions`, `store_purchases`, `users` | `pro_subscriptions`, `store_purchases` | `api/lib/access-control.ts`, `api/lib/plan-catalog.ts`, `api/lib/settings-cache.ts`, `contracts/plan-features.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/components/settings/BusinessSettingsView.tsx`, `src/hooks/usePro.ts`, `src/pages/Home.tsx` |
 | `pro.planCatalog` | query | `authedProcedure` | no | — | — | `api/lib/plan-catalog.ts`, `api/lib/settings-cache.ts` | `src/pages/Pro.tsx` |
 | `pro.restorePurchases` | mutation | `authedProcedure` | yes | — | — | `api/lib/store-billing/index.ts` | — |
 | `pro.storeBilling` | query | `authedProcedure` | no | — | — | `api/lib/store-billing/index.ts` | — |

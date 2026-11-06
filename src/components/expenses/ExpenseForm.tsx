@@ -297,7 +297,6 @@ export function ExpenseForm({
   const isSubmittingMutationRef = useRef<boolean>(false);
 
   const utilsTrpc = trpc.useUtils();
-  const learnMutation = trpc.ai.learnWord.useMutation();
 
   const showNewContactToast = (
     c?: { name?: string; totalContacts?: number } | null,

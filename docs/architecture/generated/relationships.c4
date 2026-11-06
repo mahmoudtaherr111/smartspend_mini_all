@@ -1854,6 +1854,7 @@ model {
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.expense.getMonthlyStats
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.localAuth.logout
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.localAuth.me
+  smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.pro.myPlan
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.addContact
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.deleteContact
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.deleteMyAccount

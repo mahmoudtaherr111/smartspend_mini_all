@@ -63,13 +63,21 @@ interface CategoryDraft {
 }
 
 export function BusinessSettingsView({ onBack }: { onBack: () => void }) {
-  const businessQuery = trpc.business.get.useQuery();
+  const planQuery = trpc.pro.myPlan.useQuery();
+  // An answer without the plan's features (an older server) locks nothing here; business.get decides.
+  const planFeatures = planQuery.data?.features;
+  const planLocked = planFeatures ? !planFeatures.business : false;
+  const businessQuery = trpc.business.get.useQuery(undefined, {
+    // If the plan cannot be read, ask anyway and let the server decide.
+    enabled: !planLocked && (planQuery.data !== undefined || planQuery.isError),
+  });
   const business = businessQuery.data?.business;
   const [showSetup, setShowSetup] = useState(false);
 
-  // Business mode is a plan feature, and business.get says so before anything is filled in:
-  // a plan without it sees the lock here, not after the three setup steps.
-  const locked = businessQuery.error?.data?.code === "FORBIDDEN";
+  // Business mode is a plan feature: `pro.myPlan` says so before anything is filled in, so a plan without
+  // it sees the lock here, not after the three setup steps. The server's refusal still locks it if the
+  // plan changed in the meantime.
+  const locked = planLocked || businessQuery.error?.data?.code === "FORBIDDEN";
   if (!business && (!showSetup || locked)) {
     return <BusinessWelcome onBack={onBack} onStart={() => setShowSetup(true)} locked={locked} />;
   }
