@@ -15,6 +15,7 @@ flowchart LR
   subgraph g_screens["Screens"]
     page_Pro["Pro screen"]
     page_UltraLounge["UltraLounge screen"]
+    screens_accounts["Screens of Accounts, sign-in and security"]
     screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
     screens_web_app["Screens of Web and mobile app shell"]
   end
@@ -57,6 +58,7 @@ flowchart LR
   router_pro -.-> tbl_users
   router_pro ==> tbl_pro_subscriptions
   router_pro ==> tbl_store_purchases
+  screens_accounts --> router_pro
   screens_money --> router_pro
   screens_web_app --> router_pro
 ```
@@ -105,7 +107,7 @@ Drawn in `docs/architecture/flows/paymob-upgrade.c4`; in the interactive map it 
 | `pro.cancel` | mutation | `authedProcedure` | — | `pro_subscriptions` | `More`, `Pro` |
 | `pro.createCheckoutSession` | mutation | `authedProcedure` | — | — | `More`, `Pro` |
 | `pro.listSubscriptions` | query | `adminProcedure` | `pro_subscriptions` | — | — |
-| `pro.myPlan` | query | `authedProcedure` | `local_users`, `pro_subscriptions`, `store_purchases`, `users` | `pro_subscriptions`, `store_purchases` | `Home`, `More`, `Pro` |
+| `pro.myPlan` | query | `authedProcedure` | `local_users`, `pro_subscriptions`, `store_purchases`, `users` | `pro_subscriptions`, `store_purchases` | `Home`, `More`, `Pro`, `Settings` |
 | `pro.planCatalog` | query | `authedProcedure` | — | — | `More`, `Pro` |
 | `pro.restorePurchases` | mutation | `authedProcedure` | — | — | — |
 | `pro.storeBilling` | query | `authedProcedure` | — | — | — |
@@ -145,7 +147,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [Server platform and data](platform.md).
 
-Used by: [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Used by: [Accounts, sign-in and security](accounts.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
