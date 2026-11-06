@@ -21,13 +21,15 @@ final class CalendarApi {
     return CoachOverviewData.fromJson(data);
   }
 
+  /// Adds a commitment or expected income (`coach.addCashflow`). [amount] and [startDay] are sent even when null:
+  /// the server takes null as "not known" and refuses a request without them. [startDay] is the first (or only)
+  /// due date as a Cairo day key ("2026-11-01"); for a monthly one its day is the day of every month.
   Future<void> addCashflow({
     required String title,
     required String kind,
     required String direction,
-    num? amount,
-    int? dueDay,
-    String? dueDate,
+    required num? amount,
+    required String? startDay,
     String recurrence = 'monthly',
     int? contactId,
   }) async {
@@ -37,55 +39,53 @@ final class CalendarApi {
         'title': title,
         'kind': kind,
         'direction': direction,
-        'amount': ?amount,
-        'dueDay': ?dueDay,
-        'dueDate': ?dueDate,
+        'amount': amount,
+        'startDay': startDay,
         'recurrence': recurrence,
         'contactId': ?contactId,
       },
     );
   }
 
+  /// Changes a commitment (`coach.updateCashflow`); [status] 'ended' stops it, keeping what was paid.
   Future<void> updateCashflow({
-    required int cashflowId,
+    required int id,
     String? title,
     String? kind,
     num? amount,
-    int? dueDay,
-    String? dueDate,
+    String? startDay,
     String? recurrence,
     String? status,
-    bool? isArchived,
   }) async {
     await _client.mutate(
       Procedures.coach.updateCashflow,
       input: {
-        'cashflowId': cashflowId,
+        'id': id,
         'title': ?title,
         'kind': ?kind,
         'amount': ?amount,
-        'dueDay': ?dueDay,
-        'dueDate': ?dueDate,
+        'startDay': ?startDay,
         'recurrence': ?recurrence,
         'status': ?status,
-        'isArchived': ?isArchived,
       },
     );
   }
 
+  /// Records that a due date was paid (`coach.settle`): by a recorded payment ([expenseId]), or, without one, as
+  /// paid off the records. [amount] null lets the server take what is owed (or what is left of the payment).
   Future<void> settle({
     required int cashflowId,
+    required String dueDay,
     int? expenseId,
     num? amount,
-    String? note,
   }) async {
     await _client.mutate(
       Procedures.coach.settle,
       input: {
         'cashflowId': cashflowId,
+        'dueDay': dueDay,
         'expenseId': ?expenseId,
         'amount': ?amount,
-        'note': ?note,
       },
     );
   }
@@ -97,12 +97,14 @@ final class CalendarApi {
     );
   }
 
-  Future<List<PaymentSuggestionItem>> getPaymentSuggestions(
-    int cashflowId,
-  ) async {
+  /// Recorded payments that may have paid this due date, for the user to pick; nothing is linked here.
+  Future<List<PaymentSuggestionItem>> getPaymentSuggestions({
+    required int cashflowId,
+    required String dueDay,
+  }) async {
     final data = await _client.query(
       Procedures.coach.paymentSuggestions,
-      input: {'cashflowId': cashflowId},
+      input: {'cashflowId': cashflowId, 'dueDay': dueDay},
     );
     if (data is! List<Object?>) return const [];
     return [
@@ -121,13 +123,11 @@ final class CalendarApi {
     );
   }
 
-  Future<void> setReminder({
-    required int stepId,
-    required String scheduledAt,
-  }) async {
+  /// [at] is the day and hour on Cairo's clock, "2026-11-07T09:00", whatever the phone's time zone.
+  Future<void> setReminder({required int stepId, required String at}) async {
     await _client.mutate(
       Procedures.coach.setReminder,
-      input: {'stepId': stepId, 'remindAt': scheduledAt},
+      input: {'stepId': stepId, 'at': at},
     );
   }
 

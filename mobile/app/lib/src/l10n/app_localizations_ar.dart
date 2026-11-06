@@ -1776,6 +1776,29 @@ class AppLocalizationsAr extends AppLocalizations {
   String get calPaidTapToUndo => 'اتدفع (دوس للإلغاء)';
 
   @override
+  String get calPaidOrNot => 'اتدفع ولا لأ؟';
+
+  @override
+  String get calWeCouldnTUndoIt => 'ماقدرناش نلغي الدفع. جرّب تاني.';
+
+  @override
+  String get calMoreOptions => 'اختيارات تانية';
+
+  @override
+  String get calStopThisCommitment => 'وقّف الالتزام ده';
+
+  @override
+  String calStopCommitmentP0Explained(String p0) {
+    return '«$p0» مش هيظهر في مواعيدك تاني ومش هيتخصم من المتاح. اللي اتدفع قبل كده هيفضل متسجل زي ما هو.';
+  }
+
+  @override
+  String get calStop => 'وقّف';
+
+  @override
+  String get calWeCouldnTStopIt => 'ماقدرناش نوقفه. جرّب تاني.';
+
+  @override
   String get calActiveSavingPlan => 'خطة التوفير الحالية';
 
   @override
@@ -1870,11 +1893,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get calDueDay => 'يوم الميعاد';
-
-  @override
-  String calDayP0(String p0) {
-    return 'يوم $p0';
-  }
 
   @override
   String get calRepeats => 'التكرار';
