@@ -45,6 +45,7 @@ export interface CashflowInput {
   /** The commitments ecosystem's fields (docs/decisions/0051-commitments-ecosystem.md); absent on older callers. */
   shape?: Shape | null;
   provider?: string | null;
+  catalogSlug?: string | null;
   beneficiaryContactId?: number | null;
   intervalCount?: number | null;
   occurrenceCount?: number | null;
@@ -64,7 +65,7 @@ export interface CashflowInput {
 
 const scope = (user: CoachUser) => and(eq(scheduledCashflows.userId, user.userId), eq(scheduledCashflows.userType, user.userType));
 
-function toScheduleRow(row: typeof scheduledCashflows.$inferSelect, contactName: string | null = null): ScheduleRow {
+export function toScheduleRow(row: typeof scheduledCashflows.$inferSelect, contactName: string | null = null): ScheduleRow {
   return {
     id: row.id,
     kind: row.kind,
@@ -203,6 +204,7 @@ export async function createCashflow(user: CoachUser, input: CashflowInput): Pro
     businessId: input.businessId ?? null,
     shape: input.shape ?? null,
     provider: input.provider ?? null,
+    catalogSlug: input.catalogSlug ?? null,
     beneficiaryContactId: input.beneficiaryContactId ?? null,
     intervalCount: Math.max(1, Math.floor(input.intervalCount ?? 1)),
     occurrenceCount: input.occurrenceCount ?? null,

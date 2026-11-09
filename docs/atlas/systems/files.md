@@ -17,7 +17,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/analytics-router.ts` | [admin](admin.md) |
 | `api/app-config-router.ts` | [platform](platform.md) |
 | `api/auth-router.ts` | [accounts](accounts.md) |
-| `api/boot.ts` | [accounts](accounts.md): `GET /api/auth/google/callback`, `GET /api/auth/google/start`, `job:daily-auth-cleanup` · [admin](admin.md): `GET /admin` · [ai-center](ai-center.md): `job:memory-embedding-backfill` · [bank-messages](bank-messages.md): `job:capture-ai-sweep`, `job:capture-breaker`, `job:capture-silent-devices`, `job:cashflow-cutover`, `job:cashflow-cutover-at-boot`, `job:seed-capture-catalog` · [billing](billing.md): `POST /api/webhooks/apple-asn`, `POST /api/webhooks/google-play`, `POST /api/webhooks/paymob`, `job:daily-subscription-expiry` · [expense-capture](expense-capture.md): `job:classification-log-cleanup` · [insights](insights.md): `job:monthly-behavior-snapshots`, `job:monthly-report-generation` · [money](money.md): `job:coaching-reminders`, `job:nightly-rollup-reconciliation`, `job:taxonomy-migration` · [notifications](notifications.md): `GET /api/webhooks/whatsapp`, `POST /api/webhooks/whatsapp`, `job:scheduled-notifications`, `job:seed-default-templates`, `job:smart-activity-notifications`, `job:whatsapp-outbox` · [platform](platform.md): `ALL /api/trpc/*`, `GET /`, `GET /health`, `GET /robots.txt`, `GET /sitemap.xml`, `job:data-retention-lifecycle`, `job:ops-watch` · [voice-calls](voice-calls.md): `job:voice-call-memory`, `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
+| `api/boot.ts` | [accounts](accounts.md): `GET /api/auth/google/callback`, `GET /api/auth/google/start`, `job:daily-auth-cleanup` · [admin](admin.md): `GET /admin` · [ai-center](ai-center.md): `job:memory-embedding-backfill` · [bank-messages](bank-messages.md): `job:capture-ai-sweep`, `job:capture-breaker`, `job:capture-silent-devices`, `job:cashflow-cutover`, `job:cashflow-cutover-at-boot`, `job:seed-capture-catalog` · [billing](billing.md): `POST /api/webhooks/apple-asn`, `POST /api/webhooks/google-play`, `POST /api/webhooks/paymob`, `job:daily-subscription-expiry` · [expense-capture](expense-capture.md): `job:classification-log-cleanup` · [insights](insights.md): `job:monthly-behavior-snapshots`, `job:monthly-report-generation` · [money](money.md): `job:coaching-reminders`, `job:commitment-match-sweep`, `job:commitment-reminders`, `job:nightly-rollup-reconciliation`, `job:taxonomy-migration` · [notifications](notifications.md): `GET /api/webhooks/whatsapp`, `POST /api/webhooks/whatsapp`, `job:scheduled-notifications`, `job:seed-default-templates`, `job:smart-activity-notifications`, `job:whatsapp-outbox` · [platform](platform.md): `ALL /api/trpc/*`, `GET /`, `GET /health`, `GET /robots.txt`, `GET /sitemap.xml`, `job:data-retention-lifecycle`, `job:ops-watch` · [voice-calls](voice-calls.md): `job:voice-call-memory`, `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
 | `api/budget-router.ts` | [money](money.md) |
 | `api/business-router.ts` | [money](money.md) |
 | `api/capture-admin-router.ts` | [bank-messages](bank-messages.md) |
@@ -25,6 +25,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/capture-v1-routes.ts` | [bank-messages](bank-messages.md) |
 | `api/chat-router.ts` | [ai-center](ai-center.md) |
 | `api/coach-router.ts` | [money](money.md) |
+| `api/commitments-router.ts` | [money](money.md) |
 | `api/context.ts` | [platform](platform.md) |
 | `api/expense-router.ts` | [expense-capture](expense-capture.md): `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `expense.createCategory`, `expense.dismissClarification`, `expense.getCategoryList`, `expense.getPendingClarifications` · [money](money.md): `expense.createInstallmentPlan`, `expense.delete`, `expense.deleteInstallmentPlan`, `expense.getById`, `expense.getDebtBalances`, `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getSeasonSpending`, `expense.getYearlyStats`, `expense.list`, `expense.listInstallmentPlans`, `expense.previewCategory`, `expense.searchTransactions`, `expense.update` · rest of the file: [expense-capture](expense-capture.md), [money](money.md) |
 | `api/export-router.ts` | [admin](admin.md): `export.allUsers` · [insights](insights.md): `export.monthlyReportHtml` · [money](money.md): `export.myExpenses` · rest of the file: [admin](admin.md), [insights](insights.md), [money](money.md) |
@@ -221,8 +222,10 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/ai-memory/vector-store.ts` | [ai-center](ai-center.md) |
 | `api/services/budget-status.ts` | [money](money.md) |
 | `api/services/coach/cashflows.ts` | [money](money.md) |
+| `api/services/coach/commitments.ts` | [money](money.md) |
 | `api/services/coach/matcher.ts` | [money](money.md) |
 | `api/services/coach/plans.ts` | [money](money.md) |
+| `api/services/coach/reminders.ts` | [money](money.md) |
 | `api/services/coach/schedule.ts` | [money](money.md) |
 | `api/services/debt-ledger.ts` | [money](money.md) |
 | `api/services/entitlements/voice.ts` | [voice-calls](voice-calls.md) |

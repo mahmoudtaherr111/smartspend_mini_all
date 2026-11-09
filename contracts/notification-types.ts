@@ -26,6 +26,7 @@ export const NOTIFICATION_TYPES = {
   inactivity_reminder: { kind: "reminder", destination: "/dashboard?tab=record" },
   dormant_reactivation: { kind: "reminder", destination: "/dashboard?tab=record" },
   coach_reminder: { kind: "plan", destination: "/plan" },
+  commitment_due: { kind: "reminder", destination: "/commitments" },
   biometric_suggestion: { kind: "security", destination: "/settings/security?highlight=biometric" },
   manual_scheduled: { kind: "general", destination: NOTIFICATION_CENTER_PATH },
 } as const satisfies Record<string, NotificationTypeInfo>;

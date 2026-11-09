@@ -644,6 +644,12 @@ function ledgerCacheTtl(period: { month?: string; year?: string }): number {
 }
 
 /** The category installment payments are filed under, read from the registry. */
+/** Links what was just saved to the commitment it pays, when certain (docs/decisions/0051-commitments-ecosystem.md). */
+async function commitmentLinksFor(owner: { userId: number; userType: string }, ids: Array<number | undefined>) {
+  const { matchSavedExpenses } = await import("./services/coach/commitments");
+  return matchSavedExpenses(owner, ids.filter((id): id is number => typeof id === "number" && id > 0));
+}
+
 const INSTALLMENTS_CATEGORY = CATEGORIES.find((category) => category.id === "installments")!.name_ar;
 
 export const expenseRouter = router({
@@ -752,7 +758,7 @@ export const expenseRouter = router({
         };
       }
 
-      return { success: true, id, newlyAddedContact: references.newlyAddedContact };
+      return { success: true, id, newlyAddedContact: references.newlyAddedContact, commitmentLinks: await commitmentLinksFor(owner, [id]) };
     }),
 
   batchCreate: authedProcedure
@@ -881,6 +887,7 @@ export const expenseRouter = router({
         count: entries.length + existingClientMap.size,
         ids: insertedIds,
         newlyAddedContact: references.find((reference) => reference.newlyAddedContact)?.newlyAddedContact || null,
+        commitmentLinks: await commitmentLinksFor(owner, insertedIds),
       };
     }),
 
@@ -2686,6 +2693,7 @@ export const expenseRouter = router({
         clarificationId: undefined,
         enrichedText: undefined,
         newlyAddedContact,
+        commitmentLinks: await commitmentLinksFor({ userId: Number(ctx.user!.id), userType: ctx.user!.type }, saved.map((entry) => entry.id)),
       };
     }),
 });

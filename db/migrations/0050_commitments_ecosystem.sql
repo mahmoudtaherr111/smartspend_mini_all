@@ -72,6 +72,7 @@ ALTER TABLE `cashflow_settlements` ADD `matched_by` varchar(12) DEFAULT 'user' N
 ALTER TABLE `installment_plans` ADD `cashflow_id` int;--> statement-breakpoint
 ALTER TABLE `scheduled_cashflows` ADD `shape` varchar(12);--> statement-breakpoint
 ALTER TABLE `scheduled_cashflows` ADD `provider` varchar(80);--> statement-breakpoint
+ALTER TABLE `scheduled_cashflows` ADD `catalog_slug` varchar(60);--> statement-breakpoint
 ALTER TABLE `scheduled_cashflows` ADD `beneficiary_contact_id` int;--> statement-breakpoint
 ALTER TABLE `scheduled_cashflows` ADD `interval_count` int DEFAULT 1 NOT NULL;--> statement-breakpoint
 ALTER TABLE `scheduled_cashflows` ADD `occurrence_count` int;--> statement-breakpoint
@@ -87,6 +88,8 @@ ALTER TABLE `scheduled_cashflows` ADD `origin_expense_id` int;--> statement-brea
 ALTER TABLE `scheduled_cashflows` ADD `remind_days_before` int;--> statement-breakpoint
 ALTER TABLE `scheduled_cashflows` ADD `remind_hour` int;--> statement-breakpoint
 ALTER TABLE `scheduled_cashflows` ADD `reminders_enabled` boolean DEFAULT true NOT NULL;--> statement-breakpoint
+ALTER TABLE `subscription_catalog` ADD `brand_color` varchar(9);--> statement-breakpoint
+ALTER TABLE `subscription_catalog` ADD `logo_url` varchar(300);--> statement-breakpoint
 CREATE INDEX `commitment_hints_user_idx` ON `commitment_hints` (`user_id`,`user_type`);--> statement-breakpoint
 CREATE INDEX `commitment_overrides_user_idx` ON `commitment_overrides` (`user_id`,`user_type`,`cashflow_id`);--> statement-breakpoint
 CREATE INDEX `commitment_questions_user_idx` ON `commitment_questions` (`user_id`,`user_type`,`status`);--> statement-breakpoint

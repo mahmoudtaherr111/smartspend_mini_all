@@ -201,3 +201,5 @@ export const businessAiProcedure = planFeatureAiProcedure("business");
 export const receiptsProcedure = planFeatureProcedure("receipts");
 export const proReportProcedure = planFeatureProcedure("pro_report");
 export const goalAnalysisProcedure = planFeatureProcedure("goal_analysis");
+/** The commitments ecosystem (docs/decisions/0051-commitments-ecosystem.md), on for every plan unless the admin says. */
+export const commitmentsProcedure = planFeatureProcedure("commitments");

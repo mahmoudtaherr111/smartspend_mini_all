@@ -60,6 +60,8 @@ Reads and writes cover the job body in `api/boot.ts` plus the `api/jobs/` module
 | `cashflow-cutover-at-boot` | once at boot | `api/jobs/cashflow-cutover-job.ts` | — | — |
 | `classification-log-cleanup` | `0 3 * * 0` | — | — | `classification_logs` |
 | `coaching-reminders` | `*/5 * * * *` | `api/services/coach/plans.ts` | — | — |
+| `commitment-match-sweep` | `*/10 * * * *` | `api/services/coach/reminders.ts` | — | — |
+| `commitment-reminders` | `*/5 * * * *` | `api/services/coach/reminders.ts` | — | — |
 | `daily-auth-cleanup` | `0 0 * * *` | `api/lib/access-control.ts`, `api/services/phone-challenge.ts` | — | `auth_challenges` |
 | `daily-subscription-expiry` | `0 6 * * *` | `api/jobs/subscription-expiry-job.ts` | `pro_subscriptions`, `store_purchases` | `pro_subscriptions`, `store_purchases` |
 | `data-retention-lifecycle` | `0 5 * * *` | `api/jobs/data-retention-job.ts` | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `capture_ai_accounts`, `capture_ai_days`, `capture_ai_jobs`, `capture_ai_reservations`, `capture_events`, `capture_questions`, `capture_samples`, `capture_signals`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `scheduled_job_runs`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage`, `whatsapp_messages` |

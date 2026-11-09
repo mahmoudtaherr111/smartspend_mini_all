@@ -149,6 +149,19 @@ scheduleProtectedJob("*/5 * * * *", "coaching-reminders", async () => {
   await deliverDueReminders();
 });
 
+// Commitment reminders (docs/decisions/0051-commitments-ecosystem.md): days before a due date, on it, the day after and
+// weekly while unpaid; one row per date, stage and channel is claimed before sending, so nothing goes out twice.
+scheduleProtectedJob("*/5 * * * *", "commitment-reminders", async () => {
+  const { deliverCommitmentReminders } = await import("./services/coach/reminders");
+  await deliverCommitmentReminders();
+});
+
+// Payments recorded from bank messages, linked to the commitment they pay by the same strict rules as typed ones.
+scheduleProtectedJob("*/10 * * * *", "commitment-match-sweep", async () => {
+  const { sweepCapturedPayments } = await import("./services/coach/reminders");
+  await sweepCapturedPayments();
+});
+
 // Captured messages waiting for the model that no request's wake picked up: a restart, or a lease that ran out
 // (decision 0031). The request that queued one normally reads it within seconds.
 // WhatsApp messages queued in whatsapp_messages: sent, retried or given up (decision 0038). Nothing to do until the

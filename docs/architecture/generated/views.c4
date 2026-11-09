@@ -77,6 +77,11 @@ views {
     include *
   }
 
+  view router_commitments of smartspend.api.trpc.commitments {
+    title 'tRPC router · commitments'
+    include *
+  }
+
   view router_expense of smartspend.api.trpc.expense {
     title 'tRPC router · expense'
     include *

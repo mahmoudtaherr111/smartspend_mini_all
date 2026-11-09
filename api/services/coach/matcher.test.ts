@@ -89,3 +89,39 @@ describe("tokens", () => {
     expect(learnedPhrase("دفعت قسط مدرسة محمد 5000 جنيه")).toBe("قسط محمد مدرسه");
   });
 });
+
+describe("known subscriptions", () => {
+  const netflix: MatchCommitment = {
+    id: 50, title: "نتفليكس", kind: "subscription", contactId: null, hints: [],
+    aliases: ["Netflix", "نتفليكس", "netflix.com"],
+    open: [{ dueDay: "2026-11-12", effectiveDay: "2026-11-12", remaining: 240 }],
+  };
+  it("names Netflix in Arabic, in English, and spelled without its long vowels", () => {
+    for (const text of ["دفعت نتفليكس 240", "دفعت نتفلكس 240", "paid netflix 240", "اشتراك Netflix"]) {
+      expect(decideMatch(payment({ text, amount: 240, day: "2026-11-12" }), [netflix]).status).toBe("linked");
+    }
+  });
+  it("does not take any word with 'شقة' for the apartment's installment", () => {
+    const flat: MatchCommitment = { id: 60, title: "قسط الشقة", kind: "property", contactId: null, hints: [],
+      open: [{ dueDay: "2026-11-01", effectiveDay: "2026-11-01", remaining: 30000 }] };
+    // Paint for the flat is not its installment: no question either.
+    expect(decideMatch(payment({ text: "دهان الشقة", amount: 3000 }), [flat]).status).toBe("none");
+    expect(decideMatch(payment({ text: "فرش الشقة", amount: 30000 }), [flat]).status).toBe("ask");
+    expect(decideMatch(payment({ text: "دفعت قسط الشقة", amount: 30000 }), [flat]).status).toBe("linked");
+  });
+});
+
+describe("people and shared words", () => {
+  it("links a part of a debt repaid by its very person, never more than is left", () => {
+    const farida: MatchCommitment = { id: 30, title: "سلفة فريدة", kind: "debt", contactId: 7, hints: [],
+      open: [{ dueDay: "2026-10-01", effectiveDay: "2026-10-01", remaining: 1000, undated: true }] };
+    expect(decideMatch(payment({ text: "رجعتلي", amount: 400, contactId: 7 }), [farida])).toEqual({
+      status: "linked", cashflowId: 30, allocations: [{ cashflowId: 30, dueDay: "2026-10-01", amount: 400 }],
+    });
+    expect(decideMatch(payment({ text: "رجعتلي", amount: 1400, contactId: 7 }), [farida]).status).toBe("ask");
+  });
+  it("does not let a word two schools share stop naming one of them", () => {
+    const malak = school({ id: 11, title: "مدرسة ملك", beneficiaryName: "ملك", open: [{ dueDay: "2026-11-01", effectiveDay: "2026-11-01", remaining: 4000 }] });
+    expect(decideMatch(payment({ text: "دفعت 5000 مصاريف مدرسة محمد ابني" }), [school(), malak]).status).toBe("linked");
+  });
+});

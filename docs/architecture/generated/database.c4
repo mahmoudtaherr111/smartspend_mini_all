@@ -509,7 +509,7 @@ model {
     }
     scheduled_cashflows = table 'scheduled_cashflows' {
       #classC #dualOwner
-      description '35 columns, 2 indexes, storage class C.'
+      description '36 columns, 2 indexes, storage class C.'
       metadata {
         export 'scheduledCashflows'
         storageClass 'C'
@@ -557,7 +557,7 @@ model {
     }
     subscription_catalog = table 'subscription_catalog' {
       #classA
-      description '14 columns, 1 indexes, storage class A.'
+      description '16 columns, 1 indexes, storage class A.'
       metadata {
         export 'subscriptionCatalog'
         storageClass 'A'

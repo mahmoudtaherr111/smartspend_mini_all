@@ -57,6 +57,9 @@ export interface CatalogSubscription {
   categoryId: string;
   subCategoryId: string;
   cycle: SubscriptionCycle;
+  /** The badge colour and logo the apps show for a commitment to this service (docs/decisions/0051). */
+  brandColor: string | null;
+  logoUrl: string | null;
   status: CatalogStatus;
   origin: "seed" | "admin";
   adminEditedAt: Date | null;
@@ -103,6 +106,8 @@ export const subscriptionInput = z
     subCategoryId: z.string(),
     cycle: z.enum(SUBSCRIPTION_CYCLES).default("monthly"),
     status: z.enum(CATALOG_STATUSES).default("active"),
+    brandColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "اللون بالشكل #E50914").nullable().default(null),
+    logoUrl: z.string().trim().url().max(300).refine((url) => url.startsWith("https://"), "رابط اللوجو لازم يبدأ بـ https").nullable().default(null),
   })
   .refine((value) => isSpendingSubcategory(value.categoryId, value.subCategoryId), {
     message: "التصنيف لازم يكون تصنيف مصروف موجود، والتصنيف الفرعي جواه",
@@ -186,6 +191,8 @@ export function subscriptionFromRow(row: typeof subscriptionCatalog.$inferSelect
     categoryId: row.categoryId,
     subCategoryId: row.subCategoryId,
     cycle: oneOf(SUBSCRIPTION_CYCLES, row.cycle, "varies"),
+    brandColor: row.brandColor ?? null,
+    logoUrl: row.logoUrl ?? null,
     status: oneOf(CATALOG_STATUSES, row.status, "disabled"),
     origin: row.origin === "seed" ? "seed" : "admin",
     adminEditedAt: row.adminEditedAt ?? null,

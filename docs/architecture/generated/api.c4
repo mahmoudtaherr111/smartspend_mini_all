@@ -1933,6 +1933,172 @@ model {
         }
       }
     }
+    commitments = router 'commitments' {
+      description 'api/commitments-router.ts — 16 procedures.'
+      metadata {
+        file 'api/commitments-router.ts'
+      }
+      answer = procedure 'commitments.answer' {
+        #mutation #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'mutation · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      create = procedure 'commitments.create' {
+        #mutation #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'mutation · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      defaults = procedure 'commitments.defaults' {
+        #query #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'query · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'query'
+        }
+      }
+      detail = procedure 'commitments.detail' {
+        #query #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'query · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'query'
+        }
+      }
+      forSentence = procedure 'commitments.forSentence' {
+        #query #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'query · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'query'
+        }
+      }
+      link_ = procedure 'commitments.link' {
+        #mutation #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'mutation · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      month = procedure 'commitments.month' {
+        #query #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'query · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'query'
+        }
+      }
+      overview = procedure 'commitments.overview' {
+        #query #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'query · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'query'
+        }
+      }
+      pay = procedure 'commitments.pay' {
+        #mutation #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'mutation · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      questions = procedure 'commitments.questions' {
+        #query #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'query · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'query'
+        }
+      }
+      replaceItems = procedure 'commitments.replaceItems' {
+        #mutation #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'mutation · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      setOverride = procedure 'commitments.setOverride' {
+        #mutation #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'mutation · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      setStatus = procedure 'commitments.setStatus' {
+        #mutation #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'mutation · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      subscriptions = procedure 'commitments.subscriptions' {
+        #query #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'query · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'query'
+        }
+      }
+      unlink = procedure 'commitments.unlink' {
+        #mutation #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'mutation · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      update = procedure 'commitments.update' {
+        #mutation #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'mutation · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'mutation'
+        }
+      }
+    }
     expense = router 'expense' {
       description 'api/expense-router.ts — 21 procedures.'
       metadata {
@@ -3253,6 +3419,22 @@ model {
       }
     }
     coaching-reminders = job 'coaching-reminders' {
+      technology 'cron */5 * * * *'
+      description 'Scheduled in api/boot.ts.'
+      metadata {
+        schedule '*/5 * * * *'
+        file 'api/boot.ts'
+      }
+    }
+    commitment-match-sweep = job 'commitment-match-sweep' {
+      technology 'cron */10 * * * *'
+      description 'Scheduled in api/boot.ts.'
+      metadata {
+        schedule '*/10 * * * *'
+        file 'api/boot.ts'
+      }
+    }
+    commitment-reminders = job 'commitment-reminders' {
       technology 'cron */5 * * * *'
       description 'Scheduled in api/boot.ts.'
       metadata {

@@ -425,25 +425,40 @@ model {
   smartspend.api.modules.classification -[uses]-> gemini
   smartspend.api.modules.classification -[writes]-> smartspend.mysql.user_correction_rules
   smartspend.api.modules.classification-qa -[imports]-> smartspend.api.modules.classification
+  smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.ai-insights
   smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.arabic-nlp
   smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.ledger
+  smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.notifications
   smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.whatsapp
   smartspend.api.modules.coaching -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.cashflow_settlements
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.coaching_plans
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.coaching_steps
+  smartspend.api.modules.coaching -[reads]-> smartspend.mysql.commitment_hints
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.commitment_overrides
+  smartspend.api.modules.coaching -[reads]-> smartspend.mysql.commitment_questions
+  smartspend.api.modules.coaching -[reads]-> smartspend.mysql.commitment_reminders
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.commitment_schedule_items
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.installment_plans
+  smartspend.api.modules.coaching -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.scheduled_cashflows
+  smartspend.api.modules.coaching -[reads]-> smartspend.mysql.subscription_catalog
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.user_wallets
+  smartspend.api.modules.coaching -[reads]-> smartspend.mysql.users
   smartspend.api.modules.coaching -[writes]-> smartspend.mysql.cashflow_settlements
   smartspend.api.modules.coaching -[writes]-> smartspend.mysql.coaching_plans
   smartspend.api.modules.coaching -[writes]-> smartspend.mysql.coaching_steps
+  smartspend.api.modules.coaching -[writes]-> smartspend.mysql.commitment_hints
+  smartspend.api.modules.coaching -[writes]-> smartspend.mysql.commitment_overrides
+  smartspend.api.modules.coaching -[writes]-> smartspend.mysql.commitment_questions
+  smartspend.api.modules.coaching -[writes]-> smartspend.mysql.commitment_reminders
+  smartspend.api.modules.coaching -[writes]-> smartspend.mysql.commitment_schedule_items
   smartspend.api.modules.coaching -[writes]-> smartspend.mysql.in_app_notifications
+  smartspend.api.modules.coaching -[writes]-> smartspend.mysql.installment_plans
   smartspend.api.modules.coaching -[writes]-> smartspend.mysql.scheduled_cashflows
   smartspend.api.modules.database -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.database -[uses]-> smartspend.mysql
@@ -636,6 +651,8 @@ model {
   smartspend.api.scheduler.cashflow-cutover-at-boot -[uses]-> smartspend.api.modules.jobs
   smartspend.api.scheduler.classification-log-cleanup -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.scheduler.coaching-reminders -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.scheduler.commitment-match-sweep -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.scheduler.commitment-reminders -[uses]-> smartspend.api.modules.coaching
   smartspend.api.scheduler.daily-auth-cleanup -[uses]-> smartspend.api.modules.auth
   smartspend.api.scheduler.daily-auth-cleanup -[writes]-> smartspend.mysql.auth_challenges
   smartspend.api.scheduler.daily-subscription-expiry -[uses]-> smartspend.api.modules.jobs
@@ -1151,6 +1168,22 @@ model {
   smartspend.api.trpc.coach.settle -[uses]-> smartspend.api.modules.coaching
   smartspend.api.trpc.coach.unsettle -[uses]-> smartspend.api.modules.coaching
   smartspend.api.trpc.coach.updateCashflow -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.answer -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.create -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.defaults -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.commitments.detail -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.forSentence -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.link_ -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.month -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.overview -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.pay -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.questions -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.replaceItems -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.setOverride -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.setStatus -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.subscriptions -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.unlink -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.update -[uses]-> smartspend.api.modules.coaching
   smartspend.api.trpc.expense.answerClarification -[reads]-> smartspend.mysql.business_categories
   smartspend.api.trpc.expense.answerClarification -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.expense.answerClarification -[reads]-> smartspend.mysql.pending_clarifications
@@ -1160,6 +1193,7 @@ model {
   smartspend.api.trpc.expense.answerClarification -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.expense.answerClarification -[uses]-> smartspend.api.modules.api-routers
   smartspend.api.trpc.expense.answerClarification -[uses]-> smartspend.api.modules.classification
+  smartspend.api.trpc.expense.answerClarification -[uses]-> smartspend.api.modules.coaching
   smartspend.api.trpc.expense.answerClarification -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.answerClarification -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.expense.answerClarification -[writes]-> smartspend.mysql.pending_clarifications
@@ -1167,6 +1201,7 @@ model {
   smartspend.api.trpc.expense.batchCreate -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.expense.batchCreate -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.expense.batchCreate -[uses]-> smartspend.api.modules.classification
+  smartspend.api.trpc.expense.batchCreate -[uses]-> smartspend.api.modules.coaching
   smartspend.api.trpc.expense.batchCreate -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.batchCreate -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.expense.batchCreate -[uses]-> smartspend.shared.contracts
@@ -1175,6 +1210,7 @@ model {
   smartspend.api.trpc.expense.create -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.expense.create -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.expense.create -[uses]-> smartspend.api.modules.classification
+  smartspend.api.trpc.expense.create -[uses]-> smartspend.api.modules.coaching
   smartspend.api.trpc.expense.create -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.create -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.expense.create -[uses]-> smartspend.shared.contracts

@@ -44,6 +44,8 @@ export interface MatchCommitment {
   contactId: number | null;
   beneficiaryName?: string | null;
   provider?: string | null;
+  /** Other names of the same thing: a known subscription's English and Arabic names and statement tokens. */
+  aliases?: string[];
   hints: Array<{ kind: string; value: string; weight: number }>;
   /** Open due dates, oldest first. */
   open: OpenDue[];
@@ -67,6 +69,10 @@ const STOP = new Set([
   "في", "من", "علي", "على", "عن", "الى", "الي", "ل", "و", "ب", "مع", "بتاع", "بتاعت", "بتاعه", "ده", "دي", "النهارده", "امبارح",
   "انا", "احنا", "شهر", "الشهر", "النهاردة",
 ]);
+
+/** Kinds whose name is an ordinary noun ("الشقة", "التلاجة"): the sentence must also say it is an installment. */
+const INSTALLMENT_KINDS = new Set(["installment", "loan", "property"]);
+const INSTALLMENT_CUES = new Set(["قسط", "اقساط", "قسطين", "تقسيط", "مقدم"]);
 
 /** Generic words of a commitment's name: they do not tell two commitments apart. */
 const GENERIC = new Set(["قسط", "اقساط", "قسطين", "التزام", "مصاريف", "مصروفات", "فاتوره", "اشتراك", "دفعه", "سداد"]);
@@ -98,12 +104,24 @@ export function matchTokens(text: string): string[] {
 
 const tokensIn = (needle: string[], hay: Set<string>) => needle.length > 0 && needle.every((token) => hay.has(token));
 
+/** A word without its long vowels, so "نتفلكس" and "نتفليكس" are the same name; short words are kept whole. */
+const skeleton = (token: string) => (token.length >= 4 ? token.replace(/[اوي]/g, "") : token);
+
+/** A name's words all appear in the text, spelled as the user spells them. */
+function namedIn(name: string, words: Set<string>, skeletons: Set<string>): boolean {
+  const tokens = matchTokens(name).filter((token) => !GENERIC.has(token));
+  return tokens.length > 0 && tokens.every((token) => words.has(token) || skeletons.has(skeleton(token)));
+}
+
 /** The phrase a confirmed payment teaches: its tokens without numbers, sorted, at most 160 characters. */
 export function learnedPhrase(text: string): string | null {
   const tokens = [...new Set(matchTokens(text).filter((token) => !/^\d+$/.test(token)))].sort();
   const phrase = tokens.join(" ").slice(0, 160).trim();
   return phrase.length >= 2 ? phrase : null;
 }
+
+const commitmentPersonMatched = (commitment: MatchCommitment, payment: MatchPayment) =>
+  commitment.contactId != null && payment.contactId === commitment.contactId;
 
 interface Scored {
   commitment: MatchCommitment;
@@ -114,7 +132,7 @@ interface Scored {
 
 const cents = (value: number | string) => new Decimal(value).toDecimalPlaces(2);
 
-function score(commitment: MatchCommitment, payment: MatchPayment, words: Set<string>): Scored {
+function score(commitment: MatchCommitment, payment: MatchPayment, words: Set<string>, skeletons: Set<string>): Scored {
   // Rule 5: open, up to ten days early or any time late; an undated debt is always open.
   const latest = addDays(payment.day, 10);
   const eligible = commitment.open.filter((due) => due.undated || due.effectiveDay <= latest);
@@ -136,10 +154,12 @@ function score(commitment: MatchCommitment, payment: MatchPayment, words: Set<st
     }
   }
   const titleTokens = matchTokens(commitment.title).filter((token) => !GENERIC.has(token));
-  if (tokensIn(titleTokens, words)) {
+  // An installment is named only with the word "قسط": "دهان الشقة" is not the flat's installment, "دفعت قسط الشقة" is.
+  const needsCue = INSTALLMENT_KINDS.has(commitment.kind) && ![...words].some((word) => INSTALLMENT_CUES.has(word));
+  if (!needsCue && (namedIn(commitment.title, words, skeletons) || (commitment.aliases ?? []).some((alias) => namedIn(alias, words, skeletons)))) {
     strong = true;
     total += 3;
-  } else if (titleTokens.some((token) => words.has(token))) {
+  } else if (titleTokens.some((token) => words.has(token) || skeletons.has(skeleton(token)))) {
     total += 1;
   }
   const beneficiary = matchTokens(commitment.beneficiaryName ?? "");
@@ -157,7 +177,8 @@ export function decideMatch(payment: MatchPayment, commitments: MatchCommitment[
   const words = new Set(tokens);
   const amount = cents(payment.amount);
   if (amount.lte(0)) return { status: "none" };
-  const scored = commitments.map((commitment) => score(commitment, payment, words)).filter((item) => item.eligible.length > 0);
+  const skeletons = new Set(tokens.map(skeleton));
+  const scored = commitments.map((commitment) => score(commitment, payment, words, skeletons)).filter((item) => item.eligible.length > 0);
   const signed = scored.filter((item) => item.score > 0).sort((a, b) => b.score - a.score);
   if (!signed.length) return { status: "none" };
 
@@ -168,11 +189,18 @@ export function decideMatch(payment: MatchPayment, commitments: MatchCommitment[
   const due = count > 1 ? top.commitment.open.slice(firstOpen, firstOpen + count) : top.eligible.slice(0, 1);
   const allKnown = due.length === count && due.every((item) => item.remaining != null);
   const exact = allKnown && due.reduce((sum, item) => sum.plus(item.remaining!), new Decimal(0)).toDecimalPlaces(2).eq(amount);
-  if (signed.length === 1 && top.strong && exact) {
+  // A debt with no date is repaid in parts: with its very person named, any part up to what is left is certain.
+  const debtPart = count === 1 && due[0]?.undated === true && commitmentPersonMatched(top.commitment, payment)
+    && due[0].remaining != null && amount.lte(cents(due[0].remaining));
+  // Rule 1: a rival counts when it has a sign of its own; a word every school shares ("مدرسة") is not one.
+  const rivals = signed.slice(1).filter((item) => item.strong || item.score >= 2);
+  if (!rivals.length && top.strong && (exact || debtPart)) {
     return {
       status: "linked",
       cashflowId: top.commitment.id,
-      allocations: due.map((item) => ({ cashflowId: top.commitment.id, dueDay: item.dueDay, amount: item.remaining! })),
+      allocations: debtPart
+        ? [{ cashflowId: top.commitment.id, dueDay: due[0].dueDay, amount: amount.toNumber() }]
+        : due.map((item) => ({ cashflowId: top.commitment.id, dueDay: item.dueDay, amount: item.remaining! })),
     };
   }
   // A question only when something points at a commitment: a strong name, or a weaker sign with the amount due.

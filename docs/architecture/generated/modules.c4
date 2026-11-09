@@ -62,7 +62,7 @@ model {
     api-routers = module 'tRPC routers and HTTP sub-apps' {
       description 'One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts.'
       metadata {
-        files '28'
+        files '29'
         paths 'api/*-router.ts'
       }
     }
@@ -125,7 +125,7 @@ model {
     coaching = module 'Commitments and coaching plans' {
       description 'Scheduled commitments and expected income with their due dates (the 31st on a short month’s last day), the payments linked to each due date without counting one twice, what is free until the next payday from the recorded wallets, the coaching plan the user accepted with its steps, and in-app reminders delivered once per step revision.'
       metadata {
-        files '4'
+        files '6'
         paths 'api/services/coach/**'
       }
     }

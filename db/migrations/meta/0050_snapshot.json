@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "f4ca221e-181c-4425-af24-ef16ef6cc401",
+  "id": "1525a08e-2978-4efd-8ba7-cbefe9436972",
   "prevId": "42b69c58-1a9f-4c75-8e4e-306b79f2885a",
   "tables": {
     "ad_clicks": {
@@ -7861,6 +7861,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "catalog_slug": {
+          "name": "catalog_slug",
+          "type": "varchar(60)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "beneficiary_contact_id": {
           "name": "beneficiary_contact_id",
           "type": "int",
@@ -8566,6 +8573,20 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'monthly'"
+        },
+        "brand_color": {
+          "name": "brand_color",
+          "type": "varchar(9)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "logo_url": {
+          "name": "logo_url",
+          "type": "varchar(300)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "status": {
           "name": "status",

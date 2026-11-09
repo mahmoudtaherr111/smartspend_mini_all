@@ -20,6 +20,7 @@ abstract final class Procedures {
   static const capture = CaptureProcedures._();
   static const chat = ChatProcedures._();
   static const coach = CoachProcedures._();
+  static const commitments = CommitmentsProcedures._();
   static const expense = ExpenseProcedures._();
   static const export = ExportProcedures._();
   static const goals = GoalsProcedures._();
@@ -169,6 +170,28 @@ final class CoachProcedures {
   ApiMutation get settle => const ApiMutation('coach.settle', builder: 'authedProcedure', hasInput: true);
   ApiMutation get unsettle => const ApiMutation('coach.unsettle', builder: 'authedProcedure', hasInput: true);
   ApiMutation get updateCashflow => const ApiMutation('coach.updateCashflow', builder: 'authedProcedure', hasInput: true);
+}
+
+/// The `commitments` router, `api/commitments-router.ts`.
+final class CommitmentsProcedures {
+  const CommitmentsProcedures._();
+
+  ApiMutation get answer => const ApiMutation('commitments.answer', builder: 'commitmentsProcedure', hasInput: true);
+  ApiMutation get create => const ApiMutation('commitments.create', builder: 'commitmentsProcedure', hasInput: true);
+  ApiQuery get defaults => const ApiQuery('commitments.defaults', builder: 'commitmentsProcedure');
+  ApiQuery get detail => const ApiQuery('commitments.detail', builder: 'commitmentsProcedure', hasInput: true);
+  ApiQuery get forSentence => const ApiQuery('commitments.forSentence', builder: 'commitmentsProcedure', hasInput: true);
+  ApiMutation get link => const ApiMutation('commitments.link', builder: 'commitmentsProcedure', hasInput: true);
+  ApiQuery get month => const ApiQuery('commitments.month', builder: 'commitmentsProcedure', hasInput: true);
+  ApiQuery get overview => const ApiQuery('commitments.overview', builder: 'commitmentsProcedure');
+  ApiMutation get pay => const ApiMutation('commitments.pay', builder: 'commitmentsProcedure', hasInput: true);
+  ApiQuery get questions => const ApiQuery('commitments.questions', builder: 'commitmentsProcedure');
+  ApiMutation get replaceItems => const ApiMutation('commitments.replaceItems', builder: 'commitmentsProcedure', hasInput: true);
+  ApiMutation get setOverride => const ApiMutation('commitments.setOverride', builder: 'commitmentsProcedure', hasInput: true);
+  ApiMutation get setStatus => const ApiMutation('commitments.setStatus', builder: 'commitmentsProcedure', hasInput: true);
+  ApiQuery get subscriptions => const ApiQuery('commitments.subscriptions', builder: 'commitmentsProcedure');
+  ApiMutation get unlink => const ApiMutation('commitments.unlink', builder: 'commitmentsProcedure', hasInput: true);
+  ApiMutation get update => const ApiMutation('commitments.update', builder: 'commitmentsProcedure', hasInput: true);
 }
 
 /// The `expense` router, `api/expense-router.ts`.

@@ -25,6 +25,7 @@ import { businessRouter } from "./business-router";
 import { budgetRouter } from "./budget-router";
 import { voiceRouter } from "./voice-router";
 import { coachRouter } from "./coach-router";
+import { commitmentsRouter } from "./commitments-router";
 import { captureRouter } from "./capture-router";
 import { captureAdminRouter } from "./capture-admin-router";
 
@@ -55,6 +56,7 @@ export const appRouter = router({
   business: businessRouter,
   voice: voiceRouter,
   coach: coachRouter,
+  commitments: commitmentsRouter,
   capture: captureRouter,
   captureAdmin: captureAdminRouter,
 });

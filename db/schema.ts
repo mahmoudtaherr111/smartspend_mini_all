@@ -885,6 +885,8 @@ export const scheduledCashflows = mysqlTable(
     shape: varchar("shape", { length: 12 }),
     /** Who is paid or who collects: valU, a bank, a shop, a school. A person is `contactId`. */
     provider: varchar("provider", { length: 80 }),
+    /** A known subscription from `subscription_catalog` (netflix, shahid): its logo, names and match tokens. */
+    catalogSlug: varchar("catalog_slug", { length: 60 }),
     /** Whom it is for: the child a school fee is for. */
     beneficiaryContactId: int("beneficiary_contact_id"),
     /** Every how many recurrence units (3 monthly = quarterly). */
@@ -1201,6 +1203,10 @@ export const subscriptionCatalog = mysqlTable(
     subCategoryId: varchar("sub_category_id", { length: 40 }).notNull(),
     /** weekly | monthly | quarterly | yearly | varies */
     cycle: varchar("cycle", { length: 12 }).notNull().default("monthly"),
+    /** "#E50914": the badge the apps draw when there is no logo. */
+    brandColor: varchar("brand_color", { length: 9 }),
+    /** An https image the admin set for the service's logo (commitments, the calendar). */
+    logoUrl: varchar("logo_url", { length: 300 }),
     /** active | disabled */
     status: varchar("status", { length: 12 }).notNull().default("active"),
     /** seed | admin */
