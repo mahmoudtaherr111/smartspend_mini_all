@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../features/commitments/due_prompt.dart';
 import '../l10n/app_localizations.dart';
 import 'app_router.dart';
 
-/// The frame around every tab: the screen, and the bottom bar under it.
+/// The frame around every tab: the screen, and the bottom bar under it; it also asks about commitment dates that
+/// passed (CommitmentPromptHost).
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.navigationShell});
 
@@ -15,7 +17,7 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      body: navigationShell,
+      body: CommitmentPromptHost(child: navigationShell),
       bottomNavigationBar: SmartSpendNavigationBar(
         selectedIndex: navigationShell.currentIndex,
         destinations: [

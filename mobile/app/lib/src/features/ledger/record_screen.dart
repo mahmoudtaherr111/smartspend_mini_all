@@ -7,7 +7,7 @@ import '../../l10n/app_localizations.dart';
 import '../ads/sponsored_card.dart';
 import '../capture/capture_overview_card.dart';
 import '../capture/shared_text_receiver.dart';
-import '../installments/installments_quick_card.dart';
+import '../commitments/commitments_quick_card.dart';
 import '../lock/app_lock.dart';
 import '../streak/streak_badge.dart';
 import 'ledger_models.dart';
@@ -116,7 +116,7 @@ class RecordScreen extends ConsumerWidget {
                         const CaptureOverviewCard(),
                         const PendingQuestionsCard(),
                         const OutboxSection(),
-                        const InstallmentsQuickCard(),
+                        const CommitmentsQuickCard(),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [

@@ -4070,4 +4070,811 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get captureAutomaticStopped =>
       'التسجيل التلقائي متوقف لحد ما توافق على القراءة. عملياتك المحفوظة موجودة وتقدر تعدّلها.';
+
+  @override
+  String get cmReceived => 'اتقبض';
+
+  @override
+  String get cmPaid => 'اتدفع';
+
+  @override
+  String get cmPartlyPaid => 'اتدفع جزء';
+
+  @override
+  String get cmOverdue => 'فات ميعاده';
+
+  @override
+  String get cmSkipped => 'اتخطى المرة دي';
+
+  @override
+  String get cmPaidOrNot => 'اتدفع؟';
+
+  @override
+  String get cmOpen => 'مفتوح';
+
+  @override
+  String get cmDue => 'مستني';
+
+  @override
+  String get cmNoDate => 'من غير ميعاد';
+
+  @override
+  String cmInstallmentOf(String p0, String p1) {
+    return '$p0 من $p1';
+  }
+
+  @override
+  String get cmAmountUnknown => 'المبلغ مش معروف';
+
+  @override
+  String get cmAbout => 'حوالي';
+
+  @override
+  String get cmGotIt => 'قبضته';
+
+  @override
+  String get cmPaidIt => 'دفعته';
+
+  @override
+  String get cmEnterAmount => 'اكتب المبلغ اللي اتدفع.';
+
+  @override
+  String get cmPayFailed => 'ماقدرناش نسجل الدفع، جرّب تاني.';
+
+  @override
+  String cmReceivedTitle(String p0) {
+    return 'قبضت $p0';
+  }
+
+  @override
+  String cmPaidTitle(String p0) {
+    return 'دفعت $p0';
+  }
+
+  @override
+  String cmDueOn(String p0) {
+    return 'ميعاده $p0';
+  }
+
+  @override
+  String get cmAmountPaid => 'المبلغ';
+
+  @override
+  String get cmRecordInSpending => 'سجّله في مصاريفي';
+
+  @override
+  String get cmRecordInSpendingHint => 'هيتسجل في مكانه ويتحسب على الميعاد ده.';
+
+  @override
+  String get cmOffRecordsHint =>
+      'حد تاني دفعه أو اتسجل قبل كده: هيتعلّم إنه اتدفع من غير ما يتسجل تاني.';
+
+  @override
+  String cmLeftAmount(String p0) {
+    return 'فاضل $p0';
+  }
+
+  @override
+  String cmCountedAs(String p0) {
+    return 'اتحسبت على: $p0';
+  }
+
+  @override
+  String cmWhichOneAmount(String p0) {
+    return 'الـ $p0 دي لأنهي واحد؟';
+  }
+
+  @override
+  String get cmWhichOne => 'الدفعة دي لأنهي واحد؟';
+
+  @override
+  String get cmNoneOfThem => 'مش منهم';
+
+  @override
+  String get cmTitle => 'التزاماتي';
+
+  @override
+  String get cmAdd => 'ضيف التزام';
+
+  @override
+  String get cmLoadFailed => 'ماقدرناش نجيب التزاماتك.';
+
+  @override
+  String get cmEmptyTitle => 'سجّل اللي عليك كل شهر';
+
+  @override
+  String get cmEmptyBody =>
+      'الأقساط والاشتراكات والمدارس والديون والجمعيات في مكان واحد. هنفكرك قبل كل ميعاد، ولما تقول «دفعت قسط التلاجة» هنحسبه لوحده.';
+
+  @override
+  String get cmAddFirst => 'ضيف أول التزام';
+
+  @override
+  String get cmLeftThisMonth => 'فاضل عليك الشهر ده';
+
+  @override
+  String cmPaidOfMonth(String p0, String p1) {
+    return 'دفعت $p0 من $p1';
+  }
+
+  @override
+  String get cmNothingThisMonth => 'مفيش مواعيد الشهر ده';
+
+  @override
+  String get cmInstallmentsLeft => 'فاضل في الأقساط';
+
+  @override
+  String get cmPaidThisMonth => 'دفعت الشهر ده';
+
+  @override
+  String get cmNeedsYou => 'محتاجة رد منك';
+
+  @override
+  String get cmComingUp => 'الجاي';
+
+  @override
+  String get cmAll => 'كل الالتزامات';
+
+  @override
+  String get cmAllGroups => 'الكل';
+
+  @override
+  String get cmSayItHint =>
+      'لما تدفع، سجّل زي ما بتسجل أي حاجة: «دفعت قسط التلاجة» أو «دفعت نتفليكس». لو متأكدين هنحسبه لوحده، ولو لأ هنسألك.';
+
+  @override
+  String get cmGroupInstallments => 'أقساط وقروض';
+
+  @override
+  String get cmGroupBills => 'فواتير واشتراكات';
+
+  @override
+  String get cmGroupEducation => 'تعليم';
+
+  @override
+  String get cmGroupDebts => 'ديون وسلف';
+
+  @override
+  String get cmGroupGam3eya => 'جمعيات';
+
+  @override
+  String get cmGroupIncome => 'دخل';
+
+  @override
+  String get cmPaused => 'متوقف مؤقتًا';
+
+  @override
+  String get cmNothingOpen => 'مفيش مواعيد مفتوحة';
+
+  @override
+  String cmNextOn(String p0) {
+    return 'الجاي $p0';
+  }
+
+  @override
+  String cmOverdueCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ميعاد فات',
+      few: '$count مواعيد فاتت',
+      two: 'ميعادين فاتوا',
+      one: 'ميعاد فات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String cmPaidCount(String p0, String p1) {
+    return 'دفعت $p0 من $p1';
+  }
+
+  @override
+  String get cmMoreEntry => 'أقساط، اشتراكات، مدارس، ديون وجمعيات';
+
+  @override
+  String get cmSeeAll => 'كل الالتزامات';
+
+  @override
+  String get cmQuickEmpty => 'عندك أقساط أو اشتراكات؟ سجّلها ونفكرك بيها';
+
+  @override
+  String get cmQuickNothingDue => 'مفيش مواعيد قريبة';
+
+  @override
+  String cmQuickNext(String p0, String p1) {
+    return '$p0 · $p1';
+  }
+
+  @override
+  String cmLeftThisMonthLine(String p0) {
+    return 'فاضل عليك الشهر ده $p0';
+  }
+
+  @override
+  String get cmEndTitle => 'تنهي الالتزام ده؟';
+
+  @override
+  String cmEndBody(String p0) {
+    return '«$p0» هيبطل يظهر ويتحسب. اللي اتدفع منه هيفضل متسجل.';
+  }
+
+  @override
+  String get cmCancel => 'إلغاء';
+
+  @override
+  String get cmEnd => 'أنهيه';
+
+  @override
+  String get cmChangeFailed => 'ماقدرناش نحفظ التغيير، جرّب تاني.';
+
+  @override
+  String get cmMore => 'اختيارات تانية';
+
+  @override
+  String get cmPause => 'وقّفه مؤقتًا';
+
+  @override
+  String get cmResume => 'رجّعه';
+
+  @override
+  String cmSayToPay(String p0) {
+    return 'لما تدفع قول: «$p0»';
+  }
+
+  @override
+  String get cmReminder => 'التذكير';
+
+  @override
+  String get cmFiledUnder => 'بيتسجل في';
+
+  @override
+  String get cmYourPayout => 'قبضك من الجمعية';
+
+  @override
+  String cmPayoutLine(String p0, String p1) {
+    return '$p0 · $p1';
+  }
+
+  @override
+  String get cmOpenDates => 'المواعيد الجاية';
+
+  @override
+  String get cmDoneDates => 'اللي خلص';
+
+  @override
+  String get cmAmountVaries => 'المبلغ بيتغير';
+
+  @override
+  String get cmOnItsDates => 'على مواعيده';
+
+  @override
+  String cmOwedTotal(String p0) {
+    return 'الإجمالي $p0';
+  }
+
+  @override
+  String get cmOnce => 'مرة واحدة';
+
+  @override
+  String get cmWeekly => 'كل أسبوع';
+
+  @override
+  String get cmYearly => 'كل سنة';
+
+  @override
+  String get cmMonthly => 'كل شهر';
+
+  @override
+  String cmEveryMonths(int count) {
+    return 'كل $count شهور';
+  }
+
+  @override
+  String cmTimesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count قسط',
+      few: '$count أقساط',
+      two: 'قسطين',
+      one: 'قسط واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String cmFor(String p0) {
+    return 'لـ$p0';
+  }
+
+  @override
+  String get cmKindInstallment => 'قسط';
+
+  @override
+  String get cmKindLoan => 'قرض';
+
+  @override
+  String get cmKindProperty => 'قسط شقة أو أرض';
+
+  @override
+  String get cmKindCard => 'كارت ائتمان';
+
+  @override
+  String get cmKindSchool => 'مدرسة';
+
+  @override
+  String get cmKindUniversity => 'جامعة';
+
+  @override
+  String get cmKindLessons => 'دروس';
+
+  @override
+  String get cmKindRent => 'إيجار';
+
+  @override
+  String get cmKindBill => 'فاتورة';
+
+  @override
+  String get cmKindSubscription => 'اشتراك';
+
+  @override
+  String get cmKindDebt => 'دين';
+
+  @override
+  String get cmKindGam3eya => 'جمعية';
+
+  @override
+  String get cmKindSalary => 'مرتب';
+
+  @override
+  String get cmKindFreelance => 'شغل حر';
+
+  @override
+  String get cmKindOther => 'التزام';
+
+  @override
+  String get cmNoReminder => 'مفيش تذكير';
+
+  @override
+  String get cmOnTheDay => 'يوم الميعاد';
+
+  @override
+  String cmDaysBefore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'قبلها بـ $count يوم',
+      few: 'قبلها بـ $count أيام',
+      two: 'قبلها بيومين',
+      one: 'قبلها بيوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String cmReminderAt(String p0, String p1) {
+    return '$p0، الساعة $p1';
+  }
+
+  @override
+  String get cmLinkedAuto => 'اتحسب لوحده';
+
+  @override
+  String get cmLinkedByAnswer => 'من إجابتك';
+
+  @override
+  String get cmLinkedBySentence => 'من جملتك';
+
+  @override
+  String get cmLinkedByYou => 'إنت ربطته';
+
+  @override
+  String get cmDeclared => 'اتدفع من غير ما يتسجل';
+
+  @override
+  String get cmOtherAmountTitle => 'المبلغ المرة دي';
+
+  @override
+  String get cmSave => 'احفظ';
+
+  @override
+  String get cmMoveDate => 'غيّر الميعاد المرة دي';
+
+  @override
+  String get cmOtherAmount => 'مبلغ تاني المرة دي';
+
+  @override
+  String get cmSkipThisTime => 'اتخطاه المرة دي';
+
+  @override
+  String get cmUndoChange => 'رجّعه زي ما كان';
+
+  @override
+  String cmUnlinkPayment(String p0) {
+    return 'فك ربط دفعة $p0';
+  }
+
+  @override
+  String get cmUnlinkKeeps => 'فك الربط مش بيمسح الدفعة من مصاريفك.';
+
+  @override
+  String cmReminderTitle(String p0) {
+    return 'تذكير $p0';
+  }
+
+  @override
+  String get cmRemindMe => 'فكرني قبل الميعاد';
+
+  @override
+  String get cmHowEarly => 'قبلها بقد إيه؟';
+
+  @override
+  String get cmAtHour => 'الساعة';
+
+  @override
+  String get cmDueChecksTitle => 'المواعيد دي عدّت، اتدفعت؟';
+
+  @override
+  String get cmDueChecksBody =>
+      'لو دوست «تخطي» هنعتبرها لسه ما اتدفعتش وهتفضل في المواعيد المفتوحة.';
+
+  @override
+  String get cmSkip => 'تخطي';
+
+  @override
+  String cmWasDueOn(String p0) {
+    return 'كان ميعاده $p0';
+  }
+
+  @override
+  String get cmPaidOffRecords => 'اتدفع بره التسجيل';
+
+  @override
+  String get cmNotYet => 'لسه';
+
+  @override
+  String cmPayNamed(String p0) {
+    return 'دفعت $p0';
+  }
+
+  @override
+  String cmPayNamedAmount(String p0, String p1) {
+    return 'دفعت $p0 · $p1';
+  }
+
+  @override
+  String get cmDueThatDay => 'عليك تدفع اليوم ده';
+
+  @override
+  String get cmPaidThatDay => 'اتدفع اليوم ده';
+
+  @override
+  String get cmAddTitle => 'التزام جديد';
+
+  @override
+  String get cmWhatIsIt => 'إيه اللي عايز تسجله؟';
+
+  @override
+  String get cmTypeSubscription => 'اشتراك';
+
+  @override
+  String get cmTypeSubscriptionHint => 'نتفليكس، شاهد، سبوتيفاي…';
+
+  @override
+  String get cmTypeInstallment => 'قسط حاجة';
+
+  @override
+  String get cmTypeInstallmentHint => 'موبايل، تلاجة، عربية…';
+
+  @override
+  String get cmTypeLoan => 'قرض';
+
+  @override
+  String get cmTypeLoanHint => 'من بنك أو شركة';
+
+  @override
+  String get cmTypeProperty => 'قسط شقة أو أرض';
+
+  @override
+  String get cmTypePropertyHint => 'شقة، أرض، شاليه';
+
+  @override
+  String get cmTypeSchool => 'مدرسة أو جامعة';
+
+  @override
+  String get cmTypeSchoolHint => 'المصاريف على أقساطها';
+
+  @override
+  String get cmTypeLessons => 'دروس';
+
+  @override
+  String get cmTypeLessonsHint => 'كل شهر لمدرس أو سنتر';
+
+  @override
+  String get cmTypeRent => 'إيجار';
+
+  @override
+  String get cmTypeRentHint => 'شقة أو محل';
+
+  @override
+  String get cmTypeBill => 'فاتورة';
+
+  @override
+  String get cmTypeBillHint => 'كهربا، نت، موبايل';
+
+  @override
+  String get cmTypeCard => 'كارت ائتمان';
+
+  @override
+  String get cmTypeCardHint => 'ميعاد سداد الكارت';
+
+  @override
+  String get cmTypeDebt => 'دين أو سلفة';
+
+  @override
+  String get cmTypeDebtHint => 'عليك أو ليك عند حد';
+
+  @override
+  String get cmTypeGam3eya => 'جمعية';
+
+  @override
+  String get cmTypeGam3eyaHint => 'بتدفع كل شهر وتقبض دورك';
+
+  @override
+  String get cmTypeIncome => 'مرتب أو دخل';
+
+  @override
+  String get cmTypeIncomeHint => 'اللي بتقبضه في ميعاد';
+
+  @override
+  String get cmTypeOther => 'حاجة تانية';
+
+  @override
+  String get cmTypeOtherHint => 'أي ميعاد دفع تاني';
+
+  @override
+  String get cmSearchSubscriptions => 'دوّر على الاشتراك';
+
+  @override
+  String get cmSubscriptionsFailed =>
+      'ماقدرناش نجيب الاشتراكات. تقدر تكتب اسمه.';
+
+  @override
+  String get cmNotInList => 'مش موجود؟ اكتب اسمه';
+
+  @override
+  String get cmNeedTitle => 'اكتب اسمه.';
+
+  @override
+  String get cmNeedAmount => 'اكتب المبلغ.';
+
+  @override
+  String get cmNeedDay => 'اختار الميعاد.';
+
+  @override
+  String get cmNeedCount => 'اكتب فاضل كام قسط.';
+
+  @override
+  String get cmNeedSchool => 'اكتب اسم المدرسة.';
+
+  @override
+  String get cmNeedItems => 'ضيف قسط واحد على الأقل بميعاده ومبلغه.';
+
+  @override
+  String get cmNeedPerson => 'اكتب اسم الشخص.';
+
+  @override
+  String get cmNeedInstallments => 'اكتب القسط كام وعلى كام مرة.';
+
+  @override
+  String get cmNeedMonths => 'اكتب الجمعية كام شهر.';
+
+  @override
+  String get cmNeedTurn => 'اكتب دورك، رقم من الشهور.';
+
+  @override
+  String cmSchoolTitle(String p0, String p1) {
+    return 'مصاريف $p1 · $p0';
+  }
+
+  @override
+  String cmDebtToMeTitle(String p0) {
+    return 'فلوسي عند $p0';
+  }
+
+  @override
+  String cmDebtOnMeTitle(String p0) {
+    return 'سلفة $p0';
+  }
+
+  @override
+  String cmCardTitle(String p0) {
+    return 'كارت $p0';
+  }
+
+  @override
+  String cmLessonsTitle(String p0, String p1) {
+    return '$p0 · $p1';
+  }
+
+  @override
+  String get cmAdded => 'اتضاف. هنفكرك قبل ميعاده.';
+
+  @override
+  String get cmNotInPlan => 'الالتزامات مش متاحة في باقتك دلوقتي.';
+
+  @override
+  String get cmSaveFailed => 'ماقدرناش نحفظه، جرّب تاني.';
+
+  @override
+  String get cmPickDay => 'اختار يوم';
+
+  @override
+  String get cmLoanWhat => 'القرض ده لإيه؟';
+
+  @override
+  String get cmLoanWhatHint => 'زي: قرض بنك مصر';
+
+  @override
+  String get cmPropertyWhat => 'اسمه إيه؟';
+
+  @override
+  String get cmPropertyWhatHint => 'زي: قسط الشقة';
+
+  @override
+  String get cmInstallmentWhat => 'قسط إيه؟';
+
+  @override
+  String get cmInstallmentWhatHint => 'زي: التلاجة';
+
+  @override
+  String get cmWithWhom => 'مع مين؟ (اختياري)';
+
+  @override
+  String get cmWithWhomHint => 'valU، بنك، المعرض…';
+
+  @override
+  String get cmInstallmentAmount => 'القسط كام';
+
+  @override
+  String get cmNextDay => 'الميعاد الجاي';
+
+  @override
+  String get cmRemainingCount => 'فاضل كام قسط (مع الجاي)';
+
+  @override
+  String get cmUniversityName => 'اسم الجامعة';
+
+  @override
+  String get cmSchoolName => 'اسم المدرسة';
+
+  @override
+  String get cmChildName => 'لمين؟ (اختياري)';
+
+  @override
+  String get cmChildNameHint => 'زي: محمد';
+
+  @override
+  String get cmFeeInstallments => 'أقساط المصاريف';
+
+  @override
+  String cmItemDay(int index) {
+    return 'ميعاد القسط $index';
+  }
+
+  @override
+  String get cmItemAmount => 'المبلغ';
+
+  @override
+  String get cmAddItem => 'ضيف قسط';
+
+  @override
+  String get cmIOwe => 'عليّا';
+
+  @override
+  String get cmOwedToMe => 'ليّا';
+
+  @override
+  String get cmPersonName => 'اسم الشخص';
+
+  @override
+  String get cmPersonNameHint => 'زي: فريدة';
+
+  @override
+  String get cmRelation => 'صلته بيك (اختياري)';
+
+  @override
+  String get cmRelationHint => 'أختي، صاحبي…';
+
+  @override
+  String get cmDebtTotal => 'المبلغ كله';
+
+  @override
+  String get cmHowRepaid => 'هيترد إزاي؟';
+
+  @override
+  String get cmRepayFlexible => 'على راحته';
+
+  @override
+  String get cmRepayOnce => 'مرة في ميعاد';
+
+  @override
+  String get cmRepayInstallments => 'على أقساط';
+
+  @override
+  String get cmRepayDay => 'هيترد إمتى';
+
+  @override
+  String get cmFirstInstallmentDay => 'أول قسط';
+
+  @override
+  String get cmHowManyTimes => 'على كام مرة';
+
+  @override
+  String get cmGam3eyaName => 'اسم الجمعية (اختياري)';
+
+  @override
+  String get cmGam3eyaNameHint => 'زي: جمعية الشغل';
+
+  @override
+  String get cmMonthlyShare => 'بتدفع كام كل شهر';
+
+  @override
+  String get cmMonthsCount => 'كام شهر';
+
+  @override
+  String get cmMyTurn => 'دورك كام';
+
+  @override
+  String get cmFirstPaymentDay => 'أول دفعة';
+
+  @override
+  String get cmSubscriptionName => 'اسم الاشتراك';
+
+  @override
+  String get cmBillWhat => 'فاتورة إيه؟';
+
+  @override
+  String get cmBillWhatHint => 'زي: النت';
+
+  @override
+  String get cmCardBank => 'كارت أنهي بنك؟';
+
+  @override
+  String get cmCardBankHint => 'زي: CIB';
+
+  @override
+  String get cmLessonsWhat => 'دروس إيه؟';
+
+  @override
+  String get cmLessonsWhatHint => 'زي: دروس الرياضة';
+
+  @override
+  String get cmIncomeWhat => 'اسمه إيه؟';
+
+  @override
+  String get cmIncomeWhatHint => 'زي: المرتب';
+
+  @override
+  String get cmOtherWhat => 'اسمه إيه؟';
+
+  @override
+  String get cmAmountVariesSwitch => 'المبلغ بيتغير كل مرة';
+
+  @override
+  String get cmIncomeAmount => 'بتقبض كام';
+
+  @override
+  String get cmAmount => 'المبلغ';
+
+  @override
+  String get cmNextIncomeDay => 'ميعاد القبض الجاي';
+
+  @override
+  String get cmRemindBefore => 'فكرني';
+
+  @override
+  String get cmAfterSaveHint =>
+      'بعد ما تحفظه، لما تسجّل إنك دفعته هنحسبه عليه لوحده لو متأكدين، ولو لأ هنسألك.';
 }

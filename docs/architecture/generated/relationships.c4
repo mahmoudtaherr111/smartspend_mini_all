@@ -1174,6 +1174,7 @@ model {
   smartspend.api.trpc.commitments.detail -[uses]-> smartspend.api.modules.coaching
   smartspend.api.trpc.commitments.forSentence -[uses]-> smartspend.api.modules.coaching
   smartspend.api.trpc.commitments.link_ -[uses]-> smartspend.api.modules.coaching
+  smartspend.api.trpc.commitments.linksFor -[uses]-> smartspend.api.modules.coaching
   smartspend.api.trpc.commitments.month -[uses]-> smartspend.api.modules.coaching
   smartspend.api.trpc.commitments.overview -[uses]-> smartspend.api.modules.coaching
   smartspend.api.trpc.commitments.pay -[uses]-> smartspend.api.modules.coaching

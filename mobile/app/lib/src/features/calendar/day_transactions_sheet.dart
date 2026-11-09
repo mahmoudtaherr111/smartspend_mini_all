@@ -4,6 +4,8 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 
+import '../commitments/commitment_models.dart';
+import '../commitments/commitment_ui.dart';
 import '../ledger/ledger_models.dart';
 import 'calendar_providers.dart';
 
@@ -12,21 +14,27 @@ class DayTransactionsSheet extends ConsumerStatefulWidget {
     super.key,
     required this.dateStr,
     required this.formattedDateAr,
+    this.dues = const [],
   });
 
   final String dateStr;
   final String formattedDateAr;
 
+  /// The commitments due that day: «النهارده عليك تدفع Netflix», with «دفعته».
+  final List<DueDate> dues;
+
   static Future<void> show(
     BuildContext context, {
     required String dateStr,
     required String formattedDateAr,
+    List<DueDate> dues = const [],
   }) {
     return showSmartSpendSheet<void>(
       context: context,
       builder: (context) => DayTransactionsSheet(
         dateStr: dateStr,
         formattedDateAr: formattedDateAr,
+        dues: dues,
       ),
     );
   }
@@ -81,8 +89,20 @@ class _DayTransactionsSheetState extends ConsumerState<DayTransactionsSheet> {
             ],
           ),
           const Divider(height: 1),
+          if (widget.dues.isNotEmpty) ...[
+            const SizedBox(height: SmartSpendSpacing.md),
+            Text(
+              widget.dues.any((due) => due.isOpen)
+                  ? AppLocalizations.of(context).cmDueThatDay
+                  : AppLocalizations.of(context).cmPaidThatDay,
+              style: textTheme.titleSmall,
+            ),
+            for (final due in widget.dues)
+              DueRow(key: ValueKey('day-due-${due.cashflowId}'), due: due),
+            const Divider(height: 1),
+          ],
           const SizedBox(height: SmartSpendSpacing.md),
-          Expanded(
+          Flexible(
             child: FutureBuilder<List<LedgerEntry>>(
               future: _future,
               builder: (context, snapshot) {

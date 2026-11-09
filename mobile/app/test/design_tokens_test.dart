@@ -10,6 +10,8 @@ const _allowed = {
   // Each bank and wallet's own brand colour, a fact about the real world.
   'features/wallets/wallet_models.dart',
   'features/wallets/wallet_style.dart',
+  // Each subscription's own brand colour (Netflix red), and the admin's "#RRGGBB" read into a Color.
+  'features/commitments/subscription_brands.dart',
   // Hidden until the call has audio (decision 0040); they get their design when the call is rebuilt.
   'features/ai/voice/voice_call_screen.dart',
   'features/ai/voice/past_calls_view.dart',

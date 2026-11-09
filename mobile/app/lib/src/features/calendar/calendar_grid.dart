@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../commitments/commitment_models.dart';
+import '../commitments/commitment_ui.dart';
 
 import 'calendar_models.dart';
 import 'day_transactions_sheet.dart';
@@ -13,12 +15,16 @@ class CalendarGrid extends StatelessWidget {
     required this.month,
     required this.daySpendMap,
     this.salaryDay,
+    this.dues = const {},
   });
 
   final int year;
   final int month;
   final Map<String, num> daySpendMap;
   final int? salaryDay;
+
+  /// The commitment dates of each day ("2026-11-05"): a known service's logo shows on its day.
+  final Map<String, List<DueDate>> dues;
 
   /// `DateWords.weekdays` starts on Monday; the grid starts on Saturday.
   static const _saturdayFirst = [5, 6, 0, 1, 2, 3, 4];
@@ -41,6 +47,7 @@ class CalendarGrid extends StatelessWidget {
         month: month,
         daySpendMap: daySpendMap,
         salaryDay: salaryDay,
+        dues: dues,
       );
     }
 
@@ -49,6 +56,7 @@ class CalendarGrid extends StatelessWidget {
       month: month,
       daySpendMap: daySpendMap,
       salaryDay: salaryDay,
+      dues: dues,
     );
   }
 }
@@ -59,12 +67,14 @@ class _CalendarMonthGrid extends StatelessWidget {
     required this.month,
     required this.daySpendMap,
     this.salaryDay,
+    this.dues = const {},
   });
 
   final int year;
   final int month;
   final Map<String, num> daySpendMap;
   final int? salaryDay;
+  final Map<String, List<DueDate>> dues;
 
   @override
   Widget build(BuildContext context) {
@@ -156,7 +166,11 @@ class _CalendarMonthGrid extends StatelessWidget {
             final cell = cells[index];
             if (cell.isEmpty) return const SizedBox.shrink();
 
-            return _DayCellWidget(cell: cell, colors: colors);
+            return _DayCellWidget(
+              cell: cell,
+              colors: colors,
+              dues: dues[cell.dateStr] ?? const [],
+            );
           },
         ),
       ],
@@ -165,10 +179,15 @@ class _CalendarMonthGrid extends StatelessWidget {
 }
 
 class _DayCellWidget extends StatelessWidget {
-  const _DayCellWidget({required this.cell, required this.colors});
+  const _DayCellWidget({
+    required this.cell,
+    required this.colors,
+    this.dues = const [],
+  });
 
   final CalendarDayCell cell;
   final SmartSpendColors colors;
+  final List<DueDate> dues;
 
   @override
   Widget build(BuildContext context) {
@@ -190,6 +209,7 @@ class _DayCellWidget extends StatelessWidget {
           dateStr: cell.dateStr,
           formattedDateAr: AppLocalizations.of(context)
               .calTransactionsOfDayP0('${cell.dayNumber}'),
+          dues: dues,
         );
       },
       borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
@@ -215,8 +235,10 @@ class _DayCellWidget extends StatelessWidget {
                     color: cell.isToday ? colors.accent : colors.foreground,
                   ),
                 ),
-                // Payday shape marker: small star icon
-                if (cell.isPayday)
+                // A commitment's mark on its day (a known service's logo), else payday's star, else today's dot.
+                if (dues.isNotEmpty)
+                  DueMarks(dues: dues, size: 14, compact: true)
+                else if (cell.isPayday)
                   Icon(Icons.stars_rounded, size: 11, color: colors.warning)
                 else if (cell.isToday)
                   Container(
@@ -260,12 +282,14 @@ class _CalendarDayList extends StatelessWidget {
     required this.month,
     required this.daySpendMap,
     this.salaryDay,
+    this.dues = const {},
   });
 
   final int year;
   final int month;
   final Map<String, num> daySpendMap;
   final int? salaryDay;
+  final Map<String, List<DueDate>> dues;
 
   @override
   Widget build(BuildContext context) {
@@ -301,6 +325,7 @@ class _CalendarDayList extends StatelessWidget {
                 dateStr: dateStr,
                 formattedDateAr: AppLocalizations.of(context)
                     .calTransactionsOfDayP02('$day'),
+                dues: dues[dateStr] ?? const [],
               );
             },
             leading: Container(
@@ -336,6 +361,9 @@ class _CalendarDayList extends StatelessWidget {
                       color: colors.warning,
                     ),
                   ),
+                if (dues[dateStr] case final List<DueDate> today
+                    when today.isNotEmpty)
+                  DueMarks(dues: today, size: 20),
               ],
             ),
             trailing: amount > 0
@@ -353,6 +381,75 @@ class _CalendarDayList extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// The commitments due on one day, as small marks: a known service's logo (Netflix's on its day), else its kind's
+/// icon, and «+2» when there are more. A screen reader hears their names.
+class DueMarks extends StatelessWidget {
+  const DueMarks({
+    super.key,
+    required this.dues,
+    this.size = 16,
+    this.compact = false,
+  });
+
+  final List<DueDate> dues;
+  final double size;
+
+  /// In a grid cell: the count sits on the mark instead of beside it.
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.smartSpendColors;
+    final first = dues.first;
+    final more = dues.length - 1;
+    final mark = CommitmentAvatar(
+      kind: first.kind,
+      title: first.title,
+      slug: first.catalogSlug,
+      brandColor: first.brandColor,
+      logoUrl: first.logoUrl,
+      size: size,
+    );
+    if (compact) {
+      return Semantics(
+        label: dues.map((due) => due.title).join('، '),
+        excludeSemantics: true,
+        child: Badge(
+          isLabelVisible: more > 0,
+          smallSize: 6,
+          backgroundColor: colors.accent,
+          child: mark,
+        ),
+      );
+    }
+    return Semantics(
+      label: dues.map((due) => due.title).join('، '),
+      excludeSemantics: true,
+      // A Wrap, so the count moves under the mark when large text leaves no room beside it.
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          mark,
+          if (more > 0)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                start: SmartSpendSpacing.xs / 2,
+              ),
+              child: Text(
+                '+$more',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: first.isPaid
+                      ? colors.mutedForeground
+                      : colors.foreground,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -7189,6 +7189,1428 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'التسجيل التلقائي متوقف لحد ما توافق على القراءة. عملياتك المحفوظة موجودة وتقدر تعدّلها.'**
   String get captureAutomaticStopped;
+
+  /// No description provided for @cmReceived.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتقبض'**
+  String get cmReceived;
+
+  /// No description provided for @cmPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتدفع'**
+  String get cmPaid;
+
+  /// No description provided for @cmPartlyPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتدفع جزء'**
+  String get cmPartlyPaid;
+
+  /// No description provided for @cmOverdue.
+  ///
+  /// In ar, this message translates to:
+  /// **'فات ميعاده'**
+  String get cmOverdue;
+
+  /// No description provided for @cmSkipped.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتخطى المرة دي'**
+  String get cmSkipped;
+
+  /// No description provided for @cmPaidOrNot.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتدفع؟'**
+  String get cmPaidOrNot;
+
+  /// No description provided for @cmOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفتوح'**
+  String get cmOpen;
+
+  /// No description provided for @cmDue.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستني'**
+  String get cmDue;
+
+  /// No description provided for @cmNoDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير ميعاد'**
+  String get cmNoDate;
+
+  /// No description provided for @cmInstallmentOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'{p0} من {p1}'**
+  String cmInstallmentOf(String p0, String p1);
+
+  /// No description provided for @cmAmountUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ مش معروف'**
+  String get cmAmountUnknown;
+
+  /// No description provided for @cmAbout.
+  ///
+  /// In ar, this message translates to:
+  /// **'حوالي'**
+  String get cmAbout;
+
+  /// No description provided for @cmGotIt.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبضته'**
+  String get cmGotIt;
+
+  /// No description provided for @cmPaidIt.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعته'**
+  String get cmPaidIt;
+
+  /// No description provided for @cmEnterAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب المبلغ اللي اتدفع.'**
+  String get cmEnterAmount;
+
+  /// No description provided for @cmPayFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نسجل الدفع، جرّب تاني.'**
+  String get cmPayFailed;
+
+  /// No description provided for @cmReceivedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبضت {p0}'**
+  String cmReceivedTitle(String p0);
+
+  /// No description provided for @cmPaidTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعت {p0}'**
+  String cmPaidTitle(String p0);
+
+  /// No description provided for @cmDueOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميعاده {p0}'**
+  String cmDueOn(String p0);
+
+  /// No description provided for @cmAmountPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get cmAmountPaid;
+
+  /// No description provided for @cmRecordInSpending.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّله في مصاريفي'**
+  String get cmRecordInSpending;
+
+  /// No description provided for @cmRecordInSpendingHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'هيتسجل في مكانه ويتحسب على الميعاد ده.'**
+  String get cmRecordInSpendingHint;
+
+  /// No description provided for @cmOffRecordsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'حد تاني دفعه أو اتسجل قبل كده: هيتعلّم إنه اتدفع من غير ما يتسجل تاني.'**
+  String get cmOffRecordsHint;
+
+  /// No description provided for @cmLeftAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل {p0}'**
+  String cmLeftAmount(String p0);
+
+  /// No description provided for @cmCountedAs.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحسبت على: {p0}'**
+  String cmCountedAs(String p0);
+
+  /// No description provided for @cmWhichOneAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الـ {p0} دي لأنهي واحد؟'**
+  String cmWhichOneAmount(String p0);
+
+  /// No description provided for @cmWhichOne.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدفعة دي لأنهي واحد؟'**
+  String get cmWhichOne;
+
+  /// No description provided for @cmNoneOfThem.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش منهم'**
+  String get cmNoneOfThem;
+
+  /// No description provided for @cmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'التزاماتي'**
+  String get cmTitle;
+
+  /// No description provided for @cmAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف التزام'**
+  String get cmAdd;
+
+  /// No description provided for @cmLoadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نجيب التزاماتك.'**
+  String get cmLoadFailed;
+
+  /// No description provided for @cmEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل اللي عليك كل شهر'**
+  String get cmEmptyTitle;
+
+  /// No description provided for @cmEmptyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأقساط والاشتراكات والمدارس والديون والجمعيات في مكان واحد. هنفكرك قبل كل ميعاد، ولما تقول «دفعت قسط التلاجة» هنحسبه لوحده.'**
+  String get cmEmptyBody;
+
+  /// No description provided for @cmAddFirst.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف أول التزام'**
+  String get cmAddFirst;
+
+  /// No description provided for @cmLeftThisMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل عليك الشهر ده'**
+  String get cmLeftThisMonth;
+
+  /// No description provided for @cmPaidOfMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعت {p0} من {p1}'**
+  String cmPaidOfMonth(String p0, String p1);
+
+  /// No description provided for @cmNothingThisMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش مواعيد الشهر ده'**
+  String get cmNothingThisMonth;
+
+  /// No description provided for @cmInstallmentsLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل في الأقساط'**
+  String get cmInstallmentsLeft;
+
+  /// No description provided for @cmPaidThisMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعت الشهر ده'**
+  String get cmPaidThisMonth;
+
+  /// No description provided for @cmNeedsYou.
+  ///
+  /// In ar, this message translates to:
+  /// **'محتاجة رد منك'**
+  String get cmNeedsYou;
+
+  /// No description provided for @cmComingUp.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجاي'**
+  String get cmComingUp;
+
+  /// No description provided for @cmAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الالتزامات'**
+  String get cmAll;
+
+  /// No description provided for @cmAllGroups.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get cmAllGroups;
+
+  /// No description provided for @cmSayItHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'لما تدفع، سجّل زي ما بتسجل أي حاجة: «دفعت قسط التلاجة» أو «دفعت نتفليكس». لو متأكدين هنحسبه لوحده، ولو لأ هنسألك.'**
+  String get cmSayItHint;
+
+  /// No description provided for @cmGroupInstallments.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقساط وقروض'**
+  String get cmGroupInstallments;
+
+  /// No description provided for @cmGroupBills.
+  ///
+  /// In ar, this message translates to:
+  /// **'فواتير واشتراكات'**
+  String get cmGroupBills;
+
+  /// No description provided for @cmGroupEducation.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعليم'**
+  String get cmGroupEducation;
+
+  /// No description provided for @cmGroupDebts.
+  ///
+  /// In ar, this message translates to:
+  /// **'ديون وسلف'**
+  String get cmGroupDebts;
+
+  /// No description provided for @cmGroupGam3eya.
+  ///
+  /// In ar, this message translates to:
+  /// **'جمعيات'**
+  String get cmGroupGam3eya;
+
+  /// No description provided for @cmGroupIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'دخل'**
+  String get cmGroupIncome;
+
+  /// No description provided for @cmPaused.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوقف مؤقتًا'**
+  String get cmPaused;
+
+  /// No description provided for @cmNothingOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش مواعيد مفتوحة'**
+  String get cmNothingOpen;
+
+  /// No description provided for @cmNextOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجاي {p0}'**
+  String cmNextOn(String p0);
+
+  /// No description provided for @cmOverdueCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{ميعاد فات} =2{ميعادين فاتوا} few{{count} مواعيد فاتت} other{{count} ميعاد فات}}'**
+  String cmOverdueCount(int count);
+
+  /// No description provided for @cmPaidCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعت {p0} من {p1}'**
+  String cmPaidCount(String p0, String p1);
+
+  /// No description provided for @cmMoreEntry.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقساط، اشتراكات، مدارس، ديون وجمعيات'**
+  String get cmMoreEntry;
+
+  /// No description provided for @cmSeeAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الالتزامات'**
+  String get cmSeeAll;
+
+  /// No description provided for @cmQuickEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندك أقساط أو اشتراكات؟ سجّلها ونفكرك بيها'**
+  String get cmQuickEmpty;
+
+  /// No description provided for @cmQuickNothingDue.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش مواعيد قريبة'**
+  String get cmQuickNothingDue;
+
+  /// No description provided for @cmQuickNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'{p0} · {p1}'**
+  String cmQuickNext(String p0, String p1);
+
+  /// No description provided for @cmLeftThisMonthLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل عليك الشهر ده {p0}'**
+  String cmLeftThisMonthLine(String p0);
+
+  /// No description provided for @cmEndTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنهي الالتزام ده؟'**
+  String get cmEndTitle;
+
+  /// No description provided for @cmEndBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'«{p0}» هيبطل يظهر ويتحسب. اللي اتدفع منه هيفضل متسجل.'**
+  String cmEndBody(String p0);
+
+  /// No description provided for @cmCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get cmCancel;
+
+  /// No description provided for @cmEnd.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنهيه'**
+  String get cmEnd;
+
+  /// No description provided for @cmChangeFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نحفظ التغيير، جرّب تاني.'**
+  String get cmChangeFailed;
+
+  /// No description provided for @cmMore.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيارات تانية'**
+  String get cmMore;
+
+  /// No description provided for @cmPause.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقّفه مؤقتًا'**
+  String get cmPause;
+
+  /// No description provided for @cmResume.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجّعه'**
+  String get cmResume;
+
+  /// No description provided for @cmSayToPay.
+  ///
+  /// In ar, this message translates to:
+  /// **'لما تدفع قول: «{p0}»'**
+  String cmSayToPay(String p0);
+
+  /// No description provided for @cmReminder.
+  ///
+  /// In ar, this message translates to:
+  /// **'التذكير'**
+  String get cmReminder;
+
+  /// No description provided for @cmFiledUnder.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتسجل في'**
+  String get cmFiledUnder;
+
+  /// No description provided for @cmYourPayout.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبضك من الجمعية'**
+  String get cmYourPayout;
+
+  /// No description provided for @cmPayoutLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'{p0} · {p1}'**
+  String cmPayoutLine(String p0, String p1);
+
+  /// No description provided for @cmOpenDates.
+  ///
+  /// In ar, this message translates to:
+  /// **'المواعيد الجاية'**
+  String get cmOpenDates;
+
+  /// No description provided for @cmDoneDates.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي خلص'**
+  String get cmDoneDates;
+
+  /// No description provided for @cmAmountVaries.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ بيتغير'**
+  String get cmAmountVaries;
+
+  /// No description provided for @cmOnItsDates.
+  ///
+  /// In ar, this message translates to:
+  /// **'على مواعيده'**
+  String get cmOnItsDates;
+
+  /// No description provided for @cmOwedTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجمالي {p0}'**
+  String cmOwedTotal(String p0);
+
+  /// No description provided for @cmOnce.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرة واحدة'**
+  String get cmOnce;
+
+  /// No description provided for @cmWeekly.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل أسبوع'**
+  String get cmWeekly;
+
+  /// No description provided for @cmYearly.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل سنة'**
+  String get cmYearly;
+
+  /// No description provided for @cmMonthly.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل شهر'**
+  String get cmMonthly;
+
+  /// No description provided for @cmEveryMonths.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل {count} شهور'**
+  String cmEveryMonths(int count);
+
+  /// No description provided for @cmTimesCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{قسط واحد} =2{قسطين} few{{count} أقساط} other{{count} قسط}}'**
+  String cmTimesCount(int count);
+
+  /// No description provided for @cmFor.
+  ///
+  /// In ar, this message translates to:
+  /// **'لـ{p0}'**
+  String cmFor(String p0);
+
+  /// No description provided for @cmKindInstallment.
+  ///
+  /// In ar, this message translates to:
+  /// **'قسط'**
+  String get cmKindInstallment;
+
+  /// No description provided for @cmKindLoan.
+  ///
+  /// In ar, this message translates to:
+  /// **'قرض'**
+  String get cmKindLoan;
+
+  /// No description provided for @cmKindProperty.
+  ///
+  /// In ar, this message translates to:
+  /// **'قسط شقة أو أرض'**
+  String get cmKindProperty;
+
+  /// No description provided for @cmKindCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'كارت ائتمان'**
+  String get cmKindCard;
+
+  /// No description provided for @cmKindSchool.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدرسة'**
+  String get cmKindSchool;
+
+  /// No description provided for @cmKindUniversity.
+  ///
+  /// In ar, this message translates to:
+  /// **'جامعة'**
+  String get cmKindUniversity;
+
+  /// No description provided for @cmKindLessons.
+  ///
+  /// In ar, this message translates to:
+  /// **'دروس'**
+  String get cmKindLessons;
+
+  /// No description provided for @cmKindRent.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيجار'**
+  String get cmKindRent;
+
+  /// No description provided for @cmKindBill.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة'**
+  String get cmKindBill;
+
+  /// No description provided for @cmKindSubscription.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراك'**
+  String get cmKindSubscription;
+
+  /// No description provided for @cmKindDebt.
+  ///
+  /// In ar, this message translates to:
+  /// **'دين'**
+  String get cmKindDebt;
+
+  /// No description provided for @cmKindGam3eya.
+  ///
+  /// In ar, this message translates to:
+  /// **'جمعية'**
+  String get cmKindGam3eya;
+
+  /// No description provided for @cmKindSalary.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتب'**
+  String get cmKindSalary;
+
+  /// No description provided for @cmKindFreelance.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغل حر'**
+  String get cmKindFreelance;
+
+  /// No description provided for @cmKindOther.
+  ///
+  /// In ar, this message translates to:
+  /// **'التزام'**
+  String get cmKindOther;
+
+  /// No description provided for @cmNoReminder.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش تذكير'**
+  String get cmNoReminder;
+
+  /// No description provided for @cmOnTheDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم الميعاد'**
+  String get cmOnTheDay;
+
+  /// No description provided for @cmDaysBefore.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{قبلها بيوم} =2{قبلها بيومين} few{قبلها بـ {count} أيام} other{قبلها بـ {count} يوم}}'**
+  String cmDaysBefore(int count);
+
+  /// No description provided for @cmReminderAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'{p0}، الساعة {p1}'**
+  String cmReminderAt(String p0, String p1);
+
+  /// No description provided for @cmLinkedAuto.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحسب لوحده'**
+  String get cmLinkedAuto;
+
+  /// No description provided for @cmLinkedByAnswer.
+  ///
+  /// In ar, this message translates to:
+  /// **'من إجابتك'**
+  String get cmLinkedByAnswer;
+
+  /// No description provided for @cmLinkedBySentence.
+  ///
+  /// In ar, this message translates to:
+  /// **'من جملتك'**
+  String get cmLinkedBySentence;
+
+  /// No description provided for @cmLinkedByYou.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت ربطته'**
+  String get cmLinkedByYou;
+
+  /// No description provided for @cmDeclared.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتدفع من غير ما يتسجل'**
+  String get cmDeclared;
+
+  /// No description provided for @cmOtherAmountTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المرة دي'**
+  String get cmOtherAmountTitle;
+
+  /// No description provided for @cmSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ'**
+  String get cmSave;
+
+  /// No description provided for @cmMoveDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'غيّر الميعاد المرة دي'**
+  String get cmMoveDate;
+
+  /// No description provided for @cmOtherAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'مبلغ تاني المرة دي'**
+  String get cmOtherAmount;
+
+  /// No description provided for @cmSkipThisTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتخطاه المرة دي'**
+  String get cmSkipThisTime;
+
+  /// No description provided for @cmUndoChange.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجّعه زي ما كان'**
+  String get cmUndoChange;
+
+  /// No description provided for @cmUnlinkPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'فك ربط دفعة {p0}'**
+  String cmUnlinkPayment(String p0);
+
+  /// No description provided for @cmUnlinkKeeps.
+  ///
+  /// In ar, this message translates to:
+  /// **'فك الربط مش بيمسح الدفعة من مصاريفك.'**
+  String get cmUnlinkKeeps;
+
+  /// No description provided for @cmReminderTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذكير {p0}'**
+  String cmReminderTitle(String p0);
+
+  /// No description provided for @cmRemindMe.
+  ///
+  /// In ar, this message translates to:
+  /// **'فكرني قبل الميعاد'**
+  String get cmRemindMe;
+
+  /// No description provided for @cmHowEarly.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبلها بقد إيه؟'**
+  String get cmHowEarly;
+
+  /// No description provided for @cmAtHour.
+  ///
+  /// In ar, this message translates to:
+  /// **'الساعة'**
+  String get cmAtHour;
+
+  /// No description provided for @cmDueChecksTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المواعيد دي عدّت، اتدفعت؟'**
+  String get cmDueChecksTitle;
+
+  /// No description provided for @cmDueChecksBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو دوست «تخطي» هنعتبرها لسه ما اتدفعتش وهتفضل في المواعيد المفتوحة.'**
+  String get cmDueChecksBody;
+
+  /// No description provided for @cmSkip.
+  ///
+  /// In ar, this message translates to:
+  /// **'تخطي'**
+  String get cmSkip;
+
+  /// No description provided for @cmWasDueOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'كان ميعاده {p0}'**
+  String cmWasDueOn(String p0);
+
+  /// No description provided for @cmPaidOffRecords.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتدفع بره التسجيل'**
+  String get cmPaidOffRecords;
+
+  /// No description provided for @cmNotYet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه'**
+  String get cmNotYet;
+
+  /// No description provided for @cmPayNamed.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعت {p0}'**
+  String cmPayNamed(String p0);
+
+  /// No description provided for @cmPayNamedAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعت {p0} · {p1}'**
+  String cmPayNamedAmount(String p0, String p1);
+
+  /// No description provided for @cmDueThatDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'عليك تدفع اليوم ده'**
+  String get cmDueThatDay;
+
+  /// No description provided for @cmPaidThatDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتدفع اليوم ده'**
+  String get cmPaidThatDay;
+
+  /// No description provided for @cmAddTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'التزام جديد'**
+  String get cmAddTitle;
+
+  /// No description provided for @cmWhatIsIt.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيه اللي عايز تسجله؟'**
+  String get cmWhatIsIt;
+
+  /// No description provided for @cmTypeSubscription.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراك'**
+  String get cmTypeSubscription;
+
+  /// No description provided for @cmTypeSubscriptionHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'نتفليكس، شاهد، سبوتيفاي…'**
+  String get cmTypeSubscriptionHint;
+
+  /// No description provided for @cmTypeInstallment.
+  ///
+  /// In ar, this message translates to:
+  /// **'قسط حاجة'**
+  String get cmTypeInstallment;
+
+  /// No description provided for @cmTypeInstallmentHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'موبايل، تلاجة، عربية…'**
+  String get cmTypeInstallmentHint;
+
+  /// No description provided for @cmTypeLoan.
+  ///
+  /// In ar, this message translates to:
+  /// **'قرض'**
+  String get cmTypeLoan;
+
+  /// No description provided for @cmTypeLoanHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'من بنك أو شركة'**
+  String get cmTypeLoanHint;
+
+  /// No description provided for @cmTypeProperty.
+  ///
+  /// In ar, this message translates to:
+  /// **'قسط شقة أو أرض'**
+  String get cmTypeProperty;
+
+  /// No description provided for @cmTypePropertyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'شقة، أرض، شاليه'**
+  String get cmTypePropertyHint;
+
+  /// No description provided for @cmTypeSchool.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدرسة أو جامعة'**
+  String get cmTypeSchool;
+
+  /// No description provided for @cmTypeSchoolHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصاريف على أقساطها'**
+  String get cmTypeSchoolHint;
+
+  /// No description provided for @cmTypeLessons.
+  ///
+  /// In ar, this message translates to:
+  /// **'دروس'**
+  String get cmTypeLessons;
+
+  /// No description provided for @cmTypeLessonsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل شهر لمدرس أو سنتر'**
+  String get cmTypeLessonsHint;
+
+  /// No description provided for @cmTypeRent.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيجار'**
+  String get cmTypeRent;
+
+  /// No description provided for @cmTypeRentHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'شقة أو محل'**
+  String get cmTypeRentHint;
+
+  /// No description provided for @cmTypeBill.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة'**
+  String get cmTypeBill;
+
+  /// No description provided for @cmTypeBillHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'كهربا، نت، موبايل'**
+  String get cmTypeBillHint;
+
+  /// No description provided for @cmTypeCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'كارت ائتمان'**
+  String get cmTypeCard;
+
+  /// No description provided for @cmTypeCardHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميعاد سداد الكارت'**
+  String get cmTypeCardHint;
+
+  /// No description provided for @cmTypeDebt.
+  ///
+  /// In ar, this message translates to:
+  /// **'دين أو سلفة'**
+  String get cmTypeDebt;
+
+  /// No description provided for @cmTypeDebtHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'عليك أو ليك عند حد'**
+  String get cmTypeDebtHint;
+
+  /// No description provided for @cmTypeGam3eya.
+  ///
+  /// In ar, this message translates to:
+  /// **'جمعية'**
+  String get cmTypeGam3eya;
+
+  /// No description provided for @cmTypeGam3eyaHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتدفع كل شهر وتقبض دورك'**
+  String get cmTypeGam3eyaHint;
+
+  /// No description provided for @cmTypeIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتب أو دخل'**
+  String get cmTypeIncome;
+
+  /// No description provided for @cmTypeIncomeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي بتقبضه في ميعاد'**
+  String get cmTypeIncomeHint;
+
+  /// No description provided for @cmTypeOther.
+  ///
+  /// In ar, this message translates to:
+  /// **'حاجة تانية'**
+  String get cmTypeOther;
+
+  /// No description provided for @cmTypeOtherHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أي ميعاد دفع تاني'**
+  String get cmTypeOtherHint;
+
+  /// No description provided for @cmSearchSubscriptions.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوّر على الاشتراك'**
+  String get cmSearchSubscriptions;
+
+  /// No description provided for @cmSubscriptionsFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نجيب الاشتراكات. تقدر تكتب اسمه.'**
+  String get cmSubscriptionsFailed;
+
+  /// No description provided for @cmNotInList.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش موجود؟ اكتب اسمه'**
+  String get cmNotInList;
+
+  /// No description provided for @cmNeedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسمه.'**
+  String get cmNeedTitle;
+
+  /// No description provided for @cmNeedAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب المبلغ.'**
+  String get cmNeedAmount;
+
+  /// No description provided for @cmNeedDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار الميعاد.'**
+  String get cmNeedDay;
+
+  /// No description provided for @cmNeedCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب فاضل كام قسط.'**
+  String get cmNeedCount;
+
+  /// No description provided for @cmNeedSchool.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسم المدرسة.'**
+  String get cmNeedSchool;
+
+  /// No description provided for @cmNeedItems.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف قسط واحد على الأقل بميعاده ومبلغه.'**
+  String get cmNeedItems;
+
+  /// No description provided for @cmNeedPerson.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسم الشخص.'**
+  String get cmNeedPerson;
+
+  /// No description provided for @cmNeedInstallments.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب القسط كام وعلى كام مرة.'**
+  String get cmNeedInstallments;
+
+  /// No description provided for @cmNeedMonths.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب الجمعية كام شهر.'**
+  String get cmNeedMonths;
+
+  /// No description provided for @cmNeedTurn.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب دورك، رقم من الشهور.'**
+  String get cmNeedTurn;
+
+  /// No description provided for @cmSchoolTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصاريف {p1} · {p0}'**
+  String cmSchoolTitle(String p0, String p1);
+
+  /// No description provided for @cmDebtToMeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلوسي عند {p0}'**
+  String cmDebtToMeTitle(String p0);
+
+  /// No description provided for @cmDebtOnMeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سلفة {p0}'**
+  String cmDebtOnMeTitle(String p0);
+
+  /// No description provided for @cmCardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كارت {p0}'**
+  String cmCardTitle(String p0);
+
+  /// No description provided for @cmLessonsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'{p0} · {p1}'**
+  String cmLessonsTitle(String p0, String p1);
+
+  /// No description provided for @cmAdded.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتضاف. هنفكرك قبل ميعاده.'**
+  String get cmAdded;
+
+  /// No description provided for @cmNotInPlan.
+  ///
+  /// In ar, this message translates to:
+  /// **'الالتزامات مش متاحة في باقتك دلوقتي.'**
+  String get cmNotInPlan;
+
+  /// No description provided for @cmSaveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نحفظه، جرّب تاني.'**
+  String get cmSaveFailed;
+
+  /// No description provided for @cmPickDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار يوم'**
+  String get cmPickDay;
+
+  /// No description provided for @cmLoanWhat.
+  ///
+  /// In ar, this message translates to:
+  /// **'القرض ده لإيه؟'**
+  String get cmLoanWhat;
+
+  /// No description provided for @cmLoanWhatHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: قرض بنك مصر'**
+  String get cmLoanWhatHint;
+
+  /// No description provided for @cmPropertyWhat.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمه إيه؟'**
+  String get cmPropertyWhat;
+
+  /// No description provided for @cmPropertyWhatHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: قسط الشقة'**
+  String get cmPropertyWhatHint;
+
+  /// No description provided for @cmInstallmentWhat.
+  ///
+  /// In ar, this message translates to:
+  /// **'قسط إيه؟'**
+  String get cmInstallmentWhat;
+
+  /// No description provided for @cmInstallmentWhatHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: التلاجة'**
+  String get cmInstallmentWhatHint;
+
+  /// No description provided for @cmWithWhom.
+  ///
+  /// In ar, this message translates to:
+  /// **'مع مين؟ (اختياري)'**
+  String get cmWithWhom;
+
+  /// No description provided for @cmWithWhomHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'valU، بنك، المعرض…'**
+  String get cmWithWhomHint;
+
+  /// No description provided for @cmInstallmentAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'القسط كام'**
+  String get cmInstallmentAmount;
+
+  /// No description provided for @cmNextDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميعاد الجاي'**
+  String get cmNextDay;
+
+  /// No description provided for @cmRemainingCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل كام قسط (مع الجاي)'**
+  String get cmRemainingCount;
+
+  /// No description provided for @cmUniversityName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الجامعة'**
+  String get cmUniversityName;
+
+  /// No description provided for @cmSchoolName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المدرسة'**
+  String get cmSchoolName;
+
+  /// No description provided for @cmChildName.
+  ///
+  /// In ar, this message translates to:
+  /// **'لمين؟ (اختياري)'**
+  String get cmChildName;
+
+  /// No description provided for @cmChildNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: محمد'**
+  String get cmChildNameHint;
+
+  /// No description provided for @cmFeeInstallments.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقساط المصاريف'**
+  String get cmFeeInstallments;
+
+  /// No description provided for @cmItemDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميعاد القسط {index}'**
+  String cmItemDay(int index);
+
+  /// No description provided for @cmItemAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get cmItemAmount;
+
+  /// No description provided for @cmAddItem.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف قسط'**
+  String get cmAddItem;
+
+  /// No description provided for @cmIOwe.
+  ///
+  /// In ar, this message translates to:
+  /// **'عليّا'**
+  String get cmIOwe;
+
+  /// No description provided for @cmOwedToMe.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليّا'**
+  String get cmOwedToMe;
+
+  /// No description provided for @cmPersonName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الشخص'**
+  String get cmPersonName;
+
+  /// No description provided for @cmPersonNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: فريدة'**
+  String get cmPersonNameHint;
+
+  /// No description provided for @cmRelation.
+  ///
+  /// In ar, this message translates to:
+  /// **'صلته بيك (اختياري)'**
+  String get cmRelation;
+
+  /// No description provided for @cmRelationHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أختي، صاحبي…'**
+  String get cmRelationHint;
+
+  /// No description provided for @cmDebtTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ كله'**
+  String get cmDebtTotal;
+
+  /// No description provided for @cmHowRepaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'هيترد إزاي؟'**
+  String get cmHowRepaid;
+
+  /// No description provided for @cmRepayFlexible.
+  ///
+  /// In ar, this message translates to:
+  /// **'على راحته'**
+  String get cmRepayFlexible;
+
+  /// No description provided for @cmRepayOnce.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرة في ميعاد'**
+  String get cmRepayOnce;
+
+  /// No description provided for @cmRepayInstallments.
+  ///
+  /// In ar, this message translates to:
+  /// **'على أقساط'**
+  String get cmRepayInstallments;
+
+  /// No description provided for @cmRepayDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'هيترد إمتى'**
+  String get cmRepayDay;
+
+  /// No description provided for @cmFirstInstallmentDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول قسط'**
+  String get cmFirstInstallmentDay;
+
+  /// No description provided for @cmHowManyTimes.
+  ///
+  /// In ar, this message translates to:
+  /// **'على كام مرة'**
+  String get cmHowManyTimes;
+
+  /// No description provided for @cmGam3eyaName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الجمعية (اختياري)'**
+  String get cmGam3eyaName;
+
+  /// No description provided for @cmGam3eyaNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: جمعية الشغل'**
+  String get cmGam3eyaNameHint;
+
+  /// No description provided for @cmMonthlyShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتدفع كام كل شهر'**
+  String get cmMonthlyShare;
+
+  /// No description provided for @cmMonthsCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'كام شهر'**
+  String get cmMonthsCount;
+
+  /// No description provided for @cmMyTurn.
+  ///
+  /// In ar, this message translates to:
+  /// **'دورك كام'**
+  String get cmMyTurn;
+
+  /// No description provided for @cmFirstPaymentDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول دفعة'**
+  String get cmFirstPaymentDay;
+
+  /// No description provided for @cmSubscriptionName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الاشتراك'**
+  String get cmSubscriptionName;
+
+  /// No description provided for @cmBillWhat.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة إيه؟'**
+  String get cmBillWhat;
+
+  /// No description provided for @cmBillWhatHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: النت'**
+  String get cmBillWhatHint;
+
+  /// No description provided for @cmCardBank.
+  ///
+  /// In ar, this message translates to:
+  /// **'كارت أنهي بنك؟'**
+  String get cmCardBank;
+
+  /// No description provided for @cmCardBankHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: CIB'**
+  String get cmCardBankHint;
+
+  /// No description provided for @cmLessonsWhat.
+  ///
+  /// In ar, this message translates to:
+  /// **'دروس إيه؟'**
+  String get cmLessonsWhat;
+
+  /// No description provided for @cmLessonsWhatHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: دروس الرياضة'**
+  String get cmLessonsWhatHint;
+
+  /// No description provided for @cmIncomeWhat.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمه إيه؟'**
+  String get cmIncomeWhat;
+
+  /// No description provided for @cmIncomeWhatHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: المرتب'**
+  String get cmIncomeWhatHint;
+
+  /// No description provided for @cmOtherWhat.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمه إيه؟'**
+  String get cmOtherWhat;
+
+  /// No description provided for @cmAmountVariesSwitch.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ بيتغير كل مرة'**
+  String get cmAmountVariesSwitch;
+
+  /// No description provided for @cmIncomeAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتقبض كام'**
+  String get cmIncomeAmount;
+
+  /// No description provided for @cmAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get cmAmount;
+
+  /// No description provided for @cmNextIncomeDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميعاد القبض الجاي'**
+  String get cmNextIncomeDay;
+
+  /// No description provided for @cmRemindBefore.
+  ///
+  /// In ar, this message translates to:
+  /// **'فكرني'**
+  String get cmRemindBefore;
+
+  /// No description provided for @cmAfterSaveHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد ما تحفظه، لما تسجّل إنك دفعته هنحسبه عليه لوحده لو متأكدين، ولو لأ هنسألك.'**
+  String get cmAfterSaveHint;
 }
 
 class _AppLocalizationsDelegate

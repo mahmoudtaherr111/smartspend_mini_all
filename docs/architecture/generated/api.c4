@@ -1934,7 +1934,7 @@ model {
       }
     }
     commitments = router 'commitments' {
-      description 'api/commitments-router.ts — 16 procedures.'
+      description 'api/commitments-router.ts — 17 procedures.'
       metadata {
         file 'api/commitments-router.ts'
       }
@@ -1996,6 +1996,16 @@ model {
           file 'api/commitments-router.ts'
           builder 'commitmentsProcedure'
           procedureKind 'mutation'
+        }
+      }
+      linksFor = procedure 'commitments.linksFor' {
+        #query #commitments #uncalled
+        technology 'commitmentsProcedure'
+        description 'query · commitmentsProcedure · no caller in src/'
+        metadata {
+          file 'api/commitments-router.ts'
+          builder 'commitmentsProcedure'
+          procedureKind 'query'
         }
       }
       month = procedure 'commitments.month' {

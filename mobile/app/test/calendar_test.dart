@@ -4,8 +4,11 @@ import 'package:smartspend_app/src/features/calendar/calendar_grid.dart';
 import 'package:smartspend_app/src/features/calendar/calendar_models.dart';
 import 'package:smartspend_app/src/features/calendar/calendar_screen.dart';
 import 'package:smartspend_app/src/features/calendar/day_transactions_sheet.dart';
+import 'package:smartspend_app/src/features/commitments/add_commitment_screen.dart';
+import 'package:smartspend_ui/smartspend_ui.dart';
 
 import 'support/sample_calendar.dart';
+import 'support/sample_commitments.dart';
 import 'support/sample_month.dart';
 import 'support/test_app.dart';
 
@@ -166,7 +169,7 @@ void main() {
     });
   });
 
-  testWidgets('Adding a commitment sends a first due date and the amount', (
+  testWidgets('Adding from the calendar opens the commitment types', (
     tester,
   ) async {
     addTearDown(() {
@@ -174,57 +177,53 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
     final api = FakeApi();
+    answerSampleCommitments(api);
     await _openCalendar(tester, api);
 
     await tester.tap(find.byTooltip('ضيف التزام أو دخل'));
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.widgetWithText(TextField, 'الاسم (زي: إيجار الشقة)'),
-      'قسط الموبايل',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextField, 'المبلغ (اختياري لو بيتغير)'),
-      '850',
-    );
-    // The first due date starts on the server's day.
-    expect(find.text('19 أكتوبر 2026'), findsOneWidget);
-    await tester.tap(find.text('احفظ'));
-    await tester.pumpAndSettle();
 
-    expect(api.lastInput('coach.addCashflow'), {
-      'title': 'قسط الموبايل',
-      'kind': 'bill',
-      'direction': 'out',
-      'amount': 850,
-      'startDay': '2026-10-19',
-      'recurrence': 'monthly',
-    });
+    expect(find.byType(AddCommitmentScreen), findsOneWidget);
+    expect(find.text('إيه اللي عايز تسجله؟'), findsOneWidget);
+    expect(find.text('اشتراك'), findsOneWidget);
+    expect(find.text('جمعية'), findsOneWidget);
   });
 
-  testWidgets('A commitment with no known amount sends the amount as null', (
-    tester,
-  ) async {
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    final api = FakeApi();
-    await _openCalendar(tester, api);
+  testWidgets(
+    'A subscription shows its logo on its day, and the day says it is due',
+    (tester) async {
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      final api = FakeApi();
+      answerSampleCommitments(api);
+      await _openCalendar(tester, api);
 
-    await tester.tap(find.byTooltip('ضيف التزام أو دخل'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.widgetWithText(TextField, 'الاسم (زي: إيجار الشقة)'),
-      'فاتورة المية',
-    );
-    await tester.tap(find.text('احفظ'));
-    await tester.pumpAndSettle();
+      // Netflix's mark sits on the 12th of the month shown.
+      final mark = find.descendant(
+        of: find.byType(CalendarGrid),
+        matching: find.byWidgetPredicate(
+          (widget) => widget is LogoBadge && widget.label == 'Netflix',
+        ),
+      );
+      expect(mark, findsOneWidget);
+      expect(api.lastInput('commitments.month'), {'month': '2026-11'});
 
-    final input = api.lastInput('coach.addCashflow')! as Map<String, Object?>;
-    expect(input.containsKey('amount'), isTrue);
-    expect(input['amount'], isNull);
-    expect(input['startDay'], '2026-10-19');
-  });
+      await tester.tap(find.text('12').first);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DayTransactionsSheet), findsOneWidget);
+      expect(find.text('عليك تدفع اليوم ده'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(DayTransactionsSheet),
+          matching: find.text('دفعته'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('Undoing a paid date unlinks its payment', (tester) async {
     addTearDown(() {

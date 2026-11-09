@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decideMatch, learnedPhrase, matchTokens, type MatchCommitment, type MatchPayment } from "./matcher";
+import { decideMatch, learnedPhrase, matchTokens, sayHintOf, type MatchCommitment, type MatchPayment } from "./matcher";
 
 const payment = (over: Partial<MatchPayment>): MatchPayment => ({ id: 1, amount: 5000, text: "", contactId: null, day: "2026-11-02", ...over });
 const school = (over: Partial<MatchCommitment> = {}): MatchCommitment => ({
@@ -123,5 +123,16 @@ describe("people and shared words", () => {
   it("does not let a word two schools share stop naming one of them", () => {
     const malak = school({ id: 11, title: "مدرسة ملك", beneficiaryName: "ملك", open: [{ dueDay: "2026-11-01", effectiveDay: "2026-11-01", remaining: 4000 }] });
     expect(decideMatch(payment({ text: "دفعت 5000 مصاريف مدرسة محمد ابني" }), [school(), malak]).status).toBe("linked");
+  });
+});
+
+describe("what to say when paying", () => {
+  it("puts the installment word first when the name lacks it, so the sentence links", () => {
+    expect(sayHintOf("installment", "التلاجة")).toBe("دفعت قسط التلاجة");
+    expect(sayHintOf("property", "قسط الشقة")).toBe("دفعت قسط الشقة");
+    expect(sayHintOf("subscription", "Netflix")).toBe("دفعت Netflix");
+    const fridge: MatchCommitment = { id: 70, title: "التلاجة", kind: "installment", contactId: null, hints: [],
+      open: [{ dueDay: "2026-11-05", effectiveDay: "2026-11-05", remaining: 2000 }] };
+    expect(decideMatch(payment({ text: `${sayHintOf("installment", "التلاجة")} 2000`, amount: 2000, day: "2026-11-05" }), [fridge]).status).toBe("linked");
   });
 });

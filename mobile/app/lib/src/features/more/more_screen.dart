@@ -6,10 +6,10 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 import '../../l10n/app_localizations.dart';
 import '../budgets/budgets_screen.dart';
 import '../business/business_screen.dart';
+import '../commitments/commitments_screen.dart';
 import '../contacts/contacts_providers.dart';
 import '../contacts/contacts_screen.dart';
 import '../goals/goals_screen.dart';
-import '../installments/installments_screen.dart';
 import '../limits/limits_card.dart';
 import '../notifications/notification_inbox_screen.dart';
 import '../notifications/notification_providers.dart';
@@ -103,10 +103,10 @@ class MoreScreen extends ConsumerWidget {
                   onTap: () => context.go(GoalsScreen.path),
                 ),
                 GroupedRow(
-                  icon: Icons.calendar_month_outlined,
-                  title: l10n.calInstallments,
-                  subtitle: l10n.calMonthlyInstallmentsAndWhatIs,
-                  onTap: () => context.go(InstallmentsScreen.path),
+                  icon: Icons.event_repeat_rounded,
+                  title: l10n.cmTitle,
+                  subtitle: l10n.cmMoreEntry,
+                  onTap: () => context.push(CommitmentsScreen.path),
                 ),
               ],
             ),

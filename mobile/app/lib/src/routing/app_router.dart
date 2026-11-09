@@ -17,13 +17,15 @@ import '../features/business/business_screen.dart';
 import '../features/calendar/calendar_screen.dart';
 import '../features/capture/capture_review_screen.dart';
 import '../features/capture/capture_settings_screen.dart';
+import '../features/commitments/add_commitment_screen.dart';
+import '../features/commitments/commitment_detail_screen.dart';
+import '../features/commitments/commitments_screen.dart';
 import '../features/contacts/contacts_screen.dart';
 import '../features/export/export_screen.dart';
 import '../features/goals/goals_screen.dart';
 import '../features/infrastructure/app_update_screen.dart';
 import '../features/infrastructure/data_stored_screen.dart';
 import '../features/infrastructure/terms_screen.dart';
-import '../features/installments/installments_screen.dart';
 import '../features/ledger/record_screen.dart';
 import '../features/ledger/transaction_detail_screen.dart';
 import '../features/ledger/transaction_search_screen.dart';
@@ -188,9 +190,10 @@ final appTabs = <AppTab>[
         path: GoalsScreen.path.substring('/more/'.length),
         builder: (context, state) => const GoalsScreen(),
       ),
+      // Installments became commitments (decision 0051): an old link opens the commitments.
       GoRoute(
-        path: InstallmentsScreen.path.substring('/more/'.length),
-        builder: (context, state) => const InstallmentsScreen(),
+        path: 'installments',
+        redirect: (context, state) => CommitmentsScreen.path,
       ),
       GoRoute(
         path: SeasonsScreen.path.substring('/more/'.length),
@@ -279,6 +282,26 @@ final routerProvider = Provider<GoRouter>((ref) {
             heroTag: launch?.heroTag,
           );
         },
+      ),
+      GoRoute(
+        path: CommitmentsScreen.path,
+        builder: (context, state) => const CommitmentsScreen(),
+        routes: [
+          GoRoute(
+            path: AddCommitmentScreen.path.substring(
+              CommitmentsScreen.path.length + 1,
+            ),
+            builder: (context, state) => const AddCommitmentScreen(),
+          ),
+          GoRoute(
+            path: CommitmentDetailScreen.path.substring(
+              CommitmentsScreen.path.length + 1,
+            ),
+            builder: (context, state) => CommitmentDetailScreen(
+              id: int.tryParse(state.pathParameters['commitmentId'] ?? '') ?? 0,
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: NotificationInboxScreen.path,

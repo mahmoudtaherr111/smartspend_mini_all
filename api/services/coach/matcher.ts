@@ -74,6 +74,16 @@ const STOP = new Set([
 const INSTALLMENT_KINDS = new Set(["installment", "loan", "property"]);
 const INSTALLMENT_CUES = new Set(["قسط", "اقساط", "قسطين", "تقسيط", "مقدم"]);
 
+/**
+ * What to say when paying a commitment, shown on its page: the cue word comes first for an installment kind whose name
+ * lacks it ("التلاجة" → "دفعت قسط التلاجة"), since the matcher needs it there.
+ */
+export function sayHintOf(kind: string, title: string): string {
+  const name = title.trim();
+  const hasCue = matchTokens(name).some((word) => INSTALLMENT_CUES.has(word));
+  return INSTALLMENT_KINDS.has(kind) && !hasCue ? `دفعت قسط ${name}` : `دفعت ${name}`;
+}
+
 /** Generic words of a commitment's name: they do not tell two commitments apart. */
 const GENERIC = new Set(["قسط", "اقساط", "قسطين", "التزام", "مصاريف", "مصروفات", "فاتوره", "اشتراك", "دفعه", "سداد"]);
 

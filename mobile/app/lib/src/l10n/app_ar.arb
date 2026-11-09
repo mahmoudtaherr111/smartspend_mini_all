@@ -53,7 +53,13 @@
   "captureSmsAllow": "اسمح",
   "captureSmsImport": "سجّل رسايل آخر 30 يوم",
   "captureSmsImported": "{count, plural, =0{مالقيناش رسايل بنك جديدة} =1{بنسجّل رسالة واحدة} other{بنسجّل {count} رسالة}}",
-  "@captureSmsImported": {"placeholders": {"count": {"type": "int"}}},
+  "@captureSmsImported": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "captureSamplesTitle": "ساعدنا نحسّن قراءة الرسايل",
   "captureSamplesBody": "بنحتفظ برسايل البنك متخبّي منها الأسماء والأرقام، عشان نقرا الرسايل من غير ذكاء اصطناعي بعدين. لو قفلتها بنمسح اللي اتحفظ.",
   "captureUpdateRequired": "نسخة التطبيق دي قديمة على تسجيل رسايل البنك. حدّث التطبيق، والرسايل المستنية هتتبعت بعدها.",
@@ -2290,5 +2296,500 @@
   "walletBalanceKindBody": "متاح الائتمان مش فلوس نقدية. تحديد النوع بيخلّي الرصيد وحساب المتاح أدق.",
   "walletCreditAvailable": "متاح الائتمان",
   "capturePurposePerson": "الشخص (اختياري)",
-  "captureAutomaticStopped": "التسجيل التلقائي متوقف لحد ما توافق على القراءة. عملياتك المحفوظة موجودة وتقدر تعدّلها."
+  "captureAutomaticStopped": "التسجيل التلقائي متوقف لحد ما توافق على القراءة. عملياتك المحفوظة موجودة وتقدر تعدّلها.",
+  "cmReceived": "اتقبض",
+  "cmPaid": "اتدفع",
+  "cmPartlyPaid": "اتدفع جزء",
+  "cmOverdue": "فات ميعاده",
+  "cmSkipped": "اتخطى المرة دي",
+  "cmPaidOrNot": "اتدفع؟",
+  "cmOpen": "مفتوح",
+  "cmDue": "مستني",
+  "cmNoDate": "من غير ميعاد",
+  "cmInstallmentOf": "{p0} من {p1}",
+  "@cmInstallmentOf": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "cmAmountUnknown": "المبلغ مش معروف",
+  "cmAbout": "حوالي",
+  "cmGotIt": "قبضته",
+  "cmPaidIt": "دفعته",
+  "cmEnterAmount": "اكتب المبلغ اللي اتدفع.",
+  "cmPayFailed": "ماقدرناش نسجل الدفع، جرّب تاني.",
+  "cmReceivedTitle": "قبضت {p0}",
+  "@cmReceivedTitle": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmPaidTitle": "دفعت {p0}",
+  "@cmPaidTitle": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmDueOn": "ميعاده {p0}",
+  "@cmDueOn": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmAmountPaid": "المبلغ",
+  "cmRecordInSpending": "سجّله في مصاريفي",
+  "cmRecordInSpendingHint": "هيتسجل في مكانه ويتحسب على الميعاد ده.",
+  "cmOffRecordsHint": "حد تاني دفعه أو اتسجل قبل كده: هيتعلّم إنه اتدفع من غير ما يتسجل تاني.",
+  "cmLeftAmount": "فاضل {p0}",
+  "@cmLeftAmount": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmCountedAs": "اتحسبت على: {p0}",
+  "@cmCountedAs": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmWhichOneAmount": "الـ {p0} دي لأنهي واحد؟",
+  "@cmWhichOneAmount": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmWhichOne": "الدفعة دي لأنهي واحد؟",
+  "cmNoneOfThem": "مش منهم",
+  "cmTitle": "التزاماتي",
+  "cmAdd": "ضيف التزام",
+  "cmLoadFailed": "ماقدرناش نجيب التزاماتك.",
+  "cmEmptyTitle": "سجّل اللي عليك كل شهر",
+  "cmEmptyBody": "الأقساط والاشتراكات والمدارس والديون والجمعيات في مكان واحد. هنفكرك قبل كل ميعاد، ولما تقول «دفعت قسط التلاجة» هنحسبه لوحده.",
+  "cmAddFirst": "ضيف أول التزام",
+  "cmLeftThisMonth": "فاضل عليك الشهر ده",
+  "cmPaidOfMonth": "دفعت {p0} من {p1}",
+  "@cmPaidOfMonth": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "cmNothingThisMonth": "مفيش مواعيد الشهر ده",
+  "cmInstallmentsLeft": "فاضل في الأقساط",
+  "cmPaidThisMonth": "دفعت الشهر ده",
+  "cmNeedsYou": "محتاجة رد منك",
+  "cmComingUp": "الجاي",
+  "cmAll": "كل الالتزامات",
+  "cmAllGroups": "الكل",
+  "cmSayItHint": "لما تدفع، سجّل زي ما بتسجل أي حاجة: «دفعت قسط التلاجة» أو «دفعت نتفليكس». لو متأكدين هنحسبه لوحده، ولو لأ هنسألك.",
+  "cmGroupInstallments": "أقساط وقروض",
+  "cmGroupBills": "فواتير واشتراكات",
+  "cmGroupEducation": "تعليم",
+  "cmGroupDebts": "ديون وسلف",
+  "cmGroupGam3eya": "جمعيات",
+  "cmGroupIncome": "دخل",
+  "cmPaused": "متوقف مؤقتًا",
+  "cmNothingOpen": "مفيش مواعيد مفتوحة",
+  "cmNextOn": "الجاي {p0}",
+  "@cmNextOn": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmOverdueCount": "{count, plural, =1{ميعاد فات} =2{ميعادين فاتوا} few{{count} مواعيد فاتت} other{{count} ميعاد فات}}",
+  "@cmOverdueCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cmPaidCount": "دفعت {p0} من {p1}",
+  "@cmPaidCount": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "cmMoreEntry": "أقساط، اشتراكات، مدارس، ديون وجمعيات",
+  "cmSeeAll": "كل الالتزامات",
+  "cmQuickEmpty": "عندك أقساط أو اشتراكات؟ سجّلها ونفكرك بيها",
+  "cmQuickNothingDue": "مفيش مواعيد قريبة",
+  "cmQuickNext": "{p0} · {p1}",
+  "@cmQuickNext": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "cmLeftThisMonthLine": "فاضل عليك الشهر ده {p0}",
+  "@cmLeftThisMonthLine": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmEndTitle": "تنهي الالتزام ده؟",
+  "cmEndBody": "«{p0}» هيبطل يظهر ويتحسب. اللي اتدفع منه هيفضل متسجل.",
+  "@cmEndBody": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmCancel": "إلغاء",
+  "cmEnd": "أنهيه",
+  "cmChangeFailed": "ماقدرناش نحفظ التغيير، جرّب تاني.",
+  "cmMore": "اختيارات تانية",
+  "cmPause": "وقّفه مؤقتًا",
+  "cmResume": "رجّعه",
+  "cmSayToPay": "لما تدفع قول: «{p0}»",
+  "@cmSayToPay": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmReminder": "التذكير",
+  "cmFiledUnder": "بيتسجل في",
+  "cmYourPayout": "قبضك من الجمعية",
+  "cmPayoutLine": "{p0} · {p1}",
+  "@cmPayoutLine": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "cmOpenDates": "المواعيد الجاية",
+  "cmDoneDates": "اللي خلص",
+  "cmAmountVaries": "المبلغ بيتغير",
+  "cmOnItsDates": "على مواعيده",
+  "cmOwedTotal": "الإجمالي {p0}",
+  "@cmOwedTotal": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmOnce": "مرة واحدة",
+  "cmWeekly": "كل أسبوع",
+  "cmYearly": "كل سنة",
+  "cmMonthly": "كل شهر",
+  "cmEveryMonths": "كل {count} شهور",
+  "@cmEveryMonths": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cmTimesCount": "{count, plural, =1{قسط واحد} =2{قسطين} few{{count} أقساط} other{{count} قسط}}",
+  "@cmTimesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cmFor": "لـ{p0}",
+  "@cmFor": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmKindInstallment": "قسط",
+  "cmKindLoan": "قرض",
+  "cmKindProperty": "قسط شقة أو أرض",
+  "cmKindCard": "كارت ائتمان",
+  "cmKindSchool": "مدرسة",
+  "cmKindUniversity": "جامعة",
+  "cmKindLessons": "دروس",
+  "cmKindRent": "إيجار",
+  "cmKindBill": "فاتورة",
+  "cmKindSubscription": "اشتراك",
+  "cmKindDebt": "دين",
+  "cmKindGam3eya": "جمعية",
+  "cmKindSalary": "مرتب",
+  "cmKindFreelance": "شغل حر",
+  "cmKindOther": "التزام",
+  "cmNoReminder": "مفيش تذكير",
+  "cmOnTheDay": "يوم الميعاد",
+  "cmDaysBefore": "{count, plural, =1{قبلها بيوم} =2{قبلها بيومين} few{قبلها بـ {count} أيام} other{قبلها بـ {count} يوم}}",
+  "@cmDaysBefore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cmReminderAt": "{p0}، الساعة {p1}",
+  "@cmReminderAt": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "cmLinkedAuto": "اتحسب لوحده",
+  "cmLinkedByAnswer": "من إجابتك",
+  "cmLinkedBySentence": "من جملتك",
+  "cmLinkedByYou": "إنت ربطته",
+  "cmDeclared": "اتدفع من غير ما يتسجل",
+  "cmOtherAmountTitle": "المبلغ المرة دي",
+  "cmSave": "احفظ",
+  "cmMoveDate": "غيّر الميعاد المرة دي",
+  "cmOtherAmount": "مبلغ تاني المرة دي",
+  "cmSkipThisTime": "اتخطاه المرة دي",
+  "cmUndoChange": "رجّعه زي ما كان",
+  "cmUnlinkPayment": "فك ربط دفعة {p0}",
+  "@cmUnlinkPayment": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmUnlinkKeeps": "فك الربط مش بيمسح الدفعة من مصاريفك.",
+  "cmReminderTitle": "تذكير {p0}",
+  "@cmReminderTitle": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmRemindMe": "فكرني قبل الميعاد",
+  "cmHowEarly": "قبلها بقد إيه؟",
+  "cmAtHour": "الساعة",
+  "cmDueChecksTitle": "المواعيد دي عدّت، اتدفعت؟",
+  "cmDueChecksBody": "لو دوست «تخطي» هنعتبرها لسه ما اتدفعتش وهتفضل في المواعيد المفتوحة.",
+  "cmSkip": "تخطي",
+  "cmWasDueOn": "كان ميعاده {p0}",
+  "@cmWasDueOn": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmPaidOffRecords": "اتدفع بره التسجيل",
+  "cmNotYet": "لسه",
+  "cmPayNamed": "دفعت {p0}",
+  "@cmPayNamed": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmPayNamedAmount": "دفعت {p0} · {p1}",
+  "@cmPayNamedAmount": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "cmDueThatDay": "عليك تدفع اليوم ده",
+  "cmPaidThatDay": "اتدفع اليوم ده",
+  "cmAddTitle": "التزام جديد",
+  "cmWhatIsIt": "إيه اللي عايز تسجله؟",
+  "cmTypeSubscription": "اشتراك",
+  "cmTypeSubscriptionHint": "نتفليكس، شاهد، سبوتيفاي…",
+  "cmTypeInstallment": "قسط حاجة",
+  "cmTypeInstallmentHint": "موبايل، تلاجة، عربية…",
+  "cmTypeLoan": "قرض",
+  "cmTypeLoanHint": "من بنك أو شركة",
+  "cmTypeProperty": "قسط شقة أو أرض",
+  "cmTypePropertyHint": "شقة، أرض، شاليه",
+  "cmTypeSchool": "مدرسة أو جامعة",
+  "cmTypeSchoolHint": "المصاريف على أقساطها",
+  "cmTypeLessons": "دروس",
+  "cmTypeLessonsHint": "كل شهر لمدرس أو سنتر",
+  "cmTypeRent": "إيجار",
+  "cmTypeRentHint": "شقة أو محل",
+  "cmTypeBill": "فاتورة",
+  "cmTypeBillHint": "كهربا، نت، موبايل",
+  "cmTypeCard": "كارت ائتمان",
+  "cmTypeCardHint": "ميعاد سداد الكارت",
+  "cmTypeDebt": "دين أو سلفة",
+  "cmTypeDebtHint": "عليك أو ليك عند حد",
+  "cmTypeGam3eya": "جمعية",
+  "cmTypeGam3eyaHint": "بتدفع كل شهر وتقبض دورك",
+  "cmTypeIncome": "مرتب أو دخل",
+  "cmTypeIncomeHint": "اللي بتقبضه في ميعاد",
+  "cmTypeOther": "حاجة تانية",
+  "cmTypeOtherHint": "أي ميعاد دفع تاني",
+  "cmSearchSubscriptions": "دوّر على الاشتراك",
+  "cmSubscriptionsFailed": "ماقدرناش نجيب الاشتراكات. تقدر تكتب اسمه.",
+  "cmNotInList": "مش موجود؟ اكتب اسمه",
+  "cmNeedTitle": "اكتب اسمه.",
+  "cmNeedAmount": "اكتب المبلغ.",
+  "cmNeedDay": "اختار الميعاد.",
+  "cmNeedCount": "اكتب فاضل كام قسط.",
+  "cmNeedSchool": "اكتب اسم المدرسة.",
+  "cmNeedItems": "ضيف قسط واحد على الأقل بميعاده ومبلغه.",
+  "cmNeedPerson": "اكتب اسم الشخص.",
+  "cmNeedInstallments": "اكتب القسط كام وعلى كام مرة.",
+  "cmNeedMonths": "اكتب الجمعية كام شهر.",
+  "cmNeedTurn": "اكتب دورك، رقم من الشهور.",
+  "cmSchoolTitle": "مصاريف {p1} · {p0}",
+  "@cmSchoolTitle": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "cmDebtToMeTitle": "فلوسي عند {p0}",
+  "@cmDebtToMeTitle": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmDebtOnMeTitle": "سلفة {p0}",
+  "@cmDebtOnMeTitle": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmCardTitle": "كارت {p0}",
+  "@cmCardTitle": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cmLessonsTitle": "{p0} · {p1}",
+  "@cmLessonsTitle": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "cmAdded": "اتضاف. هنفكرك قبل ميعاده.",
+  "cmNotInPlan": "الالتزامات مش متاحة في باقتك دلوقتي.",
+  "cmSaveFailed": "ماقدرناش نحفظه، جرّب تاني.",
+  "cmPickDay": "اختار يوم",
+  "cmLoanWhat": "القرض ده لإيه؟",
+  "cmLoanWhatHint": "زي: قرض بنك مصر",
+  "cmPropertyWhat": "اسمه إيه؟",
+  "cmPropertyWhatHint": "زي: قسط الشقة",
+  "cmInstallmentWhat": "قسط إيه؟",
+  "cmInstallmentWhatHint": "زي: التلاجة",
+  "cmWithWhom": "مع مين؟ (اختياري)",
+  "cmWithWhomHint": "valU، بنك، المعرض…",
+  "cmInstallmentAmount": "القسط كام",
+  "cmNextDay": "الميعاد الجاي",
+  "cmRemainingCount": "فاضل كام قسط (مع الجاي)",
+  "cmUniversityName": "اسم الجامعة",
+  "cmSchoolName": "اسم المدرسة",
+  "cmChildName": "لمين؟ (اختياري)",
+  "cmChildNameHint": "زي: محمد",
+  "cmFeeInstallments": "أقساط المصاريف",
+  "cmItemDay": "ميعاد القسط {index}",
+  "@cmItemDay": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "cmItemAmount": "المبلغ",
+  "cmAddItem": "ضيف قسط",
+  "cmIOwe": "عليّا",
+  "cmOwedToMe": "ليّا",
+  "cmPersonName": "اسم الشخص",
+  "cmPersonNameHint": "زي: فريدة",
+  "cmRelation": "صلته بيك (اختياري)",
+  "cmRelationHint": "أختي، صاحبي…",
+  "cmDebtTotal": "المبلغ كله",
+  "cmHowRepaid": "هيترد إزاي؟",
+  "cmRepayFlexible": "على راحته",
+  "cmRepayOnce": "مرة في ميعاد",
+  "cmRepayInstallments": "على أقساط",
+  "cmRepayDay": "هيترد إمتى",
+  "cmFirstInstallmentDay": "أول قسط",
+  "cmHowManyTimes": "على كام مرة",
+  "cmGam3eyaName": "اسم الجمعية (اختياري)",
+  "cmGam3eyaNameHint": "زي: جمعية الشغل",
+  "cmMonthlyShare": "بتدفع كام كل شهر",
+  "cmMonthsCount": "كام شهر",
+  "cmMyTurn": "دورك كام",
+  "cmFirstPaymentDay": "أول دفعة",
+  "cmSubscriptionName": "اسم الاشتراك",
+  "cmBillWhat": "فاتورة إيه؟",
+  "cmBillWhatHint": "زي: النت",
+  "cmCardBank": "كارت أنهي بنك؟",
+  "cmCardBankHint": "زي: CIB",
+  "cmLessonsWhat": "دروس إيه؟",
+  "cmLessonsWhatHint": "زي: دروس الرياضة",
+  "cmIncomeWhat": "اسمه إيه؟",
+  "cmIncomeWhatHint": "زي: المرتب",
+  "cmOtherWhat": "اسمه إيه؟",
+  "cmAmountVariesSwitch": "المبلغ بيتغير كل مرة",
+  "cmIncomeAmount": "بتقبض كام",
+  "cmAmount": "المبلغ",
+  "cmNextIncomeDay": "ميعاد القبض الجاي",
+  "cmRemindBefore": "فكرني",
+  "cmAfterSaveHint": "بعد ما تحفظه، لما تسجّل إنك دفعته هنحسبه عليه لوحده لو متأكدين، ولو لأ هنسألك."
 }

@@ -27,6 +27,7 @@ import 'package:smartspend_app/src/features/lock/lock_store.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../support/sample_calendar.dart';
+import '../support/sample_commitments.dart';
 import '../support/sample_money.dart';
 import '../support/sample_month.dart';
 import '../support/test_app.dart';
@@ -189,6 +190,120 @@ final _screens = <(String, bool, PrepareApi?, Reach)>[
       await tester.pumpAndSettle();
     },
   ),
+  (
+    'calendar-commitments',
+    true,
+    (api) {
+      answerSampleCalendar(api);
+      answerSampleCommitments(api);
+    },
+    (tester, language) async {
+      await tester.tap(
+        find.text(language == AppLanguage.english ? 'Calendar' : 'تقويم').last,
+      );
+      await tester.pumpAndSettle();
+      await tester.drag(find.byType(ListView).first, const Offset(0, -560));
+      await tester.pumpAndSettle();
+    },
+  ),
+  (
+    'calendar-day-due',
+    true,
+    (api) {
+      answerSampleCalendar(api);
+      answerSampleCommitments(api);
+    },
+    (tester, language) async {
+      await tester.tap(
+        find.text(language == AppLanguage.english ? 'Calendar' : 'تقويم').last,
+      );
+      await tester.pumpAndSettle();
+      final day = find.text('12');
+      await _reveal(tester, day);
+      await tester.tap(day.first);
+      await tester.pumpAndSettle();
+    },
+  ),
+  ('commitments', true, _commitmentsApi, _push('/commitments')),
+  (
+    'commitments-scrolled',
+    true,
+    _commitmentsApi,
+    (tester, language) async {
+      await _push('/commitments')(tester, language);
+      await tester.drag(find.byType(ListView).last, const Offset(0, -700));
+      await tester.pumpAndSettle();
+    },
+  ),
+  ('commitment-fridge', true, _commitmentsApi, _push('/commitments/1')),
+  ('commitment-add', true, _commitmentsApi, _push('/commitments/add')),
+  (
+    'commitment-subscriptions',
+    true,
+    _commitmentsApi,
+    (tester, language) async {
+      await _push('/commitments/add')(tester, language);
+      await tester.tap(find.byKey(const ValueKey('type-subscription')));
+      await tester.pumpAndSettle();
+    },
+  ),
+  (
+    'commitment-netflix-form',
+    true,
+    _commitmentsApi,
+    (tester, language) async {
+      await _push('/commitments/add')(tester, language);
+      await tester.tap(find.byKey(const ValueKey('type-subscription')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('brand-netflix')));
+      await tester.pumpAndSettle();
+    },
+  ),
+  (
+    'commitment-installment-form',
+    true,
+    _commitmentsApi,
+    (tester, language) async {
+      await _push('/commitments/add')(tester, language);
+      await tester.tap(find.byKey(const ValueKey('type-installment')));
+      await tester.pumpAndSettle();
+    },
+  ),
+  (
+    'commitment-gam3eya-form',
+    true,
+    _commitmentsApi,
+    (tester, language) async {
+      await _push('/commitments/add')(tester, language);
+      final tile = find.byKey(const ValueKey('type-gam3eya'));
+      await _reveal(tester, tile);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+    },
+  ),
+  (
+    'commitment-pay',
+    true,
+    _commitmentsApi,
+    (tester, language) async {
+      await _push('/commitments')(tester, language);
+      final row = find.byKey(const ValueKey('upcoming-2-2026-11-12'));
+      await _reveal(tester, row);
+      await tester.tap(
+        find.descendant(of: row, matching: find.byType(TextButton)),
+      );
+      await tester.pumpAndSettle();
+    },
+  ),
+  (
+    'commitments-prompt',
+    true,
+    (api) {
+      answerSampleMoney(api);
+      answerSampleCommitments(api, withQuestions: true);
+    },
+    (tester, _) async {},
+  ),
   ('ai', true, answerSampleMoney, _openAi),
   ('ai-report', true, answerSampleMoney, _aiTab(1)),
   ('ai-compare', true, answerSampleMoney, _aiTab(2)),
@@ -209,7 +324,6 @@ final _screens = <(String, bool, PrepareApi?, Reach)>[
     '/more/contacts',
     '/more/budgets',
     '/more/goals',
-    '/more/installments',
     '/more/seasons',
     '/more/export',
     '/more/business',
@@ -226,6 +340,24 @@ final _screens = <(String, bool, PrepareApi?, Reach)>[
       _push(path),
     ),
 ];
+
+/// Scrolls the screen's list until [finder] is built and on screen: a long list builds only what it shows.
+Future<void> _reveal(WidgetTester tester, Finder finder) async {
+  if (finder.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(
+      finder,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+  }
+  await tester.ensureVisible(finder.first);
+  await tester.pumpAndSettle();
+}
+
+void _commitmentsApi(FakeApi api) {
+  answerSampleMoney(api);
+  answerSampleCommitments(api);
+}
 
 Reach _push(String path) => (tester, _) async {
   unawaited(GoRouter.of(tester.element(find.byType(NavigationBar))).push(path));
@@ -265,15 +397,21 @@ Future<void> _loadFonts() async {
       _bytes('../packages/smartspend_ui/assets/fonts/Cairo-Variable.ttf'),
     );
   await cairo.load();
-  // The icon font of the Flutter SDK this test runs on, found by walking up from its test runner.
+  // The icon font of the Flutter SDK this test runs on, found by walking up from its test runner. Its name has
+  // capitals on disk; Windows matches it either way, Linux and macOS only as written.
   var dir = File(Platform.resolvedExecutable).parent;
-  const iconFont = 'cache/artifacts/material_fonts/materialicons-regular.otf';
-  while (!File('${dir.path}/$iconFont').existsSync() &&
-      dir.parent.path != dir.path) {
+  const iconFonts = [
+    'cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    'cache/artifacts/material_fonts/materialicons-regular.otf',
+  ];
+  String? found() => iconFonts
+      .map((name) => '${dir.path}/$name')
+      .where((path) => File(path).existsSync())
+      .firstOrNull;
+  while (found() == null && dir.parent.path != dir.path) {
     dir = dir.parent;
   }
-  final icons = FontLoader('MaterialIcons')
-    ..addFont(_bytes('${dir.path}/$iconFont'));
+  final icons = FontLoader('MaterialIcons')..addFont(_bytes(found()!));
   await icons.load();
 }
 

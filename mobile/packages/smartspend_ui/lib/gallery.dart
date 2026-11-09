@@ -43,6 +43,16 @@ class ComponentGallery extends StatelessWidget {
             ),
           ),
           const SizedBox(height: SmartSpendSpacing.lg),
+          const Row(
+            children: [
+              LogoBadge(label: 'Netflix', color: Color(0xFFE50914)),
+              SizedBox(width: SmartSpendSpacing.sm),
+              LogoBadge(label: 'شاهد', color: Color(0xFF13A88A)),
+              SizedBox(width: SmartSpendSpacing.sm),
+              LogoBadge(label: 'Spotify', color: Color(0xFF1DB954), size: 28),
+            ],
+          ),
+          const SizedBox(height: SmartSpendSpacing.lg),
           MonthSwitcher(
             label: 'أكتوبر 2026',
             previousTooltip: 'الشهر اللي قبله',

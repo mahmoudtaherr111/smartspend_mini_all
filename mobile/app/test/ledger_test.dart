@@ -347,6 +347,104 @@ void main() {
       expect(find.text('اتحفظت: 500 ج.م · تحويل/سلفة'), findsOneWidget);
     });
 
+    testWidgets(
+      'a saved payment of a commitment says which one it counted for',
+      (tester) async {
+        final api = FakeApi()
+          ..answer(
+            'ai.parseExpense',
+            (_) => _parsed('auto_save', [
+              _item(2000, 'أقساط وفوايد', sub: 'أقساط'),
+            ]),
+          )
+          ..answer('expense.create', (_) => {'id': 77})
+          ..answer(
+            'commitments.linksFor',
+            (_) => [
+              {
+                'expenseId': 77,
+                'status': 'linked',
+                'cashflowId': 1,
+                'title': 'التلاجة',
+                'number': 5,
+                'total': 12,
+                'remainingAmount': 14000,
+                'settlementIds': [40],
+                'candidates': <Object?>[],
+              },
+            ],
+          )
+          ..answer('commitments.unlink', (_) => {'success': true});
+        await _signedIn(tester, api);
+
+        await _send(tester, 'دفعت قسط التلاجة 2000');
+
+        expect(api.lastInput('commitments.linksFor'), {
+          'expenseIds': [77],
+        });
+        expect(
+          find.text('اتحسبت على: التلاجة · 5 من 12 · فاضل 14,000 ج.م'),
+          findsOneWidget,
+        );
+        // «تراجع» here unlinks it; the payment stays in the ledger.
+        await tester.tap(find.text('تراجع'));
+        await tester.pumpAndSettle();
+        expect(api.lastInput('commitments.unlink'), {'settlementId': 40});
+        expect(api.paths, isNot(contains('expense.delete')));
+      },
+    );
+
+    testWidgets('«دفعت نتفليكس» with no amount pays Netflix from one button', (
+      tester,
+    ) async {
+      final api = FakeApi()
+        ..answer(
+          'ai.parseExpense',
+          (_) => _parsed(
+            'clarify',
+            [],
+            question: 'دفعت كام؟',
+            clarificationId: 32,
+          ),
+        )
+        ..answer(
+          'commitments.forSentence',
+          (_) => {
+            'cashflowId': 2,
+            'title': 'Netflix',
+            'dueDay': '2026-11-12',
+            'amount': 240,
+            'number': null,
+            'total': null,
+          },
+        )
+        ..answer(
+          'commitments.pay',
+          (_) => {'expenseId': 99, 'settlementId': 41},
+        )
+        ..answer('expense.dismissClarification', (_) => {'success': true});
+      await _signedIn(tester, api);
+
+      await _send(tester, 'دفعت نتفليكس');
+      expect(api.lastInput('commitments.forSentence'), {
+        'text': 'دفعت نتفليكس',
+      });
+      await tester.tap(find.byKey(const ValueKey('pay-named-commitment')));
+      await tester.pumpAndSettle();
+
+      final pay = api.lastInput('commitments.pay')! as Map<String, Object?>;
+      expect(pay['cashflowId'], 2);
+      expect(pay['dueDay'], '2026-11-12');
+      expect(pay['amount'], 240);
+      expect(pay['record'], isTrue);
+      // The outbox item's id, so a repeated tap is stored once.
+      expect(pay['clientRequestId'], isA<String>());
+      expect(api.lastInput('expense.dismissClarification'), {
+        'clarificationId': 32,
+      });
+      expect(find.text('اتحسبت على: Netflix'), findsOneWidget);
+    });
+
     testWidgets('a refusal from the server is shown and the sentence kept', (
       tester,
     ) async {

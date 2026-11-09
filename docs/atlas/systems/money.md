@@ -28,7 +28,7 @@ flowchart LR
     router_budget["budget API · 4 procedures"]
     router_business["business API · 10 procedures"]
     router_coach["coach API · 10 procedures"]
-    router_commitments["commitments API · 16 procedures"]
+    router_commitments["commitments API · 17 procedures"]
     router_expense["expense API · 14 procedures"]
     router_export["export API · 1 procedure"]
     router_goals["goals API · 5 procedures"]
@@ -248,6 +248,7 @@ flowchart LR
 | `commitments.detail` | query | `commitmentsProcedure` | — | — | — |
 | `commitments.forSentence` | query | `commitmentsProcedure` | — | — | — |
 | `commitments.link` | mutation | `commitmentsProcedure` | — | — | — |
+| `commitments.linksFor` | query | `commitmentsProcedure` | — | — | — |
 | `commitments.month` | query | `commitmentsProcedure` | — | — | — |
 | `commitments.overview` | query | `commitmentsProcedure` | — | — | — |
 | `commitments.pay` | mutation | `commitmentsProcedure` | — | — | — |

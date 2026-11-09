@@ -182,6 +182,7 @@ final class CommitmentsProcedures {
   ApiQuery get detail => const ApiQuery('commitments.detail', builder: 'commitmentsProcedure', hasInput: true);
   ApiQuery get forSentence => const ApiQuery('commitments.forSentence', builder: 'commitmentsProcedure', hasInput: true);
   ApiMutation get link => const ApiMutation('commitments.link', builder: 'commitmentsProcedure', hasInput: true);
+  ApiQuery get linksFor => const ApiQuery('commitments.linksFor', builder: 'commitmentsProcedure', hasInput: true);
   ApiQuery get month => const ApiQuery('commitments.month', builder: 'commitmentsProcedure', hasInput: true);
   ApiQuery get overview => const ApiQuery('commitments.overview', builder: 'commitmentsProcedure');
   ApiMutation get pay => const ApiMutation('commitments.pay', builder: 'commitmentsProcedure', hasInput: true);

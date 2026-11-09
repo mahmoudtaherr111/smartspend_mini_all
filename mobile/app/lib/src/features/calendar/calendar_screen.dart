@@ -5,6 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../commitments/add_commitment_screen.dart';
+import '../commitments/commitment_api.dart';
+import '../commitments/commitment_models.dart';
+import '../commitments/commitments_screen.dart';
 import '../infrastructure/remote_config.dart';
 import '../ledger/ledger_providers.dart';
 import '../wallets/wallet_providers.dart';
@@ -38,6 +42,13 @@ class CalendarScreen extends ConsumerWidget {
       ref.watch(serverMonthProvider).value,
       offset,
     );
+    // Each day's commitment dates, for the logos on the grid and the day's sheet.
+    final dues = <String, List<DueDate>>{};
+    for (final due
+        in ref.watch(commitmentsMonthProvider(monthKey)).value ??
+            const <DueDate>[]) {
+      dues.putIfAbsent(due.day, () => []).add(due);
+    }
     final monthParts = monthKey.split('-');
     final targetDate = DateTime(
       int.parse(monthParts[0]),
@@ -46,6 +57,7 @@ class CalendarScreen extends ConsumerWidget {
 
     Future<void> refresh() async {
       ref.invalidate(coachOverviewProvider);
+      ref.invalidate(commitmentsMonthProvider);
       ref.invalidate(calendarMonthStatsProvider);
       ref.invalidate(salaryDayProvider);
       await Future.wait([
@@ -61,7 +73,7 @@ class CalendarScreen extends ConsumerWidget {
           IconButton(
             tooltip: AppLocalizations.of(context).calAddACommitmentOrIncome,
             icon: const Icon(Icons.add_rounded),
-            onPressed: () => AddCommitmentSheet.show(context),
+            onPressed: () => context.push(AddCommitmentScreen.path),
           ),
         ],
       ),
@@ -121,6 +133,7 @@ class CalendarScreen extends ConsumerWidget {
                         month: targetDate.month,
                         daySpendMap: daySpendMap,
                         salaryDay: salaryDay,
+                        dues: dues,
                       );
                     },
                     loading: () => const Center(
@@ -134,6 +147,7 @@ class CalendarScreen extends ConsumerWidget {
                       month: targetDate.month,
                       daySpendMap: const {},
                       salaryDay: salaryDay,
+                      dues: dues,
                     ),
                   ),
                   const SizedBox(height: SmartSpendSpacing.xl),
@@ -446,12 +460,14 @@ class _CalendarSection extends StatelessWidget {
     required this.month,
     required this.daySpendMap,
     this.salaryDay,
+    this.dues = const {},
   });
 
   final int year;
   final int month;
   final Map<String, num> daySpendMap;
   final int? salaryDay;
+  final Map<String, List<DueDate>> dues;
 
   @override
   Widget build(BuildContext context) {
@@ -496,6 +512,7 @@ class _CalendarSection extends StatelessWidget {
             month: month,
             daySpendMap: daySpendMap,
             salaryDay: salaryDay,
+            dues: dues,
           ),
         ],
       ),
@@ -529,10 +546,9 @@ class _CommitmentsSection extends ConsumerWidget {
                 ),
               ),
             ),
-            TextButton.icon(
-              icon: const Icon(Icons.add, size: 18),
-              label: Text(AppLocalizations.of(context).calAdd),
-              onPressed: () => AddCommitmentSheet.show(context),
+            TextButton(
+              onPressed: () => context.push(CommitmentsScreen.path),
+              child: Text(AppLocalizations.of(context).cmSeeAll),
             ),
           ],
         ),

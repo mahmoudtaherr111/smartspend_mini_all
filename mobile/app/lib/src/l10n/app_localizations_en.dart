@@ -4113,4 +4113,809 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get captureAutomaticStopped =>
       'Automatic recording is stopped until you consent to reading. Saved entries remain available to edit.';
+
+  @override
+  String get cmReceived => 'Received';
+
+  @override
+  String get cmPaid => 'Paid';
+
+  @override
+  String get cmPartlyPaid => 'Partly paid';
+
+  @override
+  String get cmOverdue => 'Overdue';
+
+  @override
+  String get cmSkipped => 'Skipped this time';
+
+  @override
+  String get cmPaidOrNot => 'Paid?';
+
+  @override
+  String get cmOpen => 'Open';
+
+  @override
+  String get cmDue => 'Due';
+
+  @override
+  String get cmNoDate => 'No date';
+
+  @override
+  String cmInstallmentOf(String p0, String p1) {
+    return '$p0 of $p1';
+  }
+
+  @override
+  String get cmAmountUnknown => 'Amount unknown';
+
+  @override
+  String get cmAbout => 'about';
+
+  @override
+  String get cmGotIt => 'Got it';
+
+  @override
+  String get cmPaidIt => 'Paid it';
+
+  @override
+  String get cmEnterAmount => 'Enter the amount paid.';
+
+  @override
+  String get cmPayFailed => 'We couldn\'t record the payment. Try again.';
+
+  @override
+  String cmReceivedTitle(String p0) {
+    return 'Received $p0';
+  }
+
+  @override
+  String cmPaidTitle(String p0) {
+    return 'Paid $p0';
+  }
+
+  @override
+  String cmDueOn(String p0) {
+    return 'Due $p0';
+  }
+
+  @override
+  String get cmAmountPaid => 'Amount';
+
+  @override
+  String get cmRecordInSpending => 'Record it in my spending';
+
+  @override
+  String get cmRecordInSpendingHint =>
+      'It is recorded in its category and counted for this date.';
+
+  @override
+  String get cmOffRecordsHint =>
+      'Someone else paid it or it is already recorded: it is marked paid without a new record.';
+
+  @override
+  String cmLeftAmount(String p0) {
+    return '$p0 left';
+  }
+
+  @override
+  String cmCountedAs(String p0) {
+    return 'Counted for: $p0';
+  }
+
+  @override
+  String cmWhichOneAmount(String p0) {
+    return 'Which one is this $p0 for?';
+  }
+
+  @override
+  String get cmWhichOne => 'Which one is this payment for?';
+
+  @override
+  String get cmNoneOfThem => 'None of them';
+
+  @override
+  String get cmTitle => 'My commitments';
+
+  @override
+  String get cmAdd => 'Add a commitment';
+
+  @override
+  String get cmLoadFailed => 'We couldn\'t load your commitments.';
+
+  @override
+  String get cmEmptyTitle => 'Add what you pay every month';
+
+  @override
+  String get cmEmptyBody =>
+      'Installments, subscriptions, school fees, debts and gam3eyas in one place. We remind you before each date, and when you say «I paid the fridge installment» it is counted for you.';
+
+  @override
+  String get cmAddFirst => 'Add your first commitment';
+
+  @override
+  String get cmLeftThisMonth => 'Left to pay this month';
+
+  @override
+  String cmPaidOfMonth(String p0, String p1) {
+    return 'You paid $p0 of $p1';
+  }
+
+  @override
+  String get cmNothingThisMonth => 'Nothing due this month';
+
+  @override
+  String get cmInstallmentsLeft => 'Left on installments';
+
+  @override
+  String get cmPaidThisMonth => 'Paid this month';
+
+  @override
+  String get cmNeedsYou => 'Needs you';
+
+  @override
+  String get cmComingUp => 'Coming up';
+
+  @override
+  String get cmAll => 'All commitments';
+
+  @override
+  String get cmAllGroups => 'All';
+
+  @override
+  String get cmSayItHint =>
+      'When you pay, record it as usual: «I paid the fridge installment» or «paid Netflix». If we are sure it is counted for you; if not, we ask.';
+
+  @override
+  String get cmGroupInstallments => 'Installments and loans';
+
+  @override
+  String get cmGroupBills => 'Bills and subscriptions';
+
+  @override
+  String get cmGroupEducation => 'Education';
+
+  @override
+  String get cmGroupDebts => 'Debts';
+
+  @override
+  String get cmGroupGam3eya => 'Gam3eyas';
+
+  @override
+  String get cmGroupIncome => 'Income';
+
+  @override
+  String get cmPaused => 'Paused';
+
+  @override
+  String get cmNothingOpen => 'Nothing open';
+
+  @override
+  String cmNextOn(String p0) {
+    return 'Next on $p0';
+  }
+
+  @override
+  String cmOverdueCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count overdue',
+      one: '1 overdue',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String cmPaidCount(String p0, String p1) {
+    return 'Paid $p0 of $p1';
+  }
+
+  @override
+  String get cmMoreEntry =>
+      'Installments, subscriptions, schools, debts and gam3eyas';
+
+  @override
+  String get cmSeeAll => 'All commitments';
+
+  @override
+  String get cmQuickEmpty =>
+      'Installments or subscriptions? Add them and we remind you';
+
+  @override
+  String get cmQuickNothingDue => 'Nothing due soon';
+
+  @override
+  String cmQuickNext(String p0, String p1) {
+    return '$p0 · $p1';
+  }
+
+  @override
+  String cmLeftThisMonthLine(String p0) {
+    return '$p0 left this month';
+  }
+
+  @override
+  String get cmEndTitle => 'End this commitment?';
+
+  @override
+  String cmEndBody(String p0) {
+    return '«$p0» stops showing and counting. What was paid stays recorded.';
+  }
+
+  @override
+  String get cmCancel => 'Cancel';
+
+  @override
+  String get cmEnd => 'End it';
+
+  @override
+  String get cmChangeFailed => 'We couldn\'t save the change. Try again.';
+
+  @override
+  String get cmMore => 'More options';
+
+  @override
+  String get cmPause => 'Pause';
+
+  @override
+  String get cmResume => 'Resume';
+
+  @override
+  String cmSayToPay(String p0) {
+    return 'When you pay, say: «$p0»';
+  }
+
+  @override
+  String get cmReminder => 'Reminder';
+
+  @override
+  String get cmFiledUnder => 'Filed under';
+
+  @override
+  String get cmYourPayout => 'Your payout';
+
+  @override
+  String cmPayoutLine(String p0, String p1) {
+    return '$p0 · $p1';
+  }
+
+  @override
+  String get cmOpenDates => 'Upcoming dates';
+
+  @override
+  String get cmDoneDates => 'Done';
+
+  @override
+  String get cmAmountVaries => 'Amount varies';
+
+  @override
+  String get cmOnItsDates => 'on its dates';
+
+  @override
+  String cmOwedTotal(String p0) {
+    return '$p0 in all';
+  }
+
+  @override
+  String get cmOnce => 'Once';
+
+  @override
+  String get cmWeekly => 'Weekly';
+
+  @override
+  String get cmYearly => 'Yearly';
+
+  @override
+  String get cmMonthly => 'Monthly';
+
+  @override
+  String cmEveryMonths(int count) {
+    return 'every $count months';
+  }
+
+  @override
+  String cmTimesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count installments',
+      one: '1 installment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String cmFor(String p0) {
+    return 'for $p0';
+  }
+
+  @override
+  String get cmKindInstallment => 'Installment';
+
+  @override
+  String get cmKindLoan => 'Loan';
+
+  @override
+  String get cmKindProperty => 'Property installment';
+
+  @override
+  String get cmKindCard => 'Credit card';
+
+  @override
+  String get cmKindSchool => 'School';
+
+  @override
+  String get cmKindUniversity => 'University';
+
+  @override
+  String get cmKindLessons => 'Lessons';
+
+  @override
+  String get cmKindRent => 'Rent';
+
+  @override
+  String get cmKindBill => 'Bill';
+
+  @override
+  String get cmKindSubscription => 'Subscription';
+
+  @override
+  String get cmKindDebt => 'Debt';
+
+  @override
+  String get cmKindGam3eya => 'Gam3eya';
+
+  @override
+  String get cmKindSalary => 'Salary';
+
+  @override
+  String get cmKindFreelance => 'Freelance';
+
+  @override
+  String get cmKindOther => 'Commitment';
+
+  @override
+  String get cmNoReminder => 'No reminder';
+
+  @override
+  String get cmOnTheDay => 'On the day';
+
+  @override
+  String cmDaysBefore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days before',
+      one: '1 day before',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String cmReminderAt(String p0, String p1) {
+    return '$p0, at $p1';
+  }
+
+  @override
+  String get cmLinkedAuto => 'counted automatically';
+
+  @override
+  String get cmLinkedByAnswer => 'from your answer';
+
+  @override
+  String get cmLinkedBySentence => 'from your sentence';
+
+  @override
+  String get cmLinkedByYou => 'linked by you';
+
+  @override
+  String get cmDeclared => 'paid off the records';
+
+  @override
+  String get cmOtherAmountTitle => 'This time\'s amount';
+
+  @override
+  String get cmSave => 'Save';
+
+  @override
+  String get cmMoveDate => 'Move this date';
+
+  @override
+  String get cmOtherAmount => 'Another amount this time';
+
+  @override
+  String get cmSkipThisTime => 'Skip this time';
+
+  @override
+  String get cmUndoChange => 'Undo the change';
+
+  @override
+  String cmUnlinkPayment(String p0) {
+    return 'Unlink the $p0 payment';
+  }
+
+  @override
+  String get cmUnlinkKeeps => 'Unlinking keeps the payment in your spending.';
+
+  @override
+  String cmReminderTitle(String p0) {
+    return 'Reminder for $p0';
+  }
+
+  @override
+  String get cmRemindMe => 'Remind me before the date';
+
+  @override
+  String get cmHowEarly => 'How early?';
+
+  @override
+  String get cmAtHour => 'At';
+
+  @override
+  String get cmDueChecksTitle => 'These dates passed. Were they paid?';
+
+  @override
+  String get cmDueChecksBody =>
+      'If you tap «Skip» they count as not paid yet and stay open.';
+
+  @override
+  String get cmSkip => 'Skip';
+
+  @override
+  String cmWasDueOn(String p0) {
+    return 'Was due $p0';
+  }
+
+  @override
+  String get cmPaidOffRecords => 'Paid off the records';
+
+  @override
+  String get cmNotYet => 'Not yet';
+
+  @override
+  String cmPayNamed(String p0) {
+    return 'Paid $p0';
+  }
+
+  @override
+  String cmPayNamedAmount(String p0, String p1) {
+    return 'Paid $p0 · $p1';
+  }
+
+  @override
+  String get cmDueThatDay => 'Due on this day';
+
+  @override
+  String get cmPaidThatDay => 'Paid on this day';
+
+  @override
+  String get cmAddTitle => 'New commitment';
+
+  @override
+  String get cmWhatIsIt => 'What do you want to add?';
+
+  @override
+  String get cmTypeSubscription => 'Subscription';
+
+  @override
+  String get cmTypeSubscriptionHint => 'Netflix, Shahid, Spotify…';
+
+  @override
+  String get cmTypeInstallment => 'Purchase installment';
+
+  @override
+  String get cmTypeInstallmentHint => 'Phone, fridge, car…';
+
+  @override
+  String get cmTypeLoan => 'Loan';
+
+  @override
+  String get cmTypeLoanHint => 'From a bank or company';
+
+  @override
+  String get cmTypeProperty => 'Property installment';
+
+  @override
+  String get cmTypePropertyHint => 'Flat, land, chalet';
+
+  @override
+  String get cmTypeSchool => 'School or university';
+
+  @override
+  String get cmTypeSchoolHint => 'Fees by their installments';
+
+  @override
+  String get cmTypeLessons => 'Lessons';
+
+  @override
+  String get cmTypeLessonsHint => 'Monthly for a tutor or centre';
+
+  @override
+  String get cmTypeRent => 'Rent';
+
+  @override
+  String get cmTypeRentHint => 'Flat or shop';
+
+  @override
+  String get cmTypeBill => 'Bill';
+
+  @override
+  String get cmTypeBillHint => 'Electricity, internet, phone';
+
+  @override
+  String get cmTypeCard => 'Credit card';
+
+  @override
+  String get cmTypeCardHint => 'The card\'s due date';
+
+  @override
+  String get cmTypeDebt => 'Debt or loan to a person';
+
+  @override
+  String get cmTypeDebtHint => 'You owe, or someone owes you';
+
+  @override
+  String get cmTypeGam3eya => 'Gam3eya';
+
+  @override
+  String get cmTypeGam3eyaHint => 'Pay monthly, collect on your turn';
+
+  @override
+  String get cmTypeIncome => 'Salary or income';
+
+  @override
+  String get cmTypeIncomeHint => 'What you receive on a date';
+
+  @override
+  String get cmTypeOther => 'Something else';
+
+  @override
+  String get cmTypeOtherHint => 'Any other payment date';
+
+  @override
+  String get cmSearchSubscriptions => 'Search subscriptions';
+
+  @override
+  String get cmSubscriptionsFailed =>
+      'We couldn\'t load the subscriptions. You can type its name.';
+
+  @override
+  String get cmNotInList => 'Not listed? Type its name';
+
+  @override
+  String get cmNeedTitle => 'Enter its name.';
+
+  @override
+  String get cmNeedAmount => 'Enter the amount.';
+
+  @override
+  String get cmNeedDay => 'Pick the date.';
+
+  @override
+  String get cmNeedCount => 'Enter how many installments are left.';
+
+  @override
+  String get cmNeedSchool => 'Enter the school\'s name.';
+
+  @override
+  String get cmNeedItems =>
+      'Add at least one installment with its date and amount.';
+
+  @override
+  String get cmNeedPerson => 'Enter the person\'s name.';
+
+  @override
+  String get cmNeedInstallments => 'Enter the installment and how many times.';
+
+  @override
+  String get cmNeedMonths => 'Enter how many months it runs.';
+
+  @override
+  String get cmNeedTurn => 'Enter your turn, one of the months.';
+
+  @override
+  String cmSchoolTitle(String p0, String p1) {
+    return '$p1\'s fees · $p0';
+  }
+
+  @override
+  String cmDebtToMeTitle(String p0) {
+    return '$p0 owes me';
+  }
+
+  @override
+  String cmDebtOnMeTitle(String p0) {
+    return 'Owed to $p0';
+  }
+
+  @override
+  String cmCardTitle(String p0) {
+    return '$p0 card';
+  }
+
+  @override
+  String cmLessonsTitle(String p0, String p1) {
+    return '$p0 · $p1';
+  }
+
+  @override
+  String get cmAdded => 'Added. We\'ll remind you before it is due.';
+
+  @override
+  String get cmNotInPlan => 'Commitments aren\'t in your plan right now.';
+
+  @override
+  String get cmSaveFailed => 'We couldn\'t save it. Try again.';
+
+  @override
+  String get cmPickDay => 'Pick a day';
+
+  @override
+  String get cmLoanWhat => 'What is the loan for?';
+
+  @override
+  String get cmLoanWhatHint => 'e.g. Banque Misr loan';
+
+  @override
+  String get cmPropertyWhat => 'What is it?';
+
+  @override
+  String get cmPropertyWhatHint => 'e.g. the flat';
+
+  @override
+  String get cmInstallmentWhat => 'Installment for what?';
+
+  @override
+  String get cmInstallmentWhatHint => 'e.g. the fridge';
+
+  @override
+  String get cmWithWhom => 'With whom? (optional)';
+
+  @override
+  String get cmWithWhomHint => 'valU, a bank, the shop…';
+
+  @override
+  String get cmInstallmentAmount => 'Installment amount';
+
+  @override
+  String get cmNextDay => 'Next date';
+
+  @override
+  String get cmRemainingCount => 'Installments left (with the next one)';
+
+  @override
+  String get cmUniversityName => 'University name';
+
+  @override
+  String get cmSchoolName => 'School name';
+
+  @override
+  String get cmChildName => 'For whom? (optional)';
+
+  @override
+  String get cmChildNameHint => 'e.g. Mohamed';
+
+  @override
+  String get cmFeeInstallments => 'Fee installments';
+
+  @override
+  String cmItemDay(int index) {
+    return 'Installment $index date';
+  }
+
+  @override
+  String get cmItemAmount => 'Amount';
+
+  @override
+  String get cmAddItem => 'Add an installment';
+
+  @override
+  String get cmIOwe => 'I owe';
+
+  @override
+  String get cmOwedToMe => 'Owed to me';
+
+  @override
+  String get cmPersonName => 'Person\'s name';
+
+  @override
+  String get cmPersonNameHint => 'e.g. Farida';
+
+  @override
+  String get cmRelation => 'Relation (optional)';
+
+  @override
+  String get cmRelationHint => 'Sister, friend…';
+
+  @override
+  String get cmDebtTotal => 'Total amount';
+
+  @override
+  String get cmHowRepaid => 'How is it repaid?';
+
+  @override
+  String get cmRepayFlexible => 'Whenever';
+
+  @override
+  String get cmRepayOnce => 'Once, on a date';
+
+  @override
+  String get cmRepayInstallments => 'In installments';
+
+  @override
+  String get cmRepayDay => 'Repaid on';
+
+  @override
+  String get cmFirstInstallmentDay => 'First installment';
+
+  @override
+  String get cmHowManyTimes => 'How many times';
+
+  @override
+  String get cmGam3eyaName => 'Gam3eya name (optional)';
+
+  @override
+  String get cmGam3eyaNameHint => 'e.g. the work gam3eya';
+
+  @override
+  String get cmMonthlyShare => 'Monthly share';
+
+  @override
+  String get cmMonthsCount => 'Months';
+
+  @override
+  String get cmMyTurn => 'Your turn';
+
+  @override
+  String get cmFirstPaymentDay => 'First payment';
+
+  @override
+  String get cmSubscriptionName => 'Subscription name';
+
+  @override
+  String get cmBillWhat => 'Which bill?';
+
+  @override
+  String get cmBillWhatHint => 'e.g. internet';
+
+  @override
+  String get cmCardBank => 'Which bank\'s card?';
+
+  @override
+  String get cmCardBankHint => 'e.g. CIB';
+
+  @override
+  String get cmLessonsWhat => 'Which lessons?';
+
+  @override
+  String get cmLessonsWhatHint => 'e.g. maths lessons';
+
+  @override
+  String get cmIncomeWhat => 'What is it?';
+
+  @override
+  String get cmIncomeWhatHint => 'e.g. salary';
+
+  @override
+  String get cmOtherWhat => 'What is it?';
+
+  @override
+  String get cmAmountVariesSwitch => 'The amount changes each time';
+
+  @override
+  String get cmIncomeAmount => 'Amount received';
+
+  @override
+  String get cmAmount => 'Amount';
+
+  @override
+  String get cmNextIncomeDay => 'Next payday';
+
+  @override
+  String get cmRemindBefore => 'Remind me';
+
+  @override
+  String get cmAfterSaveHint =>
+      'Once saved, when you record paying it we count it for you if we are sure, and ask if not.';
 }

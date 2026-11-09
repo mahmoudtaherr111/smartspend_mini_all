@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../commitments/commitment_api.dart';
+import '../commitments/commitment_models.dart';
+import '../commitments/commitment_ui.dart';
 import 'category_style.dart';
 import 'ledger_models.dart';
 import 'ledger_providers.dart';
@@ -52,6 +55,8 @@ void announceSaved(
     undoLabel: ids.isEmpty ? null : l10n.undo,
     onUndo: ids.isEmpty ? null : () => _undo(context, ref, ids),
   );
+  // A payment of a commitment: says which one it counted for, or asks which one it is (decision 0051).
+  unawaited(announceCommitmentLinks(context, ref, ids));
 }
 
 Future<void> _undo(BuildContext context, WidgetRef ref, List<int> ids) async {
@@ -110,6 +115,13 @@ Future<void> answerAndSave(
 ) async {
   final l10n = AppLocalizations.of(context);
   var current = item;
+  // «دفعت نتفليكس» with no amount: one button pays the commitment the sentence names, for what is due.
+  SentenceCommitment? named;
+  try {
+    named = await ref.read(commitmentApiProvider).forSentence(item.text);
+  } on Object {
+    named = null;
+  }
   while (true) {
     if (!context.mounted) return;
     final question =
@@ -121,7 +133,7 @@ Future<void> answerAndSave(
       if (context.mounted) showSmartSpendNotice(context, question);
       return;
     }
-    final answer = await showSmartSpendSheet<String>(
+    final choice = await showSmartSpendSheet<Object>(
       context: context,
       builder: (sheetContext) => MoneyPrivacy(
         hidden: false,
@@ -130,9 +142,15 @@ Future<void> answerAndSave(
           answerLabel: l10n.clarifyAnswerLabel,
           sendLabel: l10n.clarifySend,
           laterLabel: l10n.clarifyLater,
+          named: named,
         ),
       ),
     );
+    if (choice is SentenceCommitment && context.mounted) {
+      await _payNamed(context, ref, current, choice);
+      return;
+    }
+    final answer = choice is String ? choice : null;
     if (answer == null || answer.trim().isEmpty || !context.mounted) return;
     final result = await ref
         .read(outboxProvider.notifier)
@@ -152,6 +170,47 @@ Future<void> answerAndSave(
     if (waiting == null) return;
     current = waiting;
   }
+}
+
+/// Pays the commitment a sentence named: recorded where the commitment files it and linked to its open date, under
+/// the outbox item's id so a repeated tap is stored once; the server's question about the sentence is then dropped.
+Future<void> _payNamed(
+  BuildContext context,
+  WidgetRef ref,
+  OutboxItem item,
+  SentenceCommitment named,
+) async {
+  final l10n = AppLocalizations.of(context);
+  try {
+    await ref
+        .read(commitmentApiProvider)
+        .pay(
+          named.cashflowId,
+          named.dueDay,
+          amount: named.amount,
+          clientRequestId: item.id,
+        );
+  } on Object {
+    if (context.mounted) showSmartSpendNotice(context, l10n.cmPayFailed);
+    return;
+  }
+  final clarificationId = item.parse?.clarificationId;
+  if (clarificationId != null) {
+    try {
+      await ref.read(ledgerApiProvider).dismissClarification(clarificationId);
+    } on Object {
+      // The question stays in the list of questions; the payment is saved.
+    }
+  }
+  await ref.read(outboxProvider.notifier).discard(item);
+  refreshLedger(ref);
+  refreshCommitments(ref);
+  if (!context.mounted) return;
+  unawaited(SmartSpendHaptics.success());
+  final count = named.number != null && named.total != null
+      ? ' · ${l10n.cmInstallmentOf('${named.number}', '${named.total}')}'
+      : '';
+  showSmartSpendNotice(context, l10n.cmCountedAs('${named.title}$count'));
 }
 
 class _ReviewSheet extends StatelessWidget {
@@ -221,12 +280,16 @@ class _ClarifySheet extends StatefulWidget {
     required this.answerLabel,
     required this.sendLabel,
     required this.laterLabel,
+    this.named,
   });
 
   final String question;
   final String answerLabel;
   final String sendLabel;
   final String laterLabel;
+
+  /// A commitment the sentence names, offered as one tap.
+  final SentenceCommitment? named;
 
   @override
   State<_ClarifySheet> createState() => _ClarifySheetState();
@@ -256,6 +319,21 @@ class _ClarifySheetState extends State<_ClarifySheet> {
         children: [
           Text(widget.question, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: SmartSpendSpacing.lg),
+          if (widget.named case final SentenceCommitment named) ...[
+            SmartSpendButton(
+              key: const ValueKey('pay-named-commitment'),
+              icon: Icons.check_rounded,
+              variant: ButtonVariant.secondary,
+              label: named.amount == null
+                  ? AppLocalizations.of(context).cmPayNamed(named.title)
+                  : AppLocalizations.of(context).cmPayNamedAmount(
+                      named.title,
+                      moneyText(context, named.amount!),
+                    ),
+              onPressed: () => Navigator.pop(context, named),
+            ),
+            const SizedBox(height: SmartSpendSpacing.md),
+          ],
           TextField(
             controller: _answer,
             autofocus: true,

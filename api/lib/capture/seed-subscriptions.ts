@@ -73,6 +73,11 @@ export const SEED_SUBSCRIPTIONS: SeedSubscription[] = [
   { slug: "playstation_plus", name: "PlayStation Plus", nameAr: "بلايستيشن بلس", matchTokens: ["playstation", "sony interactive"], ...other },
   { slug: "xbox_game_pass", name: "Xbox Game Pass", nameAr: "إكس بوكس جيم باس", matchTokens: ["xbox", "microsoft*xbox"], ...other },
 
+  // ─── Delivery and rides: only the membership's own name, never the app's, which every order carries ───
+  { slug: "talabat_pro", name: "talabat pro", nameAr: "طلبات برو", matchTokens: ["talabat pro"], ...other },
+  { slug: "careem_plus", name: "Careem Plus", nameAr: "كريم بلس", matchTokens: ["careem plus"], ...other },
+  { slug: "uber_one", name: "Uber One", nameAr: "أوبر وان", matchTokens: ["uber one"], ...other },
+
   // ─── App stores: the charge names the store, so the service is asked once and remembered ───
   { slug: "google_play", name: "Google Play", nameAr: "جوجل بلاي", kind: "store", matchTokens: ["google *", "google*", "google play"], ...other, cycle: "varies" },
   { slug: "apple_store", name: "Apple (App Store)", nameAr: "أبل (آب ستور)", kind: "store", matchTokens: ["apple.com/bill", "apple.com"], ...other, cycle: "varies" },

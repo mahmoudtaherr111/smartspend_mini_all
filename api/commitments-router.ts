@@ -19,6 +19,7 @@ import {
   commitmentsOverview,
   createCommitment,
   linkExpense,
+  linksForExpenses,
   payDue,
   pendingQuestions,
   replaceScheduleItems,
@@ -185,6 +186,11 @@ export const commitmentsRouter = router({
   answer: commitmentsProcedure
     .input(z.object({ key: z.string().min(3).max(80), answer: z.string().min(2).max(40), amount: amount.nullable().optional() }))
     .mutation(({ ctx, input }) => answerQuestion(me(ctx), input)),
+
+  /** After a save: which commitment each payment paid, or the question to ask about it. */
+  linksFor: commitmentsProcedure
+    .input(z.object({ expenseIds: z.array(z.number().int().positive()).min(1).max(100) }))
+    .query(({ ctx, input }) => linksForExpenses(me(ctx), input.expenseIds)),
 
   /** A sentence that names a commitment with no amount ("دفعت نتفليكس"): the date it would pay, for one button. */
   forSentence: commitmentsProcedure

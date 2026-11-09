@@ -43,7 +43,7 @@ import {
   type CashflowKind,
   type CoachUser,
 } from "./cashflows";
-import { decideMatch, learnedPhrase, matchTokens, type MatchCommitment } from "./matcher";
+import { decideMatch, learnedPhrase, matchTokens, sayHintOf, type MatchCommitment } from "./matcher";
 import { addDays, isCalendarDay, occurrences, type Occurrence, type ScheduleRow, type Shape } from "./schedule";
 
 const log = createLogger("commitments");
@@ -545,7 +545,7 @@ function publicRow(row: CommitmentRow, catalog: Catalog) {
     remindDaysBefore: row.remindDaysBefore, remindHour: row.remindHour, remindersEnabled: row.remindersEnabled,
     catalog: brand ? { slug: brand.slug, name: brand.name, nameAr: brand.nameAr, brandColor: brand.brandColor, logoUrl: brand.logoUrl } : null,
     /** What to say when recording a payment of it: "دفعت قسط مدرسة محمد". */
-    sayHint: `دفعت ${row.title}`,
+    sayHint: sayHintOf(row.kind, row.title),
   };
 }
 
@@ -665,7 +665,52 @@ export interface CommitmentLinkResult {
   remainingAmount?: number | null;
   settlementIds?: number[];
   questionId?: number;
+  /** The key to answer the question with (`commitments.answer`). */
+  questionKey?: string;
   candidates?: Array<{ cashflowId: number; title: string; dueDay: string; amount: number | null }>;
+}
+
+/**
+ * What the matcher did with payments the user just saved: the commitment each paid (with the installment's number and
+ * what is left) and the settlements to undo it, or the open question to ask. The app reads it after a save, so the
+ * offline outbox needs no change.
+ */
+export async function linksForExpenses(user: CoachUser, expenseIds: number[]): Promise<CommitmentLinkResult[]> {
+  if (!expenseIds.length) return [];
+  const settled = await db.select().from(cashflowSettlements).where(and(
+    eq(cashflowSettlements.userId, user.userId), eq(cashflowSettlements.userType, user.userType), inArray(cashflowSettlements.expenseId, expenseIds),
+  ));
+  const questions = await db.select().from(commitmentQuestions).where(and(
+    eq(commitmentQuestions.userId, user.userId), eq(commitmentQuestions.userType, user.userType), eq(commitmentQuestions.status, "open"),
+    inArray(commitmentQuestions.dedupeKey, expenseIds.map((id) => `link:${id}`)),
+  ));
+  const rows = await loadCommitments(user, { ids: [...new Set(settled.map((item) => item.cashflowId))], includeEnded: true });
+  const allSettled = await settlementsOf(user, rows.map((row) => row.id));
+  const today = businessDateKey();
+  return expenseIds.map((expenseId) => {
+    const own = settled.filter((item) => item.expenseId === expenseId);
+    if (own.length) {
+      const row = rows.find((item) => item.id === own[0].cashflowId);
+      if (row) {
+        const [from, to] = span(row, today);
+        const list = occurrences([{ ...row, status: "active" }], allSettled, from, to, today);
+        const last = list.find((item) => item.dueDay === own.at(-1)!.dueDay);
+        return {
+          expenseId, status: "linked" as const, cashflowId: row.id, title: row.title, dueDays: own.map((item) => item.dueDay),
+          number: last?.number ?? null, total: last?.total ?? null,
+          remainingAmount: progressOf({ ...row, status: "active" }, list, today).remainingAmount, settlementIds: own.map((item) => item.id),
+        };
+      }
+    }
+    const question = questions.find((item) => item.dedupeKey === `link:${expenseId}`);
+    if (question) {
+      return {
+        expenseId, status: "ask" as const, questionId: question.id, questionKey: question.dedupeKey,
+        candidates: (question.candidates as Array<{ cashflowId: number; title: string; dueDay: string; amount: number | null }>) ?? [],
+      };
+    }
+    return { expenseId, status: "none" as const };
+  });
 }
 
 /**
