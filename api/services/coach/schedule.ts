@@ -12,6 +12,11 @@
  *   or says it was paid: whether it was paid is unknown, so it is listed, never subtracted, never called overdue.
  *   Earlier ones are not tracked at all.
  * - Money is Decimal: sums of pounds never pick up floating-point pennies.
+ * - Shapes (docs/decisions/0051-commitments-ecosystem.md): `fixed` stops after its installments (the count minus the
+ *   ones paid before the start day), `schedule` is its own dated payments, `gam3eya` stops after its months, `balance`
+ *   with no date is one open due keyed by the day it was added, and `recurring` (or no shape) runs until its end day.
+ *   `intervalCount` steps several units at once (every 3 months). A user's change to one date (skip, move, another
+ *   amount) is an override keyed by the date the rule computes, so settlements keep their key when a date moves.
  */
 import Decimal from "decimal.js";
 
@@ -36,6 +41,39 @@ export interface ScheduleRow {
   trackedFrom?: string | null;
   contactId?: number | null;
   contactName?: string | null;
+  /** Null: recurring (rows from before shapes). */
+  shape?: Shape | null;
+  /** Every how many units (3 monthly = quarterly); 1 when absent. */
+  intervalCount?: number | null;
+  /** Fixed: installments in all; gam3eya: months. */
+  occurrenceCount?: number | null;
+  /** Fixed: installments paid before `startDay`. */
+  paidBeforeCount?: number | null;
+  /** Balance: the debt in all. */
+  totalAmount?: string | number | null;
+  amountVaries?: boolean | null;
+  /** A varying amount's estimate from recent payments; used when the date has no amount of its own. */
+  estimatedAmount?: number | null;
+  items?: ScheduleItem[];
+  overrides?: ScheduleOverride[];
+  parentId?: number | null;
+}
+
+export type Shape = "fixed" | "schedule" | "recurring" | "balance" | "gam3eya";
+
+/** One dated payment of a schedule-shaped commitment. */
+export interface ScheduleItem {
+  dueDay: string;
+  amount: string | number | null;
+  label?: string | null;
+}
+
+/** The user's change to one computed date. */
+export interface ScheduleOverride {
+  dueDay: string;
+  action: "skip" | "move" | "amount";
+  newDay?: string | null;
+  amount?: string | number | null;
 }
 
 export interface SettlementRow {
@@ -45,7 +83,7 @@ export interface SettlementRow {
   expenseId: number | null;
 }
 
-export type DueStatus = "paid" | "partial" | "due" | "overdue" | "unconfirmed";
+export type DueStatus = "paid" | "partial" | "due" | "overdue" | "unconfirmed" | "skipped";
 
 export interface Occurrence {
   cashflowId: number;
@@ -61,6 +99,18 @@ export interface Occurrence {
   /** What is still owed (or still to come in); null when the amount is unknown. */
   remaining: number | null;
   status: DueStatus;
+  /** The day it is due after the user's move; `dueDay` stays the key settlements use. */
+  effectiveDay?: string;
+  /** Installment 5 of 12; null for open-ended commitments. */
+  number?: number | null;
+  total?: number | null;
+  /** A schedule item's label ("وديعة صيانة"). */
+  label?: string | null;
+  /** The amount is an estimate (a varying bill). */
+  estimated?: boolean;
+  /** A debt with no date: open until paid, never overdue. */
+  undated?: boolean;
+  shape?: Shape;
 }
 
 const DAY_MS = 86_400_000;
@@ -112,45 +162,84 @@ function yearlyDue(anchor: string, index: number): string {
   return key(y + index, m, Math.min(d, daysInMonth(y + index, m)));
 }
 
-/** Every due day of a schedule in [from, to], both included. */
-export function dueDays(row: Pick<ScheduleRow, "recurrence" | "startDay" | "endDay">, from: string, to: string): string[] {
-  if (!row.startDay || !isCalendarDay(row.startDay) || !isCalendarDay(from) || !isCalendarDay(to) || (row.endDay && !isCalendarDay(row.endDay)) || to < from) return [];
-  const last = row.endDay && row.endDay < to ? row.endDay : to;
-  const out: string[] = [];
-  const push = (day: string) => {
-    if (day >= from && day <= last && day >= row.startDay!) out.push(day);
-  };
+type DueRow = Pick<ScheduleRow, "recurrence" | "startDay" | "endDay"> &
+  Partial<Pick<ScheduleRow, "shape" | "intervalCount" | "occurrenceCount" | "paidBeforeCount" | "items" | "trackedFrom">>;
+
+interface DueEntry {
+  day: string;
+  /** 0-based position in the rule's sequence (or in the schedule's items). */
+  index: number;
+}
+
+function nthDue(row: DueRow, index: number, step: number): string | null {
+  const start = row.startDay!;
   switch (row.recurrence) {
-    case "once":
-      push(row.startDay);
-      break;
-    case "weekly": {
-      const skip = Math.max(0, Math.floor(daysBetween(row.startDay, from) / 7));
-      for (let day = addDays(row.startDay, skip * 7); day <= last; day = addDays(day, 7)) push(day);
-      break;
-    }
-    case "monthly": {
-      const [sy, sm] = parts(row.startDay);
-      const [fy, fm] = parts(from);
-      const start = Math.max(0, (fy - sy) * 12 + (fm - sm) - 1);
-      for (let index = start; ; index += 1) {
-        const day = monthlyDue(row.startDay, index);
-        if (day > last) break;
-        push(day);
-      }
-      break;
-    }
-    case "yearly": {
-      const start = Math.max(0, parts(from)[0] - parts(row.startDay)[0] - 1);
-      for (let index = start; ; index += 1) {
-        const day = yearlyDue(row.startDay, index);
-        if (day > last) break;
-        push(day);
-      }
-      break;
-    }
+    case "once": return index === 0 ? start : null;
+    case "weekly": return addDays(start, index * step * 7);
+    case "monthly": return monthlyDue(start, index * step);
+    case "yearly": return yearlyDue(start, index * step);
+  }
+  return null;
+}
+
+/** How many installments a rule may still produce: the count minus those paid before, or unlimited. */
+function countLimit(row: DueRow): number {
+  if (row.occurrenceCount == null) return Number.POSITIVE_INFINITY;
+  const count = Math.max(0, Math.floor(row.occurrenceCount));
+  if (row.shape === "gam3eya") return count;
+  if (row.shape === "fixed" || row.shape === "balance") return Math.max(0, count - Math.max(0, Math.floor(row.paidBeforeCount ?? 0)));
+  return count;
+}
+
+function dueEntries(row: DueRow, from: string, to: string): DueEntry[] {
+  if (!isCalendarDay(from) || !isCalendarDay(to) || to < from) return [];
+  if (row.shape === "schedule") {
+    const days = [...new Set((row.items ?? []).map((item) => item.dueDay).filter(isCalendarDay))].sort();
+    return days.map((day, index) => ({ day, index })).filter((entry) => entry.day >= from && entry.day <= to);
+  }
+  if (row.shape === "balance" && !row.startDay) {
+    // A debt "on his own time": one open due, keyed by the day it was added.
+    const anchor = row.trackedFrom;
+    return anchor && isCalendarDay(anchor) && anchor >= from && anchor <= to ? [{ day: anchor, index: 0 }] : [];
+  }
+  if (!row.startDay || !isCalendarDay(row.startDay) || (row.endDay && !isCalendarDay(row.endDay))) return [];
+  const last = row.endDay && row.endDay < to ? row.endDay : to;
+  const step = Math.max(1, Math.floor(row.intervalCount ?? 1));
+  const limit = countLimit(row);
+  const out: DueEntry[] = [];
+  const push = (day: string, index: number) => {
+    if (day >= from && day <= last && day >= row.startDay!) out.push({ day, index });
+  };
+  if (row.recurrence === "once") {
+    if (limit > 0) push(row.startDay, 0);
+    return out;
+  }
+  // Skip whole units before the window; a counted rule starts from its first installment.
+  let first = 0;
+  if (!Number.isFinite(limit)) {
+    const [sy, sm] = parts(row.startDay);
+    const [fy, fm] = parts(from);
+    const units = row.recurrence === "weekly" ? Math.floor(daysBetween(row.startDay, from) / 7)
+      : row.recurrence === "monthly" ? (fy - sy) * 12 + (fm - sm)
+      : fy - sy;
+    first = Math.max(0, Math.floor((units - 1) / step));
+  }
+  for (let index = first; index < limit; index += 1) {
+    const day = nthDue(row, index, step);
+    if (!day || day > last) break;
+    push(day, index);
   }
   return out;
+}
+
+/** Every due day of a schedule in [from, to], both included: the dates its rule computes, before any override. */
+export function dueDays(row: DueRow, from: string, to: string): string[] {
+  return dueEntries(row, from, to).map((entry) => entry.day);
+}
+
+/** The direction money moves on a due date: a gam3eya's payout row receives, everything else follows its row. */
+export function directionOf(row: Pick<ScheduleRow, "direction">): "in" | "out" {
+  return row.direction === "in" ? "in" : "out";
 }
 
 const money = (value: string | number | null | undefined): Decimal | null =>
@@ -176,33 +265,68 @@ export function occurrences(
     const lastBefore = row.trackedFrom
       ? dueDays(row, addDays(row.trackedFrom, -45), addDays(row.trackedFrom, -1)).at(-1) ?? null
       : null;
-    for (const dueDay of dueDays(row, from, to)) {
+    const overrides = new Map((row.overrides ?? []).filter((item) => isCalendarDay(item.dueDay)).map((item) => [item.dueDay, item]));
+    const entries = dueEntries(row, from, to);
+    // A date moved into the window from outside it.
+    for (const change of overrides.values()) {
+      if (change.action !== "move" || !change.newDay || change.newDay < from || change.newDay > to) continue;
+      if (entries.some((entry) => entry.day === change.dueDay)) continue;
+      entries.push(...dueEntries(row, change.dueDay, change.dueDay));
+    }
+    const itemByDay = new Map((row.items ?? []).map((item) => [item.dueDay, item]));
+    const scheduleTotal = row.shape === "schedule" ? new Set((row.items ?? []).map((item) => item.dueDay)).size : null;
+    for (const { day: dueDay, index } of entries) {
+      const change = overrides.get(dueDay);
+      const effectiveDay = change?.action === "move" && change.newDay && isCalendarDay(change.newDay) ? change.newDay : dueDay;
+      if (effectiveDay < from || effectiveDay > to) continue;
       const untracked = Boolean(row.trackedFrom && dueDay < row.trackedFrom && !paidBy.has(`${row.id}:${dueDay}`));
       if (untracked && dueDay !== lastBefore) continue;
-      const amount = money(row.amount);
+      const undated = row.shape === "balance" && !row.startDay;
+      let estimated = false;
+      let amount = change?.action === "amount" ? money(change.amount) : null;
+      if (!amount && row.shape === "schedule") amount = money(itemByDay.get(dueDay)?.amount);
+      if (!amount && undated) amount = money(row.totalAmount);
+      if (!amount) amount = money(row.amount);
+      if (!amount && row.amountVaries && row.estimatedAmount != null && row.estimatedAmount > 0) {
+        amount = new Decimal(row.estimatedAmount);
+        estimated = true;
+      }
       const paid = paidBy.get(`${row.id}:${dueDay}`) ?? new Decimal(0);
       const remaining = amount ? Decimal.max(0, amount.minus(paid)) : null;
       const settled = amount ? remaining!.isZero() : paid.gt(0);
-      const status: DueStatus = untracked
-        ? "unconfirmed"
-        : settled ? "paid" : paid.gt(0) ? "partial" : dueDay < today ? "overdue" : "due";
+      const status: DueStatus = change?.action === "skip" && !settled
+        ? "skipped"
+        : untracked
+          ? "unconfirmed"
+          : settled ? "paid" : paid.gt(0) ? "partial" : !undated && effectiveDay < today ? "overdue" : "due";
+      const counted = row.shape === "fixed" || (row.shape === "balance" && row.occurrenceCount != null);
+      const number = counted ? Math.max(0, Math.floor(row.paidBeforeCount ?? 0)) + index + 1
+        : row.shape === "schedule" || row.shape === "gam3eya" ? index + 1 : null;
+      const total = row.shape === "schedule" ? scheduleTotal : counted || row.shape === "gam3eya" ? row.occurrenceCount ?? null : null;
       out.push({
         cashflowId: row.id,
         contactId: row.contactId ?? null,
         contactName: row.contactName ?? null,
         title: row.title,
         kind: row.kind,
-        direction: row.direction,
+        direction: directionOf(row),
         certainty: row.certainty,
         dueDay,
         amount: amount ? amount.toNumber() : null,
         paid: paid.toNumber(),
         remaining: remaining ? remaining.toNumber() : null,
         status,
+        effectiveDay,
+        number: row.parentId ? null : number,
+        total: row.parentId ? null : total,
+        label: row.shape === "schedule" ? itemByDay.get(dueDay)?.label ?? null : null,
+        estimated,
+        undated,
+        shape: row.shape ?? "recurring",
       });
     }
   }
-  return out.sort((a, b) => a.dueDay.localeCompare(b.dueDay) || a.cashflowId - b.cashflowId);
+  return out.sort((a, b) => (a.effectiveDay ?? a.dueDay).localeCompare(b.effectiveDay ?? b.dueDay) || a.cashflowId - b.cashflowId);
 }
 
 /**
@@ -252,15 +376,20 @@ export function cashPosition(input: {
   wallets: Array<{ balance: string | number | null; observedAt: Date | null }>;
   rows: ScheduleRow[];
   settlements: SettlementRow[];
+  /** How far back an unpaid date is still owed; 45 days unless the caller keeps them longer. */
+  overdueLookbackDays?: number;
 }): CashPosition {
   const payday = nextPayday(input.today, input.salaryDay);
   const [y, m] = parts(input.today);
   const until = payday ?? (m === 12 ? key(y + 1, 1, 1) : key(y, m + 1, 1));
+  const lookback = Math.max(1, Math.floor(input.overdueLookbackDays ?? 45));
   const window = occurrences(input.rows, input.settlements, input.today, addDays(until, -1), input.today)
     // Overdue ones before today are still owed; include them too.
-    .concat(occurrences(input.rows, input.settlements, addDays(input.today, -45), addDays(input.today, -1), input.today)
-      .filter((occurrence) => occurrence.status === "overdue" || occurrence.status === "partial" || occurrence.status === "unconfirmed"));
-  const open = (occurrence: Occurrence) => occurrence.status !== "paid" && occurrence.status !== "unconfirmed";
+    .concat(occurrences(input.rows, input.settlements, addDays(input.today, -lookback), addDays(input.today, -1), input.today)
+      .filter((occurrence) => occurrence.status === "overdue" || occurrence.status === "partial" || occurrence.status === "unconfirmed"))
+    // A debt with no date is not due in any window: it is listed with the undated ones.
+    .filter((occurrence) => !occurrence.undated);
+  const open = (occurrence: Occurrence) => occurrence.status !== "paid" && occurrence.status !== "unconfirmed" && occurrence.status !== "skipped";
   const out = window.filter((occurrence) => occurrence.direction === "out" && open(occurrence));
   const incoming = window.filter((occurrence) => occurrence.direction === "in" && open(occurrence));
   const sum = (list: Occurrence[]) => list.reduce((total, occurrence) => total.plus(occurrence.remaining ?? 0), new Decimal(0));
@@ -284,7 +413,7 @@ export function cashPosition(input: {
     duesUnknownAmount: out.filter((occurrence) => occurrence.remaining === null),
     duesUnconfirmed: window.filter((occurrence) => occurrence.status === "unconfirmed"),
     undated: input.rows
-      .filter((row) => row.status === "active" && !row.startDay)
+      .filter((row) => row.status === "active" && !row.startDay && !(row.shape === "schedule" && (row.items ?? []).length > 0))
       .map((row) => ({ title: row.title, amount: money(row.amount)?.toNumber() ?? null, direction: row.direction })),
     incomeConfirmed: confirmed.toNumber(),
     incomeEstimated: estimated.toNumber(),

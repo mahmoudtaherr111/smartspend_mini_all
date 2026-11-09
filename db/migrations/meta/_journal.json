@@ -351,6 +351,13 @@
       "when": 1793905918416,
       "tag": "0049_chilly_mister_sinister",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "5",
+      "when": 1794046125531,
+      "tag": "0050_commitments_ecosystem",
+      "breakpoints": true
     }
   ]
 }

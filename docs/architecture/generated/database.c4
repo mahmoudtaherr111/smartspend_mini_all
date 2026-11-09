@@ -277,7 +277,7 @@ model {
     }
     cashflow_settlements = table 'cashflow_settlements' {
       #classC #dualOwner
-      description '9 columns, 3 indexes, storage class C.'
+      description '10 columns, 3 indexes, storage class C.'
       metadata {
         export 'cashflowSettlements'
         storageClass 'C'
@@ -320,6 +320,46 @@ model {
       description '17 columns, 3 indexes, storage class C.'
       metadata {
         export 'coachingSteps'
+        storageClass 'C'
+      }
+    }
+    commitment_hints = table 'commitment_hints' {
+      #classC #dualOwner
+      description '8 columns, 2 indexes, storage class C.'
+      metadata {
+        export 'commitmentHints'
+        storageClass 'C'
+      }
+    }
+    commitment_overrides = table 'commitment_overrides' {
+      #classC #dualOwner
+      description '9 columns, 2 indexes, storage class C.'
+      metadata {
+        export 'commitmentOverrides'
+        storageClass 'C'
+      }
+    }
+    commitment_questions = table 'commitment_questions' {
+      #classD #dualOwner
+      description '13 columns, 2 indexes, storage class D.'
+      metadata {
+        export 'commitmentQuestions'
+        storageClass 'D'
+      }
+    }
+    commitment_reminders = table 'commitment_reminders' {
+      #classE #dualOwner
+      description '8 columns, 2 indexes, storage class E.'
+      metadata {
+        export 'commitmentReminders'
+        storageClass 'E'
+      }
+    }
+    commitment_schedule_items = table 'commitment_schedule_items' {
+      #classC #dualOwner
+      description '7 columns, 2 indexes, storage class C.'
+      metadata {
+        export 'commitmentScheduleItems'
         storageClass 'C'
       }
     }
@@ -373,7 +413,7 @@ model {
     }
     installment_plans = table 'installment_plans' {
       #classC #dualOwner
-      description '11 columns, 1 indexes, storage class C.'
+      description '12 columns, 1 indexes, storage class C.'
       metadata {
         export 'installmentPlans'
         storageClass 'C'
@@ -469,7 +509,7 @@ model {
     }
     scheduled_cashflows = table 'scheduled_cashflows' {
       #classC #dualOwner
-      description '18 columns, 2 indexes, storage class C.'
+      description '35 columns, 2 indexes, storage class C.'
       metadata {
         export 'scheduledCashflows'
         storageClass 'C'

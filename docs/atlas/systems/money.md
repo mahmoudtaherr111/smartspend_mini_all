@@ -46,6 +46,8 @@ flowchart LR
     tbl_classification_logs[("classification_logs")]
     tbl_coaching_plans[("coaching_plans")]
     tbl_coaching_steps[("coaching_steps")]
+    tbl_commitment_overrides[("commitment_overrides")]
+    tbl_commitment_schedule_items[("commitment_schedule_items")]
     tbl_expense_daily_rollups[("expense_daily_rollups")]
     tbl_expenses[("expenses")]
     tbl_financial_goals[("financial_goals")]
@@ -78,6 +80,8 @@ flowchart LR
   mod_coaching --> sys_ai_center
   mod_coaching --> sys_expense_capture
   mod_coaching --> sys_platform
+  mod_coaching -.-> tbl_commitment_overrides
+  mod_coaching -.-> tbl_commitment_schedule_items
   mod_coaching -.-> tbl_expenses
   mod_coaching -.-> tbl_installment_plans
   mod_coaching -.-> tbl_user_contacts
@@ -187,7 +191,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `coaching` — Commitments and coaching plans | Scheduled commitments and expected income with their due dates (the 31st on a short month's last day), the payments linked to each due date without counting one twice, what is free until the next payday from the recorded wallets, the coaching plan the user accepted with its steps, and in-app reminders delivered once per step revision. | 3 |
+| `coaching` — Commitments and coaching plans | Scheduled commitments and expected income with their due dates (the 31st on a short month's last day), the payments linked to each due date without counting one twice, what is free until the next payday from the recorded wallets, the coaching plan the user accepted with its steps, and in-app reminders delivered once per step revision. | 4 |
 | `ledger` — Ledger writer and aggregates | The ledger writer (adding, changing and removing an expense row in one transaction with its signed amount, rollup delta, contact count, settlements and the streak, then clearing muscle memory and the finance caches and checking budgets), daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), salary-cycle month ranges, installment-plan progress, and Egyptian season date ranges (Ramadan and the Eids from the Hijri calendar, school and summer). | 11 |
 | `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses, goals, and the cards and wallets screen. | 20 |
 
@@ -273,6 +277,8 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `classification_logs` | E | `expense.update` | `expense.update` |
 | `coaching_plans` | C | `coaching` | `coaching` |
 | `coaching_steps` | C | `coaching` | `coaching` |
+| `commitment_overrides` | C | — | `coaching` |
+| `commitment_schedule_items` | C | — | `coaching` |
 | `expense_daily_rollups` | C | `ledger` | `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getYearlyStats`, `ledger` |
 | `expenses` | B | `business.delete`, `ledger`, `profile.deleteContact`, `profile.mergeContacts`, `wallet.deleteWallet` | `coaching`, `expense.getById`, `expense.getMonthlyStats`, `expense.getSeasonSpending`, `expense.list`, `expense.listInstallmentPlans`, `expense.searchTransactions`, `export.myExpenses`, `goals.analyze`, `ledger`, `profile.listContacts`, `profile.mergeContacts`, `wallet.getWalletMonth`, `wallet.getWalletTransactions` |
 | `financial_goals` | C | `goals.analyze`, `goals.create`, `goals.delete`, `goals.setStatus` | `goals.analyze`, `goals.create`, `goals.list` |
@@ -309,7 +315,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/money.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>70 files and declarations</summary>
+<details><summary>71 files and declarations</summary>
 
 - `api/boot.ts#job:coaching-reminders`
 - `api/boot.ts#job:nightly-rollup-reconciliation`
@@ -346,6 +352,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/profile-router.ts#rest-of-file`
 - `api/services/budget-status.ts`
 - `api/services/coach/cashflows.ts`
+- `api/services/coach/matcher.ts`
 - `api/services/coach/plans.ts`
 - `api/services/coach/schedule.ts`
 - `api/services/debt-ledger.ts`

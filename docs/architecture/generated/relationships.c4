@@ -59,6 +59,11 @@ model {
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.coaching_plans
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.coaching_steps
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.commitment_hints
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.commitment_overrides
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.commitment_questions
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.commitment_reminders
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.commitment_schedule_items
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.expense_categories
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.expenses
@@ -428,6 +433,8 @@ model {
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.cashflow_settlements
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.coaching_plans
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.coaching_steps
+  smartspend.api.modules.coaching -[reads]-> smartspend.mysql.commitment_overrides
+  smartspend.api.modules.coaching -[reads]-> smartspend.mysql.commitment_schedule_items
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.installment_plans
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.scheduled_cashflows

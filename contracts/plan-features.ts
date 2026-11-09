@@ -17,7 +17,11 @@ export type PlanFeature =
   | "receipts"
   | "pro_report"
   | "goal_analysis"
-  | "whatsapp_report";
+  | "whatsapp_report"
+  | "commitments"
+  | "commitment_reminders"
+  | "commitment_whatsapp"
+  | "commitment_capture_link";
 
 /** On/off per plan. Setting key: `feature_<feature>_<plan>`, value "true" or "false". */
 export const PLAN_FEATURE_DEFAULTS: Record<PlanFeature, Record<PlanId, boolean>> = {
@@ -27,6 +31,12 @@ export const PLAN_FEATURE_DEFAULTS: Record<PlanFeature, Record<PlanId, boolean>>
   goal_analysis: { free: false, pro: true, ultra: true },
   // Ultra was once left out by the job's query, not by a decision: the dearer plan includes it too.
   whatsapp_report: { free: false, pro: true, ultra: true },
+  // The commitments ecosystem (docs/decisions/0051-commitments-ecosystem.md): everything for every plan, except
+  // WhatsApp reminders, which cost a message each.
+  commitments: { free: true, pro: true, ultra: true },
+  commitment_reminders: { free: true, pro: true, ultra: true },
+  commitment_whatsapp: { free: false, pro: true, ultra: true },
+  commitment_capture_link: { free: true, pro: true, ultra: true },
 };
 
 /** Numbers per plan that had no setting. Setting key: `<name>_<plan>`. 0 means no limit. */
@@ -42,6 +52,8 @@ export const PLAN_NUMBER_DEFAULTS = {
   capture_monthly_limit: { free: 50, pro: 0, ultra: 0 },
   // Phones one user may send captured messages from at a time (decision 0033).
   capture_devices: { free: 2, pro: 5, ultra: 5 },
+  // Active commitments (installments, bills, debts, gam3eyas) one user may keep (decision 0051).
+  commitments_active_limit: { free: 0, pro: 0, ultra: 0 },
 } as const satisfies Record<string, Record<PlanId, number>>;
 
 export type PlanNumber = keyof typeof PLAN_NUMBER_DEFAULTS;
@@ -103,4 +115,8 @@ export const PLAN_FEATURE_LABELS: Record<PlanFeature, string> = {
   pro_report: "تقرير Pro للطباعة",
   goal_analysis: "تحليل الأهداف بالذكاء الاصطناعي",
   whatsapp_report: "التقرير الشهري على واتساب",
+  commitments: "الالتزامات والأقساط والديون",
+  commitment_reminders: "تذكير الالتزامات بالإشعارات",
+  commitment_whatsapp: "تذكير الالتزامات على واتساب",
+  commitment_capture_link: "ربط رسايل البنوك بالالتزامات",
 };

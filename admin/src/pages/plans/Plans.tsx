@@ -14,6 +14,10 @@ const FEATURE_HINTS: Record<PlanFeature, string> = {
   pro_report: "تقرير شهري مفصّل يتطبع أو يتبعت.",
   goal_analysis: "الذكاء الاصطناعي يقول الهدف ممكن في قد إيه وإزاي.",
   whatsapp_report: "ملخص الشهر على واتساب أول كل شهر، لو المستخدم سايبه شغال.",
+  commitments: "الأقساط والفواتير والمدارس والديون والجمعيات، وربط الدفع بيها من التسجيل العادي.",
+  commitment_reminders: "إشعار قبل الميعاد ويومه ولو اتأخر.",
+  commitment_whatsapp: "نفس التذكيرات على واتساب، لو الأدمن شغّلها من «الالتزامات» والمستخدم وافق.",
+  commitment_capture_link: "دفعة جاية من رسالة بنك أو محفظة تتربط بالقسط بتاعها.",
 };
 
 const FEATURES: Row[] = [
@@ -52,6 +56,7 @@ const OTHER_LIMITS: Row[] = [
   { kind: "number", label: "عمليات تتسجل من غير نت", hint: "تستنى على الموبايل لحد ما النت يرجع.", key: (plan) => `offline_limit_${plan}`, unit: "عملية" },
   { kind: "number", label: "عمليات من رسايل البنك في الشهر", hint: "بعدها بتتعلق وتتسجل لو اشترك. 0 = من غير حد.", key: (plan) => `capture_monthly_limit_${plan}`, unit: "عملية" },
   { kind: "number", label: "موبايلات بتبعت رسايل البنك", hint: "لكل مستخدم في نفس الوقت.", key: (plan) => `capture_devices_${plan}`, unit: "موبايل" },
+  { kind: "number", label: "التزامات شغالة في نفس الوقت", hint: "أقساط وفواتير وديون وجمعيات. 0 = من غير حد.", key: (plan) => `commitments_active_limit_${plan}`, unit: "التزام" },
 ];
 
 const TABS = [

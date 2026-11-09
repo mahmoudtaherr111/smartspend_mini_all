@@ -71,6 +71,11 @@ flowchart LR
     tbl_classification_logs[("classification_logs")]
     tbl_coaching_plans[("coaching_plans")]
     tbl_coaching_steps[("coaching_steps")]
+    tbl_commitment_hints[("commitment_hints")]
+    tbl_commitment_overrides[("commitment_overrides")]
+    tbl_commitment_questions[("commitment_questions")]
+    tbl_commitment_reminders[("commitment_reminders")]
+    tbl_commitment_schedule_items[("commitment_schedule_items")]
     tbl_expense_categories[("expense_categories")]
     tbl_expense_daily_rollups[("expense_daily_rollups")]
     tbl_expenses[("expenses")]
@@ -150,6 +155,11 @@ flowchart LR
   mod_accounts ==> tbl_classification_logs
   mod_accounts ==> tbl_coaching_plans
   mod_accounts ==> tbl_coaching_steps
+  mod_accounts ==> tbl_commitment_hints
+  mod_accounts ==> tbl_commitment_overrides
+  mod_accounts ==> tbl_commitment_questions
+  mod_accounts ==> tbl_commitment_reminders
+  mod_accounts ==> tbl_commitment_schedule_items
   mod_accounts ==> tbl_expense_categories
   mod_accounts ==> tbl_expense_daily_rollups
   mod_accounts ==> tbl_expenses
@@ -348,6 +358,11 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `classification_logs` | E | `accounts` | — |
 | `coaching_plans` | C | `accounts` | — |
 | `coaching_steps` | C | `accounts` | — |
+| `commitment_hints` | C | `accounts` | — |
+| `commitment_overrides` | C | `accounts` | — |
+| `commitment_questions` | D | `accounts` | — |
+| `commitment_reminders` | E | `accounts` | — |
+| `commitment_schedule_items` | C | `accounts` | — |
 | `expense_categories` | A | `accounts` | — |
 | `expense_daily_rollups` | C | `accounts` | — |
 | `expenses` | B | `accounts` | `localAuth.getStats`, `localAuth.listUsers` |

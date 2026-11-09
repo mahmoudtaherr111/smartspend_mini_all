@@ -41,6 +41,11 @@ import {
   installmentPlans,
   scheduledCashflows,
   cashflowSettlements,
+  commitmentScheduleItems,
+  commitmentOverrides,
+  commitmentHints,
+  commitmentReminders,
+  commitmentQuestions,
   coachingPlans,
   coachingSteps,
   userBusinesses,
@@ -146,6 +151,11 @@ export async function purgeUserData(
   await tx.delete(userBudgets).where(userScope(userBudgets, userId, userType));
   await tx.delete(installmentPlans).where(userScope(installmentPlans, userId, userType));
   await tx.delete(cashflowSettlements).where(userScope(cashflowSettlements, userId, userType));
+  await tx.delete(commitmentQuestions).where(userScope(commitmentQuestions, userId, userType));
+  await tx.delete(commitmentReminders).where(userScope(commitmentReminders, userId, userType));
+  await tx.delete(commitmentHints).where(userScope(commitmentHints, userId, userType));
+  await tx.delete(commitmentOverrides).where(userScope(commitmentOverrides, userId, userType));
+  await tx.delete(commitmentScheduleItems).where(userScope(commitmentScheduleItems, userId, userType));
   await tx.delete(scheduledCashflows).where(userScope(scheduledCashflows, userId, userType));
   await tx.delete(coachingSteps).where(userScope(coachingSteps, userId, userType));
   await tx.delete(coachingPlans).where(userScope(coachingPlans, userId, userType));

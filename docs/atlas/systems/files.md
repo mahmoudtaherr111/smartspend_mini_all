@@ -221,6 +221,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/ai-memory/vector-store.ts` | [ai-center](ai-center.md) |
 | `api/services/budget-status.ts` | [money](money.md) |
 | `api/services/coach/cashflows.ts` | [money](money.md) |
+| `api/services/coach/matcher.ts` | [money](money.md) |
 | `api/services/coach/plans.ts` | [money](money.md) |
 | `api/services/coach/schedule.ts` | [money](money.md) |
 | `api/services/debt-ledger.ts` | [money](money.md) |

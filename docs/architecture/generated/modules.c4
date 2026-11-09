@@ -125,7 +125,7 @@ model {
     coaching = module 'Commitments and coaching plans' {
       description 'Scheduled commitments and expected income with their due dates (the 31st on a short month’s last day), the payments linked to each due date without counting one twice, what is free until the next payday from the recorded wallets, the coaching plan the user accepted with its steps, and in-app reminders delivered once per step revision.'
       metadata {
-        files '3'
+        files '4'
         paths 'api/services/coach/**'
       }
     }

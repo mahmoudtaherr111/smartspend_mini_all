@@ -811,6 +811,8 @@ export const installmentPlans = mysqlTable(
     totalInstallments: int("total_installments").notNull(),
     paidBefore: int("paid_before").notNull().default(0),
     status: varchar("status", { length: 30 }).notNull().default("active"),
+    /** The commitment this plan became (docs/decisions/0051-commitments-ecosystem.md); the plan is kept for old apps. */
+    cashflowId: int("cashflow_id"),
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
     updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
   },
@@ -875,6 +877,42 @@ export const scheduledCashflows = mysqlTable(
     /** The installment plan this schedule belongs to, so a plan is never a second, separate commitment. */
     installmentPlanId: int("installment_plan_id"),
     contactId: int("contact_id"),
+    /**
+     * The logic of the commitment (docs/decisions/0051-commitments-ecosystem.md): fixed (equal installments, a count),
+     * schedule (dated payments of their own amounts: school, an apartment), recurring (open-ended: rent, bills, salary),
+     * balance (a debt with a person) or gam3eya (contributions, then one payout). Null on rows from before: recurring.
+     */
+    shape: varchar("shape", { length: 12 }),
+    /** Who is paid or who collects: valU, a bank, a shop, a school. A person is `contactId`. */
+    provider: varchar("provider", { length: 80 }),
+    /** Whom it is for: the child a school fee is for. */
+    beneficiaryContactId: int("beneficiary_contact_id"),
+    /** Every how many recurrence units (3 monthly = quarterly). */
+    intervalCount: int("interval_count").notNull().default(1),
+    /** Fixed: the number of installments in all; gam3eya: the months. Null: open-ended. */
+    occurrenceCount: int("occurrence_count"),
+    /** Fixed: installments paid before `startDay`, the first one still owed. */
+    paidBeforeCount: int("paid_before_count").notNull().default(0),
+    /** Balance: what the debt is in all; null for the other shapes. */
+    totalAmount: decimal("total_amount", { precision: 12, scale: 2 }),
+    /** The amount changes from time to time (bills): a due date's amount is an estimate. */
+    amountVaries: boolean("amount_varies").notNull().default(false),
+    /** cash | app | auto_debit | salary | card: how it is usually paid. */
+    paymentMethod: varchar("payment_method", { length: 20 }),
+    /** Gam3eya: the user's turn, 1-based. */
+    gam3eyaTurn: int("gam3eya_turn"),
+    /** A gam3eya's payout (direction in) belongs to its contributions' row; null otherwise. */
+    parentId: int("parent_id"),
+    /** Where a linked payment is filed when the user did not say; null: the shape's default. */
+    category: varchar("category", { length: 100 }),
+    subCategory: varchar("sub_category", { length: 100 }),
+    /** Balance: the ledger row the debt began with ("سلفت فريدة 1000"). */
+    originExpenseId: int("origin_expense_id"),
+    /** Days before a due date to remind; null: the admin's default for the shape. */
+    remindDaysBefore: int("remind_days_before"),
+    /** Hour of the day, Cairo time; null: the admin's default. */
+    remindHour: int("remind_hour"),
+    remindersEnabled: boolean("reminders_enabled").notNull().default(true),
     /** active | paused | ended */
     status: varchar("status", { length: 20 }).notNull().default("active"),
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -883,6 +921,125 @@ export const scheduledCashflows = mysqlTable(
   (t) => [
     index("scheduled_cashflows_user_idx").on(t.userId, t.userType, t.status),
     uniqueIndex("scheduled_cashflows_plan_unique").on(t.userId, t.userType, t.installmentPlanId),
+  ],
+);
+
+/** The dated payments of a schedule-shaped commitment (a school's three installments, an apartment's plan). */
+export const commitmentScheduleItems = mysqlTable(
+  "commitment_schedule_items",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    cashflowId: int("cashflow_id").notNull(),
+    dueDay: date("due_day", { mode: "string" }).notNull(),
+    amount: decimal("amount", { precision: 12, scale: 2 }),
+    /** "مقدم", "وديعة صيانة", "الباص". */
+    label: varchar("label", { length: 80 }),
+  },
+  (t) => [
+    index("commitment_schedule_items_user_idx").on(t.userId, t.userType, t.cashflowId),
+    uniqueIndex("commitment_schedule_items_day_unique").on(t.cashflowId, t.dueDay),
+  ],
+);
+
+/**
+ * One due date changed by the user: skipped ("اتلغت المرة دي"), moved to another day, or another amount this time.
+ * Keyed by the date the schedule computes, so the rule and its exceptions stay apart (like a calendar's exceptions).
+ */
+export const commitmentOverrides = mysqlTable(
+  "commitment_overrides",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    cashflowId: int("cashflow_id").notNull(),
+    dueDay: date("due_day", { mode: "string" }).notNull(),
+    /** skip | move | amount */
+    action: varchar("action", { length: 10 }).notNull(),
+    newDay: date("new_day", { mode: "string" }),
+    amount: decimal("amount", { precision: 12, scale: 2 }),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("commitment_overrides_user_idx").on(t.userId, t.userType, t.cashflowId),
+    uniqueIndex("commitment_overrides_day_unique").on(t.cashflowId, t.dueDay),
+  ],
+);
+
+/**
+ * What a commitment is recognised by, learned from the user's confirmations: the words they record it with, the
+ * sender of the bank message that pays it. Normalized text only; never a phone number or a message's text.
+ */
+export const commitmentHints = mysqlTable(
+  "commitment_hints",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    cashflowId: int("cashflow_id").notNull(),
+    /** phrase | sender */
+    kind: varchar("kind", { length: 12 }).notNull(),
+    value: varchar("value", { length: 160 }).notNull(),
+    /** Confirmations minus undos; at zero or below the hint no longer counts. */
+    weight: int("weight").notNull().default(1),
+    lastSeenAt: datetime("last_seen_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("commitment_hints_user_idx").on(t.userId, t.userType),
+    uniqueIndex("commitment_hints_value_unique").on(t.cashflowId, t.kind, t.value),
+  ],
+);
+
+/** A reminder that went out: one row per due date, stage and channel, so a retry or a second replica sends nothing twice. */
+export const commitmentReminders = mysqlTable(
+  "commitment_reminders",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    cashflowId: int("cashflow_id").notNull(),
+    dueDay: date("due_day", { mode: "string" }).notNull(),
+    /** before | due | after | week1 | week2 */
+    stage: varchar("stage", { length: 10 }).notNull(),
+    /** push | whatsapp */
+    channel: varchar("channel", { length: 10 }).notNull(),
+    sentAt: datetime("sent_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("commitment_reminders_user_idx").on(t.userId, t.userType, t.sentAt),
+    uniqueIndex("commitment_reminders_once").on(t.cashflowId, t.dueDay, t.stage, t.channel),
+  ],
+);
+
+/**
+ * A question waiting for the user, asked with buttons when the app opens: whether a due date was paid
+ * (`due_check`), or which commitment a recorded payment belongs to (`link`). One per date or payment (`dedupeKey`).
+ */
+export const commitmentQuestions = mysqlTable(
+  "commitment_questions",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    /** due_check | link */
+    kind: varchar("kind", { length: 12 }).notNull(),
+    /** due:<cashflowId>:<day> or link:<expenseId> */
+    dedupeKey: varchar("dedupe_key", { length: 80 }).notNull(),
+    cashflowId: int("cashflow_id"),
+    dueDay: date("due_day", { mode: "string" }),
+    expenseId: int("expense_id"),
+    /** link: the candidate due dates, [{ cashflowId, dueDay, amount }]. */
+    candidates: json("candidates"),
+    /** open | answered | skipped */
+    status: varchar("status", { length: 12 }).notNull().default("open"),
+    answer: varchar("answer", { length: 40 }),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    answeredAt: datetime("answered_at"),
+  },
+  (t) => [
+    index("commitment_questions_user_idx").on(t.userId, t.userType, t.status),
+    uniqueIndex("commitment_questions_once").on(t.userId, t.userType, t.dedupeKey),
   ],
 );
 
@@ -904,6 +1061,8 @@ export const cashflowSettlements = mysqlTable(
     amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
     /** linked: to a ledger row; declared: the user said it was paid, nothing recorded. */
     source: varchar("source", { length: 20 }).notNull(),
+    /** user: a tap; auto: matched with certainty when saved; question: the user picked it when asked; voice | chat. */
+    matchedBy: varchar("matched_by", { length: 12 }).notNull().default("user"),
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (t) => [

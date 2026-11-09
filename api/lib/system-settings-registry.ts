@@ -278,6 +278,22 @@ export const SETTINGS: SettingDef[] = [
     key: `chatbot_enabled_${plan}`,
     default: "true",
   })),
+  // ── Commitments (docs/decisions/0051-commitments-ecosystem.md): defaults the user can change per commitment ──
+  { key: "commitments_remind_days_default", default: "3" },
+  { key: "commitments_remind_hour_default", default: "10" },
+  /** Weekly reminders after the day-after one, while a date stays unpaid. */
+  { key: "commitments_overdue_followups", default: "2" },
+  /** Ask "was it paid?" when the app opens on or after a due date that has no payment. */
+  { key: "commitments_due_prompt_enabled", default: "true" },
+  /** Link a recorded payment on its own when the five rules hold; off: always ask. */
+  { key: "commitments_auto_link_enabled", default: "true" },
+  { key: "commitments_whatsapp_enabled", default: "false" },
+  /** The approved Meta template the reminders use, and its language code. */
+  { key: "commitments_whatsapp_template", default: "" },
+  { key: "commitments_whatsapp_template_lang", default: "ar" },
+  /** Cairo hours WhatsApp reminders may go out, "from-to". */
+  { key: "commitments_whatsapp_hours", default: "9-21" },
+  { key: "commitments_whatsapp_daily_cap", default: "3" },
   ...planSettingDefinitions(),
 ];
 

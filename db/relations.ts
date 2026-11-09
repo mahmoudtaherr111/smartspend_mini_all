@@ -48,6 +48,11 @@ import {
   installmentPlans,
   scheduledCashflows,
   cashflowSettlements,
+  commitmentScheduleItems,
+  commitmentOverrides,
+  commitmentHints,
+  commitmentReminders,
+  commitmentQuestions,
   coachingPlans,
   coachingSteps,
   apiKeyErrors,
@@ -86,6 +91,11 @@ export const usersRelations = relations(users, ({ many }) => ({
   userBudgets: many(userBudgets),
   installmentPlans: many(installmentPlans),
   scheduledCashflows: many(scheduledCashflows),
+  commitmentScheduleItems: many(commitmentScheduleItems),
+  commitmentOverrides: many(commitmentOverrides),
+  commitmentHints: many(commitmentHints),
+  commitmentReminders: many(commitmentReminders),
+  commitmentQuestions: many(commitmentQuestions),
   coachingPlans: many(coachingPlans),
   userCredentials: many(userCredentials),
   pushSubscriptions: many(pushSubscriptions),
@@ -129,6 +139,11 @@ export const localUsersRelations = relations(localUsers, ({ many }) => ({
   userBudgets: many(userBudgets),
   installmentPlans: many(installmentPlans),
   scheduledCashflows: many(scheduledCashflows),
+  commitmentScheduleItems: many(commitmentScheduleItems),
+  commitmentOverrides: many(commitmentOverrides),
+  commitmentHints: many(commitmentHints),
+  commitmentReminders: many(commitmentReminders),
+  commitmentQuestions: many(commitmentQuestions),
   coachingPlans: many(coachingPlans),
   userCredentials: many(userCredentials),
   pushSubscriptions: many(pushSubscriptions),
@@ -373,7 +388,32 @@ export const scheduledCashflowsRelations = relations(scheduledCashflows, ({ one,
   oauthUser: one(users, { fields: [scheduledCashflows.userId], references: [users.id] }),
   installmentPlan: one(installmentPlans, { fields: [scheduledCashflows.installmentPlanId], references: [installmentPlans.id] }),
   contact: one(userContacts, { fields: [scheduledCashflows.contactId], references: [userContacts.id] }),
+  beneficiary: one(userContacts, { fields: [scheduledCashflows.beneficiaryContactId], references: [userContacts.id] }),
+  originExpense: one(expenses, { fields: [scheduledCashflows.originExpenseId], references: [expenses.id] }),
   settlements: many(cashflowSettlements),
+  scheduleItems: many(commitmentScheduleItems),
+  overrides: many(commitmentOverrides),
+  hints: many(commitmentHints),
+  reminders: many(commitmentReminders),
+}));
+
+const commitmentChild = <T extends typeof commitmentScheduleItems | typeof commitmentOverrides | typeof commitmentHints | typeof commitmentReminders>(table: T) =>
+  relations(table, ({ one }) => ({
+    localUser: one(localUsers, { fields: [table.userId], references: [localUsers.id] }),
+    oauthUser: one(users, { fields: [table.userId], references: [users.id] }),
+    cashflow: one(scheduledCashflows, { fields: [table.cashflowId], references: [scheduledCashflows.id] }),
+  }));
+
+export const commitmentScheduleItemsRelations = commitmentChild(commitmentScheduleItems);
+export const commitmentOverridesRelations = commitmentChild(commitmentOverrides);
+export const commitmentHintsRelations = commitmentChild(commitmentHints);
+export const commitmentRemindersRelations = commitmentChild(commitmentReminders);
+
+export const commitmentQuestionsRelations = relations(commitmentQuestions, ({ one }) => ({
+  localUser: one(localUsers, { fields: [commitmentQuestions.userId], references: [localUsers.id] }),
+  oauthUser: one(users, { fields: [commitmentQuestions.userId], references: [users.id] }),
+  cashflow: one(scheduledCashflows, { fields: [commitmentQuestions.cashflowId], references: [scheduledCashflows.id] }),
+  expense: one(expenses, { fields: [commitmentQuestions.expenseId], references: [expenses.id] }),
 }));
 
 export const cashflowSettlementsRelations = relations(cashflowSettlements, ({ one }) => ({
