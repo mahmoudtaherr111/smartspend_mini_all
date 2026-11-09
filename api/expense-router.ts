@@ -643,13 +643,13 @@ function ledgerCacheTtl(period: { month?: string; year?: string }): number {
   return open ? 5 * 60 : 60 * 60 * 24;
 }
 
-/** The category installment payments are filed under, read from the registry. */
 /** Links what was just saved to the commitment it pays, when certain (docs/decisions/0051-commitments-ecosystem.md). */
 async function commitmentLinksFor(owner: { userId: number; userType: string }, ids: Array<number | undefined>) {
   const { matchSavedExpenses } = await import("./services/coach/commitments");
   return matchSavedExpenses(owner, ids.filter((id): id is number => typeof id === "number" && id > 0));
 }
 
+/** The category installment payments are filed under, read from the registry. */
 const INSTALLMENTS_CATEGORY = CATEGORIES.find((category) => category.id === "installments")!.name_ar;
 
 export const expenseRouter = router({

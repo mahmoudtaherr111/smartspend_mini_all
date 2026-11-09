@@ -24,6 +24,7 @@ deals with, and the expense export. Saving a new item belongs to [Recording spen
 | Wallets, budgets, goals, business | `api/wallet-router.ts`, `api/budget-router.ts`, `api/goals-router.ts`, `api/business-router.ts` | Their own records and rules |
 | Cards and wallets screen | `src/pages/WalletsPage.tsx`, route `/wallets`, linked from the More page and the sidebar; `src/components/wallets/DigitalBankingSuite.tsx#DigitalBankingSuite` | The user's cards and wallets through `wallet.*`: add one (name, kind, last four digits, balance), delete one, and a chosen one's transactions with its money in and out (`wallet.getWalletMonth`). A balance is what the user entered |
 | Commitments and plans | `api/coach-router.ts`, `api/services/coach/`, the page `src/pages/PlanPage.tsx#PlanPage` at `/plan` | Scheduled commitments and expected income, which payment paid which due date, what is free until payday, the coaching plan the user accepted, and its reminders ([below](#commitments-and-plans)) |
+| Commitments hub (التزاماتي) | `api/commitments-router.ts`, `api/services/coach/commitments.ts`, `api/services/coach/matcher.ts`, `api/services/coach/reminders.ts`; the app's `mobile/app/lib/src/features/commitments/` | Installments, subscriptions, school fees, rent, bills, debts and gam3eyas in five shapes, payments linked to them on their own only when certain, the questions asked otherwise, and reminders before each date ([below](#commitments-hub-التزاماتي), decision 0051) |
 | People | the contact procedures in `api/profile-router.ts` (`profile.listContacts`, `profile.addContact`, `profile.updateContact`, `profile.deleteContact`, `profile.mergeContacts`) | The people behind transfers and family spending |
 | Export | `export.myExpenses` in `api/export-router.ts`, the "نزّل مصاريفك" card of the More page (`src/components/expenses/ExportExpensesCard.tsx`) | The user's items, up to 10,000 newest first, as Excel or CSV (JSON too through the API), protected against spreadsheet formulas: each row dated by Cairo's day, named by its kind (دخل، مصروف، تحويل، استثمار، مرتجع for a refund, with its signed amount), with its subcategory and its source (`exportRow`) |
 
@@ -168,7 +169,9 @@ keyword, adds the ones paid before, and returns paid, remaining and the remainin
 dates ([commitments](#commitments-and-plans)) is counted from the payments linked to them instead
 (`installmentProgressFromLinked`): a partial payment counts for what it paid, an installment is paid once its whole
 amount is in, and a payment whose words also name another plan is not counted twice. `countedBy` says which. `expense.deleteInstallmentPlan`
-archives a plan.
+archives a plan. Since decision 0051 each plan is moved into a `fixed` commitment the first time the commitments hub
+opens (`migrateInstallmentPlans`: its title, monthly amount, count and installments paid before, with the payments
+already counted declared as paid); the app's installments screen is gone and its route opens the hub.
 
 ## Seasons (رمضان كلفني كام)
 A season is a date range, not a category (`api/lib/seasons.ts`): Ramadan and the two Eids come from the Hijri calendar
@@ -240,6 +243,71 @@ paid dates can be opened to inspect and unlink each settlement (`coach.unsettle`
 the ledger payment. `overview` includes settlement ids scoped to the same account and 90-day window. The [voice call](voice-calls.md)'s coach reads the same
 figures and saves plans, steps, reminders and commitments through the same services after the user's consent.
 
+## Commitments hub (التزاماتي)
+Decision 0051 makes every scheduled payment one system on `scheduled_cashflows`, used by the app's «التزاماتي»
+(`commitments.*`, `commitmentsProcedure`: the `commitments` plan feature the admin turns on per plan).
+- **Five shapes** (`api/services/coach/schedule.ts`, pure, Cairo days): `fixed` (N equal installments from `startDay`, counting
+  `paidBeforeCount`), `schedule` (its own `items` of day and amount: school fees), `recurring` (rent, bills,
+  subscriptions, salary; an amount, or `amountVaries`), `balance` (a debt of `totalAmount` repaid once, in
+  installments, or undated: its one open "date" is keyed by `trackedFrom` and stays open until paid) and `gam3eya`
+  (the monthly share; the payout is a second row, `direction` in, whose `parentId` is the share's). An occurrence
+  carries its number of the total, its label, and `effectiveDay` after a move. `commitment_overrides` skip a date,
+  move it or change its amount this time, keyed by the day the rule computed, so links stay put; a skipped date is
+  `skipped`, never owed.
+- **Creating** (`createCommitment`): each shape checks its own fixed fields (`commitments.create`); a person named in the
+  form («فريدة اختي», «محمد ابني») becomes or reuses a contact (`contactName`, `beneficiaryName`). A
+  subscription can carry a `catalogSlug` from `subscription_catalog` (name, Arabic name, match tokens, the admin's
+  `brand_color` and `logo_url`, `commitments.subscriptions`).
+- **Where payments are filed** (`filingOf`): the commitment's own category if set, else its kind's: installment, loan
+  and property under أقساط وفوايد › أقساط, school, university and lessons under تعليم, rent under سكن › إيجار,
+  subscriptions under اشتراكات, a debt or gam3eya as its financial movement (`movementKind` loan or gam3eya), a card
+  as a card payment.
+- **Paying from the app** (`payDue`, `commitments.pay`): writes the payment through the ledger writer filed as above
+  (with the outbox item's `clientRequestId` when a sentence asked for it) and settles the date in the same request;
+  `record: false` declares it paid off the records. `commitments.link` and `commitments.unlink` link or unlink a
+  recorded payment; unlinking never touches the ledger row.
+- **Linking what is saved** (`matchSavedExpenses`, called by `expense.create`, `expense.batchCreate` and
+  `expense.answerClarification`, which return `commitmentLinks`; `commitments.linksFor` reads the result again for the
+  app): `decideMatch` (`api/services/coach/matcher.ts`, no model, no category) links only when one commitment is named strongly (title
+  or catalog alias with long vowels folded, a learned phrase or SMS sender, or its contact), no rival is named too, the
+  amount is exact (k installments when the sentence says «قسطين» or «2 قسط»; a part of an undated debt repaid by its
+  contact, never above what is left), `canPayCashflow` allows it, and the date is open (ten days early, or late).
+  Installment kinds also need «قسط», «اقساط», «قسطين», «تقسيط» or «مقدم» in the sentence. A near match becomes a
+  question (`commitment_questions`, `kind` link, candidates); anything weaker is nothing. With
+  `commitments_auto_link_enabled` off every match is a question. A link teaches its phrase (+1 in
+  `commitment_hints`); unlinking an automatic or answered link takes 2. The `commitment-match-sweep` job (every ten
+  minutes, `sweepCapturedPayments`) runs the same matching over payments recorded from bank and wallet messages
+  (`source` sms) in the last 20 minutes, for plans with `commitment_capture_link`.
+- **Naming without an amount** (`commitmentForSentence`, `commitments.forSentence`): «دفعت نتفليكس» returns the one
+  commitment it names strongly and its open date, so the app offers one button that pays it.
+- **Questions when the app opens** (`pendingQuestions`, `answerQuestion`): dates of the last 60 days that passed with
+  no payment (`commitments_due_prompt_enabled`), five at most, and open link questions. «دفعته» links the one
+  recorded payment that fits exactly or records one; «اتدفع بره التسجيل» declares it; «لسه» (and the app's skip)
+  leaves it open and stops asking; a link answer is a candidate's `cashflowId:dueDay` or `none`.
+- **Hub and page** (`commitmentsOverview`, `commitmentDetail`, `commitmentsMonth`): each commitment with its progress
+  (paid of total, what is left, the next date, how many are overdue), the open dates of 60 days ahead and those
+  overdue, this month's due, paid and left; one commitment with every date to its end (a year ahead for an open
+  recurrence) and the payment linked to each with how it was linked; a month's dates with the service's colour and
+  logo for the calendar. The page says what to say when paying it (`sayHint`, with «قسط» added for an installment kind
+  whose title lacks it).
+- **Reminders** (`api/services/coach/reminders.ts`, job `commitment-reminders`, every five minutes in `api/boot.ts`, for plans with
+  `commitment_reminders`): for each open date, the stages
+  `before` (the commitment's `remindDaysBefore`, else `commitments_remind_days_default`), `due`, `after` (the next
+  day) and `week1`/`week2` (`commitments_overdue_followups`), from the hour `commitments_remind_hour_default` unless the
+  commitment sets one, each claimed once per date, stage and channel by an `INSERT IGNORE` on `commitment_reminders`.
+  Several dates due together become one notification (`commitment_due`, to `/commitments`) in the inbox and by push.
+  WhatsApp sends only with `commitments_whatsapp_enabled`, a template (`commitments_whatsapp_template`, two body
+  variables: title and text), the plan's `commitment_whatsapp` feature, inside `commitments_whatsapp_hours` and under
+  `commitments_whatsapp_daily_cap`; the WhatsApp outbox (`enqueueMessage`) then checks the person's consent and
+  opt-out.
+- **The app** (`mobile/app/lib/src/features/commitments/`): the hub from More and the Record tab's card; a commitment's
+  page with its reminder sheet (days before, hour, off) and each date's actions; adding by type with that type's
+  fields, a subscription picked from the catalog with its logo (else its initials on its brand colour,
+  `mobile/app/lib/src/features/commitments/subscription_brands.dart`); the calendar's day cells with the first commitment's mark and the day's sheet with
+  «دفعته»; the record flow's notice after a certain link (undo unlinks) or its question sheet, and the
+  «دفعت Netflix · 240 ج.م» button on a clarification. `CommitmentPromptHost` in the app shell asks the open-app
+  questions at start and after six hours away.
+
 ## Goals
 - `goals.list` returns the user's goals and, when the plan has no goal analysis, an upsell.
 - `goals.create`: a title, a description of up to 120 characters, a target amount and date. The number of active
@@ -296,6 +364,11 @@ free account sends no request the server refuses; without `features` it asks for
 | People | the contact procedures in `api/profile-router.ts`; the screen `src/components/settings/PeopleSettingsView.tsx` | |
 | Due dates, payments, what is free until payday | `api/services/coach/schedule.ts`, `api/services/coach/cashflows.ts` | `api/services/coach/schedule.test.ts`, `tests/coach-follow-up.test.ts` (`npm run test:db`) |
 | Plans, steps and reminders | `api/services/coach/plans.ts`, the job in `api/boot.ts`, the page `src/pages/PlanPage.tsx` | `tests/coach-follow-up.test.ts` |
+| The shapes of commitments and their dates | `api/services/coach/schedule.ts` | `api/services/coach/schedule.test.ts` |
+| When a saved payment links to a commitment, or asks | `api/services/coach/matcher.ts` | `api/services/coach/matcher.test.ts`, `tests/commitments-ecosystem.test.ts` (`npm run test:db`) |
+| Where a commitment's payments are filed | `filingOf` in `api/services/coach/commitments.ts` | `tests/commitments-ecosystem.test.ts` |
+| Commitment reminders and their WhatsApp gates | `api/services/coach/reminders.ts`, the `commitments_*` settings | `api/services/coach/reminders.test.ts`, `tests/commitments-ecosystem.test.ts` |
+| The app's commitments screens | `mobile/app/lib/src/features/commitments/` | `mobile/app/test/commitments_test.dart`, `mobile/app/test/calendar_test.dart`, `mobile/app/test/ledger_test.dart` |
 
 ## Rules for changes here
 1. Every write to `expenses` runs in a transaction with its rollup delta (`api/AGENTS.md`, rule 4) and bumps the
@@ -316,7 +389,11 @@ over-allocated payments, release on delete and edit, another account's ids, one 
 active plan, a reminder delivered once under two concurrent runs and never after it moved or was cancelled), whose
 database cases run with
 `npm run test:db` (`docs/guides/testing.md`), `api/jobs/taxonomy-migration-job.test.ts`, and
-`src/components/dashboard/NativeTabPanels.test.tsx`.
+`src/components/dashboard/NativeTabPanels.test.tsx`. The commitments: `api/services/coach/schedule.test.ts`,
+`api/services/coach/matcher.test.ts` and `api/services/coach/reminders.test.ts` without a database, and `tests/commitments-ecosystem.test.ts` on MySQL
+(a fridge linked on its own and undone, «دفعت نتفلكس», «دهان الشقة» left alone, two schools and a question, a debt
+repaid in parts, a passed date answered «لسه» then «دفعته», a gam3eya's payout, a reminder sent once, an installment
+plan moved in).
 
 ## Known issues
 Checked against the code; each one names where it lives.
@@ -336,12 +413,20 @@ Checked against the code; each one names where it lives.
     spending in a month when the purchase fell in an earlier one.
 7. **Gap.** Commitments, plans and wallet balances are the personal ledger's only: `business_id` exists on
     `scheduled_cashflows` and `coaching_plans` but nothing writes or reads it yet (`api/services/coach/`).
-8. **Gap.** Reminders reach the in-app notifications only, not web push (`api/services/coach/plans.ts#deliverDueReminders`).
+8. **Gap.** Coaching-plan step reminders reach the in-app notifications only, not push
+    (`api/services/coach/plans.ts#deliverDueReminders`); commitment reminders do reach push.
 9. **Debt.** Writers outside `api/expense-router.ts` still write `expenses` with their own steps instead of the ledger
     writer: receipts (`api/image-router.ts#parseReceipt`), the AI Center's actions
     (`api/services/action-runtime/extended-actions.ts`), business, profile and wallet changes
     (`api/business-router.ts`, `api/profile-router.ts`, `api/wallet-router.ts`), the taxonomy migration and account
     purge. Each moves to it as its own change (decision 0027).
+10. **Gap.** A known service shows its logo only once the admin sets `logo_url` in the catalog; until then the app
+    draws its initials on its brand colour (`mobile/app/lib/src/features/commitments/subscription_brands.dart`).
+11. **Gap.** WhatsApp commitment reminders stay off until the admin sets an approved Utility template
+    (`commitments_whatsapp_template`) and turns them on; the template's two variables are the title and the text
+    (`api/services/coach/reminders.ts`).
+12. **Gap.** The parked website's «خطتك والتزاماتك» page (`src/pages/PlanPage.tsx`) still adds and settles through
+    `coach.*` and knows nothing of shapes, overrides or questions (decision 0050 parks it).
 
 ## Related systems
 - [Recording spending](expense-capture.md): creates the items this system reads, and triggers the budget alert.

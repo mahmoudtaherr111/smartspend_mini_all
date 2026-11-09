@@ -95,7 +95,9 @@ the balance after it and the original amount. A fee becomes a linked row bundled
 Where it is filed: the user's memory of this merchant or person, then the subscription catalog, then the model's
 category and subcategory, then «متنوعات / عام» (or other income). A user who turned on «اسألني اتصرفت في إيه»
 (`purpose_questions`) is asked about payments left at the general category or sent to a person, at most two
-notifications a day; the answer edits the same row and is remembered.
+notifications a day; the answer edits the same row and is remembered. A payment recorded from a message is then
+matched to the commitment it pays by the `commitment-match-sweep` job, by the same strict rules as a typed one
+(plans with `commitment_capture_link`; [Money](money.md#commitments-hub-التزاماتي)).
 
 ## Switches and the first start
 - `capture_enabled` is on unless the admin sets it to `false`; the platforms and the beta list narrow it.
@@ -111,7 +113,11 @@ notifications a day; the answer edits the same row and is remembered.
 - Costs: `capture_ai_daily_cost_cap_usd`, `capture_ai_tokens_free`, `capture_ai_concurrency`, `sms_ai_enabled`.
 
 ## Data
-- `capture_sources` and `subscription_catalog`: the catalog, shared by all users (`0029_capture_sources.sql`).
+- `capture_sources` and `subscription_catalog`: the catalog, shared by all users (`0029_capture_sources.sql`). A
+  subscription also has the admin's `brand_color` and `logo_url` (`0050_commitments_ecosystem.sql`, edited in the
+  console's subscriptions list with a preview), which the app shows on a subscription commitment and on its calendar
+  day ([Money](money.md#commitments-hub-التزاماتي)); the seed adds talabat pro, Careem Plus and Uber One, matched by
+  the membership's own name only, never the app's, which every order carries.
 - `capture_devices`, `capture_consents`, `capture_signals` (a kept signal, deleted after 30 days):
   `0031_capture_intake.sql`; device health `0039_capture_device_health.sql`.
 - `capture_events` (one payment and the keys signals are matched on): `0032_capture_events.sql`,

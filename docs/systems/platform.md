@@ -45,7 +45,7 @@ storage, the contracts shared with the web app, and the retention job that prune
    limit and checks: anonymous traffic 3,000 requests a minute per IP (mobile carriers put many customers behind one address),
    sign-in and registration 300 per quarter hour, a signed-in user 300 a minute, and an AI call another 100 a
    minute on top. `proProcedure`, `proAiProcedure` and `ultraProcedure` check the plan, and the per-feature builders
-   (`businessProcedure`, `receiptsProcedure`, `proReportProcedure`, `goalAnalysisProcedure`) read the admin's
+   (`businessProcedure`, `receiptsProcedure`, `proReportProcedure`, `goalAnalysisProcedure`, `commitmentsProcedure`) read the admin's
    `feature_<feature>_<plan>` switch (`contracts/plan-features.ts`); an admin passes all of them.
    `moderatorProcedure` and `adminProcedure` check the role.
 4. Errors leave as `TRPCError`; in production an internal error is replaced by one Arabic sentence and the
@@ -124,7 +124,8 @@ nobody; the console's «النهارده» lists the alerts. The hours are Cairo
 schedules each job in `APP_TIMEZONE`, not the server's clock. The list, with each schedule, is in
 [docs/atlas/entrypoints.md](../atlas/entrypoints.md). In short: session, challenge and phone-code cleanup
 (daily), classification logs (Sundays), scheduled notifications (every minute) and the smart activity check
-(20:00), coaching reminders (every five minutes), the captured messages left for the model (every minute), the
+(20:00), coaching reminders (every five minutes), commitment reminders (every five) and the matching of payments
+from bank messages to commitments (every ten; see [money](money.md#commitments-hub-التزاماتي)), the captured messages left for the model (every minute), the
 capture breaker (every fifteen) and the silent capture phones (11:00; see [bank messages](bank-messages.md)), the ledger's cashflow cutover (every ten, until it is active; [money](money.md)), the taxonomy migration (every thirty), the memory embedding
 backfill (every twenty), the live calls' memory (every ten; see [voice calls](voice-calls.md)), the monthly
 behaviour snapshot (1st at 01:00) and report (1st at 02:00), the rollup reconciliation (04:00), data retention

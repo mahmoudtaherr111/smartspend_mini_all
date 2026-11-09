@@ -11,8 +11,18 @@ import { LoadError, Loading } from "../../ui/states";
 import { Field } from "./Sources";
 
 const SPENDING = CATEGORIES.filter((category) => category.type === "expense");
-interface Form { id?: number; slug: string; name: string; nameAr: string; kind: "service" | "store"; matchTokens: string; categoryId: string; subCategoryId: string; cycle: SubscriptionCycle; status: "active" | "disabled" }
-const EMPTY: Form = { slug: "", name: "", nameAr: "", kind: "service", matchTokens: "", categoryId: "subscriptions", subCategoryId: "streaming", cycle: "monthly", status: "active" };
+interface Form { id?: number; slug: string; name: string; nameAr: string; kind: "service" | "store"; matchTokens: string; categoryId: string; subCategoryId: string; cycle: SubscriptionCycle; status: "active" | "disabled"; brandColor: string; logoUrl: string }
+const EMPTY: Form = { slug: "", name: "", nameAr: "", kind: "service", matchTokens: "", categoryId: "subscriptions", subCategoryId: "streaming", cycle: "monthly", status: "active", brandColor: "", logoUrl: "" };
+
+/** The service's mark as the app draws it: its logo, else its first letter on its colour. */
+function Mark({ name, brandColor, logoUrl }: { name: string; brandColor: string | null; logoUrl: string | null }) {
+  if (logoUrl) return <img src={logoUrl} alt="" className="size-9 shrink-0 rounded-full object-cover" />;
+  return (
+    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold" style={brandColor ? { backgroundColor: brandColor, color: "#fff" } : undefined} dir="ltr">
+      {name.trim().charAt(0).toUpperCase()}
+    </span>
+  );
+}
 const label = (categoryId: string, subId: string) => {
   const category = CATEGORIES.find((item) => item.id === categoryId);
   return `${category?.name_ar ?? categoryId} / ${category?.subcategories.find((sub) => sub.id === subId)?.name_ar ?? subId}`;
@@ -47,13 +57,14 @@ export function Subscriptions() {
       <ul className="divide-y rounded-xl border">
         {rows.map((row) => (
           <li key={row.id} className="flex flex-wrap items-center gap-3 p-3">
+            <Mark name={row.name} brandColor={row.brandColor} logoUrl={row.logoUrl} />
             <div className="min-w-0 flex-1">
               <div className="font-semibold">{row.nameAr} <span className="text-xs font-normal text-muted-foreground" dir="ltr">{row.name}</span></div>
               <div className="text-xs text-muted-foreground">{label(row.categoryId, row.subCategoryId)} · {SUBSCRIPTION_CYCLE_LABELS[row.cycle]} · <span dir="ltr">{row.matchTokens.join(", ")}</span></div>
             </div>
             <Switch checked={row.status === "active"} aria-label={`تشغيل ${row.nameAr}`} onCheckedChange={(on) => status.mutate({ id: row.id, status: on ? "active" : "disabled" })} />
             <Button size="sm" variant="outline" onClick={() => setForm({ id: row.id, slug: row.slug, name: row.name, nameAr: row.nameAr, kind: row.kind, matchTokens: row.matchTokens.join(", "),
-              categoryId: row.categoryId, subCategoryId: row.subCategoryId, cycle: row.cycle, status: row.status })}>عدّل</Button>
+              categoryId: row.categoryId, subCategoryId: row.subCategoryId, cycle: row.cycle, status: row.status, brandColor: row.brandColor ?? "", logoUrl: row.logoUrl ?? "" })}>عدّل</Button>
           </li>
         ))}
       </ul>
@@ -86,10 +97,20 @@ export function Subscriptions() {
               <Field label="كلمات بتظهر في اسم التاجر" hint="زي netflix أو google *youtube، مفصولة بفاصلة.">
                 <Input dir="ltr" value={form.matchTokens} onChange={(e) => setForm({ ...form, matchTokens: e.target.value })} />
               </Field>
+              <div className="grid gap-3 sm:grid-cols-[1fr_8rem_auto] sm:items-end">
+                <Field label="رابط اللوجو" hint="صورة مربعة بـ https، بتظهر في التطبيق في الالتزامات والتقويم.">
+                  <Input dir="ltr" placeholder="https://" value={form.logoUrl} onChange={(e) => setForm({ ...form, logoUrl: e.target.value })} />
+                </Field>
+                <Field label="لون الخدمة" hint="#E50914">
+                  <Input dir="ltr" value={form.brandColor} onChange={(e) => setForm({ ...form, brandColor: e.target.value })} />
+                </Field>
+                <Mark name={form.name || form.nameAr || "?"} brandColor={/^#[0-9A-Fa-f]{6}$/.test(form.brandColor) ? form.brandColor : null} logoUrl={form.logoUrl.startsWith("https://") ? form.logoUrl : null} />
+              </div>
               <Button className="w-full" disabled={save.isPending} onClick={() => save.mutate({ id: form.id, item: {
                 slug: form.slug.trim(), name: form.name.trim(), nameAr: form.nameAr.trim(), kind: form.kind,
                 matchTokens: form.matchTokens.split(/[,،]/).map((v) => v.trim().toLowerCase()).filter(Boolean),
                 categoryId: form.categoryId, subCategoryId: form.subCategoryId, cycle: form.cycle, status: form.status,
+                brandColor: form.brandColor.trim() || null, logoUrl: form.logoUrl.trim() || null,
               } })}>احفظ</Button>
             </div>
           )}

@@ -65,3 +65,5 @@ A record explains why the code looks the way it does. What the code does today i
 | [0049](0049-one-capture-path-model-decides.md) | One capture path: the phone sends on keywords, the model decides on labelled numbers, checks that read no words, everything complete recorded on its own |
 
 | [0050](0050-backend-and-console-without-the-website.md) | The server serves the API and the admin console only; the website is parked, and the console has its own styles, kit and client |
+
+| [0051](0051-commitments-ecosystem.md) | Installments, subscriptions, school fees, debts and gam3eyas are one commitments system with five shapes; a payment links on its own only when certain, else the person is asked |

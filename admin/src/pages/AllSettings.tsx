@@ -51,6 +51,16 @@ export const LABELS: Record<string, { label: string; hint?: string }> = {
   capture_platforms: { label: "الأنظمة اللي بتبعت رسايل البنك", hint: "android,ios" },
   capture_ai_tokens_free: { label: "توكنز قراية رسايل البنك في الشهر (المجانية)" },
   capture_financial_version: { label: "نظام الدفتر", hint: "بيتحط لوحده لما تحويل الدفتر للدخل والصرف يخلص. مايتغيرش من هنا." },
+  commitments_remind_days_default: { label: "التذكير قبل الميعاد بكام يوم", hint: "الافتراضي لكل التزام. المستخدم يقدر يغيّره لكل التزام لوحده (0 = يوم الميعاد)." },
+  commitments_remind_hour_default: { label: "ساعة التذكير", hint: "من 0 لـ 23 بتوقيت القاهرة." },
+  commitments_overdue_followups: { label: "تذكيرات بعد ما الميعاد يفوت", hint: "بعد أسبوع وبعد أسبوعين. 0 = مفيش." },
+  commitments_due_prompt_enabled: { label: "سؤال «اتدفع؟» لما التطبيق يفتح", hint: "عن المواعيد اللي عدّت من غير دفعة." },
+  commitments_auto_link_enabled: { label: "ربط الدفعة بالالتزام لوحده لما نكون متأكدين", hint: "لو اتقفل، التطبيق يسأل كل مرة." },
+  commitments_whatsapp_enabled: { label: "تذكير الالتزامات على واتساب", hint: "محتاج قالب متوافق عليه من Meta، وموافقة المستخدم، وميزة الواتساب في باقته." },
+  commitments_whatsapp_template: { label: "واتساب: اسم القالب", hint: "قالب Utility فيه متغيرين: العنوان («قسط التلاجة بكرة») والنص (المبلغ والميعاد)." },
+  commitments_whatsapp_template_lang: { label: "واتساب: لغة القالب", hint: "ar" },
+  commitments_whatsapp_hours: { label: "واتساب: ساعات الإرسال", hint: "بتوقيت القاهرة، زي 9-21." },
+  commitments_whatsapp_daily_cap: { label: "واتساب: أقصى رسايل للمستخدم في اليوم" },
 };
 
 /** Settings that take one of a few values: offered as a choice, so a typo cannot reach the server. */
@@ -78,6 +88,7 @@ const GROUPS: { id: string; label: string; page?: { to: string; name: string }; 
   { id: "capture", label: "رسايل البنوك", page: { to: "/bank-messages", name: "رسايل البنوك" }, test: (k) => /^(capture_|sms_)/.test(k) },
   { id: "parser", label: "فهم الجمل", page: { to: "/ai/classifications", name: "التصنيف وسببه" }, test: (k) => /^(parser_|confidence_)/.test(k) },
   { id: "ai", label: "الذكاء الاصطناعي", page: { to: "/ai/setup", name: "إعداد الذكاء" }, test: (k) => /^(ai_|chatbot_|rag_|enable_rag|stt_|report_(provider|model|key_slot)_)|_stt_|_api_key/.test(k) },
+  { id: "commitments", label: "الالتزامات والتذكير", test: (k) => /^commitments_/.test(k) },
   { id: "whatsapp", label: "واتساب", page: { to: "/communications", name: "التواصل والإعلانات" }, test: (k) => /^whatsapp_/.test(k) },
   { id: "operations", label: "التشغيل", page: { to: "/operations", name: "التشغيل" }, test: () => true },
 ];

@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 76 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 79 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-06 897d57b3 | 2026-11-06 897d57b3 | 18 | — | — | 1 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-05 ed33efe8 | 2026-11-05 ed33efe8 | 8 | — | — | 5 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-09 c81ddb36 | 2026-11-09 c81ddb36 | 18 | — | — | 1 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-09 c81ddb36 | 2026-11-09 c81ddb36 | 8 | — | — | 5 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 6 | — | — | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-05 5af36e21 | 2026-11-05 f7bb4b83 | 9 | — | 2 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-06 1a0229e7 | 2026-11-06 1a0229e7 | 7 | — | 1 | 7 | 1 |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-06 1a0229e7 | 2026-11-05 ed33efe8 | 16 | **1** | — | 7 | — |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-09 c81ddb36 | 2026-11-09 c81ddb36 | 11 | — | 1 | 10 | 1 |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-09 c81ddb36 | 2026-11-09 c81ddb36 | 16 | **1** | — | 7 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-05 df6216e1 | 2026-11-03 ff028180 | 2 | — | — | 2 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-04 4def5707 | 2026-11-05 08b37c7f | 4 | — | — | 3 | 1 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-05 ed33efe8 | 2026-11-05 ed33efe8 | 7 | — | — | 5 | — |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 10 | — | — | 3 | 5 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-05 ed33efe8 | 2026-11-05 ed33efe8 | 5 | — | — | 1 | 7 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-09 c81ddb36 | 2026-11-09 c81ddb36 | 5 | — | — | 1 | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 7 | — | — | 3 | 1 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 
 
 Every system's explanation names at least one test.
 
-## What is waiting (76 issue(s))
+## What is waiting (79 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -47,7 +47,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
 - The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 
-### Gaps (46)
+### Gaps (49)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app (a corrected category is learned by `expense.update` through `recordCorrection`, not by `ai.learnWord`), and The website has no receipt capture. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
@@ -81,7 +81,10 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `expense.getYearlyStats` has no screen.
 - Refunds the old bank-message intake recorded netted their category only when the merchant was one the engine knew well; the others were saved as income under دخل آخر and keep that filing, as do rows saved before decision 0010. A category can show net negative spending in a month when the purchase fell in an earlier one.
 - Commitments, plans and wallet balances are the personal ledger's only: `business_id` exists on `scheduled_cashflows` and `coaching_plans` but nothing writes or reads it yet (`api/services/coach/`).
-- Reminders reach the in-app notifications only, not web push (`api/services/coach/plans.ts#deliverDueReminders`).
+- Coaching-plan step reminders reach the in-app notifications only, not push (`api/services/coach/plans.ts#deliverDueReminders`); commitment reminders do reach push.
+- A known service shows its logo only once the admin sets `logo_url` in the catalog; until then the app draws its initials on its brand colour (`mobile/app/lib/src/features/commitments/subscription_brands.dart`).
+- WhatsApp commitment reminders stay off until the admin sets an approved Utility template (`commitments_whatsapp_template`) and turns them on; the template's two variables are the title and the text (`api/services/coach/reminders.ts`).
+- The parked website's «خطتك والتزاماتك» page (`src/pages/PlanPage.tsx`) still adds and settles through `coach.*` and knows nothing of shapes, overrides or questions (decision 0050 parks it).
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
 - Verification is the setting `whatsapp_otp_enabled` (shown and switched in the admin console's WhatsApp tab, [notifications](notifications.md)): while it is off any number registers without proof that it belongs to the person.

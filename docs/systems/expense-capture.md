@@ -294,7 +294,12 @@ panel, to admins only.
   proposed for it (found through the log id), the save records it as the user's correction and marks the log
   corrected, as editing a saved item does. In a several-item sentence each item carries the clause it was read from
   (`clause`), and the rule is learned from that clause, matched to the saved row by its amount; an amount two items
-  share teaches nothing (`api/expense-router.ts#reviewCorrection`).
+  share teaches nothing (`api/expense-router.ts#reviewCorrection`). The answers of `expense.create`,
+  `expense.batchCreate` and `expense.answerClarification` also carry `commitmentLinks`: each saved payment linked to
+  the commitment it pays when that is certain, or the question to ask about it (`matchSavedExpenses`,
+  [Money](money.md#commitments-hub-التزاماتي), decision 0051). The phone app reads the same through
+  `commitments.linksFor` after its outbox saves, says which commitment a payment counted for (its "تراجع" unlinks),
+  and offers one button that pays a commitment a clarified sentence names without an amount («دفعت نتفليكس»).
 - `review`: editable cards with totals per direction; the user fixes or removes rows, then saves. A card's
   category list holds the categories of its item's kind (`src/lib/financial-taxonomy.ts#getCategoryOptionsForType`),
   and a newly picked category starts at its general subcategory.
