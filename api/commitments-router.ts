@@ -68,6 +68,7 @@ const fields = z.object({
   items: items.optional(),
   paidSoFar: amount.nullable().optional(),
   gam3eyaTurn: z.number().int().min(1).max(60).nullable().optional(),
+  gam3eyaTurns: z.array(z.number().int().min(1).max(60)).min(1).max(3).nullable().optional(),
   paymentMethod: z.enum(PAYMENT_METHODS).nullable().optional(),
   category: z.string().trim().max(100).nullable().optional(),
   subCategory: z.string().trim().max(100).nullable().optional(),

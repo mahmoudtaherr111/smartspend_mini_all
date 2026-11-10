@@ -73,7 +73,7 @@ Reads and writes cover the job body in `api/boot.ts` plus the `api/jobs/` module
 | `nightly-rollup-reconciliation` | `0 4 * * *` | `api/jobs/rollup-reconciliation-job.ts` | `expense_daily_rollups`, `expenses` | — |
 | `ops-watch` | `*/15 * * * *` | `api/services/admin-alerts.ts` | — | — |
 | `scheduled-notifications` | `* * * * *` | `api/notification-engine.ts` | — | — |
-| `seed-capture-catalog` | once at boot | `api/lib/capture/catalog.ts` | — | — |
+| `seed-capture-catalog` | once at boot | `api/lib/capture/brand-logos.ts`, `api/lib/capture/catalog.ts` | — | — |
 | `seed-default-templates` | once at boot | `api/notification-engine.ts` | — | — |
 | `smart-activity-notifications` | `0 20 * * *` | `api/notification-engine.ts` | — | — |
 | `taxonomy-migration` | `*/30 * * * *` | `api/jobs/taxonomy-migration-job.ts` | `expenses`, `user_budgets`, `user_correction_rules`, `user_dictionaries` | `expenses`, `user_budgets`, `user_correction_rules`, `user_dictionaries` |

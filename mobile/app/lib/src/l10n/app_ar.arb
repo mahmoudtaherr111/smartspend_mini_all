@@ -2956,5 +2956,36 @@
     }
   },
   "cfLeftCountHelp": "مع الجاي",
-  "cfOptional": "اختياري"
+  "cfOptional": "اختياري",
+  "cfNeedDifferentTurns": "كل سهم ليه دور مختلف.",
+  "cfShares": "كام سهم؟",
+  "cfOneShare": "سهم واحد",
+  "cfTwoShares": "سهمين",
+  "cfThreeShares": "3 أسهم",
+  "cfSharesHint": "كل سهم بتدفع قسطه كل شهر وبتقبض عنه مرة في دوره.",
+  "cfShareAmount": "قسط السهم الواحد في الشهر",
+  "cfTurnOf": "دور السهم {index}",
+  "@cfTurnOf": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "cfGam3eyaSharesSummary": "هتدفع {p0} كل شهر، وتقبض {p1} في كل دور: الشهر {p2}.",
+  "@cfGam3eyaSharesSummary": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      },
+      "p2": {
+        "type": "String"
+      }
+    }
+  },
+  "cfAnd": " و",
+  "cfYourPayouts": "قبضك من الجمعية"
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BRAND_LOGO_FILE, imageKind, isPublicHost, logoOf, playIconFrom, siteIconsFrom } from "./brand-logos";
+import { BRAND_LOGO_FILE, imageKind, imageWidth, isPublicHost, logoOf, playIconFrom, siteIconsFrom } from "./brand-logos";
 
 describe("service logos", () => {
   it("takes the app icon from a Google Play listing, asked for at 256 px", () => {
@@ -39,5 +39,15 @@ describe("service logos", () => {
     expect(BRAND_LOGO_FILE.test("netflix-0123456789ab.svg")).toBe(false);
     expect(logoOf({ logoUrl: "https://cdn/x.png", fetchedLogoUrl: "/api/brand-logos/a.png" })).toBe("https://cdn/x.png");
     expect(logoOf({ logoUrl: null, fetchedLogoUrl: "/api/brand-logos/a.png" })).toBe("/api/brand-logos/a.png");
+  });
+
+  it("reads an image's width, so a blurred favicon loses to a sharp icon", () => {
+    const png = new Uint8Array(24);
+    png.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    new DataView(png.buffer).setUint32(16, 256);
+    expect(imageWidth(png)).toBe(256);
+    const ico = new Uint8Array([0, 0, 1, 0, 2, 0, 16, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    expect(imageWidth(ico)).toBe(48);
+    expect(imageWidth(new TextEncoder().encode("<html></html>"))).toBe(0);
   });
 });

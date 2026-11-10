@@ -21,8 +21,12 @@ export interface SeedSubscription {
   cycle: SubscriptionCycle;
   /** The service's own Android app, whose store listing gives its real icon (api/lib/capture/brand-logos.ts). */
   appPackage?: string;
-  /** Its official site, the icon's second source. */
+  /** Its official Microsoft Store app, the icon's source when it has no Android app (Apple's iCloud). */
+  msStoreId?: string;
+  /** Its official site, the icon's last source. */
   website?: string;
+  /** "disabled" for a service kept for old rows but no longer offered. */
+  status?: "active" | "disabled";
   /** Its brand colour, for the badge drawn before the logo is fetched. */
   brandColor?: string;
 }
@@ -43,7 +47,7 @@ export const SEED_SUBSCRIPTIONS: SeedSubscription[] = [
   { slug: "tod", name: "TOD", nameAr: "تود", appPackage: "com.todtv.tod", website: "tod.tv", brandColor: "#6C2BD9", matchTokens: ["tod tv", "tod.tv"], ...streaming },
   { slug: "bein", name: "beIN", nameAr: "بي إن سبورتس", appPackage: "com.beinsports.andcontent", website: "beinsports.com", brandColor: "#5B2C83", matchTokens: ["bein"], ...streaming },
   { slug: "starzplay", name: "STARZPLAY", nameAr: "ستارزبلاي", appPackage: "com.parsifal.starz", website: "starzplay.com", brandColor: "#0A0A0A", matchTokens: ["starzplay", "starz play"], ...streaming },
-  { slug: "jawwy_tv", name: "Jawwy TV", nameAr: "جوي تي في", website: "jawwy.tv", brandColor: "#6A1B9A", matchTokens: ["jawwy"], ...streaming },
+  { slug: "jawwy_tv", name: "Jawwy TV", nameAr: "جوي تي في", status: "disabled", website: "jawwy.tv", brandColor: "#6A1B9A", matchTokens: ["jawwy"], ...streaming },
   { slug: "viu", name: "Viu", nameAr: "فيو", appPackage: "com.vuclip.viu", website: "viu.com", brandColor: "#FFC107", matchTokens: ["viu"], ...streaming },
   { slug: "weyyak", name: "Weyyak", nameAr: "وياك", appPackage: "com.tva.z5", website: "weyyak.com", brandColor: "#E91E63", matchTokens: ["weyyak"], ...streaming },
   { slug: "disney_plus", name: "Disney+", nameAr: "ديزني بلس", appPackage: "com.disney.disneyplus", website: "disneyplus.com", brandColor: "#113CCF", matchTokens: ["disney+", "disneyplus", "disney plus"], ...streaming },
@@ -70,7 +74,7 @@ export const SEED_SUBSCRIPTIONS: SeedSubscription[] = [
 
   // ─── Software and storage ───
   { slug: "google_one", name: "Google One", nameAr: "جوجل وان", appPackage: "com.google.android.apps.subscriptions.red", website: "one.google.com", brandColor: "#4285F4", matchTokens: ["google storage", "google one"], ...software },
-  { slug: "icloud", name: "iCloud+", nameAr: "آي كلاود", website: "icloud.com", brandColor: "#3693F3", matchTokens: ["icloud"], ...software },
+  { slug: "icloud", name: "iCloud+", nameAr: "آي كلاود", msStoreId: "9PKTQ5699M62", website: "icloud.com", brandColor: "#3693F3", matchTokens: ["icloud"], ...software },
   { slug: "microsoft_365", name: "Microsoft 365", nameAr: "مايكروسوفت 365", appPackage: "com.microsoft.office.officehubrow", website: "microsoft365.com", brandColor: "#D83B01", matchTokens: ["microsoft 365", "microsoft*365", "office 365"], ...software },
   { slug: "adobe", name: "Adobe", nameAr: "أدوبي", website: "adobe.com", brandColor: "#FA0F00", matchTokens: ["adobe"], ...software },
   { slug: "canva", name: "Canva", nameAr: "كانفا", appPackage: "com.canva.editor", website: "canva.com", brandColor: "#00C4CC", matchTokens: ["canva"], ...software },

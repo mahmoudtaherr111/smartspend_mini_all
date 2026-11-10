@@ -11,8 +11,8 @@ import { LoadError, Loading } from "../../ui/states";
 import { Field } from "./Sources";
 
 const SPENDING = CATEGORIES.filter((category) => category.type === "expense");
-interface Form { id?: number; slug: string; name: string; nameAr: string; kind: "service" | "store"; matchTokens: string; categoryId: string; subCategoryId: string; cycle: SubscriptionCycle; status: "active" | "disabled"; brandColor: string; logoUrl: string; appPackage: string; website: string }
-const EMPTY: Form = { slug: "", name: "", nameAr: "", kind: "service", matchTokens: "", categoryId: "subscriptions", subCategoryId: "streaming", cycle: "monthly", status: "active", brandColor: "", logoUrl: "", appPackage: "", website: "" };
+interface Form { id?: number; slug: string; name: string; nameAr: string; kind: "service" | "store"; matchTokens: string; categoryId: string; subCategoryId: string; cycle: SubscriptionCycle; status: "active" | "disabled"; brandColor: string; logoUrl: string; appPackage: string; website: string; msStoreId: string }
+const EMPTY: Form = { slug: "", name: "", nameAr: "", kind: "service", matchTokens: "", categoryId: "subscriptions", subCategoryId: "streaming", cycle: "monthly", status: "active", brandColor: "", logoUrl: "", appPackage: "", website: "", msStoreId: "" };
 
 /** The service's mark as the app draws it: its logo, else its first letter on its colour. */
 function Mark({ name, brandColor, logoUrl }: { name: string; brandColor: string | null; logoUrl: string | null }) {
@@ -71,7 +71,7 @@ export function Subscriptions() {
               onClick={() => fetchLogo.mutate({ id: row.id })}>{row.fetchedLogoUrl ? "حدّث اللوجو" : "جيب اللوجو"}</Button>
             <Switch checked={row.status === "active"} aria-label={`تشغيل ${row.nameAr}`} onCheckedChange={(on) => status.mutate({ id: row.id, status: on ? "active" : "disabled" })} />
             <Button size="sm" variant="outline" onClick={() => setForm({ id: row.id, slug: row.slug, name: row.name, nameAr: row.nameAr, kind: row.kind, matchTokens: row.matchTokens.join(", "),
-              categoryId: row.categoryId, subCategoryId: row.subCategoryId, cycle: row.cycle, status: row.status, brandColor: row.brandColor ?? "", logoUrl: row.logoUrl ?? "", appPackage: row.appPackage ?? "", website: row.website ?? "" })}>عدّل</Button>
+              categoryId: row.categoryId, subCategoryId: row.subCategoryId, cycle: row.cycle, status: row.status, brandColor: row.brandColor ?? "", logoUrl: row.logoUrl ?? "", appPackage: row.appPackage ?? "", website: row.website ?? "", msStoreId: row.msStoreId ?? "" })}>عدّل</Button>
           </li>
         ))}
       </ul>
@@ -108,7 +108,10 @@ export function Subscriptions() {
                 <Field label="تطبيقهم على أندرويد" hint="زي com.netflix.mediaclient: اللوجو بيتجاب من صفحته على جوجل بلاي.">
                   <Input dir="ltr" value={form.appPackage} onChange={(e) => setForm({ ...form, appPackage: e.target.value })} />
                 </Field>
-                <Field label="موقعهم" hint="زي netflix.com، لو مالهمش تطبيق.">
+                <Field label="تطبيقهم على Microsoft Store (اختياري)" hint="لو مالهمش تطبيق أندرويد، زي iCloud: 9PKTQ5699M62.">
+                  <Input dir="ltr" value={form.msStoreId} onChange={(e) => setForm({ ...form, msStoreId: e.target.value })} />
+                </Field>
+                <Field label="موقعهم" hint="زي netflix.com، آخر مصدر للوجو.">
                   <Input dir="ltr" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />
                 </Field>
               </div>
@@ -126,7 +129,7 @@ export function Subscriptions() {
                 matchTokens: form.matchTokens.split(/[,،]/).map((v) => v.trim().toLowerCase()).filter(Boolean),
                 categoryId: form.categoryId, subCategoryId: form.subCategoryId, cycle: form.cycle, status: form.status,
                 brandColor: form.brandColor.trim() || null, logoUrl: form.logoUrl.trim() || null,
-                appPackage: form.appPackage.trim() || null, website: form.website.trim() || null,
+                appPackage: form.appPackage.trim() || null, website: form.website.trim() || null, msStoreId: form.msStoreId.trim() || null,
               } })}>احفظ</Button>
             </div>
           )}

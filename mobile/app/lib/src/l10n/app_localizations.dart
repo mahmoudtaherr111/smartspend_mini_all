@@ -9175,6 +9175,72 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'اختياري'**
   String get cfOptional;
+
+  /// No description provided for @cfNeedDifferentTurns.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل سهم ليه دور مختلف.'**
+  String get cfNeedDifferentTurns;
+
+  /// No description provided for @cfShares.
+  ///
+  /// In ar, this message translates to:
+  /// **'كام سهم؟'**
+  String get cfShares;
+
+  /// No description provided for @cfOneShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'سهم واحد'**
+  String get cfOneShare;
+
+  /// No description provided for @cfTwoShares.
+  ///
+  /// In ar, this message translates to:
+  /// **'سهمين'**
+  String get cfTwoShares;
+
+  /// No description provided for @cfThreeShares.
+  ///
+  /// In ar, this message translates to:
+  /// **'3 أسهم'**
+  String get cfThreeShares;
+
+  /// No description provided for @cfSharesHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل سهم بتدفع قسطه كل شهر وبتقبض عنه مرة في دوره.'**
+  String get cfSharesHint;
+
+  /// No description provided for @cfShareAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'قسط السهم الواحد في الشهر'**
+  String get cfShareAmount;
+
+  /// No description provided for @cfTurnOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'دور السهم {index}'**
+  String cfTurnOf(int index);
+
+  /// No description provided for @cfGam3eyaSharesSummary.
+  ///
+  /// In ar, this message translates to:
+  /// **'هتدفع {p0} كل شهر، وتقبض {p1} في كل دور: الشهر {p2}.'**
+  String cfGam3eyaSharesSummary(String p0, String p1, String p2);
+
+  /// No description provided for @cfAnd.
+  ///
+  /// In ar, this message translates to:
+  /// **' و'**
+  String get cfAnd;
+
+  /// No description provided for @cfYourPayouts.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبضك من الجمعية'**
+  String get cfYourPayouts;
 }
 
 class _AppLocalizationsDelegate

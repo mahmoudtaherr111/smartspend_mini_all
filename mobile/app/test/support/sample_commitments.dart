@@ -53,6 +53,7 @@ const createKeys = {
   'items',
   'paidSoFar',
   'gam3eyaTurn',
+  'gam3eyaTurns',
   'paymentMethod',
   'category',
   'subCategory',

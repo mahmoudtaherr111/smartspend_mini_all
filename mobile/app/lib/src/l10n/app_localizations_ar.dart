@@ -5189,4 +5189,41 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cfOptional => 'اختياري';
+
+  @override
+  String get cfNeedDifferentTurns => 'كل سهم ليه دور مختلف.';
+
+  @override
+  String get cfShares => 'كام سهم؟';
+
+  @override
+  String get cfOneShare => 'سهم واحد';
+
+  @override
+  String get cfTwoShares => 'سهمين';
+
+  @override
+  String get cfThreeShares => '3 أسهم';
+
+  @override
+  String get cfSharesHint => 'كل سهم بتدفع قسطه كل شهر وبتقبض عنه مرة في دوره.';
+
+  @override
+  String get cfShareAmount => 'قسط السهم الواحد في الشهر';
+
+  @override
+  String cfTurnOf(int index) {
+    return 'دور السهم $index';
+  }
+
+  @override
+  String cfGam3eyaSharesSummary(String p0, String p1, String p2) {
+    return 'هتدفع $p0 كل شهر، وتقبض $p1 في كل دور: الشهر $p2.';
+  }
+
+  @override
+  String get cfAnd => ' و';
+
+  @override
+  String get cfYourPayouts => 'قبضك من الجمعية';
 }

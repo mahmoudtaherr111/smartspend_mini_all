@@ -123,9 +123,10 @@ class _DetailBody extends ConsumerWidget {
     final mine = detail.dates
         .where((due) => due.cashflowId == item.id)
         .toList();
-    final payout = detail.dates
+    // A gam3eya's payouts: one per share, each on its own turn.
+    final payouts = detail.dates
         .where((due) => due.cashflowId != item.id)
-        .firstOrNull;
+        .toList();
     final open = mine.where((due) => due.isOpen).toList();
     final done = mine.where((due) => !due.isOpen).toList().reversed.toList();
     return ListView(
@@ -230,7 +231,7 @@ class _DetailBody extends ConsumerWidget {
                     ? detail.filingCategory!
                     : '${detail.filingCategory} › ${detail.filingSubCategory}',
               ),
-            if (payout != null)
+            for (final payout in payouts)
               GroupedRow(
                 icon: Icons.savings_outlined,
                 title: l10n.cmYourPayout,

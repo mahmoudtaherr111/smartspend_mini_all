@@ -198,7 +198,7 @@
         "api/boot.ts#job:capture-silent-devices": "e650646f7646",
         "api/boot.ts#job:cashflow-cutover": "a4ba7ab5395f",
         "api/boot.ts#job:cashflow-cutover-at-boot": "99f3f9121b27",
-        "api/boot.ts#job:seed-capture-catalog": "c2080520b0f3",
+        "api/boot.ts#job:seed-capture-catalog": "06e7522b7072",
         "api/capture-admin-router.ts": "001c5456db32",
         "api/capture-router.ts": "b311feac0069",
         "api/capture-v1-routes.ts": "3d346a26bb14",
@@ -207,9 +207,9 @@
         "api/lib/capture/activity.ts": "9ef1cab5fab6",
         "api/lib/capture/admission.ts": "743a668dd677",
         "api/lib/capture/ai-queue.ts": "fd6b48fbbc59",
-        "api/lib/capture/brand-logos.ts": "cceeb8d83184",
+        "api/lib/capture/brand-logos.ts": "a6bb1ba3079c",
         "api/lib/capture/care.ts": "5f71a2479578",
-        "api/lib/capture/catalog.ts": "3837ed83f633",
+        "api/lib/capture/catalog.ts": "811af2798e09",
         "api/lib/capture/consent.ts": "e3f24a815cde",
         "api/lib/capture/devices.ts": "caff87cd0199",
         "api/lib/capture/events.ts": "8936d6b8d3b9",
@@ -227,15 +227,15 @@
         "api/lib/capture/samples.ts": "b7a0442c87a9",
         "api/lib/capture/schema-state.ts": "f35686735395",
         "api/lib/capture/seed-sources.ts": "693b8813dd6c",
-        "api/lib/capture/seed-subscriptions.ts": "3804d9429991",
+        "api/lib/capture/seed-subscriptions.ts": "370641f7a154",
         "api/lib/capture/simulator.ts": "12f6211f1f47",
         "api/lib/capture/vault.ts": "fae7d2695222",
         "api/lib/sms-ai-contract.ts": "34562a4b9e0c",
         "src/components/bank-capture/CaptureOverview.tsx": "30e973b0cfd2"
       },
-      "checked": "2026-11-10 5f49c2d2",
-      "arabic": "10867ee35e6e",
-      "arabicChecked": "2026-11-10 5f49c2d2"
+      "checked": "2026-11-10 5cdd21f0",
+      "arabic": "a97979f50fed",
+      "arabicChecked": "2026-11-10 5cdd21f0"
     },
     "billing": {
       "files": {
@@ -383,7 +383,7 @@
         "api/budget-router.ts": "106bf2ec3b6c",
         "api/business-router.ts": "e5273c8cd870",
         "api/coach-router.ts": "d4bc2f825796",
-        "api/commitments-router.ts": "953ae14e112a",
+        "api/commitments-router.ts": "c099a7a19411",
         "api/expense-router.ts#expense.createInstallmentPlan": "d0e4ac52ce8b",
         "api/expense-router.ts#expense.delete": "7680319b9ecd",
         "api/expense-router.ts#expense.deleteInstallmentPlan": "fc7d83b8ccfe",
@@ -413,7 +413,7 @@
         "api/profile-router.ts#rest-of-file": "8fde10be8ce6",
         "api/services/budget-status.ts": "f29a27e9d8ac",
         "api/services/coach/cashflows.ts": "bacfe98db484",
-        "api/services/coach/commitments.ts": "e8f2fb6ca3bf",
+        "api/services/coach/commitments.ts": "e52673eaee93",
         "api/services/coach/matcher.ts": "6df01c2a4f3b",
         "api/services/coach/plans.ts": "443a3bd6fcc6",
         "api/services/coach/reminders.ts": "813d4d66b1a5",
@@ -452,9 +452,9 @@
         "src/pages/PlanPage.tsx": "107068a002b0",
         "src/pages/WalletsPage.tsx": "a1964708847b"
       },
-      "checked": "2026-11-10 5f49c2d2",
-      "arabic": "15e80f827f80",
-      "arabicChecked": "2026-11-10 5f49c2d2"
+      "checked": "2026-11-10 5cdd21f0",
+      "arabic": "ac3ce6987162",
+      "arabicChecked": "2026-11-10 5cdd21f0"
     },
     "notifications": {
       "files": {
@@ -536,13 +536,13 @@
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
         "db/relations.ts": "255ab273dba0",
-        "db/schema.ts": "06a8a59f2f52",
+        "db/schema.ts": "84ed59bfbc50",
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "39eda50cb310"
       },
-      "checked": "2026-11-10 5f49c2d2",
+      "checked": "2026-11-10 5cdd21f0",
       "arabic": "2053c36f8dbf",
-      "arabicChecked": "2026-11-10 5f49c2d2"
+      "arabicChecked": "2026-11-10 5cdd21f0"
     },
     "voice-calls": {
       "files": {

@@ -439,6 +439,40 @@ void main() {
   );
 
   testWidgets(
+    'two shares of a gam3eya: one share\'s amount, a turn for each, and what each turn pays',
+    (tester) async {
+      final api = await _open(tester, path: '/commitments/add');
+      final tile = find.byKey(const ValueKey('type-gam3eya'));
+      await reveal(tester, tile);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(ChoiceChip, 'سهمين'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('field-amount')),
+        '1000',
+      );
+      await tester.enterText(find.byKey(const ValueKey('field-count')), '10');
+      await tester.enterText(find.byKey(const ValueKey('field-turn')), '7');
+      await tester.enterText(find.byKey(const ValueKey('field-turn-2')), '3');
+      await pickDay(tester, 'field-day', '5');
+      expect(
+        find.textContaining(
+          'هتدفع 2,000 ج.م كل شهر، وتقبض 10,000 ج.م في كل دور: الشهر 3 و7',
+        ),
+        findsOneWidget,
+      );
+      await save(tester);
+
+      final input =
+          api.lastInput('commitments.create')! as Map<String, Object?>;
+      expect(input, containsPair('amount', 1000));
+      expect(input, containsPair('gam3eyaTurns', [7, 3]));
+    },
+  );
+
+  testWidgets(
     'a date that passed is asked about when the app opens; «تخطي» leaves it unpaid',
     (tester) async {
       final api = await _open(tester, withQuestions: true);

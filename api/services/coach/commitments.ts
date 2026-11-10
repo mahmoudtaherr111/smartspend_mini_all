@@ -130,6 +130,8 @@ export interface CommitmentFields {
   /** Schedule: what was paid before today, settled as declared over the first items. */
   paidSoFar?: number | null;
   gam3eyaTurn?: number | null;
+  /** A gam3eya with several shares: the turn of each (1 to 3 of them); `amount` is then one share's. */
+  gam3eyaTurns?: number[] | null;
   paymentMethod?: (typeof PAYMENT_METHODS)[number] | null;
   category?: string | null;
   subCategory?: string | null;
@@ -244,20 +246,31 @@ export async function createCommitment(user: CoachUser, input: CommitmentFields,
       if (!input.startDay) throw bad("اختار أول شهر وميعاد الدفع.");
       const months = input.occurrenceCount ?? 0;
       if (months < 2 || months > 60) throw bad("الجمعية من شهرين لحد 60 شهر.");
-      const turn = input.gam3eyaTurn ?? 0;
-      if (turn < 1 || turn > months) throw bad(`دورك رقم من 1 لحد ${months}.`);
+      // Shares («سهمين»): the person pays one share's amount per share every month and collects once per share, on
+      // each share's own turn. One share is the usual gam3eya.
+      const turns = [...new Set(input.gam3eyaTurns?.length ? input.gam3eyaTurns : [input.gam3eyaTurn ?? 0])].sort((a, b) => a - b);
+      const shares = turns.length;
+      if (shares > 3) throw bad("الجمعية لحد 3 أسهم.");
+      if ((input.gam3eyaTurns?.length ?? 1) !== shares) throw bad("كل سهم ليه دور مختلف.");
+      for (const turn of turns) if (turn < 1 || turn > months) throw bad(`دورك رقم من 1 لحد ${months}.`);
+      const share = new Decimal(input.amount!);
       ({ id } = await createCashflow(user, {
-        ...base, kind: "gam3eya", direction: "out", amount: input.amount!, recurrence: "monthly", startDay: input.startDay,
-        occurrenceCount: months, gam3eyaTurn: turn,
+        ...base, kind: "gam3eya", direction: "out", amount: share.times(shares).toNumber(), recurrence: "monthly", startDay: input.startDay,
+        occurrenceCount: months, gam3eyaTurn: turns[0],
       }));
-      const [payout] = occurrences([{
+      const dates = occurrences([{
         id, kind: "gam3eya", direction: "out", title, amount: input.amount!, recurrence: "monthly", startDay: input.startDay,
         endDay: null, certainty: "confirmed", status: "active", shape: "gam3eya", occurrenceCount: months,
-      }], [], "1900-01-01", "2999-12-31", "1900-01-01").filter((item) => item.number === turn);
-      const { id: payoutId } = await createCashflow(user, {
-        ...base, kind: "gam3eya", direction: "in", title: `قبض ${title}`, amount: new Decimal(input.amount!).times(months).toNumber(),
-        recurrence: "once", startDay: payout.dueDay, shape: "recurring", parentId: id,
-      });
+      }], [], "1900-01-01", "2999-12-31", "1900-01-01");
+      let payoutId: number | null = null;
+      for (const turn of turns) {
+        const payout = dates.find((item) => item.number === turn)!;
+        const { id: made } = await createCashflow(user, {
+          ...base, kind: "gam3eya", direction: "in", title: shares > 1 ? `قبض ${title} (دور ${turn})` : `قبض ${title}`,
+          amount: share.times(months).toNumber(), recurrence: "once", startDay: payout.dueDay, shape: "recurring", parentId: id,
+        });
+        payoutId ??= made;
+      }
       return { id, payoutId };
     }
   }
@@ -468,11 +481,15 @@ export async function commitmentsOverview(user: CoachUser) {
   });
   const catalog = await catalogFor(rows.map((row) => row.catalogSlug));
   const items = rows.filter((row) => !row.parentId).map((row) => {
-    const payout = rows.find((child) => child.parentId === row.id) ?? null;
+    const payouts = rows.filter((child) => child.parentId === row.id).sort((a, b) => (a.startDay ?? "").localeCompare(b.startDay ?? ""));
+    const statusOf = (child: CommitmentRow) => all.find((item) => item.cashflowId === child.id)?.status ?? null;
+    // The payout shown first: the next one not yet received, else the last.
+    const payout = payouts.find((child) => statusOf(child) !== "paid") ?? payouts.at(-1) ?? null;
     return {
       ...publicRow(row, catalog),
       progress: progressOf(row, all, today),
-      payout: payout ? { id: payout.id, dueDay: payout.startDay, amount: payout.amount == null ? null : Number(payout.amount), status: all.find((item) => item.cashflowId === payout.id)?.status ?? null } : null,
+      payout: payout ? { id: payout.id, dueDay: payout.startDay, amount: payout.amount == null ? null : Number(payout.amount), status: statusOf(payout) } : null,
+      payouts: payouts.map((child) => ({ id: child.id, dueDay: child.startDay, amount: child.amount == null ? null : Number(child.amount), status: statusOf(child) })),
     };
   });
   const monthEnd = addDays(today, 60);
@@ -503,12 +520,12 @@ export async function commitmentDetail(user: CoachUser, id: number) {
   const rows = await loadCommitments(user, { includeEnded: true });
   const row = rows.find((item) => item.id === id);
   if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "الالتزام ده مش موجود." });
-  const payout = rows.find((item) => item.parentId === id) ?? null;
-  const ids = [id, ...(payout ? [payout.id] : [])];
+  const payouts = rows.filter((item) => item.parentId === id);
+  const ids = [id, ...payouts.map((item) => item.id)];
   const settled = await settlementsOf(user, ids);
   const active = (item: CommitmentRow) => ({ ...item, status: "active" });
   const [from, to] = span(row, today);
-  const dates = occurrences([active(row), ...(payout ? [active(payout)] : [])], settled, from, row.shape === "recurring" && !row.endDay ? addDays(today, 366) : to, today);
+  const dates = occurrences([active(row), ...payouts.map(active)], settled, from, row.shape === "recurring" && !row.endDay ? addDays(today, 366) : to, today);
   const expenseIds = settled.map((item) => item.expenseId).filter((value): value is number => !!value);
   const payments = expenseIds.length ? await db.select({
     id: expenses.id, amount: expenses.amount, date: expenses.date, description: expenses.description, source: expenses.source, category: expenses.category,

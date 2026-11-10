@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { db } from "../api/queries/connection";
 import {
   cashflowSettlements, commitmentHints, commitmentOverrides, commitmentQuestions, commitmentReminders, commitmentScheduleItems,
@@ -133,6 +133,17 @@ describe("the commitments ecosystem (docs/decisions/0051-commitments-ecosystem.m
     const { id, payoutId } = await commitments.create({ shape: "gam3eya", kind: "gam3eya", title: "جمعية الشغل", amount: 1000, occurrenceCount: 10, gam3eyaTurn: 6, startDay: "2026-01-05" });
     const [payout] = await db.select().from(scheduledCashflows).where(eq(scheduledCashflows.id, payoutId!));
     expect([payout.parentId, payout.direction, payout.startDay, Number(payout.amount)]).toEqual([id, "in", "2026-06-05", 10000]);
+  });
+
+  itWithDatabase("takes two shares of a gam3eya: pays both every month and collects on each share's turn", async () => {
+    const { id } = await commitments.create({ shape: "gam3eya", kind: "gam3eya", title: "جمعية العيلة", amount: 1000, occurrenceCount: 10, gam3eyaTurns: [7, 3], startDay: "2026-01-05" });
+    const rows = await db.select().from(scheduledCashflows).where(or(eq(scheduledCashflows.id, id), eq(scheduledCashflows.parentId, id)));
+    const share = rows.find((row) => row.id === id)!;
+    expect(Number(share.amount)).toBe(2000);
+    expect(rows.filter((row) => row.parentId === id).map((row) => [row.startDay, Number(row.amount)]).sort()).toEqual([["2026-03-05", 10000], ["2026-07-05", 10000]]);
+    const { items } = await commitments.overview();
+    expect(items.find((item) => item.id === id)?.payouts).toHaveLength(2);
+    await expect(commitments.create({ shape: "gam3eya", kind: "gam3eya", amount: 1000, occurrenceCount: 10, gam3eyaTurns: [4, 4], startDay: "2026-01-05" })).rejects.toThrow();
   });
 
   itWithDatabase("reminds once per stage, however many times the job runs", async () => {

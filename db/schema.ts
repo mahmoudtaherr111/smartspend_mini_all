@@ -1211,6 +1211,8 @@ export const subscriptionCatalog = mysqlTable(
     appPackage: varchar("app_package", { length: 160 }),
     /** Its official site ("netflix.com"), the icon's second source. */
     website: varchar("website", { length: 160 }),
+    /** Its official Microsoft Store app (12 letters and digits), a third icon source (Apple's iCloud for Windows). */
+    msStoreId: varchar("ms_store_id", { length: 20 }),
     /** The icon fetched from its own listing or site and stored by the server; the seed never writes it. */
     fetchedLogoUrl: varchar("fetched_logo_url", { length: 300 }),
     /** When a fetch was last tried, so a failed one waits before the next try. */

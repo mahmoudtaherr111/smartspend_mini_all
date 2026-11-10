@@ -63,6 +63,7 @@ export interface CatalogSubscription {
   /** The service's Android app and site, where its real icon is fetched from (./brand-logos.ts). */
   appPackage: string | null;
   website: string | null;
+  msStoreId: string | null;
   status: CatalogStatus;
   origin: "seed" | "admin";
   adminEditedAt: Date | null;
@@ -112,6 +113,7 @@ export const subscriptionInput = z
     brandColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "اللون بالشكل #E50914").nullable().default(null),
     logoUrl: z.string().trim().url().max(300).refine((url) => url.startsWith("https://"), "رابط اللوجو لازم يبدأ بـ https").nullable().default(null),
     appPackage: z.string().trim().regex(/^[a-zA-Z][\w]*(\.[a-zA-Z_][\w]*)+$/, "اسم تطبيق أندرويد زي com.netflix.mediaclient").max(160).nullable().default(null),
+    msStoreId: z.string().trim().toUpperCase().regex(/^[A-Z0-9]{12}$/, "رقم التطبيق على Microsoft Store، 12 حرف ورقم").nullable().default(null),
     website: z.string().trim().toLowerCase().regex(/^(?!-)[a-z0-9-]+(\.[a-z0-9-]+)+$/, "الموقع من غير https، زي netflix.com").max(160).nullable().default(null),
   })
   .refine((value) => isSpendingSubcategory(value.categoryId, value.subCategoryId), {
@@ -200,6 +202,7 @@ export function subscriptionFromRow(row: typeof subscriptionCatalog.$inferSelect
     logoUrl: row.logoUrl ?? null,
     appPackage: row.appPackage ?? null,
     website: row.website ?? null,
+    msStoreId: row.msStoreId ?? null,
     status: oneOf(CATALOG_STATUSES, row.status, "disabled"),
     origin: row.origin === "seed" ? "seed" : "admin",
     adminEditedAt: row.adminEditedAt ?? null,
@@ -374,8 +377,8 @@ const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringif
 const comparableSource = ({ slug, kind, nameAr, nameEn, countries, androidPackages, senderIds, aliases, notes, priority, status }: SeedRowValues<CaptureSource>) =>
   [slug, kind, nameAr, nameEn, countries, androidPackages, senderIds, aliases, notes, priority, status];
 
-const comparableSubscription = ({ slug, name, nameAr, kind, matchTokens, categoryId, subCategoryId, cycle, status, brandColor, appPackage, website }: SeedRowValues<CatalogSubscription>) =>
-  [slug, name, nameAr, kind, matchTokens, categoryId, subCategoryId, cycle, status, brandColor, appPackage, website];
+const comparableSubscription = ({ slug, name, nameAr, kind, matchTokens, categoryId, subCategoryId, cycle, status, brandColor, appPackage, website, msStoreId }: SeedRowValues<CatalogSubscription>) =>
+  [slug, name, nameAr, kind, matchTokens, categoryId, subCategoryId, cycle, status, brandColor, appPackage, website, msStoreId];
 
 /** Writes the seed to both tables (see `planSeedSync`). Runs at boot under a lock; safe to run again. */
 export async function syncCaptureSeed(): Promise<{ inserted: number; updated: number }> {

@@ -8,7 +8,7 @@
  * size limit; only PNG, JPEG, WebP, GIF and ICO bytes are kept (never SVG, which could carry script).
  */
 import crypto from "crypto";
-import { and, asc, eq, isNull, lt, or } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { subscriptionCatalog } from "../../../db/schema";
 import { db } from "../../queries/connection";
 import { getStorageDriver } from "../../services/storage";
@@ -105,24 +105,95 @@ export function siteIconsFrom(html: string, pageUrl: string): string[] {
   return [...new Set([...urls, `${origin}/apple-touch-icon.png`, `${origin}/favicon.ico`])];
 }
 
-/** The service's real icon: its Play listing first, then its site. Null when neither gives a usable image. */
-export async function fetchBrandLogo(row: { appPackage: string | null; website: string | null }): Promise<{ bytes: Uint8Array; kind: ImageKind } | null> {
-  const candidates: string[] = [];
+/** Width of an image from its header (PNG, JPEG, WebP, GIF, the largest entry of an ICO); 0 when unknown. */
+export function imageWidth(bytes: Uint8Array): number {
+  const kind = imageKind(bytes);
+  if (!kind) return 0;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  try {
+    switch (kind.ext) {
+      case "png":
+        return view.getUint32(16);
+      case "gif":
+        return view.getUint16(6, true);
+      case "ico": {
+        let best = 0;
+        const count = view.getUint16(4, true);
+        for (let index = 0; index < count && 6 + index * 16 < bytes.length; index += 1) best = Math.max(best, bytes[6 + index * 16] || 256);
+        return best;
+      }
+      case "webp": {
+        const chunk = String.fromCharCode(bytes[12], bytes[13], bytes[14], bytes[15]);
+        if (chunk === "VP8X") return 1 + (bytes[24] | (bytes[25] << 8) | (bytes[26] << 16));
+        if (chunk === "VP8L") return 1 + (((bytes[22] & 0x3f) << 8) | bytes[21]);
+        return view.getUint16(26, true) & 0x3fff;
+      }
+      case "jpg": {
+        let offset = 2;
+        while (offset + 9 < bytes.length) {
+          if (bytes[offset] !== 0xff) return 0;
+          const marker = bytes[offset + 1];
+          if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) return view.getUint16(offset + 7);
+          offset += 2 + view.getUint16(offset + 2);
+        }
+        return 0;
+      }
+    }
+  } catch {
+    return 0;
+  }
+}
+
+/** The largest square logo of a Microsoft Store listing (an official app such as Apple's iCloud for Windows). */
+async function msStoreIcon(id: string): Promise<string | null> {
+  if (!/^[A-Z0-9]{12}$/.test(id)) return null;
+  const page = await safeGet(`https://storeedgefd.dsx.mp.microsoft.com/v9.0/products/${id}?market=EG&locale=en-us&deviceFamily=Windows.Desktop`, PAGE_LIMIT, "application/json").catch(() => null);
+  if (!page) return null;
+  try {
+    const images = (JSON.parse(new TextDecoder().decode(page.bytes)) as { Payload?: { Images?: Array<{ ImageType?: string; Width?: number; Height?: number; Url?: string }> } }).Payload?.Images ?? [];
+    const logos = images.filter((image) => image.ImageType === "logo" && image.Width === image.Height && image.Url?.startsWith("https://"));
+    logos.sort((a, b) => (b.Width ?? 0) - (a.Width ?? 0));
+    return logos[0]?.Url ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Below this width a logo looks blurred on a phone; a sharper source is preferred when there is one. */
+const SHARP_WIDTH = 128;
+
+/**
+ * The service's real icon from its own official listings: Google Play, then the Microsoft Store, then its site. The
+ * first sharp one wins; otherwise the largest found. Null when none gives a usable image.
+ */
+export async function fetchBrandLogo(row: { appPackage: string | null; website: string | null; msStoreId?: string | null }): Promise<{ bytes: Uint8Array; kind: ImageKind } | null> {
+  const sources: Array<() => Promise<string[]>> = [];
   if (row.appPackage) {
-    const page = await safeGet(`https://play.google.com/store/apps/details?id=${encodeURIComponent(row.appPackage)}&hl=en`, PAGE_LIMIT, "text/html").catch(() => null);
-    const icon = page ? playIconFrom(new TextDecoder().decode(page.bytes)) : null;
-    if (icon) candidates.push(icon);
+    sources.push(async () => {
+      const page = await safeGet(`https://play.google.com/store/apps/details?id=${encodeURIComponent(row.appPackage!)}&hl=en`, PAGE_LIMIT, "text/html").catch(() => null);
+      const icon = page ? playIconFrom(new TextDecoder().decode(page.bytes)) : null;
+      return icon ? [icon] : [];
+    });
   }
+  if (row.msStoreId) sources.push(async () => { const icon = await msStoreIcon(row.msStoreId!); return icon ? [icon] : []; });
   if (row.website && isPublicHost(row.website)) {
-    const page = await safeGet(`https://${row.website}/`, PAGE_LIMIT, "text/html").catch(() => null);
-    if (page) candidates.push(...siteIconsFrom(new TextDecoder().decode(page.bytes), page.url).slice(0, 4));
+    sources.push(async () => {
+      const page = await safeGet(`https://${row.website}/`, PAGE_LIMIT, "text/html").catch(() => null);
+      return page ? siteIconsFrom(new TextDecoder().decode(page.bytes), page.url).slice(0, 4) : [];
+    });
   }
-  for (const url of candidates) {
-    const image = await safeGet(url, IMAGE_LIMIT, "image/*").catch(() => null);
-    const kind = image ? imageKind(image.bytes) : null;
-    if (image && kind) return { bytes: image.bytes, kind };
+  let best: { bytes: Uint8Array; kind: ImageKind; width: number } | null = null;
+  for (const source of sources) {
+    for (const url of await source().catch(() => [] as string[])) {
+      const image = await safeGet(url, IMAGE_LIMIT, "image/*").catch(() => null);
+      const kind = image ? imageKind(image.bytes) : null;
+      if (!image || !kind) continue;
+      const width = imageWidth(image.bytes);
+      if (width >= SHARP_WIDTH) return { bytes: image.bytes, kind };
+      if (!best || width > best.width) best = { bytes: image.bytes, kind, width };
+    }
   }
-  return null;
+  return best ? { bytes: best.bytes, kind: best.kind } : null;
 }
 
 /** The file name a stored logo is served under; anything else is refused by the route. */
@@ -157,13 +228,25 @@ export async function refreshBrandLogo(id: number): Promise<boolean> {
 export async function refreshMissingBrandLogos(limit = 60, now = new Date()): Promise<{ tried: number; fetched: number }> {
   const retry = new Date(now.getTime() - RETRY_AFTER_DAYS * 86_400_000);
   const stale = new Date(now.getTime() - REFRESH_AFTER_DAYS * 86_400_000);
-  const rows = await db.select({ id: subscriptionCatalog.id }).from(subscriptionCatalog).where(and(
-    eq(subscriptionCatalog.status, "active"),
-    or(
-      and(isNull(subscriptionCatalog.fetchedLogoUrl), or(isNull(subscriptionCatalog.logoFetchedAt), lt(subscriptionCatalog.logoFetchedAt, retry))),
-      lt(subscriptionCatalog.logoFetchedAt, stale),
-    ),
-  )).orderBy(asc(subscriptionCatalog.id)).limit(limit);
+  const services = await db.select({ id: subscriptionCatalog.id, fetchedLogoUrl: subscriptionCatalog.fetchedLogoUrl, logoFetchedAt: subscriptionCatalog.logoFetchedAt })
+    .from(subscriptionCatalog)
+    // App stores are not offered as subscriptions: a charge through one is asked about, so they need no logo.
+    .where(and(eq(subscriptionCatalog.status, "active"), eq(subscriptionCatalog.kind, "service")))
+    .orderBy(asc(subscriptionCatalog.id));
+  const driver = getStorageDriver();
+  const due: number[] = [];
+  for (const row of services) {
+    const tried = row.logoFetchedAt?.getTime() ?? 0;
+    if (!row.fetchedLogoUrl) {
+      if (tried < retry.getTime()) due.push(row.id);
+      continue;
+    }
+    // A logo kept on the server's own disk is gone after a redeploy: fetched again, whatever its age.
+    const file = row.fetchedLogoUrl.split("/").pop() ?? "";
+    const kept = BRAND_LOGO_FILE.test(file) && await driver.exists(`brand-logos/${file}`).catch(() => false);
+    if (!kept || tried < stale.getTime()) due.push(row.id);
+  }
+  const rows = due.slice(0, limit).map((id) => ({ id }));
   let fetched = 0;
   for (const row of rows) if (await refreshBrandLogo(row.id)) fetched += 1;
   if (rows.length) log.info({ event: "brand_logo.job", tried: rows.length, fetched }, "Service logos refreshed");

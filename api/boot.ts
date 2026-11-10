@@ -94,6 +94,9 @@ if (cronsEnabled) {
   // The banks, wallets and subscriptions the capture catalog ships with; rows an admin edited stay as they are.
   void withScheduledJobLock("seed-capture-catalog", async () => {
     await syncCaptureSeed();
+    // Then the services' real logos: on a new server, or after a redeploy lost files kept on the server's own disk.
+    const { refreshMissingBrandLogos } = await import("./lib/capture/brand-logos");
+    await refreshMissingBrandLogos();
   }).catch((err) => createLogger("boot").error({ err, event: "capture.seed.failed" }, "Capture catalog seed failed"));
   // The ledger's two-kind cutover runs at once on a new database, so capture records from the first message.
   // Its own lock name: the migration and the activation hold their own row and flag locks either way.

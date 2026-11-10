@@ -11,17 +11,17 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-09 c81ddb36 | 2026-11-09 c81ddb36 | 18 | — | — | 1 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-10 5f49c2d2 | 2026-11-10 5f49c2d2 | 8 | — | — | 5 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-10 5cdd21f0 | 2026-11-10 5cdd21f0 | 8 | — | — | 5 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 6 | — | — | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-05 5af36e21 | 2026-11-05 f7bb4b83 | 9 | — | 2 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-10 5f49c2d2 | 2026-11-10 5f49c2d2 | 11 | — | 1 | 10 | 1 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-10 5cdd21f0 | 2026-11-10 5cdd21f0 | 11 | — | 1 | 10 | 1 |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-09 c81ddb36 | 2026-11-09 c81ddb36 | 16 | **1** | — | 7 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-05 df6216e1 | 2026-11-03 ff028180 | 2 | — | — | 2 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-04 4def5707 | 2026-11-05 08b37c7f | 4 | — | — | 3 | 1 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-05 ed33efe8 | 2026-11-05 ed33efe8 | 7 | — | — | 5 | — |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 10 | — | — | 3 | 5 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-10 5f49c2d2 | 2026-11-10 5f49c2d2 | 5 | — | — | 1 | 7 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-10 5cdd21f0 | 2026-11-10 5cdd21f0 | 5 | — | — | 1 | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 7 | — | — | 3 | 1 |
 
 
@@ -82,7 +82,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Refunds the old bank-message intake recorded netted their category only when the merchant was one the engine knew well; the others were saved as income under دخل آخر and keep that filing, as do rows saved before decision 0010. A category can show net negative spending in a month when the purchase fell in an earlier one.
 - Commitments, plans and wallet balances are the personal ledger's only: `business_id` exists on `scheduled_cashflows` and `coaching_plans` but nothing writes or reads it yet (`api/services/coach/`).
 - Coaching-plan step reminders reach the in-app notifications only, not push (`api/services/coach/plans.ts#deliverDueReminders`); commitment reminders do reach push.
-- A service with neither an Android app nor a site icon (Jawwy TV today, and the Google Play store row) shows its initials on its brand colour until the admin sets a logo (`mobile/app/lib/src/features/commitments/subscription_brands.dart`, [bank messages](bank-messages.md)).
+- A service an admin adds without an Android app, a Microsoft Store app or a site icon shows its initials on its brand colour until the admin sets a logo (`mobile/app/lib/src/features/commitments/subscription_brands.dart`, [bank messages](bank-messages.md)); every service the seed ships has its real logo.
 - WhatsApp commitment reminders stay off until the admin sets an approved Utility template (`commitments_whatsapp_template`) and turns them on; the template's two variables are the title and the text (`api/services/coach/reminders.ts`).
 - The parked website's «خطتك والتزاماتك» page (`src/pages/PlanPage.tsx`) still adds and settles through `coach.*` and knows nothing of shapes, overrides or questions (decision 0050 parks it).
 

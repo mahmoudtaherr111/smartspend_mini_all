@@ -1571,5 +1571,16 @@
   "cfWhichBill": "Which bill?",
   "cfYearlyCost": "That is about {p0} a year.",
   "cfLeftCountHelp": "With the next",
-  "cfOptional": "Optional"
+  "cfOptional": "Optional",
+  "cfNeedDifferentTurns": "Each share needs its own turn.",
+  "cfShares": "How many shares?",
+  "cfOneShare": "One share",
+  "cfTwoShares": "Two shares",
+  "cfThreeShares": "Three shares",
+  "cfSharesHint": "You pay each share every month and collect once per share, on its turn.",
+  "cfShareAmount": "One share per month",
+  "cfTurnOf": "Turn of share {index}",
+  "cfGam3eyaSharesSummary": "You pay {p0} a month and collect {p1} on each turn: month {p2}.",
+  "cfAnd": " and ",
+  "cfYourPayouts": "Your payouts"
 }

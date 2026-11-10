@@ -250,7 +250,7 @@ Decision 0051 makes every scheduled payment one system on `scheduled_cashflows`,
   `paidBeforeCount`), `schedule` (its own `items` of day and amount: school fees), `recurring` (rent, bills,
   subscriptions, salary; an amount, or `amountVaries`), `balance` (a debt of `totalAmount` repaid once, in
   installments, or undated: its one open "date" is keyed by `trackedFrom` and stays open until paid) and `gam3eya`
-  (the monthly share; the payout is a second row, `direction` in, whose `parentId` is the share's). An occurrence
+  (the monthly share; each payout is a row, `direction` in, whose `parentId` is the share's: one per share). An occurrence
   carries its number of the total, its label, and `effectiveDay` after a move. `commitment_overrides` skip a date,
   move it or change its amount this time, keyed by the day the rule computed, so links stay put; a skipped date is
   `skipped`, never owed.
@@ -265,7 +265,7 @@ Decision 0051 makes every scheduled payment one system on `scheduled_cashflows`,
   every 1, 3, 6 or 12 months (`intervalCount`) with its one-off payments saved as a second `schedule` commitment;
   named school fees and what was paid; lessons monthly or weekly until an end; rent with its landlord and contract
   end; a bill by type with an estimate when it varies (`amount` with `amountVaries`); a card's due date; a debt's
-  person from the contacts; a gam3eya's holder and payout; income by kind. Each type starts with a fitting reminder
+  person from the contacts; a gam3eya's holder, its shares (one to three: one share's amount is paid per share every month, and each share collects on its own turn, `gam3eyaTurns`, one payout row per share) and payouts; income by kind. Each type starts with a fitting reminder
   (a day before an automatic charge, two before a trial ends, a week before a flat's or a school's amount), and the
   same service or name is asked about before it is added twice.
 - **Where payments are filed** (`filingOf`): the commitment's own category if set, else its kind's: installment, loan
@@ -432,9 +432,9 @@ Checked against the code; each one names where it lives.
     (`api/services/action-runtime/extended-actions.ts`), business, profile and wallet changes
     (`api/business-router.ts`, `api/profile-router.ts`, `api/wallet-router.ts`), the taxonomy migration and account
     purge. Each moves to it as its own change (decision 0027).
-10. **Gap.** A service with neither an Android app nor a site icon (Jawwy TV today, and the Google Play store row)
-    shows its initials on its brand colour until the admin sets a logo
-    (`mobile/app/lib/src/features/commitments/subscription_brands.dart`, [bank messages](bank-messages.md)).
+10. **Gap.** A service an admin adds without an Android app, a Microsoft Store app or a site icon shows its initials on
+    its brand colour until the admin sets a logo (`mobile/app/lib/src/features/commitments/subscription_brands.dart`,
+    [bank messages](bank-messages.md)); every service the seed ships has its real logo.
 11. **Gap.** WhatsApp commitment reminders stay off until the admin sets an approved Utility template
     (`commitments_whatsapp_template`) and turns them on; the template's two variables are the title and the text
     (`api/services/coach/reminders.ts`).

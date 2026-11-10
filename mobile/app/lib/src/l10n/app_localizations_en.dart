@@ -5230,4 +5230,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cfOptional => 'Optional';
+
+  @override
+  String get cfNeedDifferentTurns => 'Each share needs its own turn.';
+
+  @override
+  String get cfShares => 'How many shares?';
+
+  @override
+  String get cfOneShare => 'One share';
+
+  @override
+  String get cfTwoShares => 'Two shares';
+
+  @override
+  String get cfThreeShares => 'Three shares';
+
+  @override
+  String get cfSharesHint =>
+      'You pay each share every month and collect once per share, on its turn.';
+
+  @override
+  String get cfShareAmount => 'One share per month';
+
+  @override
+  String cfTurnOf(int index) {
+    return 'Turn of share $index';
+  }
+
+  @override
+  String cfGam3eyaSharesSummary(String p0, String p1, String p2) {
+    return 'You pay $p0 a month and collect $p1 on each turn: month $p2.';
+  }
+
+  @override
+  String get cfAnd => ' and ';
+
+  @override
+  String get cfYourPayouts => 'Your payouts';
 }

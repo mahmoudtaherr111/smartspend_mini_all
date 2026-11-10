@@ -4,6 +4,7 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 import 'core/preferences.dart';
 import 'features/auth/session_controller.dart';
+import 'features/commitments/logo_cache.dart';
 import 'features/infrastructure/app_update_screen.dart';
 import 'features/infrastructure/remote_config.dart';
 import 'features/lock/lock_screen.dart';
@@ -52,7 +53,9 @@ class SmartSpendApp extends ConsumerWidget {
         builder: (context, ref, _) {
           final config = ref.watch(updateRequiredProvider);
           return config == null
-              ? RemoteConfigRefresher(child: LockGate(child: child!))
+              ? RemoteConfigRefresher(
+                  child: LogoCacheScope(child: LockGate(child: child!)),
+                )
               : AppUpdateScreen(
                   minimumVersion: config.minVersion,
                   storeUrl: config.storeUrl,

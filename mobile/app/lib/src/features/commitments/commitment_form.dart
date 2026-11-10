@@ -77,6 +77,11 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
   final _total = TextEditingController();
   final _paid = TextEditingController();
   final _turn = TextEditingController();
+  final _turn2 = TextEditingController();
+  final _turn3 = TextEditingController();
+
+  /// A gam3eya's shares: one, two or three, each with its own turn.
+  int _shares = 1;
   final _items = <_Item>[];
   final _extras = <_Item>[];
   String? _day;
@@ -140,6 +145,8 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
       _total,
       _paid,
       _turn,
+      _turn2,
+      _turn3,
     ]) {
       controller.dispose();
     }
@@ -346,14 +353,25 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
         );
       case CommitmentType.gam3eya:
         final months = _int(_count);
-        final turn = _int(_turn);
+        final turns = _turns;
+        final turn = turns.firstOrNull;
         final problem =
             need(amount == null || amount <= 0, l10n.cmNeedAmount) ??
             need(
               months == null || months < 2 || months > 60,
               l10n.cmNeedMonths,
             ) ??
-            need(turn == null || turn < 1 || turn > months!, l10n.cmNeedTurn) ??
+            need(
+              turns.length != _shares ||
+                  turns.any(
+                    (value) => value == null || value < 1 || value > months!,
+                  ),
+              l10n.cmNeedTurn,
+            ) ??
+            need(
+              turns.toSet().length != turns.length,
+              l10n.cfNeedDifferentTurns,
+            ) ??
             need(_day == null, l10n.cmNeedDay);
         if (problem != null) return (null, problem);
         return (
@@ -366,6 +384,7 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
               'amount': amount,
               'occurrenceCount': months,
               'gam3eyaTurn': turn,
+              if (_shares > 1) 'gam3eyaTurns': turns,
               'startDay': _day,
               ...reminder,
             },
@@ -1096,10 +1115,24 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
     ];
   }
 
+  /// The turn of each share, in the order typed.
+  List<int?> get _turns =>
+      [_turn, _turn2, _turn3].take(_shares).map(_int).toList();
+
   List<Widget> _gam3eya(AppLocalizations l10n) {
     final amount = _money(_amount);
     final months = _int(_count);
-    final turn = _int(_turn);
+    final turns = _turns;
+    final valid =
+        amount != null &&
+        amount > 0 &&
+        months != null &&
+        months > 1 &&
+        turns.every(
+          (value) => value != null && value >= 1 && value <= months,
+        ) &&
+        turns.toSet().length == turns.length;
+    final sorted = valid ? ([...turns.cast<int>()]..sort()) : const <int>[];
     return [
       _field(
         _title,
@@ -1115,27 +1148,43 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
         key: 'field-person',
       ),
       _gap(),
-      _field(_amount, l10n.cmMonthlyShare, money: true, key: 'field-amount'),
+      _chips(
+        l10n.cfShares,
+        [(1, l10n.cfOneShare), (2, l10n.cfTwoShares), (3, l10n.cfThreeShares)],
+        _shares,
+        (value) => _shares = value,
+      ),
+      if (_shares > 1) ...[
+        const SizedBox(height: SmartSpendSpacing.xs),
+        Text(l10n.cfSharesHint, style: Theme.of(context).textTheme.bodySmall),
+      ],
+      _gap(),
+      _field(
+        _amount,
+        _shares > 1 ? l10n.cfShareAmount : l10n.cmMonthlyShare,
+        money: true,
+        key: 'field-amount',
+      ),
+      _gap(),
+      _field(_count, l10n.cmMonthsCount, number: true, key: 'field-count'),
       _gap(),
       Row(
         children: [
-          Expanded(
-            child: _field(
-              _count,
-              l10n.cmMonthsCount,
-              number: true,
-              key: 'field-count',
+          for (final (index, controller) in [
+            _turn,
+            _turn2,
+            _turn3,
+          ].take(_shares).indexed) ...[
+            if (index > 0) const SizedBox(width: SmartSpendSpacing.sm),
+            Expanded(
+              child: _field(
+                controller,
+                _shares == 1 ? l10n.cmMyTurn : l10n.cfTurnOf(index + 1),
+                number: true,
+                key: index == 0 ? 'field-turn' : 'field-turn-${index + 1}',
+              ),
             ),
-          ),
-          const SizedBox(width: SmartSpendSpacing.sm),
-          Expanded(
-            child: _field(
-              _turn,
-              l10n.cmMyTurn,
-              number: true,
-              key: 'field-turn',
-            ),
-          ),
+          ],
         ],
       ),
       _gap(),
@@ -1144,19 +1193,19 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
         value: _day,
         onPick: (day) => setState(() => _day = day),
       ),
-      if (amount != null &&
-          amount > 0 &&
-          months != null &&
-          months > 1 &&
-          turn != null &&
-          turn >= 1 &&
-          turn <= months)
+      if (valid)
         _summary(
-          l10n.cfGam3eyaSummary(
-            moneyText(context, amount * months),
-            '$turn',
-            '$months',
-          ),
+          _shares == 1
+              ? l10n.cfGam3eyaSummary(
+                  moneyText(context, amount * months),
+                  '${sorted.first}',
+                  '$months',
+                )
+              : l10n.cfGam3eyaSharesSummary(
+                  moneyText(context, amount * _shares),
+                  moneyText(context, amount * months),
+                  sorted.join(l10n.cfAnd),
+                ),
         ),
     ];
   }
