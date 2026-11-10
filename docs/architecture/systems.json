@@ -33,7 +33,8 @@
       "summaryAr": "تسجيل رسايل البنوك والمحافظ من الموبايل: قايمة البنوك والمحافظ والاشتراكات اللي الأدمن بيعدّلها، والقارئ اللي بيقرا الرسالة من غير AI، والموديل اللي الأدمن اختاره للي القارئ مش متأكد منه، والاستلام اللي بيجمع الرسايل في عمليات، وإجابة المستخدم اللي بتكتب في الدفتر.",
       "clusters": ["capture-ai-reader", "capture-catalog", "capture-intake", "web-bank-capture"],
       "routers": ["capture", "captureAdmin"],
-      "jobs": ["seed-capture-catalog", "capture-ai-sweep", "capture-breaker", "capture-silent-devices", "cashflow-cutover", "cashflow-cutover-at-boot"]
+      "routes": ["GET /api/brand-logos/:file"],
+      "jobs": ["seed-capture-catalog", "capture-ai-sweep", "capture-breaker", "capture-silent-devices", "cashflow-cutover", "cashflow-cutover-at-boot", "brand-logos"]
     },
     {
       "id": "voice-calls",

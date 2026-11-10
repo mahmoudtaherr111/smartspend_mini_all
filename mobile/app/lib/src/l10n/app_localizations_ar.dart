@@ -4367,7 +4367,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String cmEveryMonths(int count) {
-    return 'كل $count شهور';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'كل $count شهر',
+      few: 'كل $count شهور',
+      two: 'كل شهرين',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -4888,7 +4895,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cfAddExtra => 'ضيف دفعة';
 
   @override
-  String get cfAllCount => 'كام قسط كلهم (اختياري)';
+  String get cfAllCount => 'من كام قسط';
 
   @override
   String get cfAutoDebit => 'بتتخصم لوحدها';
@@ -5027,7 +5034,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cfLandlord => 'صاحب الشقة (اختياري)';
 
   @override
-  String get cfLeftCount => 'فاضل كام قسط (مع الجاي)';
+  String get cfLeftCount => 'فاضل كام قسط';
 
   @override
   String cfLeftTotal(String p0, String p1, String p2) {
@@ -5130,7 +5137,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cfRentOfHint => 'زي: إيجار الشقة';
 
   @override
-  String get cfRepaidSoFar => 'اتدفع منه كام (اختياري)';
+  String get cfRepaidSoFar => 'اتدفع منه كام';
 
   @override
   String get cfRepeats => 'بيتكرر';
@@ -5176,4 +5183,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String cfYearlyCost(String p0) {
     return 'يعني حوالي $p0 في السنة.';
   }
+
+  @override
+  String get cfLeftCountHelp => 'مع الجاي';
+
+  @override
+  String get cfOptional => 'اختياري';
 }

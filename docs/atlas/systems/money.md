@@ -87,6 +87,7 @@ flowchart LR
   job_taxonomy_migration --> sys_platform
   mod_coaching --> mod_ledger
   mod_coaching --> sys_ai_center
+  mod_coaching --> sys_bank_messages
   mod_coaching --> sys_expense_capture
   mod_coaching --> sys_insights
   mod_coaching --> sys_notifications

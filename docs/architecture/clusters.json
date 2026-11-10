@@ -264,8 +264,9 @@
     {
       "id": "capture-catalog",
       "title": "Capture catalog",
-      "description": "The banks, wallets, payment networks, fintech and messaging apps whose notifications are read, and the subscriptions recognised in card charges: the shipped seed, the per-process copy that reloads on an admin change, and the lookups by Android app, SMS sender and merchant name.",
+      "description": "The banks, wallets, payment networks, fintech and messaging apps whose notifications are read, and the subscriptions recognised in card charges: the shipped seed, the per-process copy that reloads on an admin change, the lookups by Android app, SMS sender and merchant name, and each known service's real logo, fetched from its own store listing or site, stored and served by the server.",
       "paths": [
+        "api/lib/capture/brand-logos.ts",
         "api/lib/capture/catalog.ts",
         "api/lib/capture/seed-sources.ts",
         "api/lib/capture/seed-subscriptions.ts"

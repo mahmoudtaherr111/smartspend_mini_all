@@ -113,11 +113,19 @@ matched to the commitment it pays by the `commitment-match-sweep` job, by the sa
 - Costs: `capture_ai_daily_cost_cap_usd`, `capture_ai_tokens_free`, `capture_ai_concurrency`, `sms_ai_enabled`.
 
 ## Data
-- `capture_sources` and `subscription_catalog`: the catalog, shared by all users (`0029_capture_sources.sql`). A
-  subscription also has the admin's `brand_color` and `logo_url` (`0050_commitments_ecosystem.sql`, edited in the
-  console's subscriptions list with a preview), which the app shows on a subscription commitment and on its calendar
-  day ([Money](money.md#commitments-hub-التزاماتي)); the seed adds talabat pro, Careem Plus and Uber One, matched by
-  the membership's own name only, never the app's, which every order carries.
+- `capture_sources` and `subscription_catalog`: the catalog, shared by all users (`0029_capture_sources.sql`). The seed
+  lists the services most people in Egypt pay for (video, music, AI, software and storage, games, learning and books,
+  social, delivery and rides; the memberships talabat pro, Careem Plus and Uber One are matched by their own name
+  only, never the app's, which every order carries). Each has its brand colour, its official Android app
+  (`app_package`) and site (`website`, `0051_catalog_brand_logos.sql`), and the admin's own `logo_url`.
+- **Real logos** (`api/lib/capture/brand-logos.ts`): the `brand-logos` job (daily at 04:23) and the console's
+  «جيب اللوجو» / «جيب اللوجوهات الناقصة» fetch each service's icon from its own Google Play listing (its `og:image`
+  at 256 px), else its site's apple-touch-icon or largest raster icon. Only https requests to public hosts, three checked
+  redirects, a size and time limit, and PNG, JPEG, WebP, GIF or ICO bytes are kept (never SVG). The file is stored
+  through the storage driver as `brand-logos/<slug>-<hash>.<ext>` and served by `GET /api/brand-logos/:file` with a
+  year's immutable cache; `fetched_logo_url` holds its relative address, which the seed never overwrites. A failed try
+  waits a week, a logo is refreshed after 90 days, and the admin's `logo_url` wins over a fetched one (`logoOf`). The
+  app resolves the address against the server it talks to, so a phone never asks a third party for a logo.
 - `capture_devices`, `capture_consents`, `capture_signals` (a kept signal, deleted after 30 days):
   `0031_capture_intake.sql`; device health `0039_capture_device_health.sql`.
 - `capture_events` (one payment and the keys signals are matched on): `0032_capture_events.sql`,

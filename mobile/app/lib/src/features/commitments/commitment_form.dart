@@ -539,6 +539,7 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
     bool number = false,
     bool money = false,
     String key = '',
+    String? helper,
   }) => TextField(
     key: key.isEmpty ? null : ValueKey(key),
     controller: controller,
@@ -549,6 +550,7 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
     decoration: InputDecoration(
       labelText: label,
       hintText: hint,
+      helperText: helper,
       suffixText: money ? MoneyLocale.of(context).symbol : null,
     ),
   );
@@ -855,6 +857,7 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
               l10n.cfLeftCount,
               number: true,
               key: 'field-count',
+              helper: l10n.cfLeftCountHelp,
             ),
           ),
           const SizedBox(width: SmartSpendSpacing.sm),
@@ -864,6 +867,7 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
               l10n.cfAllCount,
               number: true,
               key: 'field-total-count',
+              helper: l10n.cfOptional,
             ),
           ),
         ],
@@ -914,14 +918,11 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
     );
     final paid = _money(_paid) ?? 0;
     return [
-      SegmentedButton<bool>(
-        segments: [
-          ButtonSegment(value: false, label: Text(l10n.cmKindSchool)),
-          ButtonSegment(value: true, label: Text(l10n.cmKindUniversity)),
-        ],
-        selected: {_university},
-        onSelectionChanged: (value) =>
-            setState(() => _university = value.first),
+      _chips(
+        null,
+        [(false, l10n.cmKindSchool), (true, l10n.cmKindUniversity)],
+        _university,
+        (value) => _university = value,
       ),
       _gap(),
       _field(
@@ -980,13 +981,11 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
       ...?people?.settledContacts,
     ].where((person) => person.contactId != null).take(8).toList();
     return [
-      SegmentedButton<bool>(
-        segments: [
-          ButtonSegment(value: false, label: Text(l10n.cmIOwe)),
-          ButtonSegment(value: true, label: Text(l10n.cmOwedToMe)),
-        ],
-        selected: {_owedToMe},
-        onSelectionChanged: (value) => setState(() => _owedToMe = value.first),
+      _chips(
+        null,
+        [(false, l10n.cmIOwe), (true, l10n.cmOwedToMe)],
+        _owedToMe,
+        (value) => _owedToMe = value,
       ),
       _gap(),
       if (known.isNotEmpty) ...[
@@ -1044,6 +1043,7 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
               l10n.cfRepaidSoFar,
               money: true,
               key: 'field-paid',
+              helper: l10n.cfOptional,
             ),
           ),
         ],
@@ -1370,26 +1370,24 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
           _ => _recurring(l10n),
         },
         const SizedBox(height: SmartSpendSpacing.lg),
-        Text(
-          _type == CommitmentType.income
-              ? l10n.cfRemindIncome
-              : l10n.cmRemindBefore,
-          style: textTheme.titleSmall,
-        ),
-        const SizedBox(height: SmartSpendSpacing.sm),
-        Wrap(
-          spacing: SmartSpendSpacing.sm,
-          runSpacing: SmartSpendSpacing.sm,
-          children: [
+        DropdownButtonFormField<int>(
+          key: const ValueKey('field-remind'),
+          initialValue: remind,
+          decoration: InputDecoration(
+            labelText: _type == CommitmentType.income
+                ? l10n.cfRemindIncome
+                : l10n.cmRemindBefore,
+          ),
+          items: [
             for (final days in reminderDayChoices)
-              ChoiceChip(
-                label: Text(
+              DropdownMenuItem(
+                value: days,
+                child: Text(
                   days == 0 ? l10n.cmOnTheDay : l10n.cmDaysBefore(days),
                 ),
-                selected: remind == days,
-                onSelected: (_) => setState(() => _remindDays = days),
               ),
           ],
+          onChanged: (days) => setState(() => _remindDays = days),
         ),
         const SizedBox(height: SmartSpendSpacing.lg),
         if (_error != null) ...[

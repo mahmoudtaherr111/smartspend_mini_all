@@ -2514,7 +2514,7 @@
   "cmWeekly": "كل أسبوع",
   "cmYearly": "كل سنة",
   "cmMonthly": "كل شهر",
-  "cmEveryMonths": "كل {count} شهور",
+  "cmEveryMonths": "{count, plural, =2{كل شهرين} few{كل {count} شهور} other{كل {count} شهر}}",
   "@cmEveryMonths": {
     "placeholders": {
       "count": {
@@ -2795,7 +2795,7 @@
   "cfAboutHowMuch": "بتيجي حوالي كام (اختياري)",
   "cfAddAnyway": "ضيفه تاني",
   "cfAddExtra": "ضيف دفعة",
-  "cfAllCount": "كام قسط كلهم (اختياري)",
+  "cfAllCount": "من كام قسط",
   "cfAutoDebit": "بتتخصم لوحدها",
   "cfAutoFromAccount": "بيتخصم لوحده من حسابي أو مرتبي",
   "cfAutoFromCard": "بيتخصم لوحده من الكارت",
@@ -2874,7 +2874,7 @@
   "cfItemLabel": "اسمه (اختياري)",
   "cfLandline": "التليفون الأرضي",
   "cfLandlord": "صاحب الشقة (اختياري)",
-  "cfLeftCount": "فاضل كام قسط (مع الجاي)",
+  "cfLeftCount": "فاضل كام قسط",
   "cfLeftTotal": "فاضل {p0} × {p1} = {p2}",
   "@cfLeftTotal": {
     "placeholders": {
@@ -2933,7 +2933,7 @@
   "cfRentIn": "إيجار ليّا",
   "cfRentOf": "إيجار إيه؟ (اختياري)",
   "cfRentOfHint": "زي: إيجار الشقة",
-  "cfRepaidSoFar": "اتدفع منه كام (اختياري)",
+  "cfRepaidSoFar": "اتدفع منه كام",
   "cfRepeats": "بيتكرر",
   "cfSalary": "المرتب",
   "cfSister": "أختي",
@@ -2954,5 +2954,7 @@
         "type": "String"
       }
     }
-  }
+  },
+  "cfLeftCountHelp": "مع الجاي",
+  "cfOptional": "اختياري"
 }

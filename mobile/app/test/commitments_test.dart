@@ -240,8 +240,11 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.widgetWithText(ChoiceChip, 'قبلها بيوم'));
-      await tester.tap(find.widgetWithText(ChoiceChip, 'قبلها بيوم'));
+      await tester.ensureVisible(find.byKey(const ValueKey('field-remind')));
+      await tester.tap(find.byKey(const ValueKey('field-remind')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('قبلها بيوم').last);
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const ValueKey('commitment-save')));
       await tester.tap(find.byKey(const ValueKey('commitment-save')));
       await tester.pumpAndSettle();

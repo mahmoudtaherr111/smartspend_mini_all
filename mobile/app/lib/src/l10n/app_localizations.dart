@@ -7691,7 +7691,7 @@ abstract class AppLocalizations {
   /// No description provided for @cmEveryMonths.
   ///
   /// In ar, this message translates to:
-  /// **'كل {count} شهور'**
+  /// **'{count, plural, =2{كل شهرين} few{كل {count} شهور} other{كل {count} شهر}}'**
   String cmEveryMonths(int count);
 
   /// No description provided for @cmTimesCount.
@@ -8633,7 +8633,7 @@ abstract class AppLocalizations {
   /// No description provided for @cfAllCount.
   ///
   /// In ar, this message translates to:
-  /// **'كام قسط كلهم (اختياري)'**
+  /// **'من كام قسط'**
   String get cfAllCount;
 
   /// No description provided for @cfAutoDebit.
@@ -8885,7 +8885,7 @@ abstract class AppLocalizations {
   /// No description provided for @cfLeftCount.
   ///
   /// In ar, this message translates to:
-  /// **'فاضل كام قسط (مع الجاي)'**
+  /// **'فاضل كام قسط'**
   String get cfLeftCount;
 
   /// No description provided for @cfLeftTotal.
@@ -9077,7 +9077,7 @@ abstract class AppLocalizations {
   /// No description provided for @cfRepaidSoFar.
   ///
   /// In ar, this message translates to:
-  /// **'اتدفع منه كام (اختياري)'**
+  /// **'اتدفع منه كام'**
   String get cfRepaidSoFar;
 
   /// No description provided for @cfRepeats.
@@ -9163,6 +9163,18 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'يعني حوالي {p0} في السنة.'**
   String cfYearlyCost(String p0);
+
+  /// No description provided for @cfLeftCountHelp.
+  ///
+  /// In ar, this message translates to:
+  /// **'مع الجاي'**
+  String get cfLeftCountHelp;
+
+  /// No description provided for @cfOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختياري'**
+  String get cfOptional;
 }
 
 class _AppLocalizationsDelegate

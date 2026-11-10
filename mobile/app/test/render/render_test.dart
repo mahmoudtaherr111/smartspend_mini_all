@@ -295,6 +295,12 @@ final _screens = <(String, bool, PrepareApi?, Reach)>[
       await tester.pumpAndSettle();
     },
   ),
+  ('commitment-property-form', true, _commitmentsApi, _openType('property')),
+  ('commitment-school-form', true, _commitmentsApi, _openType('school')),
+  ('commitment-bill-form', true, _commitmentsApi, _openType('bill')),
+  ('commitment-debt-form', true, _commitmentsApi, _openType('debt')),
+  ('commitment-loan-form', true, _commitmentsApi, _openType('loan')),
+  ('commitment-income-form', true, _commitmentsApi, _openType('income')),
   (
     'commitments-prompt',
     true,
@@ -353,6 +359,15 @@ Future<void> _reveal(WidgetTester tester, Finder finder) async {
   await tester.ensureVisible(finder.first);
   await tester.pumpAndSettle();
 }
+
+/// The add flow opened on one type's form.
+Reach _openType(String type) => (tester, language) async {
+  await _push('/commitments/add')(tester, language);
+  final tile = find.byKey(ValueKey('type-$type'));
+  await _reveal(tester, tile);
+  await tester.tap(tile);
+  await tester.pumpAndSettle();
+};
 
 void _commitmentsApi(FakeApi api) {
   answerSampleMoney(api);
@@ -457,14 +472,38 @@ Future<void> _open(
             DevicePreferences(language: language),
           ),
         ],
-        child: const SmartSpendApp(),
+        child: LogoImageScope(
+          imageFor: _logoImage,
+          child: const SmartSpendApp(),
+        ),
       ),
     ),
   );
   await tester.pumpAndSettle();
 }
 
+/// The logos the server fetched, read from a local folder (SMARTSPEND_RENDER_LOGOS: the files the brand-logos job
+/// stored, named `<slug>-<hash>.png`), so the pictures show the real logos without the network.
+final _logoDir = Platform.environment['SMARTSPEND_RENDER_LOGOS'];
+
+ImageProvider? _logoImage(String url) {
+  final dir = _logoDir;
+  final slug = RegExp(r'/brand-logos/([a-z0-9_]+)').firstMatch(url)?.group(1);
+  if (dir == null || slug == null) return null;
+  final files = Directory(dir)
+      .listSync()
+      .whereType<File>()
+      .where((file) => file.uri.pathSegments.last.startsWith('$slug-'))
+      .toList();
+  return files.isEmpty ? null : MemoryImage(files.first.readAsBytesSync());
+}
+
 Future<void> _save(WidgetTester tester, String name) async {
+  // Images decode on the engine's own time: let it finish before drawing.
+  await tester.runAsync(
+    () => Future<void>.delayed(const Duration(milliseconds: 300)),
+  );
+  await tester.pump();
   await tester.runAsync(() async {
     final boundary =
         _frame.currentContext!.findRenderObject()! as RenderRepaintBoundary;
@@ -478,6 +517,7 @@ Future<void> _save(WidgetTester tester, String name) async {
 
 void main() {
   setUpAll(() async {
+    sampleCommitmentLogos = _logoDir != null;
     if (_outDir != null) await _loadFonts();
   });
 

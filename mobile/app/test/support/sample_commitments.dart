@@ -1,5 +1,11 @@
 import 'test_app.dart';
 
+/// The render harness turns this on so known services carry the logo address the server would give them.
+bool sampleCommitmentLogos = false;
+
+String? _logo(String? slug) =>
+    sampleCommitmentLogos && slug != null ? '/api/brand-logos/$slug.png' : null;
+
 /// Checks a commitments input against the keys `api/commitments-router.ts` takes: a missing required key or a key
 /// the server does not know fails the test, since it means the app and the server disagree.
 Map<String, Object?> commitmentsInput(
@@ -90,7 +96,7 @@ Map<String, Object?> _due(
   'estimated': false,
   'catalogSlug': slug,
   'brandColor': null,
-  'logoUrl': null,
+  'logoUrl': _logo(slug),
   'settlements': settlements,
 };
 
@@ -99,8 +105,23 @@ Map<String, Object?> _brand(String slug, String name, String nameAr) => {
   'name': name,
   'nameAr': nameAr,
   'brandColor': null,
-  'logoUrl': null,
+  'logoUrl': _logo(slug),
   'cycle': 'monthly',
+  'group': _groups[slug] ?? 'general_subscriptions',
+};
+
+const _groups = {
+  'netflix': 'streaming',
+  'shahid': 'streaming',
+  'watch_it': 'streaming',
+  'osn_plus': 'streaming',
+  'yango_play': 'streaming',
+  'tod': 'streaming',
+  'spotify': 'music',
+  'anghami': 'music',
+  'youtube_premium': 'streaming',
+  'chatgpt': 'ai_tools',
+  'icloud': 'software',
 };
 
 Map<String, Object?> _item(

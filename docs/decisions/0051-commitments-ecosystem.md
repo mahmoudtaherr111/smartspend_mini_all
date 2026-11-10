@@ -44,8 +44,15 @@ its commitment without a second step, but never for the wrong one.
   week and two weeks late (the admin's count of follow-ups), each claimed once per date, stage and channel (`commitment_reminders`, unique) by the
   `commitment-reminders` job. They go to the in-app inbox and push. WhatsApp sends only when the admin turned it on,
   set an approved template, the plan has the feature, the person consented, and inside the admin's hours and daily cap.
-- **Known services** come from `subscription_catalog` (Netflix, Shahid…, with the admin's logo and colour), so the
-  calendar shows the service's mark on its day and «دفعت نتفليكس» names it in Arabic or English.
+- **Known services** come from `subscription_catalog` (the services most people in Egypt pay for), so the calendar
+  shows the service's mark on its day and «دفعت نتفليكس» names it in Arabic or English. Their **real logos** are
+  fetched by the server from each service's own Google Play listing (else its site's icon), stored and served from
+  `/api/brand-logos/`: no logo file is bundled in the public repository, the brand's own published icon is what people
+  recognise, and a phone never asks a third party for one. An admin's own logo wins.
+- **Each type's form is designed for that type**, not one form with a different title: a subscription's renewal,
+  automatic charge and free trial; an installment's financing company and what is left; a flat's quarterly instalments
+  and one-off payments; named school fees; a bill's estimate; a debt's person and what was repaid. Each starts with
+  the reminder that suits it, and adding the same service or name twice is asked first.
 - **Plans:** `commitments` is a plan feature (`contracts/plan-features.ts`) the admin turns on per plan; WhatsApp
   reminders are their own feature.
 - Installment plans are moved into commitments the first time the hub opens (`migrateInstallmentPlans`); the app's

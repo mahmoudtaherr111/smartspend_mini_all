@@ -4411,7 +4411,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cmEveryMonths(int count) {
-    return 'every $count months';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'every $count months',
+      one: 'every month',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -4929,7 +4935,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cfAddExtra => 'Add a payment';
 
   @override
-  String get cfAllCount => 'Installments in all (optional)';
+  String get cfAllCount => 'Out of';
 
   @override
   String get cfAutoDebit => 'Paid automatically';
@@ -5069,7 +5075,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cfLandlord => 'Landlord (optional)';
 
   @override
-  String get cfLeftCount => 'Left (with the next)';
+  String get cfLeftCount => 'Left';
 
   @override
   String cfLeftTotal(String p0, String p1, String p2) {
@@ -5172,7 +5178,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cfRentOfHint => 'e.g. flat rent';
 
   @override
-  String get cfRepaidSoFar => 'Repaid so far (optional)';
+  String get cfRepaidSoFar => 'Repaid so far';
 
   @override
   String get cfRepeats => 'Repeats';
@@ -5218,4 +5224,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String cfYearlyCost(String p0) {
     return 'That is about $p0 a year.';
   }
+
+  @override
+  String get cfLeftCountHelp => 'With the next';
+
+  @override
+  String get cfOptional => 'Optional';
 }

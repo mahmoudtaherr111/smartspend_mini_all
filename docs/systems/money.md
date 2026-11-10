@@ -256,8 +256,18 @@ Decision 0051 makes every scheduled payment one system on `scheduled_cashflows`,
   `skipped`, never owed.
 - **Creating** (`createCommitment`): each shape checks its own fixed fields (`commitments.create`); a person named in the
   form («فريدة اختي», «محمد ابني») becomes or reuses a contact (`contactName`, `beneficiaryName`). A
-  subscription can carry a `catalogSlug` from `subscription_catalog` (name, Arabic name, match tokens, the admin's
-  `brand_color` and `logo_url`, `commitments.subscriptions`).
+  subscription can carry a `catalogSlug` from `subscription_catalog` (name, Arabic name, match tokens, brand colour
+  and real logo, `commitments.subscriptions`, in the seed's order with its section as `group`). A debt can say what
+  was repaid before it was added (`paidSoFar`, declared over its first dates by `declarePaidOnDates`), as a school's
+  fees can. The app's form for each type is `mobile/app/lib/src/features/commitments/commitment_form.dart`: a
+  subscription's renewal (monthly, every 3 months, yearly), next charge, automatic or by hand (`paymentMethod`) and
+  free trial; an installment's financing company or a loan's bank, what is left and how many in all; a flat paid
+  every 1, 3, 6 or 12 months (`intervalCount`) with its one-off payments saved as a second `schedule` commitment;
+  named school fees and what was paid; lessons monthly or weekly until an end; rent with its landlord and contract
+  end; a bill by type with an estimate when it varies (`amount` with `amountVaries`); a card's due date; a debt's
+  person from the contacts; a gam3eya's holder and payout; income by kind. Each type starts with a fitting reminder
+  (a day before an automatic charge, two before a trial ends, a week before a flat's or a school's amount), and the
+  same service or name is asked about before it is added twice.
 - **Where payments are filed** (`filingOf`): the commitment's own category if set, else its kind's: installment, loan
   and property under أقساط وفوايد › أقساط, school, university and lessons under تعليم, rent under سكن › إيجار,
   subscriptions under اشتراكات, a debt or gam3eya as its financial movement (`movementKind` loan or gam3eya), a card
@@ -296,6 +306,8 @@ Decision 0051 makes every scheduled payment one system on `scheduled_cashflows`,
   day) and `week1`/`week2` (`commitments_overdue_followups`), from the hour `commitments_remind_hour_default` unless the
   commitment sets one, each claimed once per date, stage and channel by an `INSERT IGNORE` on `commitment_reminders`.
   Several dates due together become one notification (`commitment_due`, to `/commitments`) in the inbox and by push.
+  A charge taken automatically (`paymentMethod` card, auto_debit or app) is worded as one: «هيتخصم قريب، اتأكد إن في
+  رصيد كفاية، ولو عايز تلغيه ده وقته».
   WhatsApp sends only with `commitments_whatsapp_enabled`, a template (`commitments_whatsapp_template`, two body
   variables: title and text), the plan's `commitment_whatsapp` feature, inside `commitments_whatsapp_hours` and under
   `commitments_whatsapp_daily_cap`; the WhatsApp outbox (`enqueueMessage`) then checks the person's consent and
@@ -420,8 +432,9 @@ Checked against the code; each one names where it lives.
     (`api/services/action-runtime/extended-actions.ts`), business, profile and wallet changes
     (`api/business-router.ts`, `api/profile-router.ts`, `api/wallet-router.ts`), the taxonomy migration and account
     purge. Each moves to it as its own change (decision 0027).
-10. **Gap.** A known service shows its logo only once the admin sets `logo_url` in the catalog; until then the app
-    draws its initials on its brand colour (`mobile/app/lib/src/features/commitments/subscription_brands.dart`).
+10. **Gap.** A service with neither an Android app nor a site icon (Jawwy TV today, and the Google Play store row)
+    shows its initials on its brand colour until the admin sets a logo
+    (`mobile/app/lib/src/features/commitments/subscription_brands.dart`, [bank messages](bank-messages.md)).
 11. **Gap.** WhatsApp commitment reminders stay off until the admin sets an approved Utility template
     (`commitments_whatsapp_template`) and turns them on; the template's two variables are the title and the text
     (`api/services/coach/reminders.ts`).

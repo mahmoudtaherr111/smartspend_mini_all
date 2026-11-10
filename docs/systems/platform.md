@@ -12,7 +12,7 @@ storage, the contracts shared with the web app, and the retention job that prune
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Server | `api/boot.ts` | The Hono app: middleware, Google OAuth start and callback, the OTP stream, the Paymob webhook, `/api/trpc/*`, `/health`, the admin console at `/admin` (`dist/admin`), the live-call WebSocket (`/api/voice/v2`) in production, and the cron registrations. The website is parked (decision 0050): only with `SERVE_WEB_APP=true` does it serve `dist/public`, the sitemap and an indexable `robots.txt`; otherwise `/` answers `{ service, console }` and crawlers are refused |
+| Server | `api/boot.ts` | The Hono app: middleware, Google OAuth start and callback, the OTP stream, the Paymob webhook, `/api/trpc/*`, `/health`, the known services' logos (`/api/brand-logos/:file`, [bank messages](bank-messages.md)), the admin console at `/admin` (`dist/admin`), the live-call WebSocket (`/api/voice/v2`) in production, and the cron registrations. The website is parked (decision 0050): only with `SERVE_WEB_APP=true` does it serve `dist/public`, the sitemap and an indexable `robots.txt`; otherwise `/` answers `{ service, console }` and crawlers are refused |
 | Standalone entry | `api/server.ts` | The same app served on its own, for deploying the API apart from the web app |
 | Request context | `api/context.ts` | Resolves `ctx.user` from the Bearer header, the `smartspend_token`/`local_session` cookie or the `google_session` cookie, and the client IP |
 | Builders | `api/middleware.ts` | The procedure builders, their rate limits and their role and plan checks; every mutation through `adminProcedure` or `moderatorProcedure` reaches the audit log (`auditStaffMutations`): a procedure that wrote its own entry marks `ctx.audit`, any other is recorded by its path and whether it succeeded, never by its input |
@@ -125,7 +125,7 @@ schedules each job in `APP_TIMEZONE`, not the server's clock. The list, with eac
 [docs/atlas/entrypoints.md](../atlas/entrypoints.md). In short: session, challenge and phone-code cleanup
 (daily), classification logs (Sundays), scheduled notifications (every minute) and the smart activity check
 (20:00), coaching reminders (every five minutes), commitment reminders (every five) and the matching of payments
-from bank messages to commitments (every ten; see [money](money.md#commitments-hub-التزاماتي)), the captured messages left for the model (every minute), the
+from bank messages to commitments (every ten; see [money](money.md#commitments-hub-التزاماتي)), the known services' logos (04:23), the captured messages left for the model (every minute), the
 capture breaker (every fifteen) and the silent capture phones (11:00; see [bank messages](bank-messages.md)), the ledger's cashflow cutover (every ten, until it is active; [money](money.md)), the taxonomy migration (every thirty), the memory embedding
 backfill (every twenty), the live calls' memory (every ten; see [voice calls](voice-calls.md)), the monthly
 behaviour snapshot (1st at 01:00) and report (1st at 02:00), the rollup reconciliation (04:00), data retention

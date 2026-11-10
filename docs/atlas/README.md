@@ -47,6 +47,4 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 
 Gaps the generator found between the code and the hand-maintained maps in `docs/architecture/`, or code patterns it cannot read.
 
-- Unclustered file — add a rule to docs/architecture/clusters.json: api/lib/capture/brand-logos.ts
-- docs/architecture/systems.json: the job "brand-logos" belongs to no system.
-- docs/architecture/systems.json: the route "GET /api/brand-logos/:file" belongs to no system.
+None.
