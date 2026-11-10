@@ -8,16 +8,16 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 
 | Cluster | Title | Files | Depends on | Used by | External systems referenced |
 | --- | --- | --- | --- | --- | --- |
-| `api-core` | API server core | 5 | `ai-memory`, `ai-providers`, `api-routers`, `auth`, `billing`, `capture-catalog`, `capture-intake`, `coaching`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `api-routers` | — |
-| `api-routers` | tRPC routers and HTTP sub-apps | 29 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq` |
+| `api-core` | API server core | 5 | `ai-memory`, `ai-providers`, `api-routers`, `auth`, `billing`, `capture-catalog`, `capture-intake`, `coaching`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `storage`, `unclustered`, `voice`, `whatsapp` | `api-routers` | — |
+| `api-routers` | tRPC routers and HTTP sub-apps | 29 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `unclustered`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq` |
 | `auth` | Authentication and sessions | 6 | `capture-intake`, `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `capture-intake`, `jobs` | `google-oauth` |
 | `security` | Request security | 12 | `database`, `platform` | `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `capture-intake` | `turnstile` |
-| `platform` | Platform services | 15 | `ai-providers`, `contracts`, `database`, `notifications`, `storage`, `whatsapp` | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `database`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
-| `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `mysql` |
+| `platform` | Platform services | 15 | `ai-providers`, `contracts`, `database`, `notifications`, `storage`, `whatsapp` | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `database`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `security`, `unclustered`, `voice`, `whatsapp` | `redis`, `sentry` |
+| `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `unclustered`, `voice`, `whatsapp` | `mysql` |
 | `contracts` | Shared contracts | 16 | — | `ai-actions`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `api-routers`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `voice`, `web-account`, `web-admin`, `web-capture`, `web-finance`, `web-lib`, `web-pages`, `web-shared`, `web-voice-call` | — |
 | `billing` | Billing | 8 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `google-oauth`, `paymob` |
 | `ledger` | Ledger writer and aggregates | 11 | `ai-providers`, `capture-intake`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `notifications`, `platform` | `ai-actions`, `api-routers`, `capture-intake`, `coaching`, `finance-semantic-layer`, `jobs`, `notifications`, `voice` | — |
-| `coaching` | Commitments and coaching plans | 6 | `ai-insights`, `arabic-nlp`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `whatsapp` | `ai-actions`, `api-core`, `api-routers`, `ledger`, `voice` | — |
+| `coaching` | Commitments and coaching plans | 6 | `ai-insights`, `arabic-nlp`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `unclustered`, `whatsapp` | `ai-actions`, `api-core`, `api-routers`, `ledger`, `voice` | — |
 | `accounts` | Account lifecycle | 1 | `capture-intake`, `database` | `api-routers` | — |
 | `jobs` | Scheduled job bodies | 7 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `capture-intake`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `whatsapp` | `api-core` | `fireworks` |
 | `notifications` | Notifications | 2 | `contracts`, `database`, `ledger`, `platform` | `api-core`, `api-routers`, `coaching`, `jobs`, `ledger`, `platform` | `firebase`, `web-push` |
@@ -28,7 +28,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `capture-intake`, `classification`, `coaching`, `receipt-parsing`, `voice` | — |
 | `capture-intake` | Capture intake | 18 | `arabic-nlp`, `auth`, `capture-ai-reader`, `capture-catalog`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `security` | `accounts`, `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `jobs`, `ledger` | — |
 | `capture-ai-reader` | Message model reading | 7 | `ai-governance`, `ai-providers`, `capture-intake`, `classification`, `contracts`, `database`, `platform`, `security` | `api-routers`, `capture-intake` | `gemini` |
-| `capture-catalog` | Capture catalog | 3 | `contracts`, `database`, `platform` | `api-core`, `api-routers`, `capture-intake` | — |
+| `capture-catalog` | Capture catalog | 3 | `contracts`, `database`, `platform` | `api-core`, `api-routers`, `capture-intake`, `unclustered` | — |
 | `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
 | `classification-qa` | Classification benchmark helpers | 2 | `classification` | — | — |
 | `classification` | Expense classification pipeline | 40 | `ai-providers`, `arabic-nlp`, `contracts`, `database`, `platform` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-routers`, `arabic-nlp`, `capture-ai-reader`, `capture-intake`, `classification-qa`, `finance-semantic-layer`, `ledger`, `receipt-parsing`, `voice` | `gemini` |
@@ -37,7 +37,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `ai-memory` | AI memory | 14 | `ai-governance`, `ai-providers`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-core`, `api-routers`, `voice` | `qdrant` |
 | `finance-semantic-layer` | Finance semantic layer | 10 | `classification`, `contracts`, `database`, `ledger`, `platform` | `ai-actions`, `ai-kernel`, `api-routers`, `capture-intake`, `coaching`, `jobs`, `ledger`, `voice` | — |
 | `site-guide` | Site guide | 5 | — | `ai-kernel`, `voice` | — |
-| `storage` | File storage | 5 | — | `platform` | `object-storage` |
+| `storage` | File storage | 5 | — | `api-core`, `platform`, `unclustered` | `object-storage` |
 | `ai-insights` | AI insights and reports | 8 | `classification`, `contracts`, `database`, `platform` | `ai-actions`, `api-routers`, `coaching`, `jobs`, `voice` | — |
 | `web-shell` | Web app shell | 23 | `web-account`, `web-growth`, `web-hooks`, `web-lib`, `web-pages`, `web-shared`, `web-ui-kit`, `web-voice-call` | `web-account`, `web-admin`, `web-ai`, `web-bank-capture`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-insights`, `web-pages`, `web-shared`, `web-voice-call` | `capacitor`, `firebase` |
 | `web-pages` | Web pages | 17 | `contracts`, `web-account`, `web-admin`, `web-ai`, `web-bank-capture`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `web-shell` | — |
@@ -54,6 +54,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `web-shared` | Shared web components | 4 | `contracts`, `web-account`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | — |
 | `web-hooks` | Web hooks | 19 | `web-lib`, `web-shell` | `web-account`, `web-ai`, `web-capture`, `web-finance`, `web-growth`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor`, `firebase` |
 | `web-lib` | Web utilities | 10 | `contracts` | `web-account`, `web-admin`, `web-ai`, `web-bank-capture`, `web-capture`, `web-finance`, `web-hooks`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor` |
+| `unclustered` | Files no rule matches | 1 | `capture-catalog`, `database`, `platform`, `storage` | `api-core`, `api-routers`, `coaching` | — |
 
 ## External systems
 
@@ -87,7 +88,7 @@ Hono app and server entry points, request context, tRPC procedure builders and t
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/boot.ts` | `ai-memory`, `ai-providers`, `api-routers`, `auth`, `billing`, `capture-catalog`, `capture-intake`, `coaching`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | — | — | `auth_challenges`, `classification_logs` |
+| `api/boot.ts` | `ai-memory`, `ai-providers`, `api-routers`, `auth`, `billing`, `capture-catalog`, `capture-intake`, `coaching`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `storage`, `unclustered`, `voice`, `whatsapp` | — | — | `auth_challenges`, `classification_logs` |
 | `api/context.ts` | `auth`, `database`, `security` | — | `local_users`, `users` | — |
 | `api/middleware.ts` | `contracts`, `platform`, `security` | — | — | — |
 | `api/router.ts` | `api-routers` | — | — | — |
@@ -110,7 +111,7 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 | `api/auth-router.ts` | `api-core`, `auth`, `database`, `platform` | `google-oauth` | `users` | `users` |
 | `api/budget-router.ts` | `api-core`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `security` | — | `user_budgets` | `user_budgets` |
 | `api/business-router.ts` | `ai-governance`, `ai-providers`, `api-core`, `classification`, `database`, `finance-semantic-layer`, `ledger`, `platform` | `gemini` | `business_categories`, `user_businesses`, `user_contacts` | `business_categories`, `expenses`, `user_businesses`, `user_contacts` |
-| `api/capture-admin-router.ts` | `api-core`, `capture-catalog`, `capture-intake`, `contracts`, `database`, `security` | — | `capture_sources`, `subscription_catalog` | `capture_sources`, `subscription_catalog` |
+| `api/capture-admin-router.ts` | `api-core`, `capture-catalog`, `capture-intake`, `contracts`, `database`, `security`, `unclustered` | — | `capture_sources`, `subscription_catalog` | `capture_sources`, `subscription_catalog` |
 | `api/capture-router.ts` | `api-core`, `capture-catalog`, `capture-intake`, `contracts`, `platform`, `security` | — | — | — |
 | `api/chat-router.ts` | `ai-actions`, `ai-governance`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `classification`, `database`, `finance-semantic-layer`, `platform`, `voice` | `fireworks`, `gemini` | `ai_memory_items`, `ai_pending_actions`, `chat_conversations`, `chat_messages` | `ai_conversation_summaries`, `ai_memory_embeddings`, `ai_memory_items`, `chat_conversations`, `chat_messages`, `local_users`, `users` |
 | `api/coach-router.ts` | `api-core`, `coaching`, `contracts`, `platform` | — | — | — |
@@ -258,7 +259,7 @@ Scheduled commitments and expected income with their due dates (the 31st on a sh
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `api/services/coach/cashflows.ts` | `arabic-nlp`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform` | — | `cashflow_settlements`, `commitment_overrides`, `commitment_schedule_items`, `expenses`, `installment_plans`, `scheduled_cashflows`, `user_contacts`, `user_wallets` | `cashflow_settlements`, `scheduled_cashflows` |
-| `api/services/coach/commitments.ts` | `ai-insights`, `contracts`, `database`, `ledger`, `platform` | — | `cashflow_settlements`, `commitment_hints`, `commitment_questions`, `commitment_schedule_items`, `expenses`, `installment_plans`, `scheduled_cashflows`, `subscription_catalog`, `user_contacts` | `commitment_hints`, `commitment_overrides`, `commitment_questions`, `commitment_schedule_items`, `installment_plans`, `scheduled_cashflows` |
+| `api/services/coach/commitments.ts` | `ai-insights`, `contracts`, `database`, `ledger`, `platform`, `unclustered` | — | `cashflow_settlements`, `commitment_hints`, `commitment_questions`, `commitment_schedule_items`, `expenses`, `installment_plans`, `scheduled_cashflows`, `subscription_catalog`, `user_contacts` | `commitment_hints`, `commitment_overrides`, `commitment_questions`, `commitment_schedule_items`, `installment_plans`, `scheduled_cashflows` |
 | `api/services/coach/matcher.ts` | `arabic-nlp` | — | — | — |
 | `api/services/coach/plans.ts` | `contracts`, `database`, `platform` | — | `coaching_plans`, `coaching_steps` | `coaching_plans`, `coaching_steps`, `in_app_notifications` |
 | `api/services/coach/reminders.ts` | `contracts`, `database`, `notifications`, `platform`, `whatsapp` | — | `cashflow_settlements`, `commitment_reminders`, `expenses`, `local_users`, `scheduled_cashflows`, `users` | `commitment_reminders`, `in_app_notifications` |
@@ -937,3 +938,11 @@ Client utilities (back-button handling, biometric auth, client rules engine, ima
 | `src/lib/transactionDisplay.ts` | `contracts` | — | — | — |
 | `src/lib/turnstile-config.ts` | — | — | — | — |
 | `src/lib/utils.ts` | `contracts` | — | — | — |
+
+### `unclustered` — Files no rule matches
+
+Add these files to a cluster in docs/architecture/clusters.json.
+
+| File | Imports from clusters | External systems referenced | Reads | Writes |
+| --- | --- | --- | --- | --- |
+| `api/lib/capture/brand-logos.ts` | `capture-catalog`, `database`, `platform`, `storage` | — | `subscription_catalog` | `subscription_catalog` |

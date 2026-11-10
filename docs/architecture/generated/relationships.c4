@@ -9,6 +9,7 @@ model {
   smartspend.api.http.get_auth_google_callback -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.get_auth_google_start -[uses]-> smartspend.api.modules.api-routers
   smartspend.api.http.get_auth_google_start -[uses]-> smartspend.api.modules.platform
+  smartspend.api.http.get_brand-logos_file -[uses]-> smartspend.api.modules.storage
   smartspend.api.http.get_robots_txt -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.get_sitemap_xml -[uses]-> smartspend.api.modules.api-routers
   smartspend.api.http.get_sitemap_xml -[uses]-> smartspend.api.modules.platform
@@ -196,6 +197,7 @@ model {
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.notifications
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.security
+  smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.storage
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.voice
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.whatsapp
   smartspend.api.modules.api-core -[imports]-> smartspend.shared.contracts
@@ -1089,6 +1091,9 @@ model {
   smartspend.api.trpc.captureAdmin.catalog -[reads]-> smartspend.mysql.subscription_catalog
   smartspend.api.trpc.captureAdmin.catalog -[uses]-> smartspend.api.modules.capture-catalog
   smartspend.api.trpc.captureAdmin.funnel -[uses]-> smartspend.api.modules.capture-intake
+  smartspend.api.trpc.captureAdmin.refreshMissingSubscriptionLogos -[uses]-> smartspend.api.modules.security
+  smartspend.api.trpc.captureAdmin.refreshSubscriptionLogo -[reads]-> smartspend.mysql.subscription_catalog
+  smartspend.api.trpc.captureAdmin.refreshSubscriptionLogo -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.captureAdmin.restoreSeed -[reads]-> smartspend.mysql.capture_sources
   smartspend.api.trpc.captureAdmin.restoreSeed -[reads]-> smartspend.mysql.subscription_catalog
   smartspend.api.trpc.captureAdmin.restoreSeed -[uses]-> smartspend.api.modules.capture-catalog

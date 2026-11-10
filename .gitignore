@@ -78,3 +78,6 @@ google-services.json
 
 GoogleService-Info.plist
 **/GoogleService-Info.plist
+
+# Files the local storage driver writes (api/services/storage/local-driver.ts): avatars, fetched service logos.
+storage/uploads/

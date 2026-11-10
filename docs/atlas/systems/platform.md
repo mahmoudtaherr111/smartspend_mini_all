@@ -135,6 +135,7 @@ flowchart LR
   mod_api_core --> mod_contracts
   mod_api_core --> mod_jobs
   mod_api_core --> mod_platform
+  mod_api_core --> mod_storage
   mod_api_core --> sys_accounts
   mod_api_core --> sys_ai_center
   mod_api_core --> sys_ai_platform

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'typography.dart';
 
-/// A service's mark in a circle: its logo when [imageUrl] loads, else its first letters on its brand [color]
+/// A service's mark as an app-icon tile: its real logo when [imageUrl] loads, else its first letters on its brand [color]
 /// (Netflix's red, Shahid's green). Used wherever a commitment to a known service shows: the commitments list, a
 /// commitment's page and the calendar's days. The colour is the service's, so the letters are always white or black,
 /// whichever reads on it.
@@ -53,18 +53,25 @@ class LogoBadge extends StatelessWidget {
         ThemeData.estimateBrightnessForColor(color) == Brightness.dark
         ? Colors.white
         : Colors.black;
-    final letters = Center(
-      child: Text(
-        initials(label),
-        maxLines: 1,
-        style: SmartSpendTypography.style(
-          size * 0.38,
-          FontWeight.w700,
-          height: 1,
-        ).copyWith(color: onColor),
+    final letters = DecoratedBox(
+      decoration: BoxDecoration(color: color),
+      child: Center(
+        child: Text(
+          initials(label),
+          maxLines: 1,
+          style: SmartSpendTypography.style(
+            size * 0.38,
+            FontWeight.w700,
+            height: 1,
+          ).copyWith(color: onColor),
+        ),
       ),
     );
     final url = imageUrl;
+    final image = url == null || url.isEmpty
+        ? null
+        : LogoImageScope.maybeOf(context)?.call(url) ?? NetworkImage(url);
+    // A tile shaped like an app icon, so the logo looks as it does on the phone's home screen.
     return Semantics(
       label: semanticLabel ?? label,
       image: true,
@@ -72,21 +79,38 @@ class LogoBadge extends StatelessWidget {
       excludeSemantics: true,
       child: SizedBox.square(
         dimension: size,
-        child: DecoratedBox(
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          child: ClipOval(
-            child: url == null || url.isEmpty
-                ? letters
-                : Image.network(
-                    url,
-                    width: size,
-                    height: size,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => letters,
-                  ),
-          ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(size * 0.24),
+          child: image == null
+              ? letters
+              : Image(
+                  image: image,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.medium,
+                  errorBuilder: (_, _, _) => letters,
+                ),
         ),
       ),
     );
   }
+}
+
+/// Where logos come from below it: by default the network; the render harness and tests hand in local images.
+class LogoImageScope extends InheritedWidget {
+  const LogoImageScope({
+    super.key,
+    required this.imageFor,
+    required super.child,
+  });
+
+  final ImageProvider? Function(String url) imageFor;
+
+  static ImageProvider? Function(String url)? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<LogoImageScope>()?.imageFor;
+
+  @override
+  bool updateShouldNotify(LogoImageScope oldWidget) =>
+      imageFor != oldWidget.imageFor;
 }

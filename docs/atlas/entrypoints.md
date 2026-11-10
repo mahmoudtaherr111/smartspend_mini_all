@@ -28,6 +28,7 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 | GET | `/admin` | http | `api/boot.ts` | — | — | — |
 | GET | `/api/auth/google/callback` | http | `api/boot.ts` | `api/context.ts`, `api/lib/env.ts`, `api/router.ts` | — | — |
 | GET | `/api/auth/google/start` | http | `api/boot.ts` | `api/auth-router.ts`, `api/lib/env.ts` | — | — |
+| GET | `/api/brand-logos/:file` | http | `api/boot.ts` | `api/lib/capture/brand-logos.ts`, `api/services/storage/index.ts` | — | — |
 | ALL | `/api/trpc/*` | trpc | `api/boot.ts` | `api/router.ts` | — | — |
 | POST | `/api/webhooks/apple-asn` | webhook | `api/boot.ts` | `api/lib/store-billing/index.ts` | — | — |
 | POST | `/api/webhooks/google-play` | webhook | `api/boot.ts` | `api/lib/store-billing/index.ts` | — | — |
@@ -53,6 +54,7 @@ Reads and writes cover the job body in `api/boot.ts` plus the `api/jobs/` module
 
 | Job | Schedule | Depends on | Reads | Writes |
 | --- | --- | --- | --- | --- |
+| `brand-logos` | `23 4 * * *` | `api/lib/capture/brand-logos.ts` | — | — |
 | `capture-ai-sweep` | `* * * * *` | `api/lib/capture/ai-queue.ts`, `api/lib/capture/operations.ts` | — | — |
 | `capture-breaker` | `*/15 * * * *` | `api/lib/capture/operations.ts` | — | — |
 | `capture-silent-devices` | `0 11 * * *` | `api/lib/capture/care.ts` | — | — |

@@ -27,6 +27,7 @@ class CatalogBrand {
     this.brandColor,
     this.logoUrl,
     this.cycle = 'monthly',
+    this.group = 'general_subscriptions',
   });
 
   factory CatalogBrand.fromJson(Map<String, Object?> json) => CatalogBrand(
@@ -36,6 +37,7 @@ class CatalogBrand {
     brandColor: _string(json['brandColor']),
     logoUrl: _string(json['logoUrl']),
     cycle: json['cycle'] as String? ?? 'monthly',
+    group: json['group'] as String? ?? 'general_subscriptions',
   );
 
   final String slug;
@@ -44,6 +46,9 @@ class CatalogBrand {
   final String? brandColor;
   final String? logoUrl;
   final String cycle;
+
+  /// streaming | music | ai_tools | software | general_subscriptions: the picker's sections.
+  final String group;
 }
 
 /// One due date of a commitment, with its status as the server decided it (mobile rule 8).

@@ -110,7 +110,8 @@ describe("the seeded subscriptions", () => {
       ["DM*Spotify", "spotify"],
       ["GOOGLE *GOOGLE", "youtube_premium"],
       ["GOOGLE* Google Storage", "google_one"],
-      ["GOOGLE *Duolingo", "google_play"],
+      ["GOOGLE *Duolingo", "duolingo"],
+      ["GOOGLE *Calm", "google_play"],
       ["APPLE.COM/BILL", "apple_store"],
       ["MICROSOFT*XBOX", "xbox_game_pass"],
     ];

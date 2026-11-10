@@ -1205,8 +1205,16 @@ export const subscriptionCatalog = mysqlTable(
     cycle: varchar("cycle", { length: 12 }).notNull().default("monthly"),
     /** "#E50914": the badge the apps draw when there is no logo. */
     brandColor: varchar("brand_color", { length: 9 }),
-    /** An https image the admin set for the service's logo (commitments, the calendar). */
+    /** An https image the admin set for the service's logo (commitments, the calendar); it wins over a fetched one. */
     logoUrl: varchar("logo_url", { length: 300 }),
+    /** The service's own Android app: its store listing gives its real icon (api/lib/capture/brand-logos.ts). */
+    appPackage: varchar("app_package", { length: 160 }),
+    /** Its official site ("netflix.com"), the icon's second source. */
+    website: varchar("website", { length: 160 }),
+    /** The icon fetched from its own listing or site and stored by the server; the seed never writes it. */
+    fetchedLogoUrl: varchar("fetched_logo_url", { length: 300 }),
+    /** When a fetch was last tried, so a failed one waits before the next try. */
+    logoFetchedAt: datetime("logo_fetched_at"),
     /** active | disabled */
     status: varchar("status", { length: 12 }).notNull().default("active"),
     /** seed | admin */

@@ -1606,7 +1606,7 @@ model {
       }
     }
     captureAdmin = router 'captureAdmin' {
-      description 'api/capture-admin-router.ts — 11 procedures.'
+      description 'api/capture-admin-router.ts — 13 procedures.'
       metadata {
         file 'api/capture-admin-router.ts'
       }
@@ -1638,6 +1638,26 @@ model {
           file 'api/capture-admin-router.ts'
           builder 'adminProcedure'
           procedureKind 'query'
+        }
+      }
+      refreshMissingSubscriptionLogos = procedure 'captureAdmin.refreshMissingSubscriptionLogos' {
+        #mutation #admin #uncalled
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      refreshSubscriptionLogo = procedure 'captureAdmin.refreshSubscriptionLogo' {
+        #mutation #admin #uncalled
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
         }
       }
       restoreSeed = procedure 'captureAdmin.restoreSeed' {
@@ -3295,6 +3315,15 @@ model {
         path '/api/auth/google/start'
       }
     }
+    get_brand-logos_file = endpoint 'GET /api/brand-logos/:file' {
+      #http
+      description 'Declared in api/boot.ts.'
+      metadata {
+        file 'api/boot.ts'
+        method 'GET'
+        path '/api/brand-logos/:file'
+      }
+    }
     get_health = endpoint 'GET /health' {
       #http
       description 'Declared in api/boot.ts.'
@@ -3380,6 +3409,14 @@ model {
   }
 
   extend smartspend.api.scheduler {
+    brand-logos = job 'brand-logos' {
+      technology 'cron 23 4 * * *'
+      description 'Scheduled in api/boot.ts.'
+      metadata {
+        schedule '23 4 * * *'
+        file 'api/boot.ts'
+      }
+    }
     capture-ai-sweep = job 'capture-ai-sweep' {
       technology 'cron * * * * *'
       description 'Scheduled in api/boot.ts.'

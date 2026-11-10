@@ -24,7 +24,7 @@ flowchart LR
     job_cashflow_cutover["Job · cashflow-cutover"]
     job_cashflow_cutover_at_boot["Job · cashflow-cutover-at-boot"]
     job_seed_capture_catalog["Job · seed-capture-catalog"]
-    router_captureAdmin["captureAdmin API · 11 procedures"]
+    router_captureAdmin["captureAdmin API · 13 procedures"]
     router_capture["capture API · 21 procedures"]
   end
   subgraph g_modules["Code modules"]
@@ -165,6 +165,8 @@ flowchart LR
 | `captureAdmin.bulkUndo` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
 | `captureAdmin.catalog` | query | `adminProcedure` | `capture_sources`, `subscription_catalog` | — | `Admin`, `More` |
 | `captureAdmin.funnel` | query | `adminProcedure` | — | — | `Admin`, `More` |
+| `captureAdmin.refreshMissingSubscriptionLogos` | mutation | `adminProcedure` | — | — | — |
+| `captureAdmin.refreshSubscriptionLogo` | mutation | `adminProcedure` | `subscription_catalog` | — | — |
 | `captureAdmin.restoreSeed` | mutation | `adminProcedure` | `capture_sources`, `subscription_catalog` | `capture_sources`, `subscription_catalog` | `Admin`, `More` |
 | `captureAdmin.saveSource` | mutation | `adminProcedure` | `capture_sources` | `capture_sources` | `Admin`, `More` |
 | `captureAdmin.saveSubscription` | mutation | `adminProcedure` | `subscription_catalog` | `subscription_catalog` | `Admin`, `More` |
@@ -209,7 +211,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `expenses` | B | `capture-intake` | `capture-intake` |
 | `in_app_notifications` | D | `capture-intake` | — |
 | `local_users` | A | — | `capture-ai-reader`, `capture-intake` |
-| `subscription_catalog` | A | `capture-catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` | `capture-catalog`, `captureAdmin.catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` |
+| `subscription_catalog` | A | `capture-catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` | `capture-catalog`, `captureAdmin.catalog`, `captureAdmin.refreshSubscriptionLogo`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` |
 | `system_settings` | A | `capture-intake` | — |
 | `user_contacts` | A | — | `capture-intake` |
 | `user_wallets` | A | `capture-intake` | `capture-intake` |

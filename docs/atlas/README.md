@@ -28,16 +28,16 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 | Tables with relations | 73 |
 | Foreign-key constraints | 0 |
 | tRPC routers | 29 |
-| tRPC procedures | 307 |
+| tRPC procedures | 309 |
 | — queries | 129 |
-| — mutations | 178 |
+| — mutations | 180 |
 | Procedure builders | 15 |
-| HTTP routes (outside tRPC) | 12 |
+| HTTP routes (outside tRPC) | 13 |
 | WebSocket upgrade prefixes | 2 |
-| Scheduled jobs | 24 |
+| Scheduled jobs | 25 |
 | Browser routes | 18 |
 | Lazy-loaded pages | 17 |
-| Runtime source files | 535 |
+| Runtime source files | 536 |
 | Clusters | 46 |
 | External systems in use | 19 |
 | Validated server env vars | 63 |
@@ -47,4 +47,6 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 
 Gaps the generator found between the code and the hand-maintained maps in `docs/architecture/`, or code patterns it cannot read.
 
-None.
+- Unclustered file — add a rule to docs/architecture/clusters.json: api/lib/capture/brand-logos.ts
+- docs/architecture/systems.json: the job "brand-logos" belongs to no system.
+- docs/architecture/systems.json: the route "GET /api/brand-logos/:file" belongs to no system.

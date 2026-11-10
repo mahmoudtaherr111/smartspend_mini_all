@@ -69,7 +69,9 @@ export const captureAdminRouter = router({
     return {
       version: live.version,
       sources: sourceRows.map(sourceFromRow).sort((a, b) => a.priority - b.priority || a.slug.localeCompare(b.slug)),
-      subscriptions: subscriptionRows.map(subscriptionFromRow).sort((a, b) => a.slug.localeCompare(b.slug)),
+      subscriptions: subscriptionRows
+        .map((row) => ({ ...subscriptionFromRow(row), fetchedLogoUrl: row.fetchedLogoUrl ?? null, logoFetchedAt: row.logoFetchedAt ?? null }))
+        .sort((a, b) => a.slug.localeCompare(b.slug)),
     };
   }),
 
@@ -131,6 +133,25 @@ export const captureAdminRouter = router({
       });
       return { success: true };
     }),
+
+  /** Fetches one service's real logo from its own store listing or site now (decision 0051). */
+  refreshSubscriptionLogo: adminProcedure
+    .input(idInput)
+    .mutation(async ({ input, ctx }) => {
+      const row = await subscriptionById(input.id);
+      const { refreshBrandLogo } = await import("./lib/capture/brand-logos");
+      const found = await refreshBrandLogo(input.id);
+      await logAdminAction(ctx, { action: "REFRESH_SUBSCRIPTION_LOGO", targetType: "capture_subscription", targetId: input.id, details: { slug: row.slug, found } });
+      return { found };
+    }),
+
+  /** Fetches every logo still missing, as the daily job does. */
+  refreshMissingSubscriptionLogos: adminProcedure.mutation(async ({ ctx }) => {
+    const { refreshMissingBrandLogos } = await import("./lib/capture/brand-logos");
+    const result = await refreshMissingBrandLogos(80);
+    await logAdminAction(ctx, { action: "REFRESH_SUBSCRIPTION_LOGOS", targetType: "capture_subscription", targetId: "all", details: result });
+    return result;
+  }),
 
   setSubscriptionStatus: adminProcedure
     .input(idInput.extend({ status: z.enum(CATALOG_STATUSES) }))

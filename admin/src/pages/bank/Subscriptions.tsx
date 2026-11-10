@@ -11,8 +11,8 @@ import { LoadError, Loading } from "../../ui/states";
 import { Field } from "./Sources";
 
 const SPENDING = CATEGORIES.filter((category) => category.type === "expense");
-interface Form { id?: number; slug: string; name: string; nameAr: string; kind: "service" | "store"; matchTokens: string; categoryId: string; subCategoryId: string; cycle: SubscriptionCycle; status: "active" | "disabled"; brandColor: string; logoUrl: string }
-const EMPTY: Form = { slug: "", name: "", nameAr: "", kind: "service", matchTokens: "", categoryId: "subscriptions", subCategoryId: "streaming", cycle: "monthly", status: "active", brandColor: "", logoUrl: "" };
+interface Form { id?: number; slug: string; name: string; nameAr: string; kind: "service" | "store"; matchTokens: string; categoryId: string; subCategoryId: string; cycle: SubscriptionCycle; status: "active" | "disabled"; brandColor: string; logoUrl: string; appPackage: string; website: string }
+const EMPTY: Form = { slug: "", name: "", nameAr: "", kind: "service", matchTokens: "", categoryId: "subscriptions", subCategoryId: "streaming", cycle: "monthly", status: "active", brandColor: "", logoUrl: "", appPackage: "", website: "" };
 
 /** The service's mark as the app draws it: its logo, else its first letter on its colour. */
 function Mark({ name, brandColor, logoUrl }: { name: string; brandColor: string | null; logoUrl: string | null }) {
@@ -34,6 +34,8 @@ export function Subscriptions() {
   const catalog = trpc.captureAdmin.catalog.useQuery();
   const [search, setSearch] = useState("");
   const [form, setForm] = useState<Form | null>(null);
+  const fetchLogo = trpc.captureAdmin.refreshSubscriptionLogo.useMutation({ onSettled: () => utils.captureAdmin.catalog.invalidate() });
+  const fetchAll = trpc.captureAdmin.refreshMissingSubscriptionLogos.useMutation({ onSettled: () => utils.captureAdmin.catalog.invalidate() });
   const save = trpc.captureAdmin.saveSubscription.useMutation({
     onSuccess: () => { toast.success("اتحفظ"); setForm(null); void utils.captureAdmin.catalog.invalidate(); },
     onError: (e) => toast.error(e.message),
@@ -52,19 +54,24 @@ export function Subscriptions() {
       <div className="flex flex-wrap items-center gap-2">
         <Input className="max-w-xs" placeholder="دوّر" value={search} onChange={(e) => setSearch(e.target.value)} />
         <Button size="sm" onClick={() => setForm(EMPTY)}>ضيف اشتراك</Button>
+        <Button size="sm" variant="outline" disabled={fetchAll.isPending} onClick={() => fetchAll.mutate()}>
+          {fetchAll.isPending ? "بنجيب اللوجوهات…" : fetchAll.data ? `اتجاب ${fetchAll.data.fetched} من ${fetchAll.data.tried}` : "جيب اللوجوهات الناقصة"}
+        </Button>
         <span className="text-xs text-muted-foreground">لما اسم التاجر في الخصم فيه كلمة من دول، العملية بتتسجل في فئتها على طول.</span>
       </div>
       <ul className="divide-y rounded-xl border">
         {rows.map((row) => (
           <li key={row.id} className="flex flex-wrap items-center gap-3 p-3">
-            <Mark name={row.name} brandColor={row.brandColor} logoUrl={row.logoUrl} />
+            <Mark name={row.name} brandColor={row.brandColor} logoUrl={row.logoUrl ?? row.fetchedLogoUrl} />
             <div className="min-w-0 flex-1">
               <div className="font-semibold">{row.nameAr} <span className="text-xs font-normal text-muted-foreground" dir="ltr">{row.name}</span></div>
               <div className="text-xs text-muted-foreground">{label(row.categoryId, row.subCategoryId)} · {SUBSCRIPTION_CYCLE_LABELS[row.cycle]} · <span dir="ltr">{row.matchTokens.join(", ")}</span></div>
             </div>
+            <Button size="sm" variant="ghost" disabled={fetchLogo.isPending || (!row.appPackage && !row.website)} title="من صفحة التطبيق على جوجل بلاي أو موقعهم"
+              onClick={() => fetchLogo.mutate({ id: row.id })}>{row.fetchedLogoUrl ? "حدّث اللوجو" : "جيب اللوجو"}</Button>
             <Switch checked={row.status === "active"} aria-label={`تشغيل ${row.nameAr}`} onCheckedChange={(on) => status.mutate({ id: row.id, status: on ? "active" : "disabled" })} />
             <Button size="sm" variant="outline" onClick={() => setForm({ id: row.id, slug: row.slug, name: row.name, nameAr: row.nameAr, kind: row.kind, matchTokens: row.matchTokens.join(", "),
-              categoryId: row.categoryId, subCategoryId: row.subCategoryId, cycle: row.cycle, status: row.status, brandColor: row.brandColor ?? "", logoUrl: row.logoUrl ?? "" })}>عدّل</Button>
+              categoryId: row.categoryId, subCategoryId: row.subCategoryId, cycle: row.cycle, status: row.status, brandColor: row.brandColor ?? "", logoUrl: row.logoUrl ?? "", appPackage: row.appPackage ?? "", website: row.website ?? "" })}>عدّل</Button>
           </li>
         ))}
       </ul>
@@ -97,8 +104,16 @@ export function Subscriptions() {
               <Field label="كلمات بتظهر في اسم التاجر" hint="زي netflix أو google *youtube، مفصولة بفاصلة.">
                 <Input dir="ltr" value={form.matchTokens} onChange={(e) => setForm({ ...form, matchTokens: e.target.value })} />
               </Field>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="تطبيقهم على أندرويد" hint="زي com.netflix.mediaclient: اللوجو بيتجاب من صفحته على جوجل بلاي.">
+                  <Input dir="ltr" value={form.appPackage} onChange={(e) => setForm({ ...form, appPackage: e.target.value })} />
+                </Field>
+                <Field label="موقعهم" hint="زي netflix.com، لو مالهمش تطبيق.">
+                  <Input dir="ltr" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />
+                </Field>
+              </div>
               <div className="grid gap-3 sm:grid-cols-[1fr_8rem_auto] sm:items-end">
-                <Field label="رابط اللوجو" hint="صورة مربعة بـ https، بتظهر في التطبيق في الالتزامات والتقويم.">
+                <Field label="رابط لوجو بإيدك (اختياري)" hint="بيكسب على اللوجو اللي اتجاب. صورة مربعة بـ https.">
                   <Input dir="ltr" placeholder="https://" value={form.logoUrl} onChange={(e) => setForm({ ...form, logoUrl: e.target.value })} />
                 </Field>
                 <Field label="لون الخدمة" hint="#E50914">
@@ -111,6 +126,7 @@ export function Subscriptions() {
                 matchTokens: form.matchTokens.split(/[,،]/).map((v) => v.trim().toLowerCase()).filter(Boolean),
                 categoryId: form.categoryId, subCategoryId: form.subCategoryId, cycle: form.cycle, status: form.status,
                 brandColor: form.brandColor.trim() || null, logoUrl: form.logoUrl.trim() || null,
+                appPackage: form.appPackage.trim() || null, website: form.website.trim() || null,
               } })}>احفظ</Button>
             </div>
           )}

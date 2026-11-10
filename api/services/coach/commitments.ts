@@ -43,6 +43,7 @@ import {
   type CashflowKind,
   type CoachUser,
 } from "./cashflows";
+import { logoOf } from "../../lib/capture/brand-logos";
 import { decideMatch, learnedPhrase, matchTokens, sayHintOf, type MatchCommitment } from "./matcher";
 import { addDays, isCalendarDay, occurrences, type Occurrence, type ScheduleRow, type Shape } from "./schedule";
 
@@ -519,7 +520,7 @@ async function catalogFor(slugs: Array<string | null>): Promise<Catalog> {
   if (!wanted.length) return new Map();
   const rows = await db.select().from(subscriptionCatalog).where(inArray(subscriptionCatalog.slug, wanted));
   return new Map(rows.map((row) => [row.slug, {
-    slug: row.slug, name: row.name, nameAr: row.nameAr, brandColor: row.brandColor ?? null, logoUrl: row.logoUrl ?? null,
+    slug: row.slug, name: row.name, nameAr: row.nameAr, brandColor: row.brandColor ?? null, logoUrl: logoOf(row),
     matchTokens: Array.isArray(row.matchTokens) ? (row.matchTokens as string[]) : [],
   }]));
 }
@@ -527,8 +528,9 @@ async function catalogFor(slugs: Array<string | null>): Promise<Catalog> {
 /** The subscriptions a user can pick, with their names, colours and logos (the admin edits them). */
 export async function subscriptionChoices() {
   const rows = await db.select().from(subscriptionCatalog).where(and(eq(subscriptionCatalog.status, "active"), eq(subscriptionCatalog.kind, "service")));
-  return rows.map((row) => ({ slug: row.slug, name: row.name, nameAr: row.nameAr, cycle: row.cycle, brandColor: row.brandColor ?? null, logoUrl: row.logoUrl ?? null }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  // The seed lists the services most people in Egypt pay for first; admin additions follow.
+  return rows.sort((a, b) => a.id - b.id)
+    .map((row) => ({ slug: row.slug, name: row.name, nameAr: row.nameAr, cycle: row.cycle, group: row.subCategoryId, brandColor: row.brandColor ?? null, logoUrl: logoOf(row) }));
 }
 
 function publicRow(row: CommitmentRow, catalog: Catalog) {

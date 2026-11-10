@@ -162,6 +162,13 @@ scheduleProtectedJob("*/10 * * * *", "commitment-match-sweep", async () => {
   await sweepCapturedPayments();
 });
 
+// The real logos of known services, fetched from each one's own store listing or site (decision 0051): the ones
+// still missing (a failed try waits a week) and those older than 90 days.
+scheduleProtectedJob("23 4 * * *", "brand-logos", async () => {
+  const { refreshMissingBrandLogos } = await import("./lib/capture/brand-logos");
+  await refreshMissingBrandLogos();
+});
+
 // Captured messages waiting for the model that no request's wake picked up: a restart, or a lease that ran out
 // (decision 0031). The request that queued one normally reads it within seconds.
 // WhatsApp messages queued in whatsapp_messages: sent, retried or given up (decision 0038). Nothing to do until the
@@ -755,6 +762,25 @@ app.get("/robots.txt", (c) =>
 );
 // The server's own front door when no website is served: what it is, nothing else.
 app.get("/", (c, next) => (env.SERVE_WEB_APP === "true" ? next() : c.json({ service: "smartspend-api", console: "/admin/" })));
+
+// Known services' logos (decision 0051): fetched from each service's own listing, stored, and served from here so a
+// phone never asks a third party for one. The name carries the content hash, so a file never changes.
+app.get("/api/brand-logos/:file", async (c) => {
+  const { BRAND_LOGO_FILE } = await import("./lib/capture/brand-logos");
+  const file = c.req.param("file");
+  if (!BRAND_LOGO_FILE.test(file)) return c.notFound();
+  const { getStorageDriver } = await import("./services/storage");
+  const bytes = await getStorageDriver().download(`brand-logos/${file}`).catch(() => null);
+  if (!bytes) return c.notFound();
+  const types: Record<string, string> = { png: "image/png", jpg: "image/jpeg", webp: "image/webp", gif: "image/gif", ico: "image/x-icon" };
+  return new Response(new Uint8Array(bytes), {
+    headers: {
+      "content-type": types[file.split(".").pop()!] ?? "application/octet-stream",
+      "cache-control": "public, max-age=31536000, immutable",
+      "x-content-type-options": "nosniff",
+    },
+  });
+});
 
 // Health check
 app.get("/health", (c) =>

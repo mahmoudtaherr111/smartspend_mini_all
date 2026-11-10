@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../core/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../ledger/ledger_providers.dart';
 import 'commitment_api.dart';
@@ -88,8 +89,17 @@ String commitmentMonthLabel(BuildContext context, String dayKey) =>
   };
 }
 
+/// A logo address as the app can load it: the server stores fetched logos under its own `/api/brand-logos/`.
+String? resolveLogoUrl(WidgetRef ref, String? url) {
+  if (url == null || url.isEmpty) return null;
+  if (url.startsWith('/')) {
+    return ref.read(appConfigProvider).apiBaseUri.resolve(url).toString();
+  }
+  return url;
+}
+
 /// A commitment's mark: a known service's logo or brand colour, else its kind's icon.
-class CommitmentAvatar extends StatelessWidget {
+class CommitmentAvatar extends ConsumerWidget {
   const CommitmentAvatar({
     super.key,
     required this.kind,
@@ -115,13 +125,13 @@ class CommitmentAvatar extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.smartSpendColors;
     if (slug != null) {
       return LogoBadge(
         label: title,
         color: brandColorOf(slug, brandColor, colors.accent),
-        imageUrl: logoUrl,
+        imageUrl: resolveLogoUrl(ref, logoUrl),
         size: size,
       );
     }
