@@ -2,7 +2,7 @@
 
 # Claude Code notes
 
-- This checkout is on Windows: `CLAUDE.md` imports `AGENTS.md` instead of symlinking it, and each folder
+- Some checkouts are on Windows, so `CLAUDE.md` imports `AGENTS.md` instead of symlinking it, and each folder
   with its own `AGENTS.md` has a `CLAUDE.md` that does the same.
 - `.claude/settings.json` runs `scripts/agent/session-start.mjs` when a session starts (sync status, and it
   installs the git hooks) and `scripts/agent/stop.mjs` when a turn ends (it runs `npm run agent:finish` and

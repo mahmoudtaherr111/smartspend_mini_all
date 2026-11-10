@@ -60,7 +60,7 @@ Several agents change this repository at the same time. These steps keep everyon
 1. Start: `npm run sync` merges `origin/main` into your branch. Claude Code and Codex are told their sync
    status when a session starts; other tools run it at the start of every task.
 2. Before editing, read the explanation of the system you are touching — find it through
-   `docs/atlas/systems/files.md` — and the `AGENTS.md` of the folder (`api/`, `api/lib/`, `src/`, `db/`).
+   `docs/atlas/systems/files.md` — and the `AGENTS.md` of the folder (`api/`, `api/lib/`, `src/`, `db/`, `mobile/`).
    Codex and some other tools do not load nested instruction files on their own.
 3. Finish: `npm run agent:finish` regenerates the atlas and checks every rule below. Fix what it reports and
    commit the code together with the regenerated files.
