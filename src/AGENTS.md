@@ -1,4 +1,7 @@
-# src/ — web app
+# src/ — the parked website
+
+This PWA keeps building in CI and is never deployed (decision 0050). The phone apps people use are the
+Flutter app in `mobile/`.
 
 Facts: `docs/atlas/frontend.md` (browser routes, guards, the procedures each page calls, and mutation hooks
 that are never invoked). Diagram: `npm run arch`, view `web`.
@@ -12,8 +15,7 @@ is `docs/systems/web-app.md`. Find the system of a file in `docs/atlas/systems/f
 - `providers/trpc.ts`: the typed tRPC client.
 - `components/ui/`: shadcn and Radix primitives. Feature components live in `components/<area>/`, hooks in
   `hooks/`, helpers in `lib/`, service-worker and install logic in `pwa/`.
-- The Android and iOS apps are Capacitor shells around this build (`android/` and `ios/` at the repository
-  root).
+- `android/` and `ios/` at the repository root are Capacitor shells around this build, parked with it.
 
 ## Rules
 1. Reach the server only through `trpc.<router>.<procedure>`. From `api/`, import types only
