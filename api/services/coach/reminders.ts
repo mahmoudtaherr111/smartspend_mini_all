@@ -82,6 +82,14 @@ export function reminderText(items: DueReminder[]): { title: string; body: strin
   const [{ occurrence, row, stage }] = items;
   const amount = money(occurrence.remaining);
   const income = row.direction === "in";
+  // Taken from a card or account on its own (a subscription, a loan by standing order): the person only needs money there.
+  const automatic = !income && ["card", "auto_debit", "app"].includes(row.paymentMethod ?? "");
+  if (automatic && stage === "before") {
+    return { title: `${row.title} هيتخصم قريب`, body: `${amount ? `${amount} ` : ""}هيتخصم يوم ${occurrence.effectiveDay ?? occurrence.dueDay}. اتأكد إن في رصيد كفاية، ولو عايز تلغيه ده وقته.` };
+  }
+  if (automatic && stage === "due") {
+    return { title: `${row.title} بيتخصم النهارده`, body: `${amount ? `${amount} · ` : ""}لو رسالة البنك وصلت هنحسبه لوحده.` };
+  }
   switch (stage) {
     case "before":
       return { title: `${row.title} قرّب`, body: `${amount ? `${amount} ` : ""}${income ? "المفروض توصل" : "ميعادها"} يوم ${occurrence.effectiveDay ?? occurrence.dueDay}.` };

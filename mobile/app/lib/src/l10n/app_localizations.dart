@@ -8611,6 +8611,558 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'بعد ما تحفظه، لما تسجّل إنك دفعته هنحسبه عليه لوحده لو متأكدين، ولو لأ هنسألك.'**
   String get cmAfterSaveHint;
+
+  /// No description provided for @cfAboutHowMuch.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتيجي حوالي كام (اختياري)'**
+  String get cfAboutHowMuch;
+
+  /// No description provided for @cfAddAnyway.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيفه تاني'**
+  String get cfAddAnyway;
+
+  /// No description provided for @cfAddExtra.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف دفعة'**
+  String get cfAddExtra;
+
+  /// No description provided for @cfAllCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'كام قسط كلهم (اختياري)'**
+  String get cfAllCount;
+
+  /// No description provided for @cfAutoDebit.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتتخصم لوحدها'**
+  String get cfAutoDebit;
+
+  /// No description provided for @cfAutoFromAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتخصم لوحده من حسابي أو مرتبي'**
+  String get cfAutoFromAccount;
+
+  /// No description provided for @cfAutoFromCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتخصم لوحده من الكارت'**
+  String get cfAutoFromCard;
+
+  /// No description provided for @cfBankCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقسيط الكارت'**
+  String get cfBankCard;
+
+  /// No description provided for @cfBoughtWhat.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتريت إيه؟'**
+  String get cfBoughtWhat;
+
+  /// No description provided for @cfBrother.
+  ///
+  /// In ar, this message translates to:
+  /// **'أخويا'**
+  String get cfBrother;
+
+  /// No description provided for @cfCardDueDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر ميعاد للسداد'**
+  String get cfCardDueDay;
+
+  /// No description provided for @cfCardDueHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكتوب في كشف حساب الكارت'**
+  String get cfCardDueHint;
+
+  /// No description provided for @cfCardHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنفكرك قبل آخر ميعاد عشان تسدد قبل ما الفوايد تتحسب.'**
+  String get cfCardHint;
+
+  /// No description provided for @cfCardVaries.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ بيتغير كل شهر'**
+  String get cfCardVaries;
+
+  /// No description provided for @cfContractEnds.
+  ///
+  /// In ar, this message translates to:
+  /// **'العقد بيخلص (اختياري)'**
+  String get cfContractEnds;
+
+  /// No description provided for @cfDaughter.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنتي'**
+  String get cfDaughter;
+
+  /// No description provided for @cfDeveloper.
+  ///
+  /// In ar, this message translates to:
+  /// **'المطوّر أو الشركة (اختياري)'**
+  String get cfDeveloper;
+
+  /// No description provided for @cfDeveloperHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: بالم هيلز'**
+  String get cfDeveloperHint;
+
+  /// No description provided for @cfDuplicateBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندك «{p0}» متسجل. تفتحه ولا تضيف واحد تاني؟'**
+  String cfDuplicateBody(String p0);
+
+  /// No description provided for @cfDuplicateTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'متسجل قبل كده'**
+  String get cfDuplicateTitle;
+
+  /// No description provided for @cfElectricity.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكهربا'**
+  String get cfElectricity;
+
+  /// No description provided for @cfExtraHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: دفعة الاستلام'**
+  String get cfExtraHint;
+
+  /// No description provided for @cfExtras.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعات كبيرة لوحدها (اختياري)'**
+  String get cfExtras;
+
+  /// No description provided for @cfExtrasHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعة الاستلام، وديعة الصيانة، أو أي دفعة غير القسط.'**
+  String get cfExtrasHint;
+
+  /// No description provided for @cfExtrasTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'{p0} · دفعات تانية'**
+  String cfExtrasTitle(String p0);
+
+  /// No description provided for @cfFeeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل قسط بميعاده ومبلغه، وتقدر تسمّيه (الأتوبيس، الكتب…).'**
+  String get cfFeeHint;
+
+  /// No description provided for @cfFeesTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجمالي {p0} · فاضل {p1}'**
+  String cfFeesTotal(String p0, String p1);
+
+  /// No description provided for @cfFinancedBy.
+  ///
+  /// In ar, this message translates to:
+  /// **'بالتقسيط من (اختياري)'**
+  String get cfFinancedBy;
+
+  /// No description provided for @cfFlexibleOnMeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير ميعاد: هيفضل ظاهر لحد ما تسدده، وكل مرة تسجل إنك رجعت جزء هنخصمه.'**
+  String get cfFlexibleOnMeHint;
+
+  /// No description provided for @cfFlexibleToMeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير ميعاد: هيفضل ظاهر لحد ما يرجعلك، وكل مرة تسجل إنه رجّع جزء هنخصمه.'**
+  String get cfFlexibleToMeHint;
+
+  /// No description provided for @cfFreelance.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغل حر'**
+  String get cfFreelance;
+
+  /// No description provided for @cfGam3eyaHolder.
+  ///
+  /// In ar, this message translates to:
+  /// **'مين ماسك الجمعية (اختياري)'**
+  String get cfGam3eyaHolder;
+
+  /// No description provided for @cfGam3eyaHolderHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان لما تبعتله القسط نعرف إنه للجمعية'**
+  String get cfGam3eyaHolderHint;
+
+  /// No description provided for @cfGam3eyaSummary.
+  ///
+  /// In ar, this message translates to:
+  /// **'هتقبض {p0} في دورك (الشهر {p1} من {p2}).'**
+  String cfGam3eyaSummary(String p0, String p1, String p2);
+
+  /// No description provided for @cfGas.
+  ///
+  /// In ar, this message translates to:
+  /// **'الغاز'**
+  String get cfGas;
+
+  /// No description provided for @cfGroupAi.
+  ///
+  /// In ar, this message translates to:
+  /// **'ذكاء اصطناعي'**
+  String get cfGroupAi;
+
+  /// No description provided for @cfGroupMusic.
+  ///
+  /// In ar, this message translates to:
+  /// **'موسيقى وكتب صوتية'**
+  String get cfGroupMusic;
+
+  /// No description provided for @cfGroupOther.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعليم وتوصيل وحاجات تانية'**
+  String get cfGroupOther;
+
+  /// No description provided for @cfGroupSoftware.
+  ///
+  /// In ar, this message translates to:
+  /// **'برامج وتخزين وألعاب'**
+  String get cfGroupSoftware;
+
+  /// No description provided for @cfGroupStreaming.
+  ///
+  /// In ar, this message translates to:
+  /// **'أفلام ومسلسلات ورياضة'**
+  String get cfGroupStreaming;
+
+  /// No description provided for @cfHowPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتدفع إزاي؟'**
+  String get cfHowPaid;
+
+  /// No description provided for @cfInternet.
+  ///
+  /// In ar, this message translates to:
+  /// **'نت البيت'**
+  String get cfInternet;
+
+  /// No description provided for @cfItemLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمه (اختياري)'**
+  String get cfItemLabel;
+
+  /// No description provided for @cfLandline.
+  ///
+  /// In ar, this message translates to:
+  /// **'التليفون الأرضي'**
+  String get cfLandline;
+
+  /// No description provided for @cfLandlord.
+  ///
+  /// In ar, this message translates to:
+  /// **'صاحب الشقة (اختياري)'**
+  String get cfLandlord;
+
+  /// No description provided for @cfLeftCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل كام قسط (مع الجاي)'**
+  String get cfLeftCount;
+
+  /// No description provided for @cfLeftTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل {p0} × {p1} = {p2}'**
+  String cfLeftTotal(String p0, String p1, String p2);
+
+  /// No description provided for @cfLessonsEnd.
+  ///
+  /// In ar, this message translates to:
+  /// **'لحد إمتى (اختياري)'**
+  String get cfLessonsEnd;
+
+  /// No description provided for @cfLoanFor.
+  ///
+  /// In ar, this message translates to:
+  /// **'القرض ده لإيه؟ (اختياري)'**
+  String get cfLoanFor;
+
+  /// No description provided for @cfLoanTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قرض {p0}'**
+  String cfLoanTitle(String p0);
+
+  /// No description provided for @cfMe.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا'**
+  String get cfMe;
+
+  /// No description provided for @cfMobile.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموبايل'**
+  String get cfMobile;
+
+  /// No description provided for @cfMoneyIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلوس داخلالي'**
+  String get cfMoneyIn;
+
+  /// No description provided for @cfMoneyOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلوس طالعة مني'**
+  String get cfMoneyOut;
+
+  /// No description provided for @cfMonthlyInstallment.
+  ///
+  /// In ar, this message translates to:
+  /// **'القسط الشهري'**
+  String get cfMonthlyInstallment;
+
+  /// No description provided for @cfNeedBank.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسم البنك.'**
+  String get cfNeedBank;
+
+  /// No description provided for @cfNeedEndAfterStart.
+  ///
+  /// In ar, this message translates to:
+  /// **'النهاية لازم تبقى بعد الميعاد الجاي.'**
+  String get cfNeedEndAfterStart;
+
+  /// No description provided for @cfNeedExtras.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل دفعة محتاجة ميعاد ومبلغ.'**
+  String get cfNeedExtras;
+
+  /// No description provided for @cfNeedPaidBelowTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي اتدفع لازم يبقى أقل من الإجمالي.'**
+  String get cfNeedPaidBelowTotal;
+
+  /// No description provided for @cfNeedTotalCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأقساط كلها لازم تبقى أكتر من الفاضل أو قده.'**
+  String get cfNeedTotalCount;
+
+  /// No description provided for @cfNextCharge.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخصم الجاي'**
+  String get cfNextCharge;
+
+  /// No description provided for @cfNoSuchSubscription.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش لاقيينه. اكتب اسمه من تحت.'**
+  String get cfNoSuchSubscription;
+
+  /// No description provided for @cfNthInstallment.
+  ///
+  /// In ar, this message translates to:
+  /// **'القسط {index}'**
+  String cfNthInstallment(int index);
+
+  /// No description provided for @cfOpenIt.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتحه'**
+  String get cfOpenIt;
+
+  /// No description provided for @cfPaidByCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتخصم لوحده (كارت أو محفظة)'**
+  String get cfPaidByCard;
+
+  /// No description provided for @cfPaidByHand.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدفعه بنفسي'**
+  String get cfPaidByHand;
+
+  /// No description provided for @cfPaidEvery.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتدفع كل'**
+  String get cfPaidEvery;
+
+  /// No description provided for @cfPaidSoFar.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعت منهم كام لحد دلوقتي (اختياري)'**
+  String get cfPaidSoFar;
+
+  /// No description provided for @cfPension.
+  ///
+  /// In ar, this message translates to:
+  /// **'معاش'**
+  String get cfPension;
+
+  /// No description provided for @cfPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر'**
+  String get cfPrice;
+
+  /// No description provided for @cfReceivedEvery.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتقبض كل'**
+  String get cfReceivedEvery;
+
+  /// No description provided for @cfRemindIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'فكرني'**
+  String get cfRemindIncome;
+
+  /// No description provided for @cfRemove.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيل'**
+  String get cfRemove;
+
+  /// No description provided for @cfRenews.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتجدد كل'**
+  String get cfRenews;
+
+  /// No description provided for @cfRentIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيجار ليّا'**
+  String get cfRentIn;
+
+  /// No description provided for @cfRentOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيجار إيه؟ (اختياري)'**
+  String get cfRentOf;
+
+  /// No description provided for @cfRentOfHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: إيجار الشقة'**
+  String get cfRentOfHint;
+
+  /// No description provided for @cfRepaidSoFar.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتدفع منه كام (اختياري)'**
+  String get cfRepaidSoFar;
+
+  /// No description provided for @cfRepeats.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتكرر'**
+  String get cfRepeats;
+
+  /// No description provided for @cfSalary.
+  ///
+  /// In ar, this message translates to:
+  /// **'المرتب'**
+  String get cfSalary;
+
+  /// No description provided for @cfSister.
+  ///
+  /// In ar, this message translates to:
+  /// **'أختي'**
+  String get cfSister;
+
+  /// No description provided for @cfSon.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابني'**
+  String get cfSon;
+
+  /// No description provided for @cfSubscriptionNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: الجيم'**
+  String get cfSubscriptionNameHint;
+
+  /// No description provided for @cfTheShop.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحل نفسه'**
+  String get cfTheShop;
+
+  /// No description provided for @cfTrial.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه في فترة تجربة مجانية'**
+  String get cfTrial;
+
+  /// No description provided for @cfTrialEnds.
+  ///
+  /// In ar, this message translates to:
+  /// **'التجربة بتخلص يوم'**
+  String get cfTrialEnds;
+
+  /// No description provided for @cfTrialHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'هنفكرك قبلها بيومين، عشان تلغيه لو مش عايزه قبل ما يتخصم.'**
+  String get cfTrialHint;
+
+  /// No description provided for @cfUsualCardAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتسدد عادة كام (اختياري)'**
+  String get cfUsualCardAmount;
+
+  /// No description provided for @cfWater.
+  ///
+  /// In ar, this message translates to:
+  /// **'المية'**
+  String get cfWater;
+
+  /// No description provided for @cfWhichBank.
+  ///
+  /// In ar, this message translates to:
+  /// **'من أنهي بنك؟'**
+  String get cfWhichBank;
+
+  /// No description provided for @cfWhichBill.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة إيه؟'**
+  String get cfWhichBill;
+
+  /// No description provided for @cfYearlyCost.
+  ///
+  /// In ar, this message translates to:
+  /// **'يعني حوالي {p0} في السنة.'**
+  String cfYearlyCost(String p0);
 }
 
 class _AppLocalizationsDelegate

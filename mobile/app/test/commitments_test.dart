@@ -182,7 +182,12 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const ValueKey('commitment-save')));
       await tester.tap(find.byKey(const ValueKey('commitment-save')));
+      await tester.pumpAndSettle();
+      // The sample account already has it: asked before a second one is added.
+      expect(find.text('متسجل قبل كده'), findsOneWidget);
+      await tester.tap(find.text('ضيفه تاني'));
       await tester.pumpAndSettle();
 
       final input =
@@ -235,8 +240,14 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.widgetWithText(ChoiceChip, 'قبلها بيوم'));
       await tester.tap(find.widgetWithText(ChoiceChip, 'قبلها بيوم'));
+      await tester.ensureVisible(find.byKey(const ValueKey('commitment-save')));
       await tester.tap(find.byKey(const ValueKey('commitment-save')));
+      await tester.pumpAndSettle();
+      // The sample account already has it: asked before a second one is added.
+      expect(find.text('متسجل قبل كده'), findsOneWidget);
+      await tester.tap(find.text('ضيفه تاني'));
       await tester.pumpAndSettle();
 
       final input =
@@ -248,6 +259,179 @@ void main() {
       expect(input, containsPair('amount', 2000));
       expect(input, containsPair('remainingCount', 8));
       expect(input, containsPair('remindDaysBefore', 1));
+    },
+  );
+
+  /// Scrolls the screen's own list (not a grid inside it) until [finder] is on screen.
+  Future<void> reveal(WidgetTester tester, Finder finder) async {
+    await tester.scrollUntilVisible(
+      finder,
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView).first,
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> pickDay(WidgetTester tester, String key, String day) async {
+    await reveal(tester, find.byKey(ValueKey(key)));
+    await tester.tap(find.byKey(ValueKey(key)));
+    await tester.pumpAndSettle();
+    expect(
+      find.byType(DatePickerDialog),
+      findsOneWidget,
+      reason: 'the date picker of $key opens',
+    );
+    await tester.tap(
+      find.descendant(
+        of: find.byType(DatePickerDialog),
+        matching: find.text(day),
+      ),
+    );
+    await tester.tap(
+      find.text(
+        MaterialLocalizations.of(tester.element(find.byType(DatePickerDialog)))
+            .okButtonLabel,
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> save(WidgetTester tester) async {
+    await reveal(tester, find.byKey(const ValueKey('commitment-save')));
+    await tester.tap(find.byKey(const ValueKey('commitment-save')));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets(
+    'a flat paid every three months, with its handover payment, is two commitments',
+    (tester) async {
+      final api = await _open(tester, path: '/commitments/add');
+      await tester.tap(find.byKey(const ValueKey('type-property')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const ValueKey('field-title')),
+        'شقة التجمع',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('field-amount')),
+        '45000',
+      );
+      await reveal(tester, find.widgetWithText(ChoiceChip, 'كل 3 شهور'));
+      await tester.tap(find.widgetWithText(ChoiceChip, 'كل 3 شهور'));
+      await tester.enterText(find.byKey(const ValueKey('field-count')), '20');
+      await pickDay(tester, 'field-day', '20');
+      await reveal(tester, find.text('ضيف دفعة'));
+      await tester.tap(find.text('ضيف دفعة'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('extra-label-0')),
+        'دفعة الاستلام',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('extra-amount-0')),
+        '300000',
+      );
+      await pickDay(tester, 'extra-day-0', '25');
+      expect(find.textContaining('فاضل 20 ×'), findsOneWidget);
+      await save(tester);
+
+      final creates = [
+        for (final call in api.calls)
+          if (call.path == 'commitments.create')
+            call.input! as Map<String, Object?>,
+      ];
+      expect(creates, hasLength(2));
+      expect(creates.first, containsPair('shape', 'fixed'));
+      expect(creates.first, containsPair('kind', 'property'));
+      expect(creates.first, containsPair('intervalCount', 3));
+      expect(creates.first, containsPair('remindDaysBefore', 7));
+      expect(creates.last, containsPair('shape', 'schedule'));
+      expect(creates.last['title'], 'شقة التجمع · دفعات تانية');
+      expect(
+        (creates.last['items']! as List).single,
+        containsPair('label', 'دفعة الاستلام'),
+      );
+    },
+  );
+
+  testWidgets('an electricity bill changes every month and keeps an estimate', (
+    tester,
+  ) async {
+    final api = await _open(tester, path: '/commitments/add');
+    final tile = find.byKey(const ValueKey('type-bill'));
+    await tester.ensureVisible(tile);
+    await tester.tap(tile);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'الكهربا'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('field-amount')), '900');
+    await pickDay(tester, 'field-day', '18');
+    await save(tester);
+
+    final input = api.lastInput('commitments.create')! as Map<String, Object?>;
+    expect(input, containsPair('kind', 'bill'));
+    expect(input, containsPair('title', 'الكهربا'));
+    expect(input, containsPair('amountVaries', true));
+    expect(input, containsPair('amount', 900));
+  });
+
+  testWidgets(
+    'a subscription on a free trial reminds two days before it is charged',
+    (tester) async {
+      final api = await _open(tester, path: '/commitments/add');
+      await tester.tap(find.byKey(const ValueKey('type-subscription')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('brand-shahid')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byKey(const ValueKey('field-amount')), '100');
+      await tester.tap(find.text('لسه في فترة تجربة مجانية'));
+      await tester.pumpAndSettle();
+      expect(find.text('التجربة بتخلص يوم'), findsOneWidget);
+      expect(find.text('يعني حوالي 1,200 ج.م في السنة.'), findsOneWidget);
+      await pickDay(tester, 'field-day', '15');
+      await save(tester);
+      await tester.tap(find.text('ضيفه تاني'));
+      await tester.pumpAndSettle();
+
+      final input =
+          api.lastInput('commitments.create')! as Map<String, Object?>;
+      expect(input, containsPair('catalogSlug', 'shahid'));
+      expect(input, containsPair('paymentMethod', 'card'));
+      expect(input, containsPair('remindDaysBefore', 2));
+    },
+  );
+
+  testWidgets(
+    'a gam3eya says how much the turn pays, and a turn past the months is refused',
+    (tester) async {
+      final api = await _open(tester, path: '/commitments/add');
+      final tile = find.byKey(const ValueKey('type-gam3eya'));
+      await reveal(tester, tile);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const ValueKey('field-amount')),
+        '1000',
+      );
+      await tester.enterText(find.byKey(const ValueKey('field-count')), '10');
+      await tester.enterText(find.byKey(const ValueKey('field-turn')), '12');
+      await pickDay(tester, 'field-day', '5');
+      await save(tester);
+      expect(find.text('اكتب دورك، رقم من الشهور.'), findsOneWidget);
+      expect(api.paths, isNot(contains('commitments.create')));
+
+      await tester.enterText(find.byKey(const ValueKey('field-turn')), '6');
+      await tester.pumpAndSettle();
+      expect(find.textContaining('هتقبض 10,000 ج.م في دورك'), findsOneWidget);
     },
   );
 

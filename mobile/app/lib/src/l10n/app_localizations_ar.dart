@@ -4877,4 +4877,303 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get cmAfterSaveHint =>
       'بعد ما تحفظه، لما تسجّل إنك دفعته هنحسبه عليه لوحده لو متأكدين، ولو لأ هنسألك.';
+
+  @override
+  String get cfAboutHowMuch => 'بتيجي حوالي كام (اختياري)';
+
+  @override
+  String get cfAddAnyway => 'ضيفه تاني';
+
+  @override
+  String get cfAddExtra => 'ضيف دفعة';
+
+  @override
+  String get cfAllCount => 'كام قسط كلهم (اختياري)';
+
+  @override
+  String get cfAutoDebit => 'بتتخصم لوحدها';
+
+  @override
+  String get cfAutoFromAccount => 'بيتخصم لوحده من حسابي أو مرتبي';
+
+  @override
+  String get cfAutoFromCard => 'بيتخصم لوحده من الكارت';
+
+  @override
+  String get cfBankCard => 'تقسيط الكارت';
+
+  @override
+  String get cfBoughtWhat => 'اشتريت إيه؟';
+
+  @override
+  String get cfBrother => 'أخويا';
+
+  @override
+  String get cfCardDueDay => 'آخر ميعاد للسداد';
+
+  @override
+  String get cfCardDueHint => 'مكتوب في كشف حساب الكارت';
+
+  @override
+  String get cfCardHint =>
+      'بنفكرك قبل آخر ميعاد عشان تسدد قبل ما الفوايد تتحسب.';
+
+  @override
+  String get cfCardVaries => 'المبلغ بيتغير كل شهر';
+
+  @override
+  String get cfContractEnds => 'العقد بيخلص (اختياري)';
+
+  @override
+  String get cfDaughter => 'بنتي';
+
+  @override
+  String get cfDeveloper => 'المطوّر أو الشركة (اختياري)';
+
+  @override
+  String get cfDeveloperHint => 'زي: بالم هيلز';
+
+  @override
+  String cfDuplicateBody(String p0) {
+    return 'عندك «$p0» متسجل. تفتحه ولا تضيف واحد تاني؟';
+  }
+
+  @override
+  String get cfDuplicateTitle => 'متسجل قبل كده';
+
+  @override
+  String get cfElectricity => 'الكهربا';
+
+  @override
+  String get cfExtraHint => 'زي: دفعة الاستلام';
+
+  @override
+  String get cfExtras => 'دفعات كبيرة لوحدها (اختياري)';
+
+  @override
+  String get cfExtrasHint =>
+      'دفعة الاستلام، وديعة الصيانة، أو أي دفعة غير القسط.';
+
+  @override
+  String cfExtrasTitle(String p0) {
+    return '$p0 · دفعات تانية';
+  }
+
+  @override
+  String get cfFeeHint =>
+      'كل قسط بميعاده ومبلغه، وتقدر تسمّيه (الأتوبيس، الكتب…).';
+
+  @override
+  String cfFeesTotal(String p0, String p1) {
+    return 'الإجمالي $p0 · فاضل $p1';
+  }
+
+  @override
+  String get cfFinancedBy => 'بالتقسيط من (اختياري)';
+
+  @override
+  String get cfFlexibleOnMeHint =>
+      'من غير ميعاد: هيفضل ظاهر لحد ما تسدده، وكل مرة تسجل إنك رجعت جزء هنخصمه.';
+
+  @override
+  String get cfFlexibleToMeHint =>
+      'من غير ميعاد: هيفضل ظاهر لحد ما يرجعلك، وكل مرة تسجل إنه رجّع جزء هنخصمه.';
+
+  @override
+  String get cfFreelance => 'شغل حر';
+
+  @override
+  String get cfGam3eyaHolder => 'مين ماسك الجمعية (اختياري)';
+
+  @override
+  String get cfGam3eyaHolderHint => 'عشان لما تبعتله القسط نعرف إنه للجمعية';
+
+  @override
+  String cfGam3eyaSummary(String p0, String p1, String p2) {
+    return 'هتقبض $p0 في دورك (الشهر $p1 من $p2).';
+  }
+
+  @override
+  String get cfGas => 'الغاز';
+
+  @override
+  String get cfGroupAi => 'ذكاء اصطناعي';
+
+  @override
+  String get cfGroupMusic => 'موسيقى وكتب صوتية';
+
+  @override
+  String get cfGroupOther => 'تعليم وتوصيل وحاجات تانية';
+
+  @override
+  String get cfGroupSoftware => 'برامج وتخزين وألعاب';
+
+  @override
+  String get cfGroupStreaming => 'أفلام ومسلسلات ورياضة';
+
+  @override
+  String get cfHowPaid => 'بيتدفع إزاي؟';
+
+  @override
+  String get cfInternet => 'نت البيت';
+
+  @override
+  String get cfItemLabel => 'اسمه (اختياري)';
+
+  @override
+  String get cfLandline => 'التليفون الأرضي';
+
+  @override
+  String get cfLandlord => 'صاحب الشقة (اختياري)';
+
+  @override
+  String get cfLeftCount => 'فاضل كام قسط (مع الجاي)';
+
+  @override
+  String cfLeftTotal(String p0, String p1, String p2) {
+    return 'فاضل $p0 × $p1 = $p2';
+  }
+
+  @override
+  String get cfLessonsEnd => 'لحد إمتى (اختياري)';
+
+  @override
+  String get cfLoanFor => 'القرض ده لإيه؟ (اختياري)';
+
+  @override
+  String cfLoanTitle(String p0) {
+    return 'قرض $p0';
+  }
+
+  @override
+  String get cfMe => 'أنا';
+
+  @override
+  String get cfMobile => 'الموبايل';
+
+  @override
+  String get cfMoneyIn => 'فلوس داخلالي';
+
+  @override
+  String get cfMoneyOut => 'فلوس طالعة مني';
+
+  @override
+  String get cfMonthlyInstallment => 'القسط الشهري';
+
+  @override
+  String get cfNeedBank => 'اكتب اسم البنك.';
+
+  @override
+  String get cfNeedEndAfterStart => 'النهاية لازم تبقى بعد الميعاد الجاي.';
+
+  @override
+  String get cfNeedExtras => 'كل دفعة محتاجة ميعاد ومبلغ.';
+
+  @override
+  String get cfNeedPaidBelowTotal => 'اللي اتدفع لازم يبقى أقل من الإجمالي.';
+
+  @override
+  String get cfNeedTotalCount =>
+      'الأقساط كلها لازم تبقى أكتر من الفاضل أو قده.';
+
+  @override
+  String get cfNextCharge => 'الخصم الجاي';
+
+  @override
+  String get cfNoSuchSubscription => 'مش لاقيينه. اكتب اسمه من تحت.';
+
+  @override
+  String cfNthInstallment(int index) {
+    return 'القسط $index';
+  }
+
+  @override
+  String get cfOpenIt => 'افتحه';
+
+  @override
+  String get cfPaidByCard => 'بيتخصم لوحده (كارت أو محفظة)';
+
+  @override
+  String get cfPaidByHand => 'بدفعه بنفسي';
+
+  @override
+  String get cfPaidEvery => 'بيتدفع كل';
+
+  @override
+  String get cfPaidSoFar => 'دفعت منهم كام لحد دلوقتي (اختياري)';
+
+  @override
+  String get cfPension => 'معاش';
+
+  @override
+  String get cfPrice => 'السعر';
+
+  @override
+  String get cfReceivedEvery => 'بيتقبض كل';
+
+  @override
+  String get cfRemindIncome => 'فكرني';
+
+  @override
+  String get cfRemove => 'شيل';
+
+  @override
+  String get cfRenews => 'بيتجدد كل';
+
+  @override
+  String get cfRentIn => 'إيجار ليّا';
+
+  @override
+  String get cfRentOf => 'إيجار إيه؟ (اختياري)';
+
+  @override
+  String get cfRentOfHint => 'زي: إيجار الشقة';
+
+  @override
+  String get cfRepaidSoFar => 'اتدفع منه كام (اختياري)';
+
+  @override
+  String get cfRepeats => 'بيتكرر';
+
+  @override
+  String get cfSalary => 'المرتب';
+
+  @override
+  String get cfSister => 'أختي';
+
+  @override
+  String get cfSon => 'ابني';
+
+  @override
+  String get cfSubscriptionNameHint => 'زي: الجيم';
+
+  @override
+  String get cfTheShop => 'المحل نفسه';
+
+  @override
+  String get cfTrial => 'لسه في فترة تجربة مجانية';
+
+  @override
+  String get cfTrialEnds => 'التجربة بتخلص يوم';
+
+  @override
+  String get cfTrialHint =>
+      'هنفكرك قبلها بيومين، عشان تلغيه لو مش عايزه قبل ما يتخصم.';
+
+  @override
+  String get cfUsualCardAmount => 'بتسدد عادة كام (اختياري)';
+
+  @override
+  String get cfWater => 'المية';
+
+  @override
+  String get cfWhichBank => 'من أنهي بنك؟';
+
+  @override
+  String get cfWhichBill => 'فاتورة إيه؟';
+
+  @override
+  String cfYearlyCost(String p0) {
+    return 'يعني حوالي $p0 في السنة.';
+  }
 }

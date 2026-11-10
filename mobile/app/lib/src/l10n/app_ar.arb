@@ -2791,5 +2791,168 @@
   "cmAmount": "المبلغ",
   "cmNextIncomeDay": "ميعاد القبض الجاي",
   "cmRemindBefore": "فكرني",
-  "cmAfterSaveHint": "بعد ما تحفظه، لما تسجّل إنك دفعته هنحسبه عليه لوحده لو متأكدين، ولو لأ هنسألك."
+  "cmAfterSaveHint": "بعد ما تحفظه، لما تسجّل إنك دفعته هنحسبه عليه لوحده لو متأكدين، ولو لأ هنسألك.",
+  "cfAboutHowMuch": "بتيجي حوالي كام (اختياري)",
+  "cfAddAnyway": "ضيفه تاني",
+  "cfAddExtra": "ضيف دفعة",
+  "cfAllCount": "كام قسط كلهم (اختياري)",
+  "cfAutoDebit": "بتتخصم لوحدها",
+  "cfAutoFromAccount": "بيتخصم لوحده من حسابي أو مرتبي",
+  "cfAutoFromCard": "بيتخصم لوحده من الكارت",
+  "cfBankCard": "تقسيط الكارت",
+  "cfBoughtWhat": "اشتريت إيه؟",
+  "cfBrother": "أخويا",
+  "cfCardDueDay": "آخر ميعاد للسداد",
+  "cfCardDueHint": "مكتوب في كشف حساب الكارت",
+  "cfCardHint": "بنفكرك قبل آخر ميعاد عشان تسدد قبل ما الفوايد تتحسب.",
+  "cfCardVaries": "المبلغ بيتغير كل شهر",
+  "cfContractEnds": "العقد بيخلص (اختياري)",
+  "cfDaughter": "بنتي",
+  "cfDeveloper": "المطوّر أو الشركة (اختياري)",
+  "cfDeveloperHint": "زي: بالم هيلز",
+  "cfDuplicateBody": "عندك «{p0}» متسجل. تفتحه ولا تضيف واحد تاني؟",
+  "@cfDuplicateBody": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cfDuplicateTitle": "متسجل قبل كده",
+  "cfElectricity": "الكهربا",
+  "cfExtraHint": "زي: دفعة الاستلام",
+  "cfExtras": "دفعات كبيرة لوحدها (اختياري)",
+  "cfExtrasHint": "دفعة الاستلام، وديعة الصيانة، أو أي دفعة غير القسط.",
+  "cfExtrasTitle": "{p0} · دفعات تانية",
+  "@cfExtrasTitle": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cfFeeHint": "كل قسط بميعاده ومبلغه، وتقدر تسمّيه (الأتوبيس، الكتب…).",
+  "cfFeesTotal": "الإجمالي {p0} · فاضل {p1}",
+  "@cfFeesTotal": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "cfFinancedBy": "بالتقسيط من (اختياري)",
+  "cfFlexibleOnMeHint": "من غير ميعاد: هيفضل ظاهر لحد ما تسدده، وكل مرة تسجل إنك رجعت جزء هنخصمه.",
+  "cfFlexibleToMeHint": "من غير ميعاد: هيفضل ظاهر لحد ما يرجعلك، وكل مرة تسجل إنه رجّع جزء هنخصمه.",
+  "cfFreelance": "شغل حر",
+  "cfGam3eyaHolder": "مين ماسك الجمعية (اختياري)",
+  "cfGam3eyaHolderHint": "عشان لما تبعتله القسط نعرف إنه للجمعية",
+  "cfGam3eyaSummary": "هتقبض {p0} في دورك (الشهر {p1} من {p2}).",
+  "@cfGam3eyaSummary": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      },
+      "p2": {
+        "type": "String"
+      }
+    }
+  },
+  "cfGas": "الغاز",
+  "cfGroupAi": "ذكاء اصطناعي",
+  "cfGroupMusic": "موسيقى وكتب صوتية",
+  "cfGroupOther": "تعليم وتوصيل وحاجات تانية",
+  "cfGroupSoftware": "برامج وتخزين وألعاب",
+  "cfGroupStreaming": "أفلام ومسلسلات ورياضة",
+  "cfHowPaid": "بيتدفع إزاي؟",
+  "cfInternet": "نت البيت",
+  "cfItemLabel": "اسمه (اختياري)",
+  "cfLandline": "التليفون الأرضي",
+  "cfLandlord": "صاحب الشقة (اختياري)",
+  "cfLeftCount": "فاضل كام قسط (مع الجاي)",
+  "cfLeftTotal": "فاضل {p0} × {p1} = {p2}",
+  "@cfLeftTotal": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      },
+      "p2": {
+        "type": "String"
+      }
+    }
+  },
+  "cfLessonsEnd": "لحد إمتى (اختياري)",
+  "cfLoanFor": "القرض ده لإيه؟ (اختياري)",
+  "cfLoanTitle": "قرض {p0}",
+  "@cfLoanTitle": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "cfMe": "أنا",
+  "cfMobile": "الموبايل",
+  "cfMoneyIn": "فلوس داخلالي",
+  "cfMoneyOut": "فلوس طالعة مني",
+  "cfMonthlyInstallment": "القسط الشهري",
+  "cfNeedBank": "اكتب اسم البنك.",
+  "cfNeedEndAfterStart": "النهاية لازم تبقى بعد الميعاد الجاي.",
+  "cfNeedExtras": "كل دفعة محتاجة ميعاد ومبلغ.",
+  "cfNeedPaidBelowTotal": "اللي اتدفع لازم يبقى أقل من الإجمالي.",
+  "cfNeedTotalCount": "الأقساط كلها لازم تبقى أكتر من الفاضل أو قده.",
+  "cfNextCharge": "الخصم الجاي",
+  "cfNoSuchSubscription": "مش لاقيينه. اكتب اسمه من تحت.",
+  "cfNthInstallment": "القسط {index}",
+  "@cfNthInstallment": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "cfOpenIt": "افتحه",
+  "cfPaidByCard": "بيتخصم لوحده (كارت أو محفظة)",
+  "cfPaidByHand": "بدفعه بنفسي",
+  "cfPaidEvery": "بيتدفع كل",
+  "cfPaidSoFar": "دفعت منهم كام لحد دلوقتي (اختياري)",
+  "cfPension": "معاش",
+  "cfPrice": "السعر",
+  "cfReceivedEvery": "بيتقبض كل",
+  "cfRemindIncome": "فكرني",
+  "cfRemove": "شيل",
+  "cfRenews": "بيتجدد كل",
+  "cfRentIn": "إيجار ليّا",
+  "cfRentOf": "إيجار إيه؟ (اختياري)",
+  "cfRentOfHint": "زي: إيجار الشقة",
+  "cfRepaidSoFar": "اتدفع منه كام (اختياري)",
+  "cfRepeats": "بيتكرر",
+  "cfSalary": "المرتب",
+  "cfSister": "أختي",
+  "cfSon": "ابني",
+  "cfSubscriptionNameHint": "زي: الجيم",
+  "cfTheShop": "المحل نفسه",
+  "cfTrial": "لسه في فترة تجربة مجانية",
+  "cfTrialEnds": "التجربة بتخلص يوم",
+  "cfTrialHint": "هنفكرك قبلها بيومين، عشان تلغيه لو مش عايزه قبل ما يتخصم.",
+  "cfUsualCardAmount": "بتسدد عادة كام (اختياري)",
+  "cfWater": "المية",
+  "cfWhichBank": "من أنهي بنك؟",
+  "cfWhichBill": "فاتورة إيه؟",
+  "cfYearlyCost": "يعني حوالي {p0} في السنة.",
+  "@cfYearlyCost": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  }
 }

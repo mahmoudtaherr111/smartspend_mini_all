@@ -107,6 +107,13 @@ describe("the commitments ecosystem (docs/decisions/0051-commitments-ecosystem.m
     expect(back.commitmentLinks?.[0]).toMatchObject({ status: "linked", cashflowId: id, remainingAmount: 500 });
   });
 
+  itWithDatabase("adds a debt already partly repaid: what was repaid counts, what is left shows", async () => {
+    const { id } = await commitments.create({ shape: "balance", kind: "debt", direction: "out", contactName: "خالد", contactRelation: "صاحبي", totalAmount: 3000, paidSoFar: 1000, repayment: "flexible" });
+    const { items } = await commitments.overview();
+    expect(items.find((item) => item.id === id)?.progress.remainingAmount).toBe(2000);
+    await expect(commitments.create({ shape: "balance", kind: "debt", contactName: "خالد", totalAmount: 500, paidSoFar: 500, repayment: "flexible" })).rejects.toThrow();
+  });
+
   itWithDatabase("asks «اتدفع؟» for a due date without a payment; «لسه» keeps it unpaid and stops asking; «دفعته» records it", async () => {
     const rent = await commitments.create({ shape: "recurring", kind: "rent", title: "إيجار الشقة", amount: 4000, startDay: today });
     const gym = await commitments.create({ shape: "recurring", kind: "subscription", title: "الجيم", amount: 500, startDay: today });

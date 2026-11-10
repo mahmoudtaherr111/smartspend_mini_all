@@ -228,6 +228,7 @@ export async function createCommitment(user: CoachUser, input: CommitmentFields,
       const repayment = input.repayment ?? "flexible";
       if (repayment !== "flexible" && !input.startDay) throw bad("اختار الميعاد.");
       if (repayment === "installments" && (!positive(input.amount) || !input.occurrenceCount)) throw bad("اكتب القسط كام وعلى كام مرة.");
+      if (positive(input.paidSoFar) && new Decimal(input.paidSoFar!).gte(input.totalAmount!)) throw bad("اللي اتدفع لازم يبقى أقل من المبلغ كله.");
       ({ id } = await createCashflow(user, {
         ...base, kind: "debt", shape: "balance", totalAmount: input.totalAmount!,
         amount: repayment === "installments" ? input.amount! : repayment === "once" ? input.totalAmount! : null,
@@ -235,6 +236,7 @@ export async function createCommitment(user: CoachUser, input: CommitmentFields,
         startDay: repayment === "flexible" ? null : input.startDay!,
         occurrenceCount: repayment === "installments" ? input.occurrenceCount! : null,
       }));
+      if (positive(input.paidSoFar)) await declarePaidOnDates(user, id, new Decimal(input.paidSoFar!));
       break;
     }
     case "gam3eya": {
@@ -260,6 +262,21 @@ export async function createCommitment(user: CoachUser, input: CommitmentFields,
     }
   }
   return { id, payoutId: null };
+}
+
+/** What was repaid of a debt before it was added: declared over its first dates (its one undated "date" when flexible). */
+async function declarePaidOnDates(user: CoachUser, cashflowId: number, amount: Decimal) {
+  const [row] = await loadCommitments(user, { ids: [cashflowId], includeEnded: true });
+  if (!row) return;
+  const today = businessDateKey();
+  let left = amount;
+  for (const item of occurrences([row], [], "1900-01-01", addDays(today, 3660), today)) {
+    if (left.lte(0)) break;
+    const pay = Decimal.min(left, new Decimal(item.amount ?? item.remaining ?? 0));
+    if (pay.lte(0)) continue;
+    await settle(user, { cashflowId, dueDay: item.dueDay, expenseId: null, amount: pay.toNumber(), matchedBy: "user" });
+    left = left.minus(pay);
+  }
 }
 
 /** "اتدفع كام لحد النهارده" on a schedule: declared payments over the first items, oldest first. */

@@ -4918,4 +4918,304 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get cmAfterSaveHint =>
       'Once saved, when you record paying it we count it for you if we are sure, and ask if not.';
+
+  @override
+  String get cfAboutHowMuch => 'About how much (optional)';
+
+  @override
+  String get cfAddAnyway => 'Add it anyway';
+
+  @override
+  String get cfAddExtra => 'Add a payment';
+
+  @override
+  String get cfAllCount => 'Installments in all (optional)';
+
+  @override
+  String get cfAutoDebit => 'Paid automatically';
+
+  @override
+  String get cfAutoFromAccount => 'Taken from my account or salary';
+
+  @override
+  String get cfAutoFromCard => 'Taken from my card automatically';
+
+  @override
+  String get cfBankCard => 'Card instalments';
+
+  @override
+  String get cfBoughtWhat => 'What did you buy?';
+
+  @override
+  String get cfBrother => 'Brother';
+
+  @override
+  String get cfCardDueDay => 'Payment due date';
+
+  @override
+  String get cfCardDueHint => 'It is on the card statement';
+
+  @override
+  String get cfCardHint =>
+      'We remind you before the due date so you pay before interest is charged.';
+
+  @override
+  String get cfCardVaries => 'The amount changes every month';
+
+  @override
+  String get cfContractEnds => 'Contract ends (optional)';
+
+  @override
+  String get cfDaughter => 'Daughter';
+
+  @override
+  String get cfDeveloper => 'Developer (optional)';
+
+  @override
+  String get cfDeveloperHint => 'e.g. Palm Hills';
+
+  @override
+  String cfDuplicateBody(String p0) {
+    return 'You already have «$p0». Open it, or add another?';
+  }
+
+  @override
+  String get cfDuplicateTitle => 'Already added';
+
+  @override
+  String get cfElectricity => 'Electricity';
+
+  @override
+  String get cfExtraHint => 'e.g. Handover payment';
+
+  @override
+  String get cfExtras => 'One-off payments (optional)';
+
+  @override
+  String get cfExtrasHint =>
+      'Handover, maintenance deposit, or any payment besides the instalment.';
+
+  @override
+  String cfExtrasTitle(String p0) {
+    return '$p0 · other payments';
+  }
+
+  @override
+  String get cfFeeHint =>
+      'Each instalment with its date and amount; you can name it (bus, books…).';
+
+  @override
+  String cfFeesTotal(String p0, String p1) {
+    return '$p0 in all · $p1 left';
+  }
+
+  @override
+  String get cfFinancedBy => 'Financed by (optional)';
+
+  @override
+  String get cfFlexibleOnMeHint =>
+      'No date: it stays until repaid, and each part you record is taken off.';
+
+  @override
+  String get cfFlexibleToMeHint =>
+      'No date: it stays until you get it back, and each part you record is taken off.';
+
+  @override
+  String get cfFreelance => 'Freelance';
+
+  @override
+  String get cfGam3eyaHolder => 'Who runs it (optional)';
+
+  @override
+  String get cfGam3eyaHolderHint =>
+      'So a payment to them counts for the gam3eya';
+
+  @override
+  String cfGam3eyaSummary(String p0, String p1, String p2) {
+    return 'You collect $p0 on your turn (month $p1 of $p2).';
+  }
+
+  @override
+  String get cfGas => 'Gas';
+
+  @override
+  String get cfGroupAi => 'AI';
+
+  @override
+  String get cfGroupMusic => 'Music';
+
+  @override
+  String get cfGroupOther => 'Learning, delivery and more';
+
+  @override
+  String get cfGroupSoftware => 'Software, storage and games';
+
+  @override
+  String get cfGroupStreaming => 'Films, series and sport';
+
+  @override
+  String get cfHowPaid => 'How is it paid?';
+
+  @override
+  String get cfInternet => 'Home internet';
+
+  @override
+  String get cfItemLabel => 'Name (optional)';
+
+  @override
+  String get cfLandline => 'Landline';
+
+  @override
+  String get cfLandlord => 'Landlord (optional)';
+
+  @override
+  String get cfLeftCount => 'Left (with the next)';
+
+  @override
+  String cfLeftTotal(String p0, String p1, String p2) {
+    return '$p0 left × $p1 = $p2';
+  }
+
+  @override
+  String get cfLessonsEnd => 'Until (optional)';
+
+  @override
+  String get cfLoanFor => 'What is the loan for? (optional)';
+
+  @override
+  String cfLoanTitle(String p0) {
+    return '$p0 loan';
+  }
+
+  @override
+  String get cfMe => 'Me';
+
+  @override
+  String get cfMobile => 'Mobile';
+
+  @override
+  String get cfMoneyIn => 'Money coming in';
+
+  @override
+  String get cfMoneyOut => 'Money going out';
+
+  @override
+  String get cfMonthlyInstallment => 'Monthly instalment';
+
+  @override
+  String get cfNeedBank => 'Enter the bank.';
+
+  @override
+  String get cfNeedEndAfterStart => 'The end must be after the next date.';
+
+  @override
+  String get cfNeedExtras => 'Each payment needs a date and an amount.';
+
+  @override
+  String get cfNeedPaidBelowTotal =>
+      'What was paid must be less than the total.';
+
+  @override
+  String get cfNeedTotalCount => 'All instalments must be at least those left.';
+
+  @override
+  String get cfNextCharge => 'Next charge';
+
+  @override
+  String get cfNoSuchSubscription => 'Not found. Type its name below.';
+
+  @override
+  String cfNthInstallment(int index) {
+    return 'Instalment $index';
+  }
+
+  @override
+  String get cfOpenIt => 'Open it';
+
+  @override
+  String get cfPaidByCard => 'Charged automatically (card or wallet)';
+
+  @override
+  String get cfPaidByHand => 'I pay it myself';
+
+  @override
+  String get cfPaidEvery => 'Paid every';
+
+  @override
+  String get cfPaidSoFar => 'Paid so far (optional)';
+
+  @override
+  String get cfPension => 'Pension';
+
+  @override
+  String get cfPrice => 'Price';
+
+  @override
+  String get cfReceivedEvery => 'Received every';
+
+  @override
+  String get cfRemindIncome => 'Remind me';
+
+  @override
+  String get cfRemove => 'Remove';
+
+  @override
+  String get cfRenews => 'Renews every';
+
+  @override
+  String get cfRentIn => 'Rent I receive';
+
+  @override
+  String get cfRentOf => 'Rent of what? (optional)';
+
+  @override
+  String get cfRentOfHint => 'e.g. flat rent';
+
+  @override
+  String get cfRepaidSoFar => 'Repaid so far (optional)';
+
+  @override
+  String get cfRepeats => 'Repeats';
+
+  @override
+  String get cfSalary => 'Salary';
+
+  @override
+  String get cfSister => 'Sister';
+
+  @override
+  String get cfSon => 'Son';
+
+  @override
+  String get cfSubscriptionNameHint => 'e.g. the gym';
+
+  @override
+  String get cfTheShop => 'The shop itself';
+
+  @override
+  String get cfTrial => 'Still on a free trial';
+
+  @override
+  String get cfTrialEnds => 'Trial ends on';
+
+  @override
+  String get cfTrialHint =>
+      'We remind you two days before, so you can cancel before you are charged.';
+
+  @override
+  String get cfUsualCardAmount => 'Usually pay (optional)';
+
+  @override
+  String get cfWater => 'Water';
+
+  @override
+  String get cfWhichBank => 'Which bank?';
+
+  @override
+  String get cfWhichBill => 'Which bill?';
+
+  @override
+  String cfYearlyCost(String p0) {
+    return 'That is about $p0 a year.';
+  }
 }

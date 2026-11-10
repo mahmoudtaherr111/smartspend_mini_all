@@ -45,5 +45,9 @@ describe("reminder stages", () => {
     const netflix = { row: row({ id: 2, title: "نتفليكس" }), occurrence: due({ cashflowId: 2, title: "نتفليكس", remaining: 240 }), stage: "due" as const };
     expect(reminderText([fridge, netflix])).toEqual({ title: "عليك 2 حاجات النهارده", body: "قسط التلاجة، نتفليكس · 1,740 ج.م" });
     expect(reminderText([fridge])).toEqual({ title: "ميعاد قسط التلاجة النهارده", body: "1,500 ج.م · لو دفعته دوس «دفعته»." });
+    // Taken from the card on its own: the person only needs money there, or to cancel in time.
+    const auto = { row: row({ id: 2, title: "نتفليكس", paymentMethod: "card" }), occurrence: due({ cashflowId: 2, title: "نتفليكس", remaining: 240 }), stage: "before" as const };
+    expect(reminderText([auto]).title).toBe("نتفليكس هيتخصم قريب");
+    expect(reminderText([auto]).body).toContain("اتأكد إن في رصيد كفاية");
   });
 });
