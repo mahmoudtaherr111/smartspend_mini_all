@@ -97,7 +97,7 @@ Bank messages went through the same journey and ended in decision
 - The rule engine, its lexicon, its calibration table and its benchmark are removed.
 
 ## Where it stands
-- Built and tested without a model (`api/lib/understanding/`, 66 tests): taxonomy v2, the reply contract and its
+- Built and tested without a model (`api/lib/understanding/`): taxonomy v2, the reply contract and its
   parser, the number and quote readers, the guard, the policy, the prompt, the bridge, the user's context for a
   reading, route resolution and the engine that runs one reading end to end.
 - The evaluation harness is built and tested with a fake model (`api/qa/understanding/`, `npm run eval:understand`).
