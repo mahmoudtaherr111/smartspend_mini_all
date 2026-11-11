@@ -7,7 +7,7 @@
       "titleAr": "تسجيل المصاريف",
       "summary": "Turns a typed or dictated sentence, or a receipt photo, into categorized transactions: the entry form, the classification pipeline, Arabic text handling, clarifying questions and saving the items.",
       "summaryAr": "بيحوّل جملة مكتوبة أو متقالة أو صورة إيصال لمعاملات متصنفة: خانة الإدخال وخط التصنيف وفهم العربي والأسئلة التوضيحية وحفظ البنود.",
-      "clusters": ["classification", "classification-qa", "arabic-nlp", "receipt-parsing", "web-capture"],
+      "clusters": ["classification", "understanding", "classification-qa", "arabic-nlp", "receipt-parsing", "web-capture"],
       "routers": ["image"],
       "procedures": [
         "ai.parseExpense",

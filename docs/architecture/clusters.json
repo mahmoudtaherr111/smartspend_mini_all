@@ -290,6 +290,14 @@
       ]
     },
     {
+      "id": "understanding",
+      "title": "Sentence understanding engine",
+      "description": "Reads a typed or spoken sentence into money events with a model and verifies the reading in code: the reply contract and its parser, the numbers and quotes the code reads on its own, the guard's exact checks, the save, show or ask policy, the prompt built from taxonomy v2, the user's context for a reading, route resolution, and the bridge from taxonomy v2 to the names the ledger stores.",
+      "paths": [
+        "api/lib/understanding/**"
+      ]
+    },
+    {
       "id": "classification",
       "title": "Expense classification pipeline",
       "description": "smart-pipeline.ts and the modules it composes: financial events, the role of each number and of each word in a clause, admissibility, rules, muscle memory, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance.",

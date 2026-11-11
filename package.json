@@ -49,6 +49,8 @@
     "bench:classify:live": "tsx api/qa/classification-benchmark-runner.ts --mode=live",
     "bench:classify:freeze": "tsx api/qa/classification-baseline.ts --freeze",
     "bench:classify:compare": "tsx api/qa/classification-baseline.ts --compare",
+    "eval:understand": "tsx api/qa/understanding/run.ts",
+    "eval:understand:score": "tsx api/qa/understanding/report.ts",
     "qa:ai-center:full": "npm run qa:ai-center",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

@@ -199,6 +199,13 @@ model {
         paths 'api/services/storage/**'
       }
     }
+    understanding = module 'Sentence understanding engine' {
+      description 'Reads a typed or spoken sentence into money events with a model and verifies the reading in code: the reply contract and its parser, the numbers and quotes the code reads on its own, the guard’s exact checks, the save, show or ask policy, the prompt built from taxonomy v2, the user’s context for a reading, route resolution, and the bridge from taxonomy v2 to the names the ledger stores.'
+      metadata {
+        files '10'
+        paths 'api/lib/understanding/**'
+      }
+    }
     voice = module 'Voice' {
       description 'Live voice calls in api/services/voice: the ticket and the /api/voice/v2 gateway, the Gemini Live engine, the brain with its tools and the checks on what is said, Egyptian number speech, the post-call memory and the admin dashboard’s figures. api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month.'
       metadata {
@@ -219,7 +226,7 @@ model {
     contracts = module 'Shared contracts' {
       description 'Types, limits and billing plans shared by the web app and the API.'
       metadata {
-        files '16'
+        files '17'
         paths 'contracts/**'
       }
     }

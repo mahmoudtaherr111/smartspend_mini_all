@@ -424,6 +424,38 @@ the sentence through `ai.parseExpense` like the normal button, and cannot start 
 phone-side keyword guess that used to fill the chip, and disagreed with the saved result, is gone; offline text is only
 checked (`src/lib/clientRulesEngine.ts#validateOfflineInput`) and classified by the server when it syncs.
 
+## The understanding engine (built, not serving any channel yet)
+Decision [0052](../decisions/0052-understanding-engine.md) replaces the pipeline above with a model that reads the
+sentence and code that verifies the reading. Its modules are in `api/lib/understanding/`; no procedure calls them yet,
+so everything above still describes what users get.
+
+- `api/lib/understanding/contract.ts`: the reply a model returns for one sentence (`READING_SCHEMA`) and
+  `parseReply`, which turns any reply into a well-formed `Reading` or null. Each event carries the person's own
+  words, the amount, the ledger kind and flow (`contracts/ledger-movement.ts`), a category and subcategory id of
+  taxonomy v2 (`contracts/taxonomy.ts`), the person, role and relation, a reference to a commitment and a wallet, a
+  date and the model's own doubt.
+- `api/lib/understanding/numbers.ts`: what the code reads without a model: the numbers of the sentence through the
+  Arabic number parser (`numberMentions`), whether a quote is the person's words (`quoteIsFromText`), and whether an
+  amount is stated, derived or absent (`sourceOfAmount`).
+- `api/lib/understanding/guard.ts#guardReading`: exact checks that put named flags on an event: an amount not in the
+  sentence, a derived amount, a quote that is not the person's, a category that does not exist or cannot hold that
+  kind of money, an impossible flow, a reference that was not offered, a date in the future, the local negation
+  detector disagreeing, and, for the reply, a number of the sentence nothing accounts for.
+- `api/lib/understanding/policy.ts#decide`: save, show or ask, with no confidence number. A clean ordinary event is
+  saved; any flag, a large amount in a category the user never saved, an entry dated on another day or a loan to
+  someone the user has not named is shown first; a question is asked only when nothing can be recorded.
+- `api/lib/understanding/prompt.ts`: the static system prompt built from the taxonomy's guide lines and worked
+  examples, and the per-request prompt with today's date, the user's people, commitments, wallets and own words, and
+  the sentence fenced and last.
+- `api/lib/understanding/bridge.ts#storedShape`: a v2 answer as the category names, row type and direction the
+  ledger stores today.
+- `api/lib/understanding/reading-context.ts`, `api/lib/understanding/context.ts`, `api/lib/understanding/routes.ts` and `api/lib/understanding/engine.ts`: the user's context for a
+  reading, the model routes and the orchestration. They are being written; this page describes them when they serve
+  a channel.
+
+Tests: `api/lib/understanding/understanding-core.test.ts`. The labelled development sentences are
+`api/qa/understanding/dev-set.json`.
+
 ## Known issues
 Checked against the code; each one names where it lives.
 1. **Clarifications save immediately with undo (Decision 0039).** A clarification saves as soon as it is answered;

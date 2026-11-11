@@ -327,6 +327,16 @@
         "api/lib/taxonomy-adapter.ts": "fd63a36d2f25",
         "api/lib/taxonomy-ssot.ts": "fb99f8118120",
         "api/lib/text-normalizer.ts": "05ac2af6ca6a",
+        "api/lib/understanding/bridge.ts": "8778e5f34757",
+        "api/lib/understanding/context.ts": "d325302a93bf",
+        "api/lib/understanding/contract.ts": "d974c73e6a0a",
+        "api/lib/understanding/engine.ts": "3d4775fbfe19",
+        "api/lib/understanding/guard.ts": "8baec4ec2c63",
+        "api/lib/understanding/numbers.ts": "00ff944ccf14",
+        "api/lib/understanding/policy.ts": "2f514ed47ede",
+        "api/lib/understanding/prompt.ts": "cf0ae59c610a",
+        "api/lib/understanding/reading-context.ts": "8e884de5adc3",
+        "api/lib/understanding/routes.ts": "1c2384b5e358",
         "api/lib/unified-normalizer.ts": "bfd4f91bfd4b",
         "api/lib/voice-intake-gate.ts": "0a8bf7293a27",
         "api/services/parser-trace.ts": "aa8b5bad3877",
@@ -334,9 +344,9 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-11-09 c81ddb36",
-      "arabic": "b8f8c6e0a146",
-      "arabicChecked": "2026-11-09 c81ddb36"
+      "checked": "2026-11-11 9fd9a6f",
+      "arabic": "7e42ab3f9f3d",
+      "arabicChecked": "2026-11-11 9fd9a6f"
     },
     "insights": {
       "files": {
@@ -532,6 +542,7 @@
         "contracts/plan-features.ts": "85f1c985c24f",
         "contracts/plans.ts": "371c028a6907",
         "contracts/profile-fields.ts": "5bf4f78b90e6",
+        "contracts/taxonomy.ts": "a9ac7f3a1884",
         "contracts/types.ts": "191164b8f041",
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
@@ -540,9 +551,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "39eda50cb310"
       },
-      "checked": "2026-11-10 5cdd21f0",
-      "arabic": "2053c36f8dbf",
-      "arabicChecked": "2026-11-10 5cdd21f0"
+      "checked": "2026-11-11 9fd9a6f",
+      "arabic": "00178d3627c9",
+      "arabicChecked": "2026-11-11 9fd9a6f"
     },
     "voice-calls": {
       "files": {

@@ -612,6 +612,20 @@ model {
   smartspend.api.modules.security -[uses]-> turnstile
   smartspend.api.modules.security -[writes]-> smartspend.mysql.admin_audit_logs
   smartspend.api.modules.storage -[uses]-> smartspend.object-storage
+  smartspend.api.modules.understanding -[imports]-> smartspend.api.modules.ai-providers
+  smartspend.api.modules.understanding -[imports]-> smartspend.api.modules.arabic-nlp
+  smartspend.api.modules.understanding -[imports]-> smartspend.api.modules.coaching
+  smartspend.api.modules.understanding -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.understanding -[imports]-> smartspend.shared.contracts
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.business_categories
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.cashflow_settlements
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.expenses
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.scheduled_cashflows
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.user_businesses
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.user_contacts
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.user_correction_rules
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.user_dictionaries
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.user_wallets
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.ai-actions
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.ai-insights
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.ai-memory
