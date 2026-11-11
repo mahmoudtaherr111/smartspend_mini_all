@@ -334,8 +334,8 @@
         "api/lib/understanding/guard.ts": "8baec4ec2c63",
         "api/lib/understanding/numbers.ts": "00ff944ccf14",
         "api/lib/understanding/policy.ts": "2f514ed47ede",
-        "api/lib/understanding/prompt.ts": "cf0ae59c610a",
-        "api/lib/understanding/reading-context.ts": "8e884de5adc3",
+        "api/lib/understanding/prompt.ts": "03fb679c4f74",
+        "api/lib/understanding/reading-context.ts": "9980c7595b9b",
         "api/lib/understanding/routes.ts": "1c2384b5e358",
         "api/lib/unified-normalizer.ts": "bfd4f91bfd4b",
         "api/lib/voice-intake-gate.ts": "0a8bf7293a27",
@@ -344,9 +344,9 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-11-11 9fd9a6f",
-      "arabic": "7e42ab3f9f3d",
-      "arabicChecked": "2026-11-11 9fd9a6f"
+      "checked": "2026-11-11 5137c0e",
+      "arabic": "7ef421d85152",
+      "arabicChecked": "2026-11-11 5137c0e"
     },
     "insights": {
       "files": {

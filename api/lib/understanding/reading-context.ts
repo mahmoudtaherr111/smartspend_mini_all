@@ -290,7 +290,10 @@ export function toPromptContext(ctx: ReadingContext): PromptContext {
     today: ctx.today,
     weekday: ctx.weekday,
     people: ctx.people,
-    commitments: ctx.commitments.map(({ cashflowId: _id, ...offered }) => offered),
+    // The model sees references only; the ids stay on the server.
+    commitments: ctx.commitments.map((item) => ({
+      ref: item.ref, title: item.title, kindLabel: item.kindLabel, amount: item.amount, dueDay: item.dueDay, person: item.person,
+    })),
     wallets: ctx.wallets,
     vocabulary: ctx.vocabulary,
     businessCategories: ctx.businessMode ? ctx.businessCategories : [],

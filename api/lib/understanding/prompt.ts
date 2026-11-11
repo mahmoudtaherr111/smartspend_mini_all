@@ -263,7 +263,7 @@ ${examplesBlock()}`;
 /** One line, no control characters, guillemets removed so the fence cannot be closed from inside. */
 function inline(value: unknown, limit: number): string {
   return String(value ?? "")
-    .replace(/[\u0000-\u001f\u007f«»]/g, " ")
+    .replace(/[\p{Cc}«»]/gu, " ")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, limit);

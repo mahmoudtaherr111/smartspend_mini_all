@@ -449,12 +449,25 @@ so everything above still describes what users get.
   the sentence fenced and last.
 - `api/lib/understanding/bridge.ts#storedShape`: a v2 answer as the category names, row type and direction the
   ledger stores today.
-- `api/lib/understanding/reading-context.ts`, `api/lib/understanding/context.ts`, `api/lib/understanding/routes.ts` and `api/lib/understanding/engine.ts`: the user's context for a
-  reading, the model routes and the orchestration. They are being written; this page describes them when they serve
-  a channel.
+- `api/lib/understanding/context.ts#loadReadingContext`: what the engine knows about the user for one reading, each
+  part bounded and filtered on the user: their contacts, active commitments with what is due next and a reference
+  (`c1`…) for each, wallets with references, the words they taught (correction rules and dictionary, translated to
+  v2 ids by `api/lib/understanding/bridge.ts#v2OfStored`), the stored pairs they saved at least twice, and the
+  business's categories in business mode. A part whose query fails is left empty. The pure half
+  (`api/lib/understanding/reading-context.ts#assembleContext`) has no database, so the engine imports only that.
+- `api/lib/understanding/routes.ts#resolveUnderstandingRoutes`: the admin's `classification` models for the plan's
+  tier, then the built-in providers that have a key.
+- `api/lib/understanding/engine.ts#understand`: one chain call with the static prompt and the schema, `parseReply`,
+  the guard, the policy, and the references resolved to ids. An unreadable reply is asked again on the routes that
+  remain; when nothing answers it throws `UnderstandingUnavailableError` and never falls back to a local guess.
+  Empty or over-long text is answered without a model. The engine does no database work and no budget check: its
+  caller admits the call and records it.
 
-Tests: `api/lib/understanding/understanding-core.test.ts`. The labelled development sentences are
-`api/qa/understanding/dev-set.json`.
+Tests: `api/lib/understanding/understanding-core.test.ts`, `api/lib/understanding/engine.test.ts`,
+`api/lib/understanding/context.test.ts`, `api/lib/understanding/routes.test.ts`. The labelled development sentences are
+`api/qa/understanding/dev-set.json`; `npm run eval:understand` reads them through one named model at a
+requests-per-minute limit and writes a report (the share of automatic saves that are wrong, questions, field
+accuracy, tokens and time). It has not been run against a real model yet.
 
 ## Known issues
 Checked against the code; each one names where it lives.

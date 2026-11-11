@@ -97,7 +97,9 @@ Bank messages went through the same journey and ended in decision
 - The rule engine, its lexicon, its calibration table and its benchmark are removed.
 
 ## Where it stands
-- Built and tested without a model: taxonomy v2, the reply contract and its parser, the number and quote readers,
-  the guard, the policy, the prompt and the bridge (`api/lib/understanding/understanding-core.test.ts`).
+- Built and tested without a model (`api/lib/understanding/`, 66 tests): taxonomy v2, the reply contract and its
+  parser, the number and quote readers, the guard, the policy, the prompt, the bridge, the user's context for a
+  reading, route resolution and the engine that runs one reading end to end.
+- The evaluation harness is built and tested with a fake model (`api/qa/understanding/`, `npm run eval:understand`).
 - Not serving any channel yet: `ai.parseExpense` and the other entry points still run the rule engine.
-- Not measured against a model yet.
+- Not measured against a model yet: no provider key was available where this was built.
