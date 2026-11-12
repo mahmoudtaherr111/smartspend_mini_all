@@ -186,10 +186,11 @@ export async function understand(input: UnderstandInput, deps: { execute?: typeo
   try {
     const { context: ctx, settings } = input;
     const deadlineMs = numberSetting(settings, "llm_trip_deadline_ms", DEFAULT_DEADLINE_MS);
+    // `compact`: subcategory ids in the system prompt, and only the guide lines this sentence touches beside it.
+    const detail = input.settings?.understanding_prompt_detail === "compact" ? "compact" : "full";
     const request: LlmRequest = {
-      // `understanding_prompt_detail=compact` is for provider tiers with a small tokens-per-minute allowance.
-      systemPrompt: buildSystemPrompt(input.settings?.understanding_prompt_detail === "compact" ? "compact" : "full"),
-      userPrompt: buildUserPrompt(toPromptContext(ctx), text),
+      systemPrompt: buildSystemPrompt(detail),
+      userPrompt: buildUserPrompt(toPromptContext(ctx), text, detail),
       schema: READING_SCHEMA,
       lowThinking: true,
       temperature: 0,

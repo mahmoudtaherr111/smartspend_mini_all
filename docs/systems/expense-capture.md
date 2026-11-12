@@ -487,8 +487,9 @@ the same shapes through `api/services/recording/`, so both apps need no change:
 - `expense.previewCategory` and `api/lib/classify-text.ts#classifyText` answer null: no model is called per
   keystroke, the AI Center keeps the category its own model chose and capture questions use their default.
 
-`understanding_prompt_detail=compact` sends a shorter prompt for provider tiers with a small tokens-per-minute
-allowance. The policy and guard limits are the `understanding_*` settings.
+`understanding_prompt_detail=compact` sends a shorter system prompt (subcategory ids without their wording, fewer
+examples) and, beside the sentence, only the guide lines whose usual wording appears in it
+(`api/lib/understanding/prompt.ts#hintsFor`), so the system prompt stays the same for everyone. The policy and guard limits are the `understanding_*` settings.
 
 Tests: `api/lib/understanding/understanding-core.test.ts`, `api/lib/understanding/engine.test.ts`,
 `api/lib/understanding/context.test.ts`, `api/lib/understanding/routes.test.ts`, `api/services/recording/items.test.ts`,

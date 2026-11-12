@@ -330,11 +330,11 @@
         "api/lib/understanding/bridge.ts": "8778e5f34757",
         "api/lib/understanding/context.ts": "d325302a93bf",
         "api/lib/understanding/contract.ts": "d974c73e6a0a",
-        "api/lib/understanding/engine.ts": "44a37cde71f7",
+        "api/lib/understanding/engine.ts": "b9b6b37cbc4e",
         "api/lib/understanding/guard.ts": "8baec4ec2c63",
         "api/lib/understanding/numbers.ts": "00ff944ccf14",
         "api/lib/understanding/policy.ts": "2f514ed47ede",
-        "api/lib/understanding/prompt.ts": "9c0b19eee733",
+        "api/lib/understanding/prompt.ts": "13f5069bbe1b",
         "api/lib/understanding/reading-context.ts": "9980c7595b9b",
         "api/lib/understanding/routes.ts": "1c2384b5e358",
         "api/lib/unified-normalizer.ts": "bfd4f91bfd4b",
@@ -350,9 +350,9 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-11-12 cc853f3",
-      "arabic": "8bd72b3291fd",
-      "arabicChecked": "2026-11-12 a7ebe6b"
+      "checked": "2026-11-12 bbb072d",
+      "arabic": "d40450a71818",
+      "arabicChecked": "2026-11-12 bbb072d"
     },
     "insights": {
       "files": {
@@ -548,7 +548,7 @@
         "contracts/plan-features.ts": "85f1c985c24f",
         "contracts/plans.ts": "371c028a6907",
         "contracts/profile-fields.ts": "5bf4f78b90e6",
-        "contracts/taxonomy.ts": "a9ac7f3a1884",
+        "contracts/taxonomy.ts": "d4bf227812a7",
         "contracts/types.ts": "191164b8f041",
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
@@ -557,7 +557,7 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "39eda50cb310"
       },
-      "checked": "2026-11-12 a7ebe6b",
+      "checked": "2026-11-12 bbb072d",
       "arabic": "57e47418f4c9",
       "arabicChecked": "2026-11-12 a7ebe6b"
     },

@@ -15,9 +15,10 @@
  * Why: docs/decisions/0052-understanding-engine.md.
  */
 import { TAXONOMY, TAXONOMY_VERSION, type TaxonomyCategory } from "../../../contracts/taxonomy";
+import { foldForMatch } from "./numbers";
 
 /** Bump on any change to the instructions or examples; stored with every reading. */
-export const PROMPT_VERSION = "2";
+export const PROMPT_VERSION = "3";
 
 export interface PromptPerson {
   name: string;
@@ -287,8 +288,50 @@ function inline(value: unknown, limit: number): string {
 
 export const MAX_SENTENCE_CHARS = 2000;
 
+/** Letters people attach to a word: «والمدرسة», «للدكتور», «بالفيزا». */
+const ATTACHED = /^(?:وال|بال|لل|ال|و|ب|ل|ف)(?=.{3,})/;
+const bare = (word: string) => word.replace(ATTACHED, "");
+
+interface Hint {
+  line: string;
+  /** Each wording of the subcategory's guide, as bare folded words. */
+  wordings: string[][];
+}
+
+const HINTS: Hint[] = TAXONOMY.flatMap((category) =>
+  category.subs
+    .filter((sub) => sub.guide)
+    .map((sub) => ({
+      line: `${category.id}/${sub.id} = ${sub.nameAr}: ${sub.guide}`,
+      wordings: sub.guide
+        .split("،")
+        .map((wording) => foldForMatch(wording).split(" ").map(bare).filter((word) => word.length > 1))
+        .filter((words) => words.length > 0),
+    })),
+);
+
+export const MAX_HINTS = 8;
+
+/**
+ * The subcategory guide lines whose usual wording appears in the sentence, most specific first.
+ *
+ * The compact prompt names subcategories by id only, and readings then miss what only the guide says («أنبوبة» is
+ * the gas bill, «باص المدرسة» is education). Sending every guide line to everyone costs thousands of tokens a
+ * request; sending the few that this sentence touches costs tens, and keeps the system prompt identical for
+ * everyone, so providers still cache it. A hint decides nothing: the model reads it and may ignore it.
+ */
+export function hintsFor(sentence: string, limit = MAX_HINTS): string[] {
+  const words = new Set(foldForMatch(sentence).split(" ").flatMap((word) => [word, bare(word)]));
+  return HINTS
+    .map((hint) => ({ hint, score: Math.max(0, ...hint.wordings.filter((wording) => wording.every((word) => words.has(word))).map((wording) => wording.length)) }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((entry) => entry.hint.line);
+}
+
 /** The per-request half: what is true today for this user, then the sentence, fenced and last. */
-export function buildUserPrompt(ctx: PromptContext, sentence: string): string {
+export function buildUserPrompt(ctx: PromptContext, sentence: string, detail: PromptDetail = "full"): string {
   const lines: string[] = [`TODAY: ${ctx.today} (${ctx.weekday})`];
 
   if (ctx.people?.length) {
@@ -324,6 +367,10 @@ export function buildUserPrompt(ctx: PromptContext, sentence: string): string {
       `The user is recording for their BUSINESS. Its own categories: ${ctx.businessCategories.map((name) => inline(name, 40)).join("، ")}. Business spending is category work; business income is business_income.`,
     );
   }
+
+  // The full prompt already carries every guide line; the compact one gets the few this sentence touches.
+  const hints = detail === "compact" ? hintsFor(sentence) : [];
+  if (hints.length) lines.push(`HINTS (guide lines whose usual words appear in the sentence; use one only if it fits what was said):\n${hints.map((hint) => `- ${hint}`).join("\n")}`);
 
   lines.push(`SENTENCE: «${inline(sentence, MAX_SENTENCE_CHARS)}»`);
   return lines.join("\n");
