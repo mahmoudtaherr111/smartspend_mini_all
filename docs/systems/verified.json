@@ -334,7 +334,7 @@
         "api/lib/understanding/guard.ts": "8baec4ec2c63",
         "api/lib/understanding/numbers.ts": "00ff944ccf14",
         "api/lib/understanding/policy.ts": "2f514ed47ede",
-        "api/lib/understanding/prompt.ts": "b1735c7da58d",
+        "api/lib/understanding/prompt.ts": "9c0b19eee733",
         "api/lib/understanding/reading-context.ts": "9980c7595b9b",
         "api/lib/understanding/routes.ts": "1c2384b5e358",
         "api/lib/unified-normalizer.ts": "bfd4f91bfd4b",
@@ -350,7 +350,7 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-11-12 a7ebe6b",
+      "checked": "2026-11-12 cc853f3",
       "arabic": "8bd72b3291fd",
       "arabicChecked": "2026-11-12 a7ebe6b"
     },

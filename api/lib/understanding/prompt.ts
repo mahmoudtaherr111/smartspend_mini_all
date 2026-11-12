@@ -17,7 +17,7 @@
 import { TAXONOMY, TAXONOMY_VERSION, type TaxonomyCategory } from "../../../contracts/taxonomy";
 
 /** Bump on any change to the instructions or examples; stored with every reading. */
-export const PROMPT_VERSION = "1";
+export const PROMPT_VERSION = "2";
 
 export interface PromptPerson {
   name: string;
@@ -246,7 +246,7 @@ An event is money that ALREADY moved. For each one:
 
 ignored: clauses that mention money but are not finished events, each with why: negated (did not happen, cancelled), planned (will or wants to), question, chatter, instruction (telling the app what to do), already_counted.
 numbers: every number in the sentence that is NOT an event's amount, with its role: quantity, date, time, label (a bus line, a model, a street, a corrected-away price), name (part of a name: «مستشفى 57357»), phone, percent, count (number of instalments, months, people), total (a stated total of amounts you listed separately), unit_price.
-ask and ask_about: when a REQUIRED fact is missing and nothing can be recorded without it, one short friendly question in Egyptian Arabic and what it is about: amount, purpose, person, commitment, flow. Otherwise "" and "none". Never ask about something the sentence already says. If some events are complete, return them and do not ask.
+ask and ask_about: a question is the last resort. Ask ONLY when the sentence gives no amount at all, or an amount with no word about what it was for or which way it went. Then return no events and one short friendly question in Egyptian Arabic, with what it is about: amount, purpose, person, commitment, flow. In every other case "" and "none". Never ask to confirm, never ask who paid, how many months or instalments, which child, or anything else that is not needed to record the event: when you can tell the amount and roughly what it was for, return the event, and if you are unsure of something set doubt. The speaker is the one who paid or received unless the sentence says otherwise («محمد ابني 500 درس» = I paid 500 for my son Mohamed's lesson; «يوسف خد 300 درس» = 300 spent on Youssef's lesson).
 
 # Rules
 1. The category is the PURPOSE: what the money was for. A person is never the category, and neither is how it was paid. «دفعت تمن العملية بتاعة امي» is health/hospital for امي; «دفعت بالفيزا في المطعم» is dining/restaurant.
