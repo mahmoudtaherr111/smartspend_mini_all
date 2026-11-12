@@ -427,6 +427,11 @@ class ProviderError extends Error {
   }
 }
 
+/** Models that reason before every reply whatever they are asked. */
+const ALWAYS_REASONS = /gpt-oss/i;
+/** Output tokens added for such a model, so a short reply is not cut off by its reasoning. */
+const REASONING_HEADROOM_TOKENS = 700;
+
 /**
  * How to ask a provider not to think out loud.
  *
@@ -449,7 +454,13 @@ function applyThinkingSuppression(body: Record<string, unknown>, route: LlmRoute
   // its other reasoning models only accept low to high, so their reasoning is kept out of `content` instead.
   if (/(^|\.)groq\.com$/i.test(hostOf(route.baseUrl))) {
     if (/qwen/i.test(route.model)) body.reasoning_effort = "none";
-    else body.reasoning_format = "hidden";
+    else if (ALWAYS_REASONS.test(route.model)) {
+      // gpt-oss cannot turn reasoning off and refuses `reasoning_format`: it is asked for the least, kept out of the
+      // reply, and given room for it, since its reasoning is spent from the same output allowance.
+      body.reasoning_effort = "low";
+      body.include_reasoning = false;
+      if (typeof body.max_tokens === "number") body.max_tokens += REASONING_HEADROOM_TOKENS;
+    } else body.reasoning_format = "hidden";
     return;
   }
   body.chat_template_kwargs = { thinking: false };

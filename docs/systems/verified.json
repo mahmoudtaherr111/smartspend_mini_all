@@ -176,8 +176,8 @@
         "api/lib/feature-switches.ts": "2bc21c37fb32",
         "api/lib/fireworks-client.ts": "0ff5cda683b6",
         "api/lib/groq-client.ts": "bdb495a8b189",
-        "api/lib/llm-provider-chain.ts": "bda53b1b4999",
-        "api/lib/llm-router.ts": "cec4926b4034",
+        "api/lib/llm-provider-chain.ts": "cd32d9dd86d3",
+        "api/lib/llm-router.ts": "88a3cf0ddb05",
         "api/lib/model-mapper.ts": "bd0773702045",
         "api/lib/nvidia-client.ts": "63815969f5a6",
         "api/lib/provider-health.ts": "56a6f6eb8217",
@@ -185,9 +185,9 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "3185b204f24e"
       },
-      "checked": "2026-11-12 a7ebe6b",
-      "arabic": "813c53b8df7b",
-      "arabicChecked": "2026-11-05 f7bb4b83"
+      "checked": "2026-11-12 588d3ab",
+      "arabic": "c56eeb371de1",
+      "arabicChecked": "2026-11-12 588d3ab"
     },
     "bank-messages": {
       "files": {

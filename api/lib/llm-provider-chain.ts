@@ -100,7 +100,7 @@ export function modelConflictsWithProvider(model: string, slug: string): boolean
 }
 
 export function looksLikeReasoningModel(modelId: string): boolean {
-  return /deepseek-(?:v4|r1)|(?:^|\/)o[13](?:-|$)|reasoner|thinking|qwq/i.test(modelId);
+  return /deepseek-(?:v4|r1)|(?:^|\/)o[13](?:-|$)|reasoner|thinking|qwq|gpt-oss/i.test(modelId);
 }
 
 export interface ChainRequest {
