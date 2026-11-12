@@ -164,7 +164,7 @@
     "ai-platform": {
       "files": {
         "api/ai-router.ts#ai.getUserLimits": "85e198fa737d",
-        "api/ai-router.ts#rest-of-file": "007fc7fe1fe2",
+        "api/ai-router.ts#rest-of-file": "52074b95d4ed",
         "api/lib/ai-gateway.ts": "8c9597ab30f2",
         "api/lib/ai-ledger.ts": "ccf8de3f1eb5",
         "api/lib/ai-pricing.ts": "23f9d247a58d",
@@ -185,7 +185,7 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "3185b204f24e"
       },
-      "checked": "2026-11-05 f7bb4b83",
+      "checked": "2026-11-12 a7ebe6b",
       "arabic": "813c53b8df7b",
       "arabicChecked": "2026-11-05 f7bb4b83"
     },
@@ -263,19 +263,19 @@
     "expense-capture": {
       "files": {
         "api/ai-router.ts#ai.learnWord": "ef6a568c333e",
-        "api/ai-router.ts#ai.parseExpense": "c8f5ae781196",
-        "api/ai-router.ts#ai.parseVoiceExpense": "a2da9c226247",
+        "api/ai-router.ts#ai.parseExpense": "f3d1428cc374",
+        "api/ai-router.ts#ai.parseVoiceExpense": "822e225a2f11",
         "api/ai-router.ts#ai.speechToText": "a7448c0e2eb7",
-        "api/ai-router.ts#rest-of-file": "007fc7fe1fe2",
+        "api/ai-router.ts#rest-of-file": "52074b95d4ed",
         "api/boot.ts#job:classification-log-cleanup": "4b85025f200f",
-        "api/expense-router.ts#expense.answerClarification": "db42f12ad0f0",
-        "api/expense-router.ts#expense.batchCreate": "e5b707b440de",
-        "api/expense-router.ts#expense.create": "653a3e46a373",
+        "api/expense-router.ts#expense.answerClarification": "3d4b47c11807",
+        "api/expense-router.ts#expense.batchCreate": "d11178795e26",
+        "api/expense-router.ts#expense.create": "b2ae29ef1410",
         "api/expense-router.ts#expense.createCategory": "8b691f7a3e91",
         "api/expense-router.ts#expense.dismissClarification": "a9dbadaeccf5",
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
-        "api/expense-router.ts#rest-of-file": "c631cba756a0",
+        "api/expense-router.ts#rest-of-file": "39aa4a536a1f",
         "api/image-router.ts": "18fc7e24ebeb",
         "api/lib/admissibility-gate.ts": "3b5889850057",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
@@ -291,7 +291,7 @@
         "api/lib/classification-merge.ts": "d5c6e33cc406",
         "api/lib/classification-prompt.ts": "61bbc5d67001",
         "api/lib/classifier-contract.ts": "a95889de61d2",
-        "api/lib/classify-text.ts": "a8c5ef962442",
+        "api/lib/classify-text.ts": "39d230c78154",
         "api/lib/clause-roles.ts": "ce48e7d9285c",
         "api/lib/confidence-calibration.generated.ts": "15ac6b75c46f",
         "api/lib/confidence-calibrator.ts": "1b39cceb819e",
@@ -330,23 +330,29 @@
         "api/lib/understanding/bridge.ts": "8778e5f34757",
         "api/lib/understanding/context.ts": "d325302a93bf",
         "api/lib/understanding/contract.ts": "d974c73e6a0a",
-        "api/lib/understanding/engine.ts": "3d4775fbfe19",
+        "api/lib/understanding/engine.ts": "44a37cde71f7",
         "api/lib/understanding/guard.ts": "8baec4ec2c63",
         "api/lib/understanding/numbers.ts": "00ff944ccf14",
         "api/lib/understanding/policy.ts": "2f514ed47ede",
-        "api/lib/understanding/prompt.ts": "03fb679c4f74",
+        "api/lib/understanding/prompt.ts": "b1735c7da58d",
         "api/lib/understanding/reading-context.ts": "9980c7595b9b",
         "api/lib/understanding/routes.ts": "1c2384b5e358",
         "api/lib/unified-normalizer.ts": "bfd4f91bfd4b",
         "api/lib/voice-intake-gate.ts": "0a8bf7293a27",
         "api/services/parser-trace.ts": "aa8b5bad3877",
+        "api/services/recording/engine-switch.ts": "dfada3699105",
+        "api/services/recording/items.ts": "37958241275e",
+        "api/services/recording/read-sentence.ts": "69cce77e9e66",
+        "api/services/recording/reading-log.ts": "c610b2ea5979",
+        "api/services/recording/saved-reading.ts": "9afcf3c69aa5",
+        "api/services/recording/types.ts": "8dd4728f20b1",
         "src/components/expenses/ExpenseForm.tsx": "9aa3dce6b603",
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-11-11 5137c0e",
-      "arabic": "7ef421d85152",
-      "arabicChecked": "2026-11-11 5137c0e"
+      "checked": "2026-11-12 a7ebe6b",
+      "arabic": "8bd72b3291fd",
+      "arabicChecked": "2026-11-12 a7ebe6b"
     },
     "insights": {
       "files": {
@@ -354,7 +360,7 @@
         "api/ai-router.ts#ai.generateMonthlyInsights": "7a0a987072b9",
         "api/ai-router.ts#ai.generateYearlyInsights": "935b893e6244",
         "api/ai-router.ts#ai.getCachedMonthlyInsights": "95b28ed6f694",
-        "api/ai-router.ts#rest-of-file": "007fc7fe1fe2",
+        "api/ai-router.ts#rest-of-file": "52074b95d4ed",
         "api/boot.ts#job:monthly-behavior-snapshots": "1a1a7ff4d857",
         "api/boot.ts#job:monthly-report-generation": "60a67c71d204",
         "api/export-router.ts#export.monthlyReportHtml": "335e0925b0ca",
@@ -379,7 +385,7 @@
         "api/services/user-profile-service.ts": "620d598615c2",
         "src/components/insights/AIInsights.tsx": "3be01c23f12c"
       },
-      "checked": "2026-11-05 5af36e21",
+      "checked": "2026-11-12 a7ebe6b",
       "arabic": "2e2041ed05c5",
       "arabicChecked": "2026-11-05 f7bb4b83"
     },
@@ -405,10 +411,10 @@
         "api/expense-router.ts#expense.getYearlyStats": "6d543ca15ce5",
         "api/expense-router.ts#expense.list": "12dad4e2af82",
         "api/expense-router.ts#expense.listInstallmentPlans": "115b08de9c7a",
-        "api/expense-router.ts#expense.previewCategory": "dab97f94d0c8",
+        "api/expense-router.ts#expense.previewCategory": "92be6cf7556f",
         "api/expense-router.ts#expense.searchTransactions": "67e877566eaa",
         "api/expense-router.ts#expense.update": "4f3b81c3338b",
-        "api/expense-router.ts#rest-of-file": "c631cba756a0",
+        "api/expense-router.ts#rest-of-file": "39aa4a536a1f",
         "api/export-router.ts#export.myExpenses": "89b0670d4bbb",
         "api/export-router.ts#rest-of-file": "8bc72b35b4e8",
         "api/goals-router.ts": "504b451d0fcb",
@@ -423,8 +429,8 @@
         "api/profile-router.ts#rest-of-file": "8fde10be8ce6",
         "api/services/budget-status.ts": "f29a27e9d8ac",
         "api/services/coach/cashflows.ts": "bacfe98db484",
-        "api/services/coach/commitments.ts": "e52673eaee93",
-        "api/services/coach/matcher.ts": "6df01c2a4f3b",
+        "api/services/coach/commitments.ts": "9d6e3488a236",
+        "api/services/coach/matcher.ts": "dc7be0432db5",
         "api/services/coach/plans.ts": "443a3bd6fcc6",
         "api/services/coach/reminders.ts": "813d4d66b1a5",
         "api/services/coach/schedule.ts": "9c635d07a335",
@@ -462,9 +468,9 @@
         "src/pages/PlanPage.tsx": "107068a002b0",
         "src/pages/WalletsPage.tsx": "a1964708847b"
       },
-      "checked": "2026-11-10 5cdd21f0",
-      "arabic": "ac3ce6987162",
-      "arabicChecked": "2026-11-10 5cdd21f0"
+      "checked": "2026-11-12 a7ebe6b",
+      "arabic": "bbe227135587",
+      "arabicChecked": "2026-11-12 a7ebe6b"
     },
     "notifications": {
       "files": {
@@ -515,7 +521,7 @@
         "api/lib/redis-client.ts": "b5bd5c4ff3ad",
         "api/lib/settings-cache.ts": "cf6ddd683871",
         "api/lib/shared-generation.ts": "2d53bf30e567",
-        "api/lib/system-settings-registry.ts": "4f3e0f3d7c10",
+        "api/lib/system-settings-registry.ts": "130d86ee5638",
         "api/middleware.ts": "6876b8eace8f",
         "api/queries/connection.ts": "49fd2ab76893",
         "api/router.ts": "98cabcd61edc",
@@ -551,9 +557,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "39eda50cb310"
       },
-      "checked": "2026-11-11 9fd9a6f",
-      "arabic": "00178d3627c9",
-      "arabicChecked": "2026-11-11 9fd9a6f"
+      "checked": "2026-11-12 a7ebe6b",
+      "arabic": "57e47418f4c9",
+      "arabicChecked": "2026-11-12 a7ebe6b"
     },
     "voice-calls": {
       "files": {

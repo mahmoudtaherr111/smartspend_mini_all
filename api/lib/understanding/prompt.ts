@@ -62,13 +62,23 @@ export interface PromptContext {
   businessCategories?: string[];
 }
 
-function taxonomyBlock(categories: readonly TaxonomyCategory[]): string {
+/**
+ * How much of the guide a prompt carries. `full` has every subcategory's Arabic name and wording; `compact` keeps
+ * each category's guide and only the ids of its subcategories, and fewer examples: about a third of the tokens,
+ * for provider tiers with a small tokens-per-minute allowance.
+ */
+export type PromptDetail = "full" | "compact";
+
+function taxonomyBlock(categories: readonly TaxonomyCategory[], detail: PromptDetail): string {
   return categories
     .map((category) => {
+      const kinds = category.group === "movement" ? ` [kind: ${category.kinds.join(" or ")}]` : "";
+      if (detail === "compact") {
+        return `- ${category.id} = ${category.nameAr}${kinds}: ${category.guide}\n  subs: ${category.subs.map((sub) => sub.id).join(", ")}`;
+      }
       const subs = category.subs
         .map((sub) => (sub.guide ? `${sub.id}=${sub.nameAr} (${sub.guide})` : `${sub.id}=${sub.nameAr}`))
         .join(" | ");
-      const kinds = category.group === "movement" ? ` [kind: ${category.kinds.join(" or ")}]` : "";
       return `- ${category.id} = ${category.nameAr}${kinds}: ${category.guide}\n  subs: ${subs}`;
     })
     .join("\n");
@@ -193,19 +203,24 @@ const EXAMPLES: Array<{ context?: string; sentence: string; reply: unknown }> = 
   },
 ];
 
-function examplesBlock(): string {
-  return EXAMPLES.map((example, index) => {
+/** The examples a compact prompt keeps: several events with spoken numbers, commitments, number roles, a clause set aside, loans, a question. */
+const COMPACT_EXAMPLES = [0, 1, 2, 3, 4, 9];
+
+function examplesBlock(detail: PromptDetail): string {
+  const examples = detail === "compact" ? COMPACT_EXAMPLES.map((index) => EXAMPLES[index]) : EXAMPLES;
+  return examples.map((example, index) => {
     const context = example.context ? `${example.context}\n` : "";
     return `Example ${index + 1}\n${context}SENTENCE: «${example.sentence}»\n${JSON.stringify(example.reply)}`;
   }).join("\n\n");
 }
 
-let cachedSystemPrompt: string | null = null;
+const cachedSystemPrompts = new Map<PromptDetail, string>();
 
-/** Static for a prompt version and a taxonomy version. */
-export function buildSystemPrompt(): string {
-  if (cachedSystemPrompt) return cachedSystemPrompt;
-  cachedSystemPrompt = `You read what a person in Egypt typed or dictated about their money, in Egyptian Arabic (sometimes Franco-Arabic or English, sometimes a noisy speech-to-text transcript), and return the finished money events in it as JSON. You do not chat, advise or explain.
+/** Static for a prompt version, a taxonomy version and a level of detail. */
+export function buildSystemPrompt(detail: PromptDetail = "full"): string {
+  const cached = cachedSystemPrompts.get(detail);
+  if (cached) return cached;
+  const prompt = `You read what a person in Egypt typed or dictated about their money, in Egyptian Arabic (sometimes Franco-Arabic or English, sometimes a noisy speech-to-text transcript), and return the finished money events in it as JSON. You do not chat, advise or explain.
 
 # What to return
 One JSON object: {"events":[...],"ignored":[...],"numbers":[...],"ask":"","ask_about":"none"}. Every field is always present.
@@ -247,17 +262,18 @@ ask and ask_about: when a REQUIRED fact is missing and nothing can be recorded w
 
 # Taxonomy (id = Arabic name: guide; subs)
 ## Spending purposes (kind spending, or refund)
-${taxonomyBlock(group("spending"))}
+${taxonomyBlock(group("spending"), detail)}
 
 ## Money movements (neither spending nor income)
-${taxonomyBlock(group("movement"))}
+${taxonomyBlock(group("movement"), detail)}
 
 ## Income sources (kind income)
-${taxonomyBlock(group("income"))}
+${taxonomyBlock(group("income"), detail)}
 
 # Examples
-${examplesBlock()}`;
-  return cachedSystemPrompt;
+${examplesBlock(detail)}`;
+  cachedSystemPrompts.set(detail, prompt);
+  return prompt;
 }
 
 /** One line, no control characters, guillemets removed so the fence cannot be closed from inside. */

@@ -1,4 +1,4 @@
-import { MOVEMENT_KINDS } from "../contracts/ledger-movement";
+import { MOVEMENT_KINDS, type MovementKind } from "../contracts/ledger-movement";
 import { spendingRowSql, ledgerBucketSql } from "./services/ledger-semantics";
 import { ledgerBundle, ledgerBundleColumns, ledgerBundleJoin, linkedLedgerFee, standaloneLedgerRowSql } from "./services/ledger-bundles";
 import { z } from "zod";
@@ -50,8 +50,13 @@ import {
   updateLedgerEntry,
   type LedgerTx,
 } from "./services/ledger-writer";
+import { currentRecordingEngine } from "./services/recording/engine-switch";
+import { loadReadingLogItems } from "./services/recording/reading-log";
+import { readSentence } from "./services/recording/read-sentence";
+import { movementKindFor, readingItemFor, readingOf, savedAsRead, withReadingMetadata } from "./services/recording/saved-reading";
 
 const reviewLog = createLogger("expense-review");
+const readingLog = createLogger("expense-reading");
 
 async function loadBusinessCategoriesForUser(
   userId: number,
@@ -181,6 +186,8 @@ type ClarifiedItem = {
   businessId?: number | null;
   person_mentioned?: string;
   person_relationship?: string;
+  /** What the understanding engine read, on items it produced. */
+  reading?: unknown;
 };
 
 export type SavedEntry = {
@@ -218,6 +225,11 @@ async function saveClarifiedItems(
     source: string;
     askedAt: Date | null | undefined;
     classificationLogId?: number;
+    /**
+     * The items were read by the understanding engine in this request (never sent by a client): each one is saved
+     * with its reading's ledger kind, wallet and `parsed_metadata.reading`.
+     */
+    fromReading?: boolean;
   },
 ): Promise<SavedEntry[]> {
   const owner = { userId: options.userId, userType: options.userType };
@@ -228,6 +240,14 @@ async function saveClarifiedItems(
       options.userId,
       options.userType,
     );
+    const reading = options.fromReading ? readingOf(item.reading) : null;
+    const fromReading = reading
+      ? {
+        movementKind: movementKindFor(reading, item.type),
+        parsedMetadata: withReadingMetadata(undefined, item.direction, reading),
+        ...(reading.walletId ? { walletId: reading.walletId } : {}),
+      }
+      : {};
     const [id] = await insertLedgerEntriesInTx(tx, owner, [
       {
         type: item.type,
@@ -242,6 +262,7 @@ async function saveClarifiedItems(
         contactId: references.contactId,
         classificationLogId: references.classificationLogId,
         businessId: item.businessId,
+        ...fromReading,
       },
     ]);
     saved.push({
@@ -649,6 +670,169 @@ async function commitmentLinksFor(owner: { userId: number; userType: string }, i
   return matchSavedExpenses(owner, ids.filter((id): id is number => typeof id === "number" && id > 0));
 }
 
+/** An item about to be saved, as far as its reading is concerned. */
+type ReadableSave = {
+  amount: number;
+  type: string;
+  category: string;
+  subCategory?: string;
+  classificationLogId?: number;
+  movementKind?: MovementKind;
+  walletId?: number;
+  direction?: "incoming" | "outgoing";
+  parsedMetadata?: Record<string, unknown>;
+};
+
+/** What a save takes from its reading: set only where the client sent nothing. */
+type ReadingEnrichment = { movementKind?: MovementKind; walletId?: number; parsedMetadata?: Record<string, unknown> };
+
+/**
+ * Under the understanding engine: each saved item's reading, from the user's own log row (loaded once for the
+ * request), never from the client. An item saved as it was read takes the reading's ledger kind and wallet when the
+ * client sent none, and keeps the reading in `parsed_metadata.reading`. A `reading` the client put in its metadata is
+ * dropped. A wallet that is no longer the user's is left out rather than failing the save.
+ */
+async function enrichFromReadings(owner: { userId: number; userType: string }, items: ReadableSave[]): Promise<ReadingEnrichment[]> {
+  const logs = await loadReadingLogItems(owner, items.map((item) => item.classificationLogId));
+  const matched = items.map((item) => {
+    const found = item.classificationLogId && logs.has(item.classificationLogId)
+      ? readingItemFor(logs.get(item.classificationLogId), item)
+      : null;
+    return found && savedAsRead(found, item) ? found.reading : null;
+  });
+  const wanted = [...new Set(matched.flatMap((reading, index) => (reading?.walletId && !items[index].walletId ? [reading.walletId] : [])))];
+  const owned = new Set<number>();
+  for (const walletId of wanted) {
+    try {
+      await assertEntityOwnership({ userId: owner.userId, userType: owner.userType, walletId });
+      owned.add(walletId);
+    } catch {
+      readingLog.info({ event: "reading.wallet_not_owned", userId: owner.userId, walletId }, "A read wallet is no longer the user's");
+    }
+  }
+  return items.map((item, index) => {
+    const reading = matched[index];
+    const clientReading = Boolean(item.parsedMetadata && "reading" in item.parsedMetadata);
+    const enrichment: ReadingEnrichment = {};
+    if (reading || clientReading) enrichment.parsedMetadata = withReadingMetadata(item.parsedMetadata, item.direction, reading);
+    if (reading && !item.movementKind) enrichment.movementKind = movementKindFor(reading, item.type);
+    if (reading?.walletId && !item.walletId && owned.has(reading.walletId)) enrichment.walletId = reading.walletId;
+    return enrichment;
+  });
+}
+
+/** Questions asked again after the first; past this a reading that still asks saves what it can. */
+const MAX_FOLLOW_UPS = 2;
+const NOT_ENOUGH_ANSWER = "التوضيح لسه مش كافي لتسجيل العملية بدقة.";
+
+/**
+ * `expense.answerClarification` under the understanding engine: one mode. The answer is added to the sentence and
+ * the sentence is read again through the recording service, which writes its own log row and opens no second
+ * question. Whatever it can record is saved, shown or not, since the person has just answered; a reading that asks
+ * again updates this question, keeping its log id, source and count, up to `MAX_FOLLOW_UPS` times.
+ */
+async function answerByReading(
+  user: { id: number; type: "oauth" | "local"; plan?: string },
+  input: { clarificationId: number; answer: string },
+  clarification: typeof pendingClarifications.$inferSelect,
+  ctxData: Record<string, unknown>,
+) {
+  const owner = { userId: user.id, userType: user.type };
+  const answer = input.answer.trim();
+  const source = ctxData.source === "voice" ? "voice" : ctxData.source === "ai_parsed" ? "ai_parsed" : "manual";
+  const asked = Number(ctxData.followUps);
+  const followUps = Number.isInteger(asked) && asked > 0 ? asked : 0;
+
+  // "تخطي" on a question about a person stops asking about them, as it always has.
+  if (answer === "تخطي" || answer.toLowerCase() === "skip") {
+    const nameMatch = clarification.question?.match(/مين\s+(.*?)؟/);
+    if (nameMatch?.[1]) {
+      try {
+        const { silenceContact } = await import("./services/user-profile-service");
+        await silenceContact(user.id, user.type, nameMatch[1].trim());
+      } catch (err) {
+        readingLog.warn({ err, event: "clarification.silence_failed", userId: user.id }, "Silencing a contact failed");
+      }
+    }
+  }
+
+  const text = `${clarification.originalText} (${input.answer})`;
+  const read = await readSentence({
+    user,
+    text,
+    channel: source === "voice" ? "voice" : "text",
+    businessMode: ctxData.businessMode === true,
+    skipClarification: false,
+    openClarification: false,
+  });
+  const classificationLogId = read.classificationLogId ?? (typeof ctxData.classificationLogId === "number" ? ctxData.classificationLogId : undefined);
+  const savable = read.items.filter((item) => item.amount > 0);
+
+  if (read.decision === "clarify" && (followUps < MAX_FOLLOW_UPS || savable.length === 0)) {
+    const question = read.clarificationQuestion || "ممكن توضح أكتر؟";
+    await getDb()
+      .update(pendingClarifications)
+      .set({
+        originalText: text,
+        question,
+        contextData: {
+          items: read.items,
+          classificationLogId,
+          source,
+          followUps: Math.min(followUps + 1, MAX_FOLLOW_UPS),
+          ...(ctxData.businessMode === true ? { businessMode: true } : {}),
+        },
+      })
+      .where(and(
+        eq(pendingClarifications.id, input.clarificationId),
+        eq(pendingClarifications.userId, user.id),
+        eq(pendingClarifications.userType, user.type),
+        eq(pendingClarifications.status, "pending"),
+      ));
+    return {
+      success: false,
+      savedCount: 0,
+      saved: [] as SavedEntry[],
+      needsClarification: true,
+      clarificationQuestion: question,
+      clarificationId: input.clarificationId,
+      enrichedText: text,
+      newlyAddedContact: null,
+    };
+  }
+
+  if (savable.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: NOT_ENOUGH_ANSWER });
+
+  let saved: SavedEntry[] = [];
+  await getDb().transaction(async (tx) => {
+    // The answer is taken once: a second tap, or a retry, finds it resolved and saves nothing.
+    await claimClarification(tx, input.clarificationId, user.id, user.type);
+    saved = await saveClarifiedItems(tx, savable, {
+      userId: user.id,
+      userType: user.type,
+      rawText: text,
+      source,
+      askedAt: clarification.createdAt,
+      classificationLogId,
+      fromReading: true,
+    });
+  });
+  const newlyAddedContact = await addMentionedContacts(savable, user.id, user.type);
+  await afterLedgerWrite(owner, { spending: savable.some((item) => item.type === "expense") });
+
+  return {
+    success: true,
+    savedCount: saved.length,
+    saved,
+    needsClarification: false,
+    clarificationQuestion: undefined,
+    clarificationId: undefined,
+    enrichedText: undefined,
+    newlyAddedContact,
+    commitmentLinks: await commitmentLinksFor(owner, saved.map((entry) => entry.id)),
+  };
+}
+
 /** The category installment payments are filed under, read from the registry. */
 const INSTALLMENTS_CATEGORY = CATEGORIES.find((category) => category.id === "installments")!.name_ar;
 
@@ -723,6 +907,11 @@ export const expenseRouter = router({
 
       const references = await resolveExpenseReferences(input, userId, requestUserType);
 
+      // Under the understanding engine the item takes what its reading knew (the user's own log row, not the client).
+      const fromReading: ReadingEnrichment = (await currentRecordingEngine()) === "understanding"
+        ? (await enrichFromReadings(owner, [input]))[0]
+        : {};
+
       // The row, its rollup delta, the contact's count and the streak in one transaction; then the review's
       // correction is learned before the caches forget (api/services/ledger-writer.ts).
       const { id, existing } = await createLedgerEntry(
@@ -745,6 +934,7 @@ export const expenseRouter = router({
           movementKind: input.movementKind,
           clientRequestId: input.clientRequestId,
           parsedMetadata: input.parsedMetadata,
+          ...fromReading,
         },
         { afterCommit: () => learnFromReview(userId, requestUserType, input.classificationLogId, input) },
       );
@@ -835,6 +1025,11 @@ export const expenseRouter = router({
 
       const references = await resolveExpenseReferences(itemsToInsert, userId, requestUserType);
 
+      // Under the understanding engine each item takes what its reading knew (the user's own log rows, loaded once).
+      const fromReadings: ReadingEnrichment[] = (await currentRecordingEngine()) === "understanding"
+        ? await enrichFromReadings(owner, itemsToInsert)
+        : itemsToInsert.map(() => ({}));
+
       const entries = itemsToInsert.map((item, index) => ({
         type: item.type,
         amount: item.amount,
@@ -852,6 +1047,7 @@ export const expenseRouter = router({
         counterWalletId: item.counterWalletId,
         movementKind: item.movementKind,
         clientRequestId: item.clientRequestId,
+        ...fromReadings[index],
       }));
 
       // ─── ACID Transaction: batch insert + rollups + contact counts + streak (api/services/ledger-writer.ts) ───
@@ -1201,6 +1397,8 @@ export const expenseRouter = router({
   previewCategory: authedProcedure
     .input(z.object({ text: z.string().trim().min(1).max(ExpenseInputLimits.rawTextMax) }))
     .query(async ({ ctx, input }) => {
+      // The understanding engine reads a sentence with a model, never per keystroke: no chip.
+      if ((await currentRecordingEngine()) === "understanding") return null;
       const userDict = await getDb()
         .select({ word: userDictionaries.word, category: userDictionaries.category, subCategory: userDictionaries.subCategory })
         .from(userDictionaries)
@@ -2331,6 +2529,10 @@ export const expenseRouter = router({
         ctxData = clarification.contextData as Record<string, any>;
       }
 
+      if ((await currentRecordingEngine()) === "understanding") {
+        return answerByReading({ id: userId, type: userType as "oauth" | "local", plan: ctx.user!.plan ?? undefined }, input, clarification, ctxData);
+      }
+
       // Saved as the sentence came in (typed or spoken); questions stored before the source
       // was kept are typed.
       const clarifiedSource = ctxData.source === "voice" ? "voice" : "manual";
@@ -2363,7 +2565,8 @@ export const expenseRouter = router({
                  } catch {}
                  resolvedAnswers[name] = "جهة اتصال عامة";
                } else {
-                 const finalAnswer = trimmedAnswer.replace(new RegExp(`(?:^|\\s)$${name}(?:\\s|$)`), " ").trim() || trimmedAnswer;
+                 // The name said in the answer ("أحمد أخويا") is dropped, so the relation is what remains.
+                 const finalAnswer = trimmedAnswer.replace(new RegExp(`(?:^|\\s)${escapeRegex(name)}(?:\\s|$)`), " ").trim() || trimmedAnswer;
                  resolvedAnswers[name] = finalAnswer || "معروف";
                }
                anyResolved = true;

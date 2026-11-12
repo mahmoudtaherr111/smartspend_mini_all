@@ -194,6 +194,29 @@ export const SETTINGS: SettingDef[] = [
   { key: "parser_review_threshold", default: "50" },
   { key: "parser_escalate_threshold", default: "85" },
 
+  // ── Provider trips for reading a sentence: the wait for one route, and for the whole chain, in milliseconds ──
+  { key: "llm_timeout_ms", default: "8000" },
+  { key: "llm_trip_deadline_ms", default: "15000" },
+
+  // ── Recording engine (docs/decisions/0052-understanding-engine.md) ──
+  // "rules": the classification pipeline. "understanding": a model reads the sentence and code verifies the reading
+  // (api/services/recording/read-sentence.ts).
+  { key: "recording_engine", default: "rules" },
+  // The understanding engine's policy (api/lib/understanding/policy.ts). "false" shows every reading before saving.
+  { key: "understanding_auto_save", default: "true" },
+  // At or above this amount (EGP), a category the user never saved before is shown first.
+  { key: "understanding_review_amount", default: "5000" },
+  // More events than this in one sentence are shown first.
+  { key: "understanding_auto_max_events", default: "6" },
+  // "true" shows an entry dated on another day before saving it.
+  { key: "understanding_review_dated", default: "true" },
+  // The guard's limits: the largest amount one event may carry, and how many days back a stated date may be.
+  { key: "understanding_max_amount", default: "10000000" },
+  { key: "understanding_max_days_back", default: "366" },
+  // "compact" sends a shorter prompt (subcategory ids without their wording, fewer examples) for provider tiers
+  // with a small tokens-per-minute allowance; "full" is the default.
+  { key: "understanding_prompt_detail", default: "full" },
+
   // ── Prompt settings ──
   { key: "ai_response_length", default: "medium" },
   { key: "ai_focus", default: "balanced" },

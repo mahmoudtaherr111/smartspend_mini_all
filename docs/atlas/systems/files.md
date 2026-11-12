@@ -264,6 +264,12 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/personal-context-builder.ts` | [insights](insights.md) |
 | `api/services/phone-challenge.ts` | [accounts](accounts.md) |
 | `api/services/pro-report-engine.ts` | [insights](insights.md) |
+| `api/services/recording/engine-switch.ts` | [expense-capture](expense-capture.md) |
+| `api/services/recording/items.ts` | [expense-capture](expense-capture.md) |
+| `api/services/recording/read-sentence.ts` | [expense-capture](expense-capture.md) |
+| `api/services/recording/reading-log.ts` | [expense-capture](expense-capture.md) |
+| `api/services/recording/saved-reading.ts` | [expense-capture](expense-capture.md) |
+| `api/services/recording/types.ts` | [expense-capture](expense-capture.md) |
 | `api/services/report-personalization-engine.ts` | [insights](insights.md) |
 | `api/services/scheduler-lock.ts` | [platform](platform.md) |
 | `api/services/server-status.ts` | [platform](platform.md) |

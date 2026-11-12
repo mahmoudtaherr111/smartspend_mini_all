@@ -292,9 +292,10 @@
     {
       "id": "understanding",
       "title": "Sentence understanding engine",
-      "description": "Reads a typed or spoken sentence into money events with a model and verifies the reading in code: the reply contract and its parser, the numbers and quotes the code reads on its own, the guard's exact checks, the save, show or ask policy, the prompt built from taxonomy v2, the user's context for a reading, route resolution, and the bridge from taxonomy v2 to the names the ledger stores.",
+      "description": "Reads a typed or spoken sentence into money events with a model and verifies the reading in code: the reply contract and its parser, the numbers and quotes the code reads on its own, the guard's exact checks, the save, show or ask policy, the prompt built from taxonomy v2, the user's context for a reading, route resolution, the bridge from taxonomy v2 to the names the ledger stores, and the recording service that puts a reading behind the entry points.",
       "paths": [
-        "api/lib/understanding/**"
+        "api/lib/understanding/**",
+        "api/services/recording/**"
       ]
     },
     {

@@ -424,10 +424,10 @@ the sentence through `ai.parseExpense` like the normal button, and cannot start 
 phone-side keyword guess that used to fill the chip, and disagreed with the saved result, is gone; offline text is only
 checked (`src/lib/clientRulesEngine.ts#validateOfflineInput`) and classified by the server when it syncs.
 
-## The understanding engine (built, not serving any channel yet)
+## The understanding engine (built; serves a channel only when `recording_engine` is `understanding`)
 Decision [0052](../decisions/0052-understanding-engine.md) replaces the pipeline above with a model that reads the
-sentence and code that verifies the reading. Its modules are in `api/lib/understanding/`; no procedure calls them yet,
-so everything above still describes what users get.
+sentence and code that verifies the reading. Its modules are in `api/lib/understanding/`. With the default setting
+everything above still describes what users get.
 
 - `api/lib/understanding/contract.ts`: the reply a model returns for one sentence (`READING_SCHEMA`) and
   `parseReply`, which turns any reply into a well-formed `Reading` or null. Each event carries the person's own
@@ -462,9 +462,38 @@ so everything above still describes what users get.
   remain; when nothing answers it throws `UnderstandingUnavailableError` and never falls back to a local guess.
   Empty or over-long text is answered without a model. The engine does no database work and no budget check: its
   caller admits the call and records it.
+### Behind the entry points (setting `recording_engine`)
+`recording_engine` is `rules` by default: everything above. Set to `understanding`, the same procedures answer in
+the same shapes through `api/services/recording/`, so both apps need no change:
+
+- `ai.parseExpense` and `ai.parseVoiceExpense` call `api/services/recording/read-sentence.ts#readSentence`: admission
+  (the plan's parse switch, the daily limit and the token budget, for voice as for text) while the settings and
+  `loadReadingContext` load; `understand`; the cost recorded as every parse records it; one slim
+  `classification_logs` row whose `finalResult` holds the items with their reading; and, for a question, one
+  `pending_clarifications` row found by its own insert id. When no provider can read the sentence the person is
+  told to try again shortly and nothing is guessed. `api/services/recording/items.ts#toParsedItems` maps events to
+  the items the apps read: the stored category names from the bridge, a date only when the sentence named one, the
+  person and relation, and an optional `reading` (v2 ids, kind, flow, commitment and wallet ids, flags).
+- `expense.create` and `expense.batchCreate`: an item saved with its `classificationLogId` is matched to its reading
+  in the user's own log row (`api/services/recording/saved-reading.ts#readingItemFor`: the only item, or the one
+  item with the same amount). When the person kept the reading's category, subcategory and type, the row gets the
+  reading's ledger kind, its wallet when none was sent, and `parsed_metadata.reading`. A `reading` a client sends is
+  dropped: only the log's is used.
+- Commitments: `matchSavedExpenses` passes the reading's commitment to `decideMatch` as `namedCashflowId`, which
+  names that commitment as strongly as its title does. Every other rule of decision 0051 holds: the commitment must
+  be payable, the amount exact, no rival named, the date open, and an instalment kind still needs its cue word.
+- `expense.answerClarification`: the answer is added to the sentence, the sentence is read again, and whatever can
+  be recorded is saved; a reading that asks again updates the same question, at most twice.
+- `expense.previewCategory` and `api/lib/classify-text.ts#classifyText` answer null: no model is called per
+  keystroke, the AI Center keeps the category its own model chose and capture questions use their default.
+
+`understanding_prompt_detail=compact` sends a shorter prompt for provider tiers with a small tokens-per-minute
+allowance. The policy and guard limits are the `understanding_*` settings.
 
 Tests: `api/lib/understanding/understanding-core.test.ts`, `api/lib/understanding/engine.test.ts`,
-`api/lib/understanding/context.test.ts`, `api/lib/understanding/routes.test.ts`. The labelled development sentences are
+`api/lib/understanding/context.test.ts`, `api/lib/understanding/routes.test.ts`, `api/services/recording/items.test.ts`,
+`api/services/recording/read-sentence.test.ts`, `api/services/recording/saved-reading.test.ts`, the reading cases of
+`api/services/coach/matcher.test.ts`, and on MySQL `tests/recording-reading.test.ts`. The labelled development sentences are
 `api/qa/understanding/dev-set.json`; `npm run eval:understand` reads them through one named model at a
 requests-per-minute limit and writes a report (the share of automatic saves that are wrong, questions, field
 accuracy, tokens and time). It has not been run against a real model yet.

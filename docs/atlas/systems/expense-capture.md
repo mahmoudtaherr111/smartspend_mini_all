@@ -59,6 +59,7 @@ flowchart LR
   mod_arabic_nlp --> mod_classification
   mod_classification --> ext_gemini
   mod_classification --> mod_arabic_nlp
+  mod_classification --> mod_understanding
   mod_classification --> sys_ai_platform
   mod_classification --> sys_platform
   mod_classification -.-> tbl_classification_logs
@@ -82,9 +83,12 @@ flowchart LR
   mod_understanding -.-> tbl_user_correction_rules
   mod_understanding -.-> tbl_user_dictionaries
   mod_understanding -.-> tbl_user_wallets
+  mod_understanding ==> tbl_classification_logs
+  mod_understanding ==> tbl_pending_clarifications
   mod_web_capture --> sys_platform
   mod_web_capture --> sys_web_app
   router_ai --> mod_classification
+  router_ai --> mod_understanding
   router_ai --> sys_ai_center
   router_ai --> sys_ai_platform
   router_ai --> sys_insights
@@ -97,6 +101,7 @@ flowchart LR
   router_ai ==> tbl_user_dictionaries
   router_ai ==> tbl_voice_usage
   router_expense --> mod_classification
+  router_expense --> mod_understanding
   router_expense --> sys_accounts
   router_expense --> sys_insights
   router_expense --> sys_money
@@ -171,7 +176,7 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | `classification` — Expense classification pipeline | smart-pipeline.ts and the modules it composes: financial events, the role of each number and of each word in a clause, admissibility, rules, muscle memory, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance. | 40 |
 | `classification-qa` — Classification benchmark helpers | Helpers used only by the classification benchmark and QA scripts: taxonomy assertions and simulated users. | 2 |
 | `receipt-parsing` — Receipt parsing | Receipt parsing with a vision model. | 1 |
-| `understanding` — Sentence understanding engine | Reads a typed or spoken sentence into money events with a model and verifies the reading in code: the reply contract and its parser, the numbers and quotes the code reads on its own, the guard's exact checks, the save, show or ask policy, the prompt built from taxonomy v2, the user's context for a reading, route resolution, and the bridge from taxonomy v2 to the names the ledger stores. | 10 |
+| `understanding` — Sentence understanding engine | Reads a typed or spoken sentence into money events with a model and verifies the reading in code: the reply contract and its parser, the numbers and quotes the code reads on its own, the guard's exact checks, the save, show or ask policy, the prompt built from taxonomy v2, the user's context for a reading, route resolution, the bridge from taxonomy v2 to the names the ledger stores, and the recording service that puts a reading behind the entry points. | 16 |
 | `web-capture` — Expense entry UI | The expense form on the home screen: typed, spoken and photographed entries, the review and clarification steps, the offline text queue, local suggestions and offline input checks, and image compression before a receipt is uploaded. | 3 |
 
 ## API procedures
@@ -179,8 +184,8 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
 | `ai.learnWord` | mutation | `authedProcedure` | — | `user_dictionaries` | — |
-| `ai.parseExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries` | `classification_logs`, `pending_clarifications` | `Admin`, `Home`, `More` |
-| `ai.parseVoiceExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries`, `voice_usage` | `classification_logs`, `pending_clarifications`, `voice_usage` | `Home` |
+| `ai.parseExpense` | mutation | `aiProcedure` | `business_categories`, `user_businesses`, `user_dictionaries` | `classification_logs`, `pending_clarifications` | `Admin`, `Home`, `More` |
+| `ai.parseVoiceExpense` | mutation | `aiProcedure` | `business_categories`, `user_businesses`, `user_dictionaries`, `voice_usage` | `classification_logs`, `pending_clarifications`, `voice_usage` | `Home` |
 | `ai.speechToText` | mutation | `aiProcedure` | `voice_usage` | `voice_usage` | — |
 | `expense.answerClarification` | mutation | `authedProcedure` | `business_categories`, `classification_logs`, `pending_clarifications`, `user_businesses`, `user_contacts`, `user_dictionaries` | `pending_clarifications` | `Home` |
 | `expense.batchCreate` | mutation | `authedProcedure` | `classification_logs`, `user_contacts` | `classification_logs` | `Home` |
@@ -205,10 +210,10 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | --- | --- | --- | --- |
 | `business_categories` | A | — | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `understanding` |
 | `cashflow_settlements` | C | — | `understanding` |
-| `classification_logs` | E | `ai.parseExpense`, `ai.parseVoiceExpense`, `classification-log-cleanup`, `expense.batchCreate`, `expense.create` | `classification`, `expense.answerClarification`, `expense.batchCreate`, `expense.create` |
+| `classification_logs` | E | `ai.parseExpense`, `ai.parseVoiceExpense`, `classification-log-cleanup`, `expense.batchCreate`, `expense.create`, `understanding` | `classification`, `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `understanding` |
 | `expense_categories` | A | `expense.createCategory` | `expense.getCategoryList` |
 | `expenses` | B | — | `classification`, `image.parseReceipt`, `understanding` |
-| `pending_clarifications` | D | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.dismissClarification` | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.getPendingClarifications` |
+| `pending_clarifications` | D | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.dismissClarification`, `understanding` | `expense.answerClarification`, `expense.getPendingClarifications` |
 | `scheduled_cashflows` | C | — | `understanding` |
 | `user_businesses` | A | — | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `understanding` |
 | `user_contacts` | A | — | `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `understanding` |
@@ -243,7 +248,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/expense-capture.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>81 files and declarations</summary>
+<details><summary>87 files and declarations</summary>
 
 - `api/ai-router.ts#ai.learnWord`
 - `api/ai-router.ts#ai.parseExpense`
@@ -323,6 +328,12 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/unified-normalizer.ts`
 - `api/lib/voice-intake-gate.ts`
 - `api/services/parser-trace.ts`
+- `api/services/recording/engine-switch.ts`
+- `api/services/recording/items.ts`
+- `api/services/recording/read-sentence.ts`
+- `api/services/recording/reading-log.ts`
+- `api/services/recording/saved-reading.ts`
+- `api/services/recording/types.ts`
 - `src/components/expenses/ExpenseForm.tsx`
 - `src/lib/clientRulesEngine.ts`
 - `src/lib/compress-image.ts`

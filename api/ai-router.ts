@@ -103,6 +103,8 @@ import {
   validateNumbersAgainstFacts,
 } from "./services/ai-cost-policy";
 import { buildParserTrace } from "./services/parser-trace";
+import { recordingEngineOf } from "./services/recording/engine-switch";
+import { assertSentenceAllowed, readSentence } from "./services/recording/read-sentence";
 import { planNumber } from "../contracts/plan-features";
 import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
 
@@ -561,6 +563,19 @@ export const aiRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const startTime = Date.now();
+      // Setting `recording_engine`: the understanding engine reads the sentence through one service; otherwise the
+      // classification pipeline below runs as it always has. A settings outage keeps the pipeline, whose reads fail alike.
+      if (recordingEngineOf(await getSystemSettings().catch(() => null)) === "understanding") {
+        return readSentence({
+          user: ctx.user,
+          text: input.text,
+          channel: input.inputChannel,
+          businessMode: input.businessMode,
+          skipClarification: input.skipClarification,
+          ...(input.voiceModelUsed ? { stt: { model: input.voiceModelUsed, tokensUsed: input.sttTokensUsed ?? 0, seconds: 0 } } : {}),
+          startedAt: startTime,
+        });
+      }
       // Check daily limits
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -886,7 +901,7 @@ export const aiRouter = router({
             firstQuestion = `محتاج أوضح دول مين: ${unknownNames.join(" و ")}؟`;
           }
 
-          await db.insert(pendingClarifications).values({
+          const [pending] = await db.insert(pendingClarifications).values({
             userId: ctx.user.id,
             userType: ctx.user.type,
             question: firstQuestion,
@@ -903,19 +918,8 @@ export const aiRouter = router({
               resolvedAnswers: {},
             },
           });
-          const [pending] = await db
-            .select({ id: pendingClarifications.id })
-            .from(pendingClarifications)
-            .where(
-              and(
-                eq(pendingClarifications.userId, ctx.user.id),
-                eq(pendingClarifications.userType, ctx.user.type),
-                eq(pendingClarifications.status, "pending"),
-              ),
-            )
-            .orderBy(desc(pendingClarifications.id))
-            .limit(1);
-          clarificationId = pending?.id;
+          // The row this INSERT made, not the user's latest pending one: two parses at once swapped ids.
+          clarificationId = Number(pending.insertId) || undefined;
           // Override the clarification question returned to frontend with the first one
           result.clarificationQuestion = firstQuestion;
         } catch (err) {
@@ -1246,6 +1250,11 @@ export const aiRouter = router({
         });
       }
 
+      // Under the understanding engine a recording is admitted as typed text is (the plan's parse switch and the
+      // daily limit), and before the transcription is paid for.
+      const understandingEngine = recordingEngineOf(cfg) === "understanding";
+      if (understandingEngine) await assertSentenceAllowed(ctx.user, cfg);
+
       // The spend is reserved before the network call, not reconciled after it.
       await assertAiBudget(
         ctx.user,
@@ -1305,6 +1314,38 @@ export const aiRouter = router({
           source: "gemini_stt",
         });
       } catch (e) {}
+
+      if (understandingEngine) {
+        const sttProvider = isGroqModel(sttResult.modelUsed) ? "groq" : "gemini";
+        recordModelCalls(ctx.user, "speech", undefined, { model: sttResult.modelUsed, tokens: sttResult.tokensUsed, providerSlug: sttProvider });
+        void recordAICostMetric({
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          channel: "speech",
+          plan: ctx.user.plan || "free",
+          intentKind: "stt",
+          model: sttResult.modelUsed,
+          inputTokens: 0,
+          outputTokens: sttResult.tokensUsed,
+          totalTokens: sttResult.tokensUsed,
+          embeddingCalls: 0,
+          llmCalls: 0,
+          toolCalls: 0,
+          latencyMs: Date.now() - startTime,
+          metadata: { durationSeconds: voiceVerdict.billableSeconds, claimedDurationSeconds: input.durationSeconds, mimeType: cleanMimeType, provider: sttProvider },
+        });
+        // The daily limit and the plan switch were checked before the transcription.
+        return readSentence({
+          user: ctx.user,
+          text: transcribedText,
+          channel: "voice",
+          businessMode: input.businessMode,
+          skipClarification: false,
+          stt: { model: sttResult.modelUsed, tokensUsed: sttResult.tokensUsed, seconds: voiceVerdict.billableSeconds },
+          startedAt: startTime,
+          gateChecked: true,
+        });
+      }
 
       // 2. Run Parse Logic
       const client = await getAiClient("parse", ctx.user.plan);
@@ -1596,7 +1637,7 @@ export const aiRouter = router({
             ? `مين ${unknownNames[0]}؟ (أخوك، صديقك، موظف عندك...)`
             : (parseResult.clarificationQuestion || "ممكن توضح أكتر؟");
 
-          await db.insert(pendingClarifications).values({
+          const [pending] = await db.insert(pendingClarifications).values({
             userId: ctx.user.id,
             userType: ctx.user.type,
             question: firstQuestion,
@@ -1613,19 +1654,8 @@ export const aiRouter = router({
               resolvedAnswers: {},
             },
           });
-          const [pending] = await db
-            .select({ id: pendingClarifications.id })
-            .from(pendingClarifications)
-            .where(
-              and(
-                eq(pendingClarifications.userId, ctx.user.id),
-                eq(pendingClarifications.userType, ctx.user.type),
-                eq(pendingClarifications.status, "pending"),
-              ),
-            )
-            .orderBy(desc(pendingClarifications.id))
-            .limit(1);
-          clarificationId = pending?.id;
+          // The row this INSERT made, not the user's latest pending one: two parses at once swapped ids.
+          clarificationId = Number(pending.insertId) || undefined;
           parseResult.clarificationQuestion = firstQuestion;
         } catch (err) {
           console.error("Failed to insert pending voice clarification:", err);

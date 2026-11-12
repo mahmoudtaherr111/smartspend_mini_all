@@ -187,7 +187,8 @@ export async function understand(input: UnderstandInput, deps: { execute?: typeo
     const { context: ctx, settings } = input;
     const deadlineMs = numberSetting(settings, "llm_trip_deadline_ms", DEFAULT_DEADLINE_MS);
     const request: LlmRequest = {
-      systemPrompt: buildSystemPrompt(),
+      // `understanding_prompt_detail=compact` is for provider tiers with a small tokens-per-minute allowance.
+      systemPrompt: buildSystemPrompt(input.settings?.understanding_prompt_detail === "compact" ? "compact" : "full"),
       userPrompt: buildUserPrompt(toPromptContext(ctx), text),
       schema: READING_SCHEMA,
       lowThinking: true,
