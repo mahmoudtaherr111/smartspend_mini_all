@@ -334,7 +334,7 @@
         "api/lib/understanding/guard.ts": "8baec4ec2c63",
         "api/lib/understanding/numbers.ts": "00ff944ccf14",
         "api/lib/understanding/policy.ts": "2f514ed47ede",
-        "api/lib/understanding/prompt.ts": "6a33432ef7c9",
+        "api/lib/understanding/prompt.ts": "612d5ebbaca6",
         "api/lib/understanding/reading-context.ts": "9980c7595b9b",
         "api/lib/understanding/routes.ts": "1c2384b5e358",
         "api/lib/unified-normalizer.ts": "bfd4f91bfd4b",
@@ -350,7 +350,7 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-11-13 3e7f594",
+      "checked": "2026-11-13 d7a9d38",
       "arabic": "ad47a55d51bb",
       "arabicChecked": "2026-11-13 3e7f594"
     },
@@ -548,7 +548,7 @@
         "contracts/plan-features.ts": "85f1c985c24f",
         "contracts/plans.ts": "371c028a6907",
         "contracts/profile-fields.ts": "5bf4f78b90e6",
-        "contracts/taxonomy.ts": "d4bf227812a7",
+        "contracts/taxonomy.ts": "b144b0b31264",
         "contracts/types.ts": "191164b8f041",
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
@@ -557,7 +557,7 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "39eda50cb310"
       },
-      "checked": "2026-11-12 bbb072d",
+      "checked": "2026-11-13 d7a9d38",
       "arabic": "57e47418f4c9",
       "arabicChecked": "2026-11-12 a7ebe6b"
     },

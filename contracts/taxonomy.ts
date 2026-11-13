@@ -177,7 +177,7 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
       sub("nursery", "حضانة", "Nursery", "حضانة"),
       sub("baby_supplies", "بامبرز ولبن ومستلزمات", "Diapers & formula", "بامبرز، لبن أطفال، ببرونة، مستلزمات البيبي"),
       sub("clothes_toys", "لبس ولعب", "Clothes & toys", "لبس العيال، لبس العيد للأولاد، لعب"),
-      sub("pocket_money", "مصروف الأولاد", "Pocket money", "مصروف الواد أو البنت، مصروف المدرسة اليومي"),
+      sub("pocket_money", "مصروف الأولاد", "Pocket money", "مصروف الواد، مصروف البنت، مصروف العيال، الواد مصروف، البنت مصروف، مصروف المدرسة اليومي"),
       sub("activities", "تمارين وأنشطة", "Activities", "تمرين كورة أو سباحة للأولاد، نشاط"),
       other,
     ],
