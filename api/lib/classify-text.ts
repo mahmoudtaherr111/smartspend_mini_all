@@ -4,7 +4,12 @@
  * entry form runs (`runRuleEngine` on `normalizeV2` text), with the user's own dictionary, so
  * a sentence is filed the same way whichever screen it was typed into. It does not call a
  * model: callers that save show the result as a draft the user confirms.
+ *
+ * Under the understanding engine (setting `recording_engine`) the keyword engine no longer
+ * files sentences, so this answers null: the AI Center keeps the category its own model chose
+ * and capture questions fall back to their default.
  */
+import { currentRecordingEngine } from "../services/recording/engine-switch";
 import { normalizeV2 } from "./normalizer-v2";
 import { runRuleEngine } from "./rule-engine";
 
@@ -26,6 +31,7 @@ export async function classifyText(
 ): Promise<ChannelClassification | null> {
   const trimmed = String(text || "").trim();
   if (!trimmed) return null;
+  if ((await currentRecordingEngine()) === "understanding") return null;
   const withAmount = /[0-9٠-٩]/.test(trimmed) || !options.amount ? trimmed : `${trimmed} ${options.amount}`;
   const result = await runRuleEngine(normalizeV2(withAmount).forRules, options.userDict ?? []);
   const item = result.items[0];

@@ -29,6 +29,9 @@ import { planNumber } from "../../../contracts/plan-features";
 import { createLogger } from "../../lib/log";
 import { db } from "../../queries/connection";
 import { createLedgerEntry, updateLedgerEntry } from "../ledger-writer";
+import { recordingEngineOf } from "../recording/engine-switch";
+import { loadReadingLogItems } from "../recording/reading-log";
+import { readingItemFor } from "../recording/saved-reading";
 import { addDynamicContact } from "../user-profile-service";
 import { GAM3EYA_SUBCATEGORY, LOAN_CATEGORY, LOAN_SUBCATEGORY } from "../debt-ledger";
 import {
@@ -768,6 +771,10 @@ export async function matchSavedExpenses(user: CoachUser, expenseIds: number[]):
     const settled = await settlementsOf(user, active.map((row) => row.id));
     const hints = await db.select().from(commitmentHints).where(and(eq(commitmentHints.userId, user.userId), eq(commitmentHints.userType, user.userType)));
     const catalog = await catalogFor(active.map((row) => row.catalogSlug));
+    // Under the understanding engine a payment's reading may name its commitment: read from the user's own log rows.
+    const readings = recordingEngineOf(settings) === "understanding"
+      ? await loadReadingLogItems(user, payments.map((payment) => payment.classificationLogId))
+      : new Map<number, unknown>();
     const results: CommitmentLinkResult[] = [];
     for (const payment of payments) {
       if (settled.some((item) => item.expenseId === payment.id)) {
@@ -790,9 +797,14 @@ export async function matchSavedExpenses(user: CoachUser, expenseIds: number[]):
           hints: hints.filter((hint) => hint.cashflowId === row.id).map((hint) => ({ kind: hint.kind, value: hint.value, weight: hint.weight })),
         });
       }
+      const magnitude = Math.abs(Number(payment.amount));
+      const read = payment.classificationLogId && readings.has(payment.classificationLogId)
+        ? readingItemFor(readings.get(payment.classificationLogId), { amount: magnitude })
+        : null;
       const decision = decideMatch({
-        id: payment.id, amount: Math.abs(Number(payment.amount)), text: `${payment.description ?? ""} ${payment.rawText ?? ""}`,
+        id: payment.id, amount: magnitude, text: `${payment.description ?? ""} ${payment.rawText ?? ""}`,
         contactId: payment.contactId ?? null, day, sender: senderOf(payment.parsedMetadata),
+        ...(read?.reading.commitmentId ? { namedCashflowId: read.reading.commitmentId } : {}),
       }, candidates);
       const titleOf = (id: number) => active.find((row) => row.id === id)?.title ?? "";
       if (decision.status === "linked" && autoLink) {

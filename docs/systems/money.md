@@ -279,7 +279,8 @@ Decision 0051 makes every scheduled payment one system on `scheduled_cashflows`,
 - **Linking what is saved** (`matchSavedExpenses`, called by `expense.create`, `expense.batchCreate` and
   `expense.answerClarification`, which return `commitmentLinks`; `commitments.linksFor` reads the result again for the
   app): `decideMatch` (`api/services/coach/matcher.ts`, no model, no category) links only when one commitment is named strongly (title
-  or catalog alias with long vowels folded, a learned phrase or SMS sender, or its contact), no rival is named too, the
+  or catalog alias with long vowels folded, a learned phrase or SMS sender, its contact, or, under the understanding
+  engine, the commitment the sentence's reading named: `namedCashflowId`, read from the user's own reading log), no rival is named too, the
   amount is exact (k installments when the sentence says «قسطين» or «2 قسط»; a part of an undated debt repaid by its
   contact, never above what is left), `canPayCashflow` allows it, and the date is open (ten days early, or late).
   Installment kinds also need «قسط», «اقساط», «قسطين», «تقسيط» or «مقدم» in the sentence. A near match becomes a

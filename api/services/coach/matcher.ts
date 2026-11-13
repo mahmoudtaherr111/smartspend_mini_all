@@ -27,6 +27,12 @@ export interface MatchPayment {
   day: string;
   /** The bank or wallet a captured message came from, normalized ("cib", "vf-cash"). */
   sender?: string | null;
+  /**
+   * The commitment the sentence's reading named (the understanding engine's reference, resolved on the server from
+   * the user's own reading log). It names that commitment strongly, but only one the caller already found payable,
+   * and every other rule still holds.
+   */
+  namedCashflowId?: number | null;
 }
 
 export interface OpenDue {
@@ -166,6 +172,11 @@ function score(commitment: MatchCommitment, payment: MatchPayment, words: Set<st
   const titleTokens = matchTokens(commitment.title).filter((token) => !GENERIC.has(token));
   // An installment is named only with the word "قسط": "دهان الشقة" is not the flat's installment, "دفعت قسط الشقة" is.
   const needsCue = INSTALLMENT_KINDS.has(commitment.kind) && ![...words].some((word) => INSTALLMENT_CUES.has(word));
+  // The reading's reference counts as a name, under the same cue rule as a name.
+  if (payment.namedCashflowId != null && payment.namedCashflowId === commitment.id && !needsCue) {
+    strong = true;
+    total += 3;
+  }
   if (!needsCue && (namedIn(commitment.title, words, skeletons) || (commitment.aliases ?? []).some((alias) => namedIn(alias, words, skeletons)))) {
     strong = true;
     total += 3;

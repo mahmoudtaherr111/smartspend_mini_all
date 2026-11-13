@@ -445,7 +445,9 @@ describe("M09 — a truncated answer is not a successful one", () => {
     await executeLlmChain([route({ ...groq, model: "qwen/qwen3.8-27b" })], req);
     await executeLlmChain([route({ ...groq, model: "openai/gpt-oss-20b" })], req);
     expect(bodies[0]).toMatchObject({ reasoning_effort: "none" });
-    expect(bodies[1]).toMatchObject({ reasoning_format: "hidden" });
+    // gpt-oss always reasons: the least of it, kept out of the reply, with room so a short reply is not cut off.
+    expect(bodies[1]).toMatchObject({ reasoning_effort: "low", include_reasoning: false });
+    expect(Number(bodies[1].max_tokens)).toBeGreaterThan(Number(bodies[0].max_tokens));
     expect(bodies.every((body) => body.chat_template_kwargs === undefined)).toBe(true);
   });
 

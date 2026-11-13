@@ -9,29 +9,30 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | Cluster | Title | Files | Depends on | Used by | External systems referenced |
 | --- | --- | --- | --- | --- | --- |
 | `api-core` | API server core | 5 | `ai-memory`, `ai-providers`, `api-routers`, `auth`, `billing`, `capture-catalog`, `capture-intake`, `coaching`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `storage`, `voice`, `whatsapp` | `api-routers` | — |
-| `api-routers` | tRPC routers and HTTP sub-apps | 29 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq` |
+| `api-routers` | tRPC routers and HTTP sub-apps | 29 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `understanding`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq` |
 | `auth` | Authentication and sessions | 6 | `capture-intake`, `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `capture-intake`, `jobs` | `google-oauth` |
 | `security` | Request security | 12 | `database`, `platform` | `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `capture-intake` | `turnstile` |
-| `platform` | Platform services | 15 | `ai-providers`, `contracts`, `database`, `notifications`, `storage`, `whatsapp` | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `database`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
-| `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `mysql` |
-| `contracts` | Shared contracts | 16 | — | `ai-actions`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `api-routers`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `voice`, `web-account`, `web-admin`, `web-capture`, `web-finance`, `web-lib`, `web-pages`, `web-shared`, `web-voice-call` | — |
+| `platform` | Platform services | 15 | `ai-providers`, `contracts`, `database`, `notifications`, `storage`, `whatsapp` | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `database`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `security`, `understanding`, `voice`, `whatsapp` | `redis`, `sentry` |
+| `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `understanding`, `voice`, `whatsapp` | `mysql` |
+| `contracts` | Shared contracts | 17 | — | `ai-actions`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `api-routers`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `understanding`, `voice`, `web-account`, `web-admin`, `web-capture`, `web-finance`, `web-lib`, `web-pages`, `web-shared`, `web-voice-call` | — |
 | `billing` | Billing | 8 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `google-oauth`, `paymob` |
 | `ledger` | Ledger writer and aggregates | 11 | `ai-providers`, `capture-intake`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `notifications`, `platform` | `ai-actions`, `api-routers`, `capture-intake`, `coaching`, `finance-semantic-layer`, `jobs`, `notifications`, `voice` | — |
-| `coaching` | Commitments and coaching plans | 6 | `ai-insights`, `arabic-nlp`, `capture-catalog`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `whatsapp` | `ai-actions`, `api-core`, `api-routers`, `ledger`, `voice` | — |
+| `coaching` | Commitments and coaching plans | 6 | `ai-insights`, `arabic-nlp`, `capture-catalog`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `understanding`, `whatsapp` | `ai-actions`, `api-core`, `api-routers`, `ledger`, `understanding`, `voice` | — |
 | `accounts` | Account lifecycle | 1 | `capture-intake`, `database` | `api-routers` | — |
 | `jobs` | Scheduled job bodies | 7 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `capture-intake`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `whatsapp` | `api-core` | `fireworks` |
 | `notifications` | Notifications | 2 | `contracts`, `database`, `ledger`, `platform` | `api-core`, `api-routers`, `coaching`, `jobs`, `ledger`, `platform` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 4 | `database`, `platform` | `api-core`, `api-routers`, `coaching`, `jobs`, `platform` | `whatsapp` |
 | `voice` | Voice | 39 | `ai-actions`, `ai-insights`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
-| `ai-providers` | AI provider access | 15 | `ai-governance`, `contracts`, `database`, `platform` | `ai-governance`, `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `capture-ai-reader`, `classification`, `jobs`, `ledger`, `platform`, `receipt-parsing`, `voice` | `anthropic`, `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
-| `ai-governance` | AI usage and cost governance | 4 | `ai-providers`, `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-routers`, `capture-ai-reader`, `jobs` | — |
-| `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `capture-intake`, `classification`, `coaching`, `receipt-parsing`, `voice` | — |
+| `ai-providers` | AI provider access | 15 | `ai-governance`, `contracts`, `database`, `platform` | `ai-governance`, `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `capture-ai-reader`, `classification`, `jobs`, `ledger`, `platform`, `receipt-parsing`, `understanding`, `voice` | `anthropic`, `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
+| `ai-governance` | AI usage and cost governance | 4 | `ai-providers`, `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-routers`, `capture-ai-reader`, `jobs`, `understanding` | — |
+| `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `capture-intake`, `classification`, `coaching`, `receipt-parsing`, `understanding`, `voice` | — |
 | `capture-intake` | Capture intake | 18 | `arabic-nlp`, `auth`, `capture-ai-reader`, `capture-catalog`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `security` | `accounts`, `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `jobs`, `ledger` | — |
 | `capture-ai-reader` | Message model reading | 7 | `ai-governance`, `ai-providers`, `capture-intake`, `classification`, `contracts`, `database`, `platform`, `security` | `api-routers`, `capture-intake` | `gemini` |
 | `capture-catalog` | Capture catalog | 4 | `contracts`, `database`, `platform`, `storage` | `api-core`, `api-routers`, `capture-intake`, `coaching` | — |
 | `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
 | `classification-qa` | Classification benchmark helpers | 2 | `classification` | — | — |
-| `classification` | Expense classification pipeline | 40 | `ai-providers`, `arabic-nlp`, `contracts`, `database`, `platform` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-routers`, `arabic-nlp`, `capture-ai-reader`, `capture-intake`, `classification-qa`, `finance-semantic-layer`, `ledger`, `receipt-parsing`, `voice` | `gemini` |
+| `understanding` | Sentence understanding engine | 16 | `ai-governance`, `ai-providers`, `arabic-nlp`, `coaching`, `contracts`, `database`, `platform` | `api-routers`, `classification`, `coaching` | — |
+| `classification` | Expense classification pipeline | 40 | `ai-providers`, `arabic-nlp`, `contracts`, `database`, `platform`, `understanding` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-routers`, `arabic-nlp`, `capture-ai-reader`, `capture-intake`, `classification-qa`, `finance-semantic-layer`, `ledger`, `receipt-parsing`, `voice` | `gemini` |
 | `ai-kernel` | AI Center kernel | 11 | `ai-governance`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-routers` | — |
 | `ai-actions` | AI action runtime | 6 | `ai-governance`, `ai-insights`, `ai-memory`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform` | `api-routers`, `voice` | — |
 | `ai-memory` | AI memory | 14 | `ai-governance`, `ai-providers`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-core`, `api-routers`, `voice` | `qdrant` |
@@ -103,7 +104,7 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 | `api/admin-router.ts` | `accounts`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `auth`, `classification`, `contracts`, `database`, `notifications`, `platform`, `security` | `gemini` | `admin_audit_logs`, `ads`, `ai_models`, `ai_providers`, `ai_token_ledgers`, `classification_logs`, `expense_daily_rollups`, `expenses`, `local_users`, `notification_logs`, `notification_templates`, `onboarding_questions`, `pending_clarifications`, `pro_subscriptions`, `push_subscriptions`, `sessions`, `store_purchases`, `support_tickets`, `system_settings`, `user_dictionaries`, `users`, `voice_usage` | `ai_models`, `ai_providers`, `local_users`, `notification_logs`, `notification_templates`, `pending_clarifications`, `system_settings`, `user_dictionaries`, `users` |
 | `api/admin-whatsapp-router.ts` | `api-core`, `database`, `platform`, `security`, `whatsapp` | — | `local_users`, `users`, `whatsapp_contacts`, `whatsapp_messages` | `system_settings`, `whatsapp_messages` |
 | `api/ads-router.ts` | `api-core`, `database`, `platform`, `security` | — | `ad_impressions`, `ads` | `ad_clicks`, `ad_impressions`, `ads` |
-| `api/ai-router.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `arabic-nlp`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `security`, `voice` | `gemini`, `groq` | `ai_summaries`, `business_categories`, `expenses`, `local_users`, `pending_clarifications`, `user_businesses`, `user_dictionaries`, `users`, `voice_usage` | `ai_summaries`, `classification_logs`, `monthly_behavior_snapshots`, `pending_clarifications`, `user_dictionaries`, `voice_usage` |
+| `api/ai-router.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `arabic-nlp`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `security`, `understanding`, `voice` | `gemini`, `groq` | `ai_summaries`, `business_categories`, `expenses`, `local_users`, `user_businesses`, `user_dictionaries`, `users`, `voice_usage` | `ai_summaries`, `classification_logs`, `monthly_behavior_snapshots`, `pending_clarifications`, `user_dictionaries`, `voice_usage` |
 | `api/ai-setup-router.ts` | `ai-providers`, `api-core`, `capture-ai-reader`, `contracts`, `database`, `platform`, `security` | — | `ai_models`, `ai_providers` | `ai_models` |
 | `api/analytics-router.ts` | `api-core`, `database`, `ledger`, `platform` | — | `expenses`, `local_users`, `user_analytics`, `users` | `user_analytics` |
 | `api/app-config-router.ts` | `ai-governance`, `api-core`, `platform` | — | — | — |
@@ -115,7 +116,7 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 | `api/chat-router.ts` | `ai-actions`, `ai-governance`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `classification`, `database`, `finance-semantic-layer`, `platform`, `voice` | `fireworks`, `gemini` | `ai_memory_items`, `ai_pending_actions`, `chat_conversations`, `chat_messages` | `ai_conversation_summaries`, `ai_memory_embeddings`, `ai_memory_items`, `chat_conversations`, `chat_messages`, `local_users`, `users` |
 | `api/coach-router.ts` | `api-core`, `coaching`, `contracts`, `platform` | — | — | — |
 | `api/commitments-router.ts` | `api-core`, `coaching`, `contracts`, `platform` | — | — | — |
-| `api/expense-router.ts` | `ai-insights`, `api-core`, `arabic-nlp`, `classification`, `coaching`, `contracts`, `database`, `ledger`, `platform`, `security` | — | `business_categories`, `cashflow_settlements`, `classification_logs`, `expense_categories`, `expense_daily_rollups`, `expenses`, `installment_plans`, `pending_clarifications`, `scheduled_cashflows`, `user_businesses`, `user_contacts`, `user_dictionaries` | `classification_logs`, `expense_categories`, `installment_plans`, `pending_clarifications` |
+| `api/expense-router.ts` | `ai-insights`, `api-core`, `arabic-nlp`, `classification`, `coaching`, `contracts`, `database`, `ledger`, `platform`, `security`, `understanding` | — | `business_categories`, `cashflow_settlements`, `classification_logs`, `expense_categories`, `expense_daily_rollups`, `expenses`, `installment_plans`, `pending_clarifications`, `scheduled_cashflows`, `user_businesses`, `user_contacts`, `user_dictionaries` | `classification_logs`, `expense_categories`, `installment_plans`, `pending_clarifications` |
 | `api/export-router.ts` | `ai-insights`, `api-core`, `contracts`, `database`, `ledger`, `platform`, `security` | — | `expenses`, `local_users`, `users` | — |
 | `api/goals-router.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform` | `gemini` | `expenses`, `financial_goals` | `financial_goals`, `user_budgets` |
 | `api/image-router.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `classification`, `database`, `ledger`, `platform`, `receipt-parsing`, `security` | — | `expenses`, `user_dictionaries` | — |
@@ -214,6 +215,7 @@ Types, limits and billing plans shared by the web app and the API.
 | `contracts/plan-features.ts` | — | — | — | — |
 | `contracts/plans.ts` | — | — | — | — |
 | `contracts/profile-fields.ts` | — | — | — | — |
+| `contracts/taxonomy.ts` | — | — | — | — |
 | `contracts/types.ts` | — | — | — | — |
 | `contracts/voice-models.ts` | — | — | — | — |
 | `contracts/voice-protocol.ts` | — | — | — | — |
@@ -258,7 +260,7 @@ Scheduled commitments and expected income with their due dates (the 31st on a sh
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `api/services/coach/cashflows.ts` | `arabic-nlp`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform` | — | `cashflow_settlements`, `commitment_overrides`, `commitment_schedule_items`, `expenses`, `installment_plans`, `scheduled_cashflows`, `user_contacts`, `user_wallets` | `cashflow_settlements`, `scheduled_cashflows` |
-| `api/services/coach/commitments.ts` | `ai-insights`, `capture-catalog`, `contracts`, `database`, `ledger`, `platform` | — | `cashflow_settlements`, `commitment_hints`, `commitment_questions`, `commitment_schedule_items`, `expenses`, `installment_plans`, `scheduled_cashflows`, `subscription_catalog`, `user_contacts` | `commitment_hints`, `commitment_overrides`, `commitment_questions`, `commitment_schedule_items`, `installment_plans`, `scheduled_cashflows` |
+| `api/services/coach/commitments.ts` | `ai-insights`, `capture-catalog`, `contracts`, `database`, `ledger`, `platform`, `understanding` | — | `cashflow_settlements`, `commitment_hints`, `commitment_questions`, `commitment_schedule_items`, `expenses`, `installment_plans`, `scheduled_cashflows`, `subscription_catalog`, `user_contacts` | `commitment_hints`, `commitment_overrides`, `commitment_questions`, `commitment_schedule_items`, `installment_plans`, `scheduled_cashflows` |
 | `api/services/coach/matcher.ts` | `arabic-nlp` | — | — | — |
 | `api/services/coach/plans.ts` | `contracts`, `database`, `platform` | — | `coaching_plans`, `coaching_steps` | `coaching_plans`, `coaching_steps`, `in_app_notifications` |
 | `api/services/coach/reminders.ts` | `contracts`, `database`, `notifications`, `platform`, `whatsapp` | — | `cashflow_settlements`, `commitment_reminders`, `expenses`, `local_users`, `scheduled_cashflows`, `users` | `commitment_reminders`, `in_app_notifications` |
@@ -469,6 +471,29 @@ Helpers used only by the classification benchmark and QA scripts: taxonomy asser
 | `api/lib/benchmark-taxonomy-assert.ts` | `classification` | — | — | — |
 | `api/lib/real-user-sim.ts` | `classification` | — | — | — |
 
+### `understanding` — Sentence understanding engine
+
+Reads a typed or spoken sentence into money events with a model and verifies the reading in code: the reply contract and its parser, the numbers and quotes the code reads on its own, the guard's exact checks, the save, show or ask policy, the prompt built from taxonomy v2, the user's context for a reading, route resolution, the bridge from taxonomy v2 to the names the ledger stores, and the recording service that puts a reading behind the entry points.
+
+| File | Imports from clusters | External systems referenced | Reads | Writes |
+| --- | --- | --- | --- | --- |
+| `api/lib/understanding/bridge.ts` | — | — | — | — |
+| `api/lib/understanding/context.ts` | `coaching`, `database`, `platform` | — | `business_categories`, `cashflow_settlements`, `expenses`, `scheduled_cashflows`, `user_businesses`, `user_contacts`, `user_correction_rules`, `user_dictionaries`, `user_wallets` | — |
+| `api/lib/understanding/contract.ts` | `arabic-nlp`, `contracts` | — | — | — |
+| `api/lib/understanding/engine.ts` | `ai-providers`, `contracts` | — | — | — |
+| `api/lib/understanding/guard.ts` | `arabic-nlp`, `contracts` | — | — | — |
+| `api/lib/understanding/numbers.ts` | `arabic-nlp` | — | — | — |
+| `api/lib/understanding/policy.ts` | — | — | — | — |
+| `api/lib/understanding/prompt.ts` | `contracts` | — | — | — |
+| `api/lib/understanding/reading-context.ts` | — | — | — | — |
+| `api/lib/understanding/routes.ts` | `ai-providers`, `platform` | — | — | — |
+| `api/services/recording/engine-switch.ts` | `platform` | — | — | — |
+| `api/services/recording/items.ts` | — | — | — | — |
+| `api/services/recording/read-sentence.ts` | `ai-governance`, `ai-providers`, `database`, `platform` | — | `user_businesses` | `classification_logs`, `pending_clarifications` |
+| `api/services/recording/reading-log.ts` | `database` | — | `classification_logs` | — |
+| `api/services/recording/saved-reading.ts` | `contracts` | — | — | — |
+| `api/services/recording/types.ts` | — | — | — | — |
+
 ### `classification` — Expense classification pipeline
 
 smart-pipeline.ts and the modules it composes: financial events, the role of each number and of each word in a clause, admissibility, rules, muscle memory, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance.
@@ -486,7 +511,7 @@ smart-pipeline.ts and the modules it composes: financial events, the role of eac
 | `api/lib/classification-merge.ts` | — | — | — | — |
 | `api/lib/classification-prompt.ts` | — | — | — | — |
 | `api/lib/classifier-contract.ts` | — | `gemini` | — | — |
-| `api/lib/classify-text.ts` | `arabic-nlp` | — | — | — |
+| `api/lib/classify-text.ts` | `arabic-nlp`, `understanding` | — | — | — |
 | `api/lib/clause-roles.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/confidence-calibration.generated.ts` | — | — | — | — |
 | `api/lib/confidence-calibrator.ts` | — | — | — | — |

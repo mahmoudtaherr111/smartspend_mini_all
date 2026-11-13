@@ -22,9 +22,9 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `FIREBASE_CLIENT_EMAIL` | no | — | `api/services/firebase.ts` |
 | `FIREBASE_PRIVATE_KEY` | no | — | `api/services/firebase.ts` |
 | `FIREBASE_PROJECT_ID` | no | — | `api/services/firebase.ts` |
-| `FIREWORKS_API_KEY` | no | — | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
+| `FIREWORKS_API_KEY` | no | — | `api/ai-router.ts`, `api/lib/system-settings-registry.ts`, `api/lib/understanding/routes.ts` |
 | `FRONTEND_URL` | no | — | `api/lib/origin-policy.ts` |
-| `GEMINI_API_KEY` | yes | — | `api/admin-router.ts`, `api/ai-router.ts`, `api/ai-setup-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/capture/model-reader.ts`, `api/lib/embedding-provider.ts`, `api/lib/system-settings-registry.ts`, `api/services/server-status.ts`, `api/services/voice/gateway/index.ts`, `api/services/voice/text-model.ts` |
+| `GEMINI_API_KEY` | yes | — | `api/admin-router.ts`, `api/ai-router.ts`, `api/ai-setup-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/capture/model-reader.ts`, `api/lib/embedding-provider.ts`, `api/lib/system-settings-registry.ts`, `api/lib/understanding/routes.ts`, `api/services/server-status.ts`, `api/services/voice/gateway/index.ts`, `api/services/voice/text-model.ts` |
 | `GEMINI_MODEL_FREE` | no | `gemini-3.1-flash-lite` | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_PRO` | no | `gemini-3.5-flash` | `api/ai-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_REPORTS` | no | `gemini-3.8-flash` | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
@@ -37,7 +37,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `GOOGLE_PLAY_PUBSUB_SERVICE_ACCOUNT` | no | — | `api/lib/store-billing/google-play-verifier.ts` |
 | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | no | — | `api/lib/store-billing/google-play-verifier.ts` |
 | `GOOGLE_REDIRECT_URI` | no | `http://localhost:3000/api/auth/google/callback` | `api/auth-router.ts` |
-| `GROQ_API_KEY` | no | — | `api/ai-router.ts` |
+| `GROQ_API_KEY` | no | — | `api/ai-router.ts`, `api/lib/understanding/routes.ts` |
 | `JWT_SECRET` | yes | — | `api/lib/capture/memory.ts`, `api/lib/login-protection.ts`, `api/lib/provider-key-crypto.ts`, `api/lib/session-validation.ts`, `api/lib/store-billing/ledger.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` |
 | `LOGIN_ACCOUNT_MAX_FAILURES` | no | `5` | `api/lib/login-protection.ts` |
 | `LOGIN_IP_BURST_MAX_FAILURES` | no | `10` | `api/lib/login-protection.ts` |
@@ -45,7 +45,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `LOGIN_PAIR_MAX_FAILURES` | no | `5` | `api/lib/login-protection.ts` |
 | `LOG_SLOW_QUERIES` | no | `true` | `api/queries/connection.ts` |
 | `NODE_ENV` | no | `development` | `api/boot.ts`, `api/chat-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/client-platform.ts`, `api/lib/log.ts`, `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/redis-client.ts`, `api/lib/security-logger.ts`, `api/local-auth-utils.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/server-status.ts`, `api/services/turnstile-service.ts` |
-| `NVIDIA_API_KEY` | no | — | `api/ai-router.ts` |
+| `NVIDIA_API_KEY` | no | — | `api/ai-router.ts`, `api/lib/understanding/routes.ts` |
 | `OWNER_EMAIL` | no | — | — |
 | `PAYMOB_API_KEY` | no | — | `api/lib/paymob.ts` |
 | `PAYMOB_HMAC_SECRET` | no | — | `api/boot.ts` |

@@ -82,6 +82,40 @@ describe("decideMatch", () => {
   });
 });
 
+describe("a commitment named by the sentence's reading", () => {
+  // «دفعت مصاريف يوسف» says no word of the title «مدرسة الأولاد»; the reading names the commitment instead.
+  const kids = school({ title: "مدرسة الأولاد", beneficiaryName: null });
+
+  it("links on the reference alone when the amount is exact and nothing rivals it", () => {
+    const decision = decideMatch(payment({ text: "دفعت مصاريف يوسف 5000", namedCashflowId: 10 }), [kids, fridge]);
+    expect(decision).toEqual({ status: "linked", cashflowId: 10, allocations: [{ cashflowId: 10, dueDay: "2026-11-01", amount: 5000 }] });
+    expect(decideMatch(payment({ text: "دفعت مصاريف يوسف 5000" }), [kids, fridge])).toEqual({ status: "none" });
+  });
+
+  it("asks instead of linking when the amount is not what is due", () => {
+    const decision = decideMatch(payment({ text: "دفعت مصاريف يوسف 3000", amount: 3000, namedCashflowId: 10 }), [kids]);
+    expect(decision).toEqual({ status: "ask", candidates: [{ cashflowId: 10, dueDay: "2026-11-01", amount: 5000 }] });
+  });
+
+  it("does nothing for a reference to a commitment the payment cannot pay", () => {
+    // The caller passes only payable commitments; a reference to one it left out names nothing.
+    expect(decideMatch(payment({ text: "دفعت مصاريف يوسف 5000", namedCashflowId: 99 }), [kids])).toEqual({ status: "none" });
+  });
+
+  it("still needs the instalment word for an instalment commitment", () => {
+    const without = decideMatch(payment({ text: "دفعت التلاجة 1500", amount: 1500, day: "2026-11-04", namedCashflowId: 20 }), [fridge]);
+    expect(without.status).not.toBe("linked");
+    const withCue = decideMatch(payment({ text: "دفعت قسط 1500", amount: 1500, day: "2026-11-04", namedCashflowId: 20 }), [fridge]);
+    expect(withCue.status).toBe("linked");
+  });
+
+  it("does not link when another commitment is named by the words", () => {
+    const malak = school({ id: 11, title: "مدرسة ملك", beneficiaryName: "ملك" });
+    const decision = decideMatch(payment({ text: "دفعت مدرسة ملك 5000", namedCashflowId: 10 }), [kids, malak]);
+    expect(decision.status).toBe("ask");
+  });
+});
+
 describe("tokens", () => {
   it("drops paying verbs, money words and the article, and keeps the names", () => {
     expect(matchTokens("دفعت ٥٠٠٠ جنيه للمدرسة بتاعة محمد")).toEqual(["5000", "مدرسه", "محمد"]);

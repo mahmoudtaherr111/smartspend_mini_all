@@ -292,6 +292,11 @@ views {
     include *
   }
 
+  view module_understanding of smartspend.api.modules.understanding {
+    title 'Module · Sentence understanding engine'
+    include *
+  }
+
   view module_voice of smartspend.api.modules.voice {
     title 'Module · Voice'
     include *

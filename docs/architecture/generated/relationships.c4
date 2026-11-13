@@ -227,6 +227,7 @@ model {
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.receipt-parsing
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.security
+  smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.understanding
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.voice
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.whatsapp
   smartspend.api.modules.api-routers -[imports]-> smartspend.shared.contracts
@@ -422,6 +423,7 @@ model {
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.ai-providers
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.arabic-nlp
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.classification -[imports]-> smartspend.api.modules.understanding
   smartspend.api.modules.classification -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.classification -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.modules.classification -[reads]-> smartspend.mysql.expenses
@@ -436,6 +438,7 @@ model {
   smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.ledger
   smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.notifications
   smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.understanding
   smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.whatsapp
   smartspend.api.modules.coaching -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.cashflow_settlements
@@ -612,6 +615,24 @@ model {
   smartspend.api.modules.security -[uses]-> turnstile
   smartspend.api.modules.security -[writes]-> smartspend.mysql.admin_audit_logs
   smartspend.api.modules.storage -[uses]-> smartspend.object-storage
+  smartspend.api.modules.understanding -[imports]-> smartspend.api.modules.ai-governance
+  smartspend.api.modules.understanding -[imports]-> smartspend.api.modules.ai-providers
+  smartspend.api.modules.understanding -[imports]-> smartspend.api.modules.arabic-nlp
+  smartspend.api.modules.understanding -[imports]-> smartspend.api.modules.coaching
+  smartspend.api.modules.understanding -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.understanding -[imports]-> smartspend.shared.contracts
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.business_categories
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.cashflow_settlements
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.classification_logs
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.expenses
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.scheduled_cashflows
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.user_businesses
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.user_contacts
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.user_correction_rules
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.user_dictionaries
+  smartspend.api.modules.understanding -[reads]-> smartspend.mysql.user_wallets
+  smartspend.api.modules.understanding -[writes]-> smartspend.mysql.classification_logs
+  smartspend.api.modules.understanding -[writes]-> smartspend.mysql.pending_clarifications
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.ai-actions
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.ai-insights
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.ai-memory
@@ -932,7 +953,6 @@ model {
   smartspend.api.trpc.ai.getUserLimits -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.ai.learnWord -[writes]-> smartspend.mysql.user_dictionaries
   smartspend.api.trpc.ai.parseExpense -[reads]-> smartspend.mysql.business_categories
-  smartspend.api.trpc.ai.parseExpense -[reads]-> smartspend.mysql.pending_clarifications
   smartspend.api.trpc.ai.parseExpense -[reads]-> smartspend.mysql.user_businesses
   smartspend.api.trpc.ai.parseExpense -[reads]-> smartspend.mysql.user_dictionaries
   smartspend.api.trpc.ai.parseExpense -[uses]-> smartspend.api.modules.ai-governance
@@ -941,10 +961,10 @@ model {
   smartspend.api.trpc.ai.parseExpense -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.ai.parseExpense -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.ai.parseExpense -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.ai.parseExpense -[uses]-> smartspend.api.modules.understanding
   smartspend.api.trpc.ai.parseExpense -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.ai.parseExpense -[writes]-> smartspend.mysql.pending_clarifications
   smartspend.api.trpc.ai.parseVoiceExpense -[reads]-> smartspend.mysql.business_categories
-  smartspend.api.trpc.ai.parseVoiceExpense -[reads]-> smartspend.mysql.pending_clarifications
   smartspend.api.trpc.ai.parseVoiceExpense -[reads]-> smartspend.mysql.user_businesses
   smartspend.api.trpc.ai.parseVoiceExpense -[reads]-> smartspend.mysql.user_dictionaries
   smartspend.api.trpc.ai.parseVoiceExpense -[reads]-> smartspend.mysql.voice_usage
@@ -954,6 +974,7 @@ model {
   smartspend.api.trpc.ai.parseVoiceExpense -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.ai.parseVoiceExpense -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.ai.parseVoiceExpense -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.ai.parseVoiceExpense -[uses]-> smartspend.api.modules.understanding
   smartspend.api.trpc.ai.parseVoiceExpense -[uses]-> smartspend.api.modules.voice
   smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.pending_clarifications
@@ -1208,6 +1229,7 @@ model {
   smartspend.api.trpc.expense.answerClarification -[uses]-> smartspend.api.modules.coaching
   smartspend.api.trpc.expense.answerClarification -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.answerClarification -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.expense.answerClarification -[uses]-> smartspend.api.modules.understanding
   smartspend.api.trpc.expense.answerClarification -[writes]-> smartspend.mysql.pending_clarifications
   smartspend.api.trpc.expense.batchCreate -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.expense.batchCreate -[reads]-> smartspend.mysql.user_contacts
@@ -1216,6 +1238,7 @@ model {
   smartspend.api.trpc.expense.batchCreate -[uses]-> smartspend.api.modules.coaching
   smartspend.api.trpc.expense.batchCreate -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.batchCreate -[uses]-> smartspend.api.modules.security
+  smartspend.api.trpc.expense.batchCreate -[uses]-> smartspend.api.modules.understanding
   smartspend.api.trpc.expense.batchCreate -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.expense.batchCreate -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.expense.create -[reads]-> smartspend.mysql.classification_logs
@@ -1225,6 +1248,7 @@ model {
   smartspend.api.trpc.expense.create -[uses]-> smartspend.api.modules.coaching
   smartspend.api.trpc.expense.create -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.create -[uses]-> smartspend.api.modules.security
+  smartspend.api.trpc.expense.create -[uses]-> smartspend.api.modules.understanding
   smartspend.api.trpc.expense.create -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.expense.create -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.expense.createCategory -[writes]-> smartspend.mysql.expense_categories
@@ -1263,6 +1287,7 @@ model {
   smartspend.api.trpc.expense.previewCategory -[reads]-> smartspend.mysql.user_dictionaries
   smartspend.api.trpc.expense.previewCategory -[uses]-> smartspend.api.modules.arabic-nlp
   smartspend.api.trpc.expense.previewCategory -[uses]-> smartspend.api.modules.classification
+  smartspend.api.trpc.expense.previewCategory -[uses]-> smartspend.api.modules.understanding
   smartspend.api.trpc.expense.previewCategory -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.expense.searchTransactions -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.searchTransactions -[uses]-> smartspend.api.modules.arabic-nlp

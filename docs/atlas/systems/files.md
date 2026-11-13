@@ -170,6 +170,16 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/taxonomy-adapter.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/taxonomy-ssot.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/text-normalizer.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/understanding/bridge.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/understanding/context.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/understanding/contract.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/understanding/engine.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/understanding/guard.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/understanding/numbers.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/understanding/policy.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/understanding/prompt.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/understanding/reading-context.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/understanding/routes.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/unified-normalizer.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/voice-intake-gate.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/whatsapp/client.ts` | [notifications](notifications.md) |
@@ -254,6 +264,12 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/personal-context-builder.ts` | [insights](insights.md) |
 | `api/services/phone-challenge.ts` | [accounts](accounts.md) |
 | `api/services/pro-report-engine.ts` | [insights](insights.md) |
+| `api/services/recording/engine-switch.ts` | [expense-capture](expense-capture.md) |
+| `api/services/recording/items.ts` | [expense-capture](expense-capture.md) |
+| `api/services/recording/read-sentence.ts` | [expense-capture](expense-capture.md) |
+| `api/services/recording/reading-log.ts` | [expense-capture](expense-capture.md) |
+| `api/services/recording/saved-reading.ts` | [expense-capture](expense-capture.md) |
+| `api/services/recording/types.ts` | [expense-capture](expense-capture.md) |
 | `api/services/report-personalization-engine.ts` | [insights](insights.md) |
 | `api/services/scheduler-lock.ts` | [platform](platform.md) |
 | `api/services/server-status.ts` | [platform](platform.md) |
@@ -327,6 +343,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `contracts/plan-features.ts` | [platform](platform.md) |
 | `contracts/plans.ts` | [platform](platform.md) |
 | `contracts/profile-fields.ts` | [platform](platform.md) |
+| `contracts/taxonomy.ts` | [platform](platform.md) |
 | `contracts/types.ts` | [platform](platform.md) |
 | `contracts/voice-models.ts` | [platform](platform.md) |
 | `contracts/voice-protocol.ts` | [platform](platform.md) |
