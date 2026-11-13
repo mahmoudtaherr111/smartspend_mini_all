@@ -90,6 +90,24 @@ describe("reading a reply", () => {
     expect(parsed?.problems).toEqual([]);
   });
 
+  it("reads the short form: short keys, missing fields as nothing, and no quote as the whole sentence", () => {
+    const sentence = "دفعت قسط مدرسة سلمى 6500";
+    const parsed = parseReply('{"e":[{"a":6500,"k":"spending","f":"out","c":"education","s":"school_fees","w":"قسط مدرسة سلمى","p":"سلمى","pr":"for","cm":"c1","i":1}]}', sentence);
+    expect(parsed?.problems).toEqual([]);
+    expect(parsed?.reading.events[0]).toMatchObject({
+      quote: sentence, amount: 6500, category: "education", sub: "school_fees", person: "سلمى", personRole: "for", personRelation: "",
+      commitment: "c1", installments: 1, wallet: "", date: "", doubt: "none",
+    });
+    expect(parsed?.reading).toMatchObject({ ignored: [], numbers: [], ask: "", askAbout: "none" });
+  });
+
+  it("reads set-aside clauses, number roles and a question in the short form", () => {
+    const parsed = parseReply({ e: [], x: [{ q: "لسه هدفع 500", y: "planned" }], n: [{ t: "57357", r: "name" }], ask: "بكام؟", about: "amount" }, "x");
+    expect(parsed?.reading).toMatchObject({
+      events: [], ignored: [{ quote: "لسه هدفع 500", why: "planned" }], numbers: [{ text: "57357", role: "name" }], ask: "بكام؟", askAbout: "amount",
+    });
+  });
+
   it("reads JSON wrapped in prose or a code fence, and refuses what is not a reading", () => {
     expect(extractJson('Sure!\n```json\n{"events":[]}\n```')).toEqual({ events: [] });
     expect(parseReply("I cannot help with that")).toBeNull();
@@ -293,7 +311,7 @@ describe("the prompt", () => {
     const examples = [...system.matchAll(/SENTENCE: «(.+?)»\n(\{.+\})/g)];
     expect(examples.length).toBeGreaterThan(8);
     for (const [, sentence, json] of examples) {
-      const parsed = parseReply(json);
+      const parsed = parseReply(json, sentence);
       expect(parsed, sentence).not.toBeNull();
       expect(parsed!.problems, sentence).toEqual([]);
       const guarded = guardReading(parsed!.reading, sentence, { ...ctx, commitmentRefs: new Set(["c1", "c2"]) });

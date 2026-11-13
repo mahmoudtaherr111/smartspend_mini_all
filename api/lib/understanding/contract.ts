@@ -8,9 +8,11 @@
  * failure and asks the next route). Whether the reading is TRUE is the guard's job
  * (`guard.ts`); this file only makes it well-formed.
  *
- * Every field is required in the schema and has an explicit "nothing" value ("" or "none"),
- * so the same schema is valid for Gemini's response schema, OpenAI-style strict JSON Schema
- * and Anthropic's output format, none of which agree on optional and nullable fields.
+ * Output tokens cost several times what input tokens do, so the reply is as short as it can be
+ * read: one- and two-letter keys, a field left out when it has nothing to say, and `q` left out
+ * (or "*") when the event is the whole sentence. No field is nullable, which Gemini's response
+ * schema, OpenAI-style JSON Schema and Anthropic's output format do not agree on. The parser
+ * also reads the long names, so a model that spells a key out is still understood.
  *
  * Why: docs/decisions/0052-understanding-engine.md.
  */
@@ -20,7 +22,7 @@ import { arabicIndicToAscii } from "../arabic-number-parser";
 import type { StructuredSchema } from "../llm-router";
 
 /** Bump when the reply's shape or the meaning of a field changes; stored with every reading. */
-export const READING_CONTRACT_VERSION = "1";
+export const READING_CONTRACT_VERSION = "2";
 
 export const FLOWS = ["out", "in"] as const;
 export type Flow = (typeof FLOWS)[number];
@@ -94,50 +96,42 @@ const ENUM = (values: readonly string[]) => ({ type: "string", format: "enum", e
 export const READING_SCHEMA: StructuredSchema = {
   type: "object",
   properties: {
-    events: {
+    e: {
       type: "array",
       items: {
         type: "object",
         properties: {
-          quote: STRING(),
-          amount: { type: "number" },
-          kind: ENUM(MOVEMENT_KINDS),
-          flow: ENUM(FLOWS),
-          category: ENUM(TAXONOMY_CATEGORY_IDS),
-          sub: STRING(),
-          what: STRING(),
-          person: STRING(),
-          person_role: ENUM(PERSON_ROLES),
-          person_relation: STRING(),
-          commitment: STRING(),
-          installments: { type: "integer" },
-          wallet: STRING(),
-          date: STRING(),
-          doubt: ENUM(DOUBTS),
+          q: STRING(),
+          a: { type: "number" },
+          k: ENUM(MOVEMENT_KINDS),
+          f: ENUM(FLOWS),
+          c: ENUM(TAXONOMY_CATEGORY_IDS),
+          s: STRING(),
+          w: STRING(),
+          p: STRING(),
+          pr: ENUM(PERSON_ROLES),
+          pl: STRING(),
+          cm: STRING(),
+          i: { type: "integer" },
+          wl: STRING(),
+          d: STRING(),
+          db: ENUM(DOUBTS),
         },
-        required: ["quote", "amount", "kind", "flow", "category", "sub", "what", "person", "person_role", "person_relation", "commitment", "installments", "wallet", "date", "doubt"],
+        required: ["a", "k", "f", "c", "s"],
       },
     },
-    ignored: {
+    x: {
       type: "array",
-      items: {
-        type: "object",
-        properties: { quote: STRING(), why: ENUM(IGNORED_REASONS) },
-        required: ["quote", "why"],
-      },
+      items: { type: "object", properties: { q: STRING(), y: ENUM(IGNORED_REASONS) }, required: ["q", "y"] },
     },
-    numbers: {
+    n: {
       type: "array",
-      items: {
-        type: "object",
-        properties: { text: STRING(), role: ENUM(NUMBER_ROLES) },
-        required: ["text", "role"],
-      },
+      items: { type: "object", properties: { t: STRING(), r: ENUM(NUMBER_ROLES) }, required: ["t", "r"] },
     },
     ask: STRING(),
-    ask_about: ENUM(ASK_ABOUT),
+    about: ENUM(ASK_ABOUT),
   },
-  required: ["events", "ignored", "numbers", "ask", "ask_about"],
+  required: ["e"],
 };
 
 // ─── Reading a reply ────────────────────────────────────────────────────────────
@@ -181,6 +175,12 @@ function isoDate(value: unknown): { value: string; repaired: boolean } {
   return real ? { value: `${match[1]}-${match[2]}-${match[3]}`, repaired: false } : { value: "", repaired: true };
 }
 
+/** The event's quote, or the whole sentence when the reply left it out or wrote "*". */
+function quoteOf(value: unknown, sentence: string): string {
+  const quote = text(value);
+  return quote && quote !== "*" ? quote : text(sentence);
+}
+
 function field(row: Record<string, unknown>, ...names: string[]): unknown {
   for (const name of names) if (row[name] !== undefined && row[name] !== null) return row[name];
   return undefined;
@@ -216,69 +216,72 @@ export function extractJson(raw: string): unknown {
  * a reference written as "none") and reports it; never invents a value: an event whose kind
  * is not a kind is dropped, not guessed.
  */
-export function parseReply(raw: unknown): ParsedReply | null {
+/** `sentence` stands in for an event's quote when the reply leaves it out or writes "*": the event is the whole sentence. */
+export function parseReply(raw: unknown, sentence = ""): ParsedReply | null {
   const value = typeof raw === "string" ? extractJson(raw) : raw;
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const body = value as Record<string, unknown>;
-  if (!Array.isArray(body.events) && typeof body.ask !== "string" && !Array.isArray(body.ignored)) return null;
+  const eventRows = field(body, "e", "events");
+  const ignoredRows = field(body, "x", "ignored");
+  if (!Array.isArray(eventRows) && typeof body.ask !== "string" && !Array.isArray(ignoredRows)) return null;
 
   const problems: string[] = [];
   const events: ReadEvent[] = [];
-  const rawEvents = rows(body.events);
+  const rawEvents = rows(eventRows);
   if (rawEvents.length > MAX_EVENTS) problems.push(`dropped ${rawEvents.length - MAX_EVENTS} events over the limit`);
 
   rawEvents.slice(0, MAX_EVENTS).forEach((row, index) => {
     const at = `event ${index + 1}`;
-    const kind = oneOf<MovementKind>(field(row, "kind"), MOVEMENT_KINDS, "spending");
+    const kind = oneOf<MovementKind>(field(row, "k", "kind"), MOVEMENT_KINDS, "spending");
     if (kind.repaired) {
       problems.push(`${at}: dropped, unknown kind`);
       return;
     }
-    const flow = oneOf<Flow>(field(row, "flow"), FLOWS, "out");
-    if (flow.repaired || field(row, "flow") === undefined) {
+    const flow = oneOf<Flow>(field(row, "f", "flow"), FLOWS, "out");
+    if (flow.repaired || field(row, "f", "flow") === undefined) {
       problems.push(`${at}: dropped, unknown flow`);
       return;
     }
-    const personRole = oneOf<PersonRole>(field(row, "person_role", "personRole"), PERSON_ROLES, "none");
-    const doubt = oneOf<Doubt>(field(row, "doubt"), DOUBTS, "none");
+    const personRole = oneOf<PersonRole>(field(row, "pr", "person_role", "personRole"), PERSON_ROLES, "none");
+    const doubt = oneOf<Doubt>(field(row, "db", "doubt"), DOUBTS, "none");
     // An unreadable doubt is still a doubt: the model tried to say something.
     if (doubt.repaired) problems.push(`${at}: unknown doubt read as category`);
-    const date = isoDate(field(row, "date"));
+    const date = isoDate(field(row, "d", "date"));
     if (date.repaired) problems.push(`${at}: unreadable date`);
-    const installments = Number(field(row, "installments"));
-    const person = text(field(row, "person"), 60);
+    const installments = Number(field(row, "i", "installments"));
+    const person = text(field(row, "p", "person"), 60);
 
     events.push({
-      quote: text(field(row, "quote")),
-      amount: toAmount(field(row, "amount")),
+      quote: quoteOf(field(row, "q", "quote"), sentence),
+      amount: toAmount(field(row, "a", "amount")),
       kind: kind.value,
       flow: flow.value,
-      category: text(field(row, "category"), 40).toLowerCase(),
-      sub: text(field(row, "sub", "subcategory"), 40).toLowerCase(),
-      what: text(field(row, "what", "description"), 80),
+      category: text(field(row, "c", "category"), 40).toLowerCase(),
+      sub: text(field(row, "s", "sub", "subcategory"), 40).toLowerCase(),
+      what: text(field(row, "w", "what", "description"), 80),
       person: /^(none|null|-)$/i.test(person) ? "" : person,
       personRole: person ? personRole.value : "none",
-      personRelation: person ? text(field(row, "person_relation", "personRelation"), 30).replace(/^(none|null|-)$/i, "") : "",
-      commitment: reference(field(row, "commitment")),
+      personRelation: person ? text(field(row, "pl", "person_relation", "personRelation"), 30).replace(/^(none|null|-)$/i, "") : "",
+      commitment: reference(field(row, "cm", "commitment")),
       installments: Number.isInteger(installments) && installments > 0 && installments <= 60 ? installments : 0,
-      wallet: reference(field(row, "wallet")),
+      wallet: reference(field(row, "wl", "wallet")),
       date: date.value,
       doubt: doubt.repaired ? "category" : date.repaired && doubt.value === "none" ? "date" : doubt.value,
     });
   });
 
-  const ignored = rows(body.ignored)
-    .map((row) => ({ quote: text(field(row, "quote")), why: oneOf<IgnoredReason>(field(row, "why", "reason"), IGNORED_REASONS, "chatter").value }))
+  const ignored = rows(ignoredRows)
+    .map((row) => ({ quote: text(field(row, "q", "quote")), why: oneOf<IgnoredReason>(field(row, "y", "why", "reason"), IGNORED_REASONS, "chatter").value }))
     .filter((row) => row.quote)
     .slice(0, MAX_EVENTS);
 
-  const numbers = rows(body.numbers)
-    .map((row) => ({ text: text(field(row, "text", "value"), 40), role: oneOf<NumberRole>(field(row, "role"), NUMBER_ROLES, "label").value }))
+  const numbers = rows(field(body, "n", "numbers"))
+    .map((row) => ({ text: text(field(row, "t", "text", "value"), 40), role: oneOf<NumberRole>(field(row, "r", "role"), NUMBER_ROLES, "label").value }))
     .filter((row) => row.text)
     .slice(0, 40);
 
   const ask = text(body.ask, 200);
-  const askAbout = oneOf<AskAbout>(field(body, "ask_about", "askAbout"), ASK_ABOUT, "none");
+  const askAbout = oneOf<AskAbout>(field(body, "about", "ask_about", "askAbout"), ASK_ABOUT, "none");
 
   return {
     reading: {

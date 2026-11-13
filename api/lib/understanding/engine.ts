@@ -224,7 +224,7 @@ export async function understand(input: UnderstandInput, deps: { execute?: typeo
     };
 
     let res = await call(input.routes, request);
-    let parsed = parseReply(res.text);
+    let parsed = parseReply(res.text, text);
     if (!parsed) {
       // `executeLlmChain` already returned, so it cannot move on by itself: the routes after
       // the one that served get the same request once, within what is left of the trip.
@@ -233,7 +233,7 @@ export async function understand(input: UnderstandInput, deps: { execute?: typeo
       const left = deadlineMs - (Date.now() - startedAt);
       if (!rest.length || left < MIN_RETRY_MS) throw unavailable("The reply could not be read and no route is left", usage);
       res = await call(rest, { ...request, deadlineMs: left });
-      parsed = parseReply(res.text);
+      parsed = parseReply(res.text, text);
       if (!parsed) {
         problems.push(`unusable reply from ${res.route.slug}/${res.route.model}`);
         throw unavailable("No route returned a readable reply", usage);

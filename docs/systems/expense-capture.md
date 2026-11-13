@@ -429,7 +429,9 @@ Decision [0052](../decisions/0052-understanding-engine.md) replaces the pipeline
 sentence and code that verifies the reading. Its modules are in `api/lib/understanding/`. With the default setting
 everything above still describes what users get.
 
-- `api/lib/understanding/contract.ts`: the reply a model returns for one sentence (`READING_SCHEMA`) and
+- `api/lib/understanding/contract.ts`: the reply a model returns for one sentence (`READING_SCHEMA`: short keys, a
+  field left out when it has nothing to say and no quote when the event is the whole sentence, since output tokens
+  cost the most) and
   `parseReply`, which turns any reply into a well-formed `Reading` or null. Each event carries the person's own
   words, the amount, the ledger kind and flow (`contracts/ledger-movement.ts`), a category and subcategory id of
   taxonomy v2 (`contracts/taxonomy.ts`), the person, role and relation, a reference to a commitment and a wallet, a

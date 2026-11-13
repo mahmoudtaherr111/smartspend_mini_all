@@ -329,12 +329,12 @@
         "api/lib/text-normalizer.ts": "05ac2af6ca6a",
         "api/lib/understanding/bridge.ts": "8778e5f34757",
         "api/lib/understanding/context.ts": "d325302a93bf",
-        "api/lib/understanding/contract.ts": "d974c73e6a0a",
-        "api/lib/understanding/engine.ts": "b9b6b37cbc4e",
+        "api/lib/understanding/contract.ts": "4cbc6407abf7",
+        "api/lib/understanding/engine.ts": "f34f6526cd8f",
         "api/lib/understanding/guard.ts": "8baec4ec2c63",
         "api/lib/understanding/numbers.ts": "00ff944ccf14",
         "api/lib/understanding/policy.ts": "2f514ed47ede",
-        "api/lib/understanding/prompt.ts": "13f5069bbe1b",
+        "api/lib/understanding/prompt.ts": "6a33432ef7c9",
         "api/lib/understanding/reading-context.ts": "9980c7595b9b",
         "api/lib/understanding/routes.ts": "1c2384b5e358",
         "api/lib/unified-normalizer.ts": "bfd4f91bfd4b",
@@ -350,9 +350,9 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-11-12 bbb072d",
-      "arabic": "d40450a71818",
-      "arabicChecked": "2026-11-12 bbb072d"
+      "checked": "2026-11-13 3e7f594",
+      "arabic": "ad47a55d51bb",
+      "arabicChecked": "2026-11-13 3e7f594"
     },
     "insights": {
       "files": {
