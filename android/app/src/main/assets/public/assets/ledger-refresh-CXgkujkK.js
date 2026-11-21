@@ -1,1 +1,0 @@
-import{c as i}from"./index-1zhR_0Jg.js";const a=[["rect",{width:"18",height:"18",x:"3",y:"3",rx:"2",key:"afitv7"}]],d=i("square",a);function o(e){e.expense.invalidate(),e.budget.invalidate(),e.wallet.invalidate(),e.ai.getUserLimits.invalidate()}export{d as S,o as r};

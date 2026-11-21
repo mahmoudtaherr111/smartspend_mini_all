@@ -51,12 +51,12 @@
         "src/components/settings/LanguageSettings.tsx": "2e84329609e6",
         "src/components/settings/PeopleSettingsView.tsx": "fe994df04b34",
         "src/pages/AuthCallback.tsx": "6ca3f9321f43",
-        "src/pages/Login.tsx": "ce38c7bebcda",
+        "src/pages/Login.tsx": "1e99a0a9b841",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-11-21 0abf2ed4",
-      "arabic": "54f2a9fe4191",
-      "arabicChecked": "2026-11-21 0abf2ed4"
+      "checked": "2026-11-21 873da7f4",
+      "arabic": "7b61006e0af9",
+      "arabicChecked": "2026-11-21 873da7f4"
     },
     "admin": {
       "files": {
@@ -391,8 +391,8 @@
         "src/components/insights/AIInsights.tsx": "56cda5d89124"
       },
       "checked": "2026-11-21 0abf2ed4",
-      "arabic": "a4b113c5ee3a",
-      "arabicChecked": "2026-11-21 0abf2ed4"
+      "arabic": "4066779daa01",
+      "arabicChecked": "2026-11-21 873da7f4"
     },
     "money": {
       "files": {
@@ -513,10 +513,10 @@
         "api/boot.ts#GET /sitemap.xml": "4c2af6ff5731",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
         "api/boot.ts#job:ops-watch": "4d611e8ca1ca",
-        "api/boot.ts#rest-of-file": "51c5f6d1cea3",
+        "api/boot.ts#rest-of-file": "b2d2060cda18",
         "api/context.ts": "fb91749f00ed",
         "api/jobs/data-retention-job.ts": "0b30321625dc",
-        "api/lib/app-time.ts": "70a15830f672",
+        "api/lib/app-time.ts": "7eaf4ab8fae6",
         "api/lib/cache-keys.ts": "89dc693d0c12",
         "api/lib/client-platform.ts": "fe6ce60846a0",
         "api/lib/env.ts": "2a48846c3eee",
@@ -562,9 +562,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "39eda50cb310"
       },
-      "checked": "2026-11-21 0abf2ed4",
-      "arabic": "b8b100bdc91a",
-      "arabicChecked": "2026-11-21 0abf2ed4"
+      "checked": "2026-11-21 873da7f4",
+      "arabic": "63ce77b72863",
+      "arabicChecked": "2026-11-21 873da7f4"
     },
     "voice-calls": {
       "files": {
@@ -627,8 +627,8 @@
         "src/lib/voice/speech-detector.ts": "69cc55d954de"
       },
       "checked": "2026-11-21 0abf2ed4",
-      "arabic": "5f6ee41fdea3",
-      "arabicChecked": "2026-11-21 0abf2ed4"
+      "arabic": "d9c67ff2beb4",
+      "arabicChecked": "2026-11-21 873da7f4"
     },
     "web-app": {
       "files": {
@@ -638,7 +638,7 @@
         "src/components/PageLoadingSkeleton.tsx": "fa0fe3239b38",
         "src/components/Sidebar.tsx": "c84e5a0cbe11",
         "src/components/ads/AdBanner.tsx": "9e9811bd3c1c",
-        "src/components/layout/MobileBottomNav.tsx": "af17b1e57cd8",
+        "src/components/layout/MobileBottomNav.tsx": "58976958e2f2",
         "src/components/layout/PageTransition.tsx": "500656dd741d",
         "src/components/layout/mobile-nav-platform.ts": "be85b5893eb0",
         "src/components/pwa/NetworkStatusToast.tsx": "ef9a09045e3c",
@@ -723,14 +723,14 @@
         "src/hooks/useVirtualKeyboard.ts": "cd9133e4472c",
         "src/i18n/LanguagePreferenceSync.tsx": "f1a533c6da56",
         "src/i18n/LanguageProvider.tsx": "10f3c6a09aa8",
-        "src/i18n/ar.ts": "4fbf1d621e13",
+        "src/i18n/ar.ts": "3f91d29c88c8",
         "src/i18n/context.ts": "862082f8b940",
-        "src/i18n/en.ts": "a04e990639b0",
+        "src/i18n/en.ts": "9b850c436c96",
         "src/i18n/format.ts": "dcabd0402133",
         "src/i18n/language.ts": "398827de4cd9",
         "src/lib/api-url.ts": "18ecb9feb4c8",
         "src/lib/back-button-manager.ts": "8f9f1a1d70ca",
-        "src/lib/biometricAuth.ts": "f00b2d283f96",
+        "src/lib/biometricAuth.ts": "1f4941edc3a3",
         "src/lib/financial-taxonomy.ts": "8d5316f3e67b",
         "src/lib/ledger-refresh.ts": "0db704f2a63e",
         "src/lib/native-ios-bridge.ts": "f796cc7355c7",
@@ -747,15 +747,15 @@
         "src/pages/Privacy.tsx": "d888313990ad",
         "src/pages/Terms.tsx": "4ff361a45f01",
         "src/providers/BiometricLockProvider.tsx": "c4258fcc8f5b",
-        "src/providers/trpc.ts": "e890a85a705c",
+        "src/providers/trpc.ts": "a5189624d456",
         "src/pwa/firebase.ts": "3543ebd77700",
         "src/pwa/install-platform.ts": "fb566145f9a7",
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "04cff3e23190"
       },
-      "checked": "2026-11-21 0abf2ed4",
-      "arabic": "74611b0f0f1c",
-      "arabicChecked": "2026-11-21 0abf2ed4"
+      "checked": "2026-11-21 873da7f4",
+      "arabic": "d29e834201f2",
+      "arabicChecked": "2026-11-21 873da7f4"
     }
   }
 }
