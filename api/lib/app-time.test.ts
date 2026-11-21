@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { businessDateKey, businessDayRange, businessMonthRange, businessTimeLabel, parseBusinessInstant } from "./app-time";
+import {
+  businessDateKey,
+  businessDayRange,
+  businessMonthKeyRange,
+  businessMonthRange,
+  businessTimeLabel,
+  businessWeekday,
+  parseBusinessInstant,
+  previousBusinessMonth,
+  shiftMonthKey,
+} from "./app-time";
 
 const CAIRO = "Africa/Cairo";
 
@@ -40,5 +50,33 @@ describe("a date the client wrote without a time zone", () => {
   it("keeps a string that names its instant", () => {
     expect(parseBusinessInstant("2026-09-20T10:00:00Z", "Africa/Cairo").toISOString()).toBe("2026-09-20T10:00:00.000Z");
     expect(parseBusinessInstant("2026-09-20T10:00:00+02:00", "Africa/Cairo").toISOString()).toBe("2026-09-20T08:00:00.000Z");
+  });
+});
+
+describe("months as the ledger counts them", () => {
+  it("moves a month key across years without a clock", () => {
+    expect(shiftMonthKey("2026-01", -1)).toBe("2025-12");
+    expect(shiftMonthKey("2026-12", 1)).toBe("2027-01");
+    expect(shiftMonthKey("2026-10", -13)).toBe("2025-09");
+  });
+
+  it("names the month that just ended by the Cairo clock, not by UTC", () => {
+    // 00:30 on November 1st in Cairo is still October 31st in UTC.
+    expect(previousBusinessMonth(new Date("2026-10-31T22:30:00Z"), CAIRO)).toBe("2026-10");
+    // 23:59 on October 31st in Cairo: October is still running.
+    expect(previousBusinessMonth(new Date("2026-10-31T21:59:00Z"), CAIRO)).toBe("2026-09");
+  });
+
+  it("gives a month key its Cairo boundaries, across the end of summer time", () => {
+    // Cairo is UTC+3 on October 1st and UTC+2 again from October 30th.
+    const range = businessMonthKeyRange("2026-10", CAIRO);
+    expect(range.start.toISOString()).toBe("2026-09-30T21:00:00.000Z");
+    expect(range.endExclusive.toISOString()).toBe("2026-10-31T22:00:00.000Z");
+  });
+
+  it("reads the weekday in Cairo", () => {
+    // 00:30 on Saturday in Cairo is Friday in UTC.
+    expect(businessWeekday(new Date("2026-10-30T22:30:00Z"), CAIRO)).toBe(6);
+    expect(businessWeekday(new Date("2026-10-30T21:30:00Z"), CAIRO)).toBe(5);
   });
 });

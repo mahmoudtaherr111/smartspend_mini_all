@@ -11,7 +11,9 @@ the per-plan token budget every paid call is measured against, and the two place
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Admin routes | `api/lib/ai-gateway.ts` | Reads `ai_providers` and `ai_models` into a per-process cache that reloads when the shared generation `aiconfiggen` moves, opens the keys (moving any on an older secret to the current one), and answers "which provider and model did the admin pick for this purpose and plan" |
+| Admin routes | `api/lib/ai-gateway.ts` | Reads `ai_providers` and `ai_models` into a per-process cache that reloads when the shared generation `aiconfiggen` moves, opens the keys (moving any on an older secret to the current one), and answers "which models did the admin give this purpose and plan, in what order" (`orderRouteModels`) |
+| Claude | `api/lib/anthropic-client.ts` | Calls Claude through Anthropic's SDK for every caller (router, gateway, chat, model discovery) |
+| AI setup | `api/ai-setup-router.ts` (`aiSetup.*`), the console page «إعداد الذكاء» | The order of the models of each purpose and plan, the models of each connector, and one real call to check a model ([admin](admin.md)) |
 | Provider keys | `sealProviderKey` and `openProviderKey` in `api/lib/provider-key-crypto.ts` | AES-256-GCM over the keys stored in `ai_providers`, sealed with `AI_GATEWAY_SECRET` (or `JWT_SECRET` while it is unset) and opened with any secret the server still holds |
 | Model discovery | `discoverRemoteModels` in `api/lib/ai-gateway.ts` | Asks a provider for the models a key can reach ([admin](admin.md)) |
 | Provider chain | `api/lib/llm-provider-chain.ts` | Builds the ordered list of routes: the admin's rows first, then every built-in provider whose key is present |
@@ -26,10 +28,13 @@ the per-plan token budget every paid call is measured against, and the two place
 | Limits for the app | `ai.getUserLimits` in `api/ai-router.ts` | What the user has left this cycle: AI tokens, voice seconds for the Cairo calendar month (reset at its end) and offline items (`offline_limit_<plan>`) |
 
 ## Choosing a provider
-1. The caller asks for a purpose and a tier. `resolveAdminRoutes` returns the model the admin marked as the
-   default for that pair, plus every other model allowed for that purpose as fallbacks, ordered by
-   `ai_providers.priority`. A route whose key no configured secret opens is left out instead of being tried,
-   and says so (see Provider keys).
+1. The caller asks for a purpose and a tier. `resolveAdminRoutes` returns every active model of an active connector
+   that serves that purpose for that plan, in one order (`orderRouteModels`): a model still marked as the default
+   (rows written before the console ordered models) first, then `ai_models.sort_order`, which the console's
+   «إعداد الذكاء» sets, then `ai_providers.priority`. The first is `preferred`; the rest are its fallbacks. A model
+   kept for another plan is never a fallback, so a free user is not answered by a Pro-only model. The cache used to
+   keep one model per purpose and plan, so the second and third models an admin assigned never ran. A route whose key
+   no configured secret opens is left out instead of being tried, and says so (see Provider keys).
 2. `buildProviderChain` puts the requested provider first, then the admin's other rows, then a second Gemini
    key, then every built-in provider that has a key (Gemini, Groq — `llama-3.3-70b-versatile` on every plan, not a
    reasoning model —, Fireworks, NVIDIA), then DeepSeek and
@@ -38,18 +43,30 @@ the per-plan token budget every paid call is measured against, and the two place
    For classification the requested provider is the admin's "classification" model for the plan; without one it is
    Gemini with the plan's own model (`resolveRoutingConfig`). Nothing depends on how many tokens the user has spent:
    the monthly limit is `assertAiBudget`'s, and the per-plan token-range routing (`*_routing_ranges`) is gone.
+   Bank messages are the exception to the built-in floor ([decision 0025](../decisions/0025-bank-message-model-through-admin-gateway.md)):
+   `api/lib/capture/model-reader.ts#captureRoutes` builds the chain from the admin's "sms" routes, so a message is only
+   ever sent to a provider the admin chose for it; with none, the server's Gemini key answers with gemini-3.5-flash-lite
+   then gemini-3.1-flash-lite. That call also passes the admin's switch `sms_ai_enabled`, a durable reservation per
+   call and a daily cap in USD across all users, `capture_ai_daily_cost_cap_usd` (`api/lib/capture/admission.ts`), at
+   the routes' prices; an unpriced route is left out ([bank messages](bank-messages.md#the-reading-sms-v5)).
 3. `executeLlmChain` tries the routes in order under one deadline for the whole chain. A request with `lowThinking`
    (classification) asks a Gemini 3 model for `thinkingLevel: LOW`, since thinking tokens come out of a small output
    cap, and asks once more without it if the model refuses the setting. Gemini goes through the
-   Google SDK; everything else speaks the OpenAI-compatible shape, which is why adding a provider is a row and
-   a key rather than code.
+   Google SDK and Claude through Anthropic's (`api/lib/anthropic-client.ts`, a connector with protocol `anthropic`):
+   the system prompt apart from the turn, the answer held to the schema by `output_config.format` (numeric and length
+   constraints removed, `additionalProperties: false` on every object), no sampling parameters, since current models
+   reject them, and the least thinking each model allows (`disabled` on Haiku 5.5, `between_tools` on Sonnet 5.5,
+   effort `low` everywhere it is accepted; Opus 5.5 and Fable always think, so 1,024 tokens are added to `max_tokens`).
+   The SDK's own retries are off; its typed errors map onto the same failure kinds, a refusal moves on as
+   `empty_response`, and `max_tokens` as `truncated`. Everything else speaks the OpenAI-compatible shape, which is why
+   adding one of those providers is a row and a key rather than code.
 
 The Gemini text models this app uses are `gemini-3.8-flash`, `gemini-3.5-flash-lite` and `gemini-3.1-flash-lite`
 (`GEMINI_TEXT_CHAIN` in `api/lib/model-mapper.ts`, built from `contracts/voice-models.ts` so the admin console offers the same list, strongest first; all three answered on Google's API on 2026-09-24).
 Google does not serve `gemini-3.1-pro` (it answers 404), so that name, the older Pro names and the `pro`/`ultra`
 shorthand map to `gemini-3.8-flash`, which is also Ultra's default. `executeAiGateway`, which the voice call's `think`
 tool uses, takes the model named in `forceModelId` (the admin's model by that id, else that Gemini model), else the
-admin's route for the purpose and plan, else Gemini with the plan's default (`defaultGeminiModelForPlan`:
+admin's route for the purpose and plan (Claude through the same client, without tools), else Gemini with the plan's default (`defaultGeminiModelForPlan`:
 `gemini-3.8-flash` for Ultra, `gemini-3.1-flash-lite` otherwise), and passes a Gemini id through `mapModelName`. When
 Google answers 429 (a model's quota spent), 500 or 503 (overloaded), or an attempt runs past the caller's
 `attemptTimeoutMs`, it tries the next model of `geminiFallbackChain`, lighter ones first and then the stronger ones
@@ -63,8 +80,10 @@ console, over Google's native API or the OpenAI-compatible `/embeddings` shape (
 their priority order, then Google's `gemini-embedding-2` with each Gemini key (up to 100 texts a request). Each model
 gets the task the way it expects it (`taskText`: a prefix for gemini-embedding-2, a field for the older Google model,
 Qwen's instruction). A provider that is out of quota, failing or slow rests for a minute, or a quarter of an hour for a
-refused key, and the next answers. The chat also takes its model from the admin's "chat" routes first
-([AI Center](ai-center.md)).
+refused key, and the next answers. The chat also takes its model from the admin's "chat" routes first, a Claude
+connector included ([AI Center](ai-center.md)), and the monthly report from the admin's "report" routes before its
+own settings ([insights](insights.md)). Speech-to-text does not read connectors: it uses the server's keys and the
+models of the console's «تحويل الصوت لكلام» tab.
 
 ## Provider keys
 - The admin console saves a provider's key sealed with AES-256-GCM under SHA-256 of `AI_GATEWAY_SECRET`, or of
@@ -90,6 +109,11 @@ refused key, and the next answers. The chat also takes its model from the admin'
 - Failures are classified: rate limited, auth, unsupported schema, server, timeout, network, empty response,
   truncated. Everything but "unsupported schema" moves to the next route; an unsupported schema is retried
   once on the same route without the schema.
+- So a schema the provider refuses silently loses its guarantee. Gemini refuses JSON Schema documents (`$schema`,
+  `additionalProperties`, `anyOf` with null, as `z.toJSONSchema` writes them), so `toGeminiSchema` converts a schema
+  that carries `$schema` into Gemini's subset; hand-written Gemini schemas pass unchanged. Groq refuses
+  `chat_template_kwargs`: a reasoning route there gets `reasoning_effort: "none"` for Qwen and
+  for gpt-oss, which cannot stop reasoning, `reasoning_effort: "low"` with `include_reasoning: false` and extra output tokens so its reasoning does not cut a short reply off, and `reasoning_format: "hidden"` otherwise (`applyThinkingSuppression`, decision 0048).
 - The breaker is per route (provider plus model), opens after three failures — or immediately on an auth
   failure — and stays open for a minute, ten minutes for an auth failure, or for as long as the provider's
   `Retry-After` says, up to thirty minutes. One shut-out route is probed per request, behind every route that
@@ -100,6 +124,9 @@ refused key, and the next answers. The chat also takes its model from the admin'
   answer, because the parser cannot tell a truncated JSON object from an invalid one.
 
 ## Budgets and limits
+- Before anything else `assertAiBudget` obeys the admin's stop for the channel (`ai_off_<name>`) and the ceiling on
+  what all AI costs in a Cairo day (`ai_daily_cost_cap_usd`, 50 USD when the admin never saved a value, read at most once a minute per process):
+  `api/lib/feature-switches.ts`. Past the ceiling AI stops until midnight; a failed reading lets the call through.
 - `assertAiBudget` runs the burst guard, resolves the budget, and refuses the call when the plan has no
   allowance for that channel, when the input alone exceeds the hard ceiling, or when the monthly limit is
   used up. Callers then shrink the output with `clampOutputTokens`.
@@ -122,22 +149,25 @@ refused key, and the next answers. The chat also takes its model from the admin'
   neither knows is written at zero with `metadata.priced` false and logged (`ai_ledger.unpriced_model`), never
   guessed, and a model saved with both prices at zero counts as unpriced. Thinking tokens are billed as output and
   cached input at its own rate.
-- **Who records.** Parsing writes one row per attempt of the classification chain, failovers included, each at its
-  own provider's price (`recordModelCalls`); speech-to-text, the monthly analysis (with the provider's input and
+- **Who records.** Parsing and bank messages read by the model write one row per attempt of their chain, failovers
+  included, each at its own provider's price (`recordModelCalls`, channels `parse` and `sms`); speech-to-text, the
+  monthly analysis (with the provider's input and
   output split), receipts (the vision call and the classification behind it), goal analysis, business category
-  suggestions, bank messages read by the model, the chat (the kernel returns the answer's usage,
+  suggestions, the chat (the kernel returns the answer's usage,
   `AIResponse.llmUsage`), `executeAiGateway`, the WhatsApp monthly report job and the voice call (the live session
   at its end, priced per audio and text modality; `think`, a price lookup and the post-call summary on their own
   rows) all write through it.
 - **The plan budget.** `trackTokens` in `api/ai-router.ts` still adds the tokens to `users.ai_tokens_used` and
-  records an `ai_<channel>` event, which the monthly budget reads.
+  records an `ai_<channel>` event, which the monthly budget reads; bank messages do the same through `trackAiTokens`
+  in `api/lib/ai-usage-policy.ts`, and receipts and goals through copies in their routers.
 - `recordAICostMetric` separately writes an `ai_cost_*` event into `user_analytics` with tokens, latency, route and
   fallback flags; `loadAICostOverview` aggregates it for `admin.getAICostOverview`.
 
 ## Where to change what
 | To change | Edit | Check with |
 | --- | --- | --- |
-| Which provider serves a purpose and plan | the admin console: providers, models and their purposes ([admin](admin.md)) | `api/lib/admin-model-switch.test.ts` |
+| Which provider serves a purpose and plan, and in what order | the console's «الموصلات» and «إعداد الذكاء» ([admin](admin.md)) | `api/lib/admin-model-switch.test.ts`, `api/lib/ai-route-order.test.ts` |
+| How Claude is asked | `api/lib/anthropic-client.ts` | `api/lib/anthropic-client.test.ts` |
 | The order and contents of the fallback chain | `api/lib/llm-provider-chain.ts` | `api/lib/provider-route-acceptance.test.ts` |
 | Retries, the breaker, timeouts, failure classes | `api/lib/llm-router.ts` | `api/lib/llm-router.test.ts` |
 | A model name, shorthand or per-plan default | `api/lib/model-mapper.ts` | `api/lib/model-mapper.test.ts` |
@@ -150,7 +180,8 @@ refused key, and the next answers. The chat also takes its model from the admin'
 2. Before paying for a model call, check the budget with `assertAiBudget`; record the tokens afterwards
    (`api/AGENTS.md`, rule 5).
 3. Adding a provider should stay a row plus a key: keep new provider behaviour behind `baseUrl` and the
-   OpenAI-compatible shape instead of a new client file.
+   OpenAI-compatible shape instead of a new client file. Gemini and Claude are the two exceptions, each through its
+   vendor's SDK; never send Claude through an OpenAI-compatible shim.
 4. The breaker is per process (`api/AGENTS.md`, rule 6): never assume one replica's view of a provider's health is
    another's. The route and price caches are per process too, but reload on the shared generation; a write to
    `ai_providers` or `ai_models` calls `invalidateAiConfig`.
@@ -158,7 +189,8 @@ refused key, and the next answers. The chat also takes its model from the admin'
    key, and never change the stored shape without a way for the previous version to read it.
 
 ## Tests
-`api/lib/llm-router.test.ts`, `api/lib/provider-route-acceptance.test.ts`, `api/lib/admin-model-switch.test.ts`,
+`api/lib/llm-router.test.ts`, `api/lib/anthropic-client.test.ts`, `api/lib/ai-route-order.test.ts`,
+`api/lib/provider-route-acceptance.test.ts`, `api/lib/admin-model-switch.test.ts`,
 `api/lib/model-mapper.test.ts`, `api/services/ai-cost-policy.test.ts` and
 `api/services/ai-cost-analytics.test.ts`; the provider keys in `api/lib/provider-key-crypto.test.ts` and
 `api/lib/provider-key-reseal.test.ts`.
@@ -166,7 +198,7 @@ refused key, and the next answers. The chat also takes its model from the admin'
 ## Known issues
 Checked against the code; each one names where it lives.
 1. **Debt.** `executeAiGateway` — the execution half of the "universal gateway", with its own price-based cost
-   calculation and ledger write — has one caller, the rebuilt voice call's `think` tool. Elsewhere only its route
+   calculation and ledger write — has one caller, the voice call's `think` tool. Elsewhere only its route
    resolution is used, by `api/lib/smart-pipeline.ts`.
 2. **Gap.** Two accountings remain: the `ai_cost_*` events of `recordAICostMetric` estimate tokens on their own and
    the screen that would show them is not mounted ([admin](admin.md)); the ledger is the priced one.
@@ -179,9 +211,14 @@ Checked against the code; each one names where it lives.
 5. **Debt.** The breaker is per process, so during an outage each replica learns on its own that a provider is down.
 6. **Debt.** The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and
    `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat,
-   report, SMS and voice paths do not.
-7. **Gap.** `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` — the dot on each provider's card —
-   is only ever written by the breaker during real traffic ([admin](admin.md)).
+   report and voice paths do not. The running token count and its event are written by four copies of the same
+   code (`trackTokens` in `api/ai-router.ts`, `trackAiTokens` in `api/lib/ai-usage-policy.ts`, and one each in
+   `api/image-router.ts` and `api/goals-router.ts`).
+7. **Limit.** A model has one place in one order and serves the cross product of its purposes and plans: a model
+   ranked above another is above it in every list both are in, and a model cannot serve one purpose for Free and
+   another for Pro only. The same model id under two connectors is two rows.
+8. **Gap.** Nobody has called Claude with a real key from this code yet: the adapter is tested against recorded
+   response shapes, and a call with an invented key reached Anthropic and came back as `auth`.
 
 ## Related systems
 - [Recording spending](expense-capture.md): the classification pipeline, the biggest caller of the chain.
@@ -194,3 +231,5 @@ Checked against the code; each one names where it lives.
 
 ### Cost log privacy
 `recordAICostMetric` logs through `createLogger`, with an explicit list of account identifiers, channel and numeric usage counters. Arbitrary routing or trace metadata is never forwarded to server logs, because it can contain raw expense clauses nested beyond redaction depth. The analytics row stores only scoped counters and whitelisted routing codes, never arbitrary nested traces or clauses; `api/services/ai-cost-policy.logging.test.ts` verifies that nested private text does not enter the log.
+
+The understanding reader budgets the system prompt, context, reply schema and output separately from the user sentence limit. Its short structured Gemini 3.1 Flash-Lite calls request minimal thinking. Recorded completion usage includes reported thinking tokens.

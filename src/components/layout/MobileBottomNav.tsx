@@ -109,7 +109,7 @@ const VISIBLE_ROUTES = [
   "/settings",
   "/support",
   "/pro",
-  "/bank-sync",
+  "/wallets",
   "/plan",
   "/more",
 ];
@@ -119,7 +119,7 @@ const MORE_TAB_ROUTES = [
   "/settings",
   "/support",
   "/pro",
-  "/bank-sync",
+  "/wallets",
   "/plan",
 ];
 

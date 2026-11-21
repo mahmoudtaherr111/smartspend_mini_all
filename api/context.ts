@@ -29,6 +29,11 @@ export type Context = {
   /** Client IP (from proxy headers when present) — used for public endpoint rate limits */
   ip: string;
   resHeaders?: Headers;
+  /**
+   * Set on a staff mutation (api/middleware.ts): `logAdminAction` marks it written, and the middleware records the
+   * mutation itself only when nothing richer was.
+   */
+  audit?: { written: boolean };
 };
 
 // Parse cookies from request header manually (works with both HonoRequest and raw Request)

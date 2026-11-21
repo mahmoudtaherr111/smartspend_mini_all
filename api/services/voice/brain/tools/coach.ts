@@ -33,7 +33,7 @@ export const COACH_FIELDS_SCHEMA = {
     budget_id: { type: "integer" }, limit: { type: "number" }, paused: { type: "boolean" },
     cashflow_id: { type: "integer" }, due_day: { type: "string" }, expense_id: { type: "integer" },
     contact_id: { type: "integer" }, contact_name: { type: "string", description: "User's exact person name" },
-    step_id: { type: "integer" }, bank_id: { type: "integer" },
+    step_id: { type: "integer" },
     at: { type: "string", description: "YYYY-MM-DDTHH:mm Cairo" }, review_day: { type: "string" },
     evidence_refs: { type: "array", items: { type: "string" } },
     steps: { type: "array", items: { type: "object", properties: {
@@ -125,8 +125,7 @@ export async function planAnswer(ctx: ToolContext, answer: Answer): Promise<Tool
 // ─── Drafts ─────────────────────────────────────────────────────────
 
 export const COACH_ACTIONS = [
-  "plan_save", "step_done", "reminder_set", "reminder_cancel", "commitment_add", "commitment_paid", "bank_confirm", "bank_dismiss",
-  "budget_update",
+  "plan_save", "step_done", "reminder_set", "reminder_cancel", "commitment_add", "commitment_paid", "budget_update",
 ] as const;
 export type CoachAction = (typeof COACH_ACTIONS)[number];
 
@@ -137,7 +136,6 @@ export type CoachDraftPayload =
   | { op: "reminder_cancel"; stepId: number }
   | { op: "commitment_add"; cashflow: Parameters<typeof createCashflow>[1] }
   | { op: "commitment_paid"; cashflowId: number; dueDay: string; expenseId: number | null; amount: number | null }
-  | { op: "bank_confirm" | "bank_dismiss"; suggestionId: number }
   | { op: "budget_update"; budgetId: number; monthlyLimit?: number; status?: "active" | "paused" };
 
 const record = (value: unknown): Record<string, unknown> =>
@@ -253,17 +251,6 @@ export async function coachDraft(action: string, fields: Record<string, unknown>
       if (Number.isNaN(instant.getTime()) || instant.getTime() <= ctx.now().getTime()) return { refuse: "ميعاد التذكير لازم يكون بعد دلوقتي." };
       return { payload: { op: "reminder_set", stepId, at: instant.toISOString() }, title: "تذكير جوه التطبيق", lines: [{ label: str(fields.title, 200) ?? "الخطوة", detail: at.replace("T", " الساعة ") }] };
     }
-    case "bank_confirm":
-    case "bank_dismiss": {
-      const suggestionId = num(fields.bank_id);
-      if (!suggestionId) return { refuse: "أنهي رسالة بنك؟ هاتها من money_query pending (bank_id)." };
-      const amount = knownAmount(ctx, fields.amount);
-      return {
-        payload: { op: action, suggestionId },
-        title: action === "bank_confirm" ? "تسجيل رسالة البنك" : "تجاهل رسالة البنك",
-        lines: [{ label: str(fields.title, 120) ?? "رسالة البنك", ...(typeof amount === "number" ? { amount } : {}) }],
-      };
-    }
     case "budget_update": {
       const budgetId = num(fields.budget_id);
       if (!budgetId) return { refuse: "أنهي ميزانية؟ هاتها من money_query budgets (budget_id)." };
@@ -316,14 +303,6 @@ export async function executeCoachDraft(draft: Draft, ctx: ToolContext): Promise
     case "commitment_add":
       await createCashflow(user, payload.cashflow);
       return `اتسجل ${payload.cashflow.direction === "in" ? "الدخل الجاي" : "الالتزام"}: ${payload.cashflow.title}`;
-    case "bank_confirm":
-      return (await ctx.app.confirmBankSuggestion(ctx.identity, payload.suggestionId))
-        ? "اتسجلت رسالة البنك"
-        : "الرسالة دي اتسجلت أو اتشالت قبل كده";
-    case "bank_dismiss":
-      return (await ctx.app.dismissBankSuggestion(ctx.identity, payload.suggestionId))
-        ? "اتشالت رسالة البنك من غير تسجيل"
-        : "الرسالة دي اتسجلت أو اتشالت قبل كده";
     case "budget_update": {
       await ctx.app.updateBudget(ctx.identity, payload.budgetId, {
         ...(payload.monthlyLimit !== undefined ? { monthlyLimit: payload.monthlyLimit } : {}),

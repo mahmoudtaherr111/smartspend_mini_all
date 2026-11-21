@@ -7,6 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { AtlasGraph } from "../atlas/graph";
+import { resolveSpecifier } from "../atlas/lib/project";
 import { REPO_ROOT } from "../atlas/lib/util";
 import { guardedAccessWrites } from "./access-writes";
 import { unparenthesizedOrFragments } from "./sql-fragments";
@@ -16,9 +17,7 @@ const PLAN_NAMES = ["free", "pro", "ultra"];
 const PURGE_SERVICE = "api/services/user-purge-service.ts";
 
 /** `*-router.ts` files that are not tRPC routers, so api/router.ts does not mount them. */
-const NOT_TRPC_ROUTERS: Record<string, string> = {
-  "api/sms-router.ts": "Hono sub-app mounted at /api/sms by api/boot.ts",
-};
+const NOT_TRPC_ROUTERS: Record<string, string> = {};
 
 /**
  * Variables read straight from process.env instead of through api/lib/env.ts. Move them into env.ts and
@@ -198,6 +197,27 @@ const RULES: RuleDefinition[] = [
         ]),
   },
   {
+    id: "console-and-server-without-website",
+    title: "decision 0050: the admin console and the server import nothing from the website (src/)",
+    fix: "Build what the console needs under admin/src, or move code both sides need into contracts/.",
+    check: (graph, root) => [
+      ...graph.modules
+        .filter((module) => module.file.startsWith("api/"))
+        .flatMap((module) =>
+          [...module.imports, ...module.typeImports]
+            .filter((target) => target.startsWith("src/"))
+            .map((target) => `${module.file} -> ${target}`),
+        ),
+      // The atlas does not read the console, so its files are read here.
+      ...consoleFiles(root).flatMap((file) =>
+        [...fs.readFileSync(path.join(root, file), "utf8").matchAll(/(?:from\s+|import\s*\(\s*)["']([^"']+)["']/g)]
+          .map((match) => resolveSpecifier(file, match[1]))
+          .filter((target): target is string => !!target && target.startsWith("src/"))
+          .map((target) => `${file} -> ${target}`),
+      ),
+    ],
+  },
+  {
     id: "contracts-standalone",
     title: "contracts import nothing from the application, schema types excepted",
     fix: "Move what the contract needs into contracts/, or import it as a type from db/schema.ts.",
@@ -263,6 +283,20 @@ const RULES: RuleDefinition[] = [
 ];
 
 /** Rule metadata without the checks, so tests can name one test per rule before the graph is built. */
+/** The admin console's source files, repository-relative. */
+function consoleFiles(root: string): string[] {
+  const out: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
+      const rel = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) walk(rel);
+      else if (/\.(ts|tsx)$/.test(entry.name)) out.push(rel);
+    }
+  };
+  if (fs.existsSync(path.join(root, "admin/src"))) walk("admin/src");
+  return out;
+}
+
 export const ARCHITECTURE_RULES = RULES.map(({ id, title, fix }) => ({ id, title, fix }));
 
 export function checkArchitecture(graph: AtlasGraph, root = REPO_ROOT): RuleResult[] {

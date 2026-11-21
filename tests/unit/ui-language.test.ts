@@ -72,6 +72,8 @@ describe("UI Language Core Infrastructure", () => {
       expect(formatCurrency(1250, "en")).toBe("1,250 EGP");
       expect(formatCurrency(50000, "en")).toBe("50,000 EGP");
       expect(formatCurrency(undefined, "en")).toBe("0 EGP");
+      expect(formatCurrency(85.75, "en")).toBe("85.75 EGP");
+      expect(formatCurrency(0.01, "ar")).toBe("0.01 ج.م");
     });
   });
 

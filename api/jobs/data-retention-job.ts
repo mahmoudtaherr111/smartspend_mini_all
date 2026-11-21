@@ -7,6 +7,8 @@ export interface RetentionPolicy {
   retainDays: number;
   dateColumn: string;
   whereClause?: string;
+  /** Expand/contract deployment: skip newly introduced optional tables until their migration is installed. */
+  optionalTable?: boolean;
   rollupBefore?: () => Promise<void>;
   customCleanup?: (dryRun: boolean) => Promise<number>;
   description: string;
@@ -147,6 +149,66 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
     },
   },
   {
+    tableName: "capture_signals",
+    class: "E",
+    retainDays: 30,
+    dateColumn: "created_at",
+    description:
+      "Bank and wallet notifications read as transactions (redacted text and the reader's fields). A recorded one lives on in the ledger; one never answered is forgotten (decision 0028).",
+  },
+  { tableName: "capture_questions", class: "E", retainDays: 30, dateColumn: "created_at", optionalTable: true, description: "Optional post-save purpose questions, never a condition for saving money" },
+  { tableName: "scheduled_job_runs", class: "E", retainDays: 14, dateColumn: "started_at", optionalTable: true, description: "When each background job ran, how long it took and whether it failed" },
+  { tableName: "capture_ai_days", class: "D", retainDays: 60, dateColumn: "created_at", optionalTable: true, description: "Capture-only resource reservations and aggregate budgets" },
+  { tableName: "capture_ai_accounts", class: "D", retainDays: 60, dateColumn: "created_at", optionalTable: true, description: "Capture-only resource reservations and aggregate budgets" },
+  { tableName: "capture_ai_reservations", class: "D", retainDays: 60, dateColumn: "created_at", optionalTable: true, description: "Capture-only resource reservations and aggregate budgets" },
+  {
+    tableName: "capture_ai_jobs",
+    class: "D",
+    retainDays: 7,
+    whereClause: "status = 'done' AND (outcome IS NULL OR outcome NOT LIKE 'waiting_%')",
+    dateColumn: "created_at",
+    description: "Captured messages the model read (or could not) and the notice it left for the phone (decision 0031).",
+  },
+  {
+    tableName: "capture_samples",
+    class: "E",
+    retainDays: 365,
+    dateColumn: "created_at",
+    optionalTable: true,
+    description: "Redacted bank messages kept with the message_samples consent to build a reader without a model (plan v7 §8). The period awaits the lawyer.",
+  },
+  {
+    tableName: "capture_ai_jobs",
+    class: "D",
+    retainDays: 30,
+    whereClause: "status = 'done' AND outcome LIKE 'waiting_%'",
+    dateColumn: "created_at",
+    description: "A read still waiting for its missing evidence (the pound value, the fee relation): kept as long as its signal, 30 days.",
+  },
+  {
+    tableName: "capture_events",
+    class: "E",
+    retainDays: 30,
+    dateColumn: "created_at",
+      whereClause: "status IN ('review', 'waiting')",
+    description: "A captured payment nobody answered in 30 days: its signals are gone, so it is forgotten too (decision 0029).",
+  },
+  {
+    tableName: "capture_events",
+    class: "E",
+    retainDays: 60,
+    dateColumn: "created_at",
+    whereClause: "status = 'held'",
+    description: "A payment held over the free monthly limit and not released by an upgrade within two months (decision 0028).",
+  },
+  {
+    tableName: "capture_events",
+    class: "E",
+    retainDays: 400,
+    dateColumn: "created_at",
+    description: "Answered captured payments: the keys refunds and late signals are matched on, no message text (decision 0029).",
+  },
+  {
     tableName: "user_analytics",
     class: "E",
     retainDays: 30,
@@ -161,6 +223,23 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
     dateColumn: "created_at",
     whereClause: "event LIKE 'ai_cost_%'",
     description: "AI cost events (recordAICostMetric), kept as long as the token ledger they sit beside.",
+  },
+  {
+    tableName: "whatsapp_messages",
+    class: "E",
+    retainDays: 90,
+    dateColumn: "created_at",
+    description: "WhatsApp messages we sent and what happened to them (decision 0038); the recipient's number is cleared after 30 days.",
+    customCleanup: async (dryRun: boolean) => {
+      if (dryRun) return 0;
+      const cutoff30 = new Date(Date.now() - 30 * 24 * 3600 * 1000);
+      await db.execute(sql`
+        UPDATE whatsapp_messages SET recipient = NULL
+        WHERE created_at < ${cutoff30} AND recipient IS NOT NULL
+        LIMIT 5000
+      `);
+      return 0;
+    },
   },
   {
     tableName: "notification_logs",
@@ -198,14 +277,6 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
     dateColumn: "created_at",
     whereClause: "resolved = 0",
     description: "Unresolved API key errors.",
-  },
-  {
-    tableName: "raw_sms_events",
-    class: "E",
-    retainDays: 90,
-    dateColumn: "created_at",
-    description:
-      "Raw bank and wallet messages, with account digits and balances. What they recorded lives on in expenses; a suggestion left unanswered for 90 days goes with them.",
   },
   {
     tableName: "profile_learning_events",
@@ -336,6 +407,13 @@ export async function runDataRetentionJob(options: {
     let rolledUp = false;
 
     try {
+      if (policy.optionalTable) {
+        const [tables] = await db.execute(sql`SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ${policy.tableName}`);
+        if (!Array.isArray(tables) || tables.length === 0) {
+          results.push({ table: policy.tableName, class: policy.class, prunedCount: 0, durationMs: 0, dryRun });
+          continue;
+        }
+      }
       const cutoffDate = new Date(Date.now() - policy.retainDays * 24 * 3600 * 1000);
       const cutoffStr = cutoffDate.toISOString().slice(0, 19).replace("T", " ");
 

@@ -11,7 +11,6 @@ import { db } from "./queries/connection";
 import {
   localUsers,
   expenses,
-  sessions,
   userAnalytics,
   supportTickets,
   userWallets,
@@ -24,8 +23,6 @@ import {
   userDictionaries,
   classificationLogs,
   voiceUsage,
-  webhookTokens,
-  rawSmsEvents,
   expenseCategories,
   financialGoals,
   userBudgets,
@@ -43,17 +40,21 @@ import {
   generateReferralCode,
   cleanPhoneNumber,
   getSessionMetadata,
+  sessionCookie,
   invalidateSession,
 } from "./local-auth-utils";
 import { getIncomingHeader } from "./lib/get-client-ip";
-import { whatsappService } from "./services/whatsapp-service";
 import {
   PHONE_CHALLENGE_TTL_MS,
+  confirmPhoneChallenge,
   consumePhoneChallenge,
   readPhoneChallenge,
   startPhoneChallenge,
   type PhoneChallenge,
 } from "./services/phone-challenge";
+import { WhatsAppApiError, whatsAppConfig } from "./lib/whatsapp/client";
+import { sendMessageNow } from "./lib/whatsapp/outbox";
+import { verificationMessage } from "./lib/whatsapp/templates";
 import { guardOtpGeneration } from "./services/turnstile-service";
 import { createRateLimiter } from "./lib/rate-limit";
 
@@ -67,7 +68,7 @@ import {
   releaseLoginAttempt,
   setLoginRateLimitHeaders,
 } from "./lib/login-protection";
-import { invalidatePrincipal, setRole } from "./lib/access-control";
+import { invalidatePrincipal, setRole, revokeAllSessions } from "./lib/access-control";
 
 // A fixed cost-12 hash keeps nonexistent-account failures on the same bcrypt
 // path as incorrect passwords without deriving a hash during each request.
@@ -81,12 +82,18 @@ const NOT_VERIFIED_MESSAGE = "برجاء توثيق رقم التليفون عب
 const codeRequestsPerIp = createRateLimiter(5, 10 * 60 * 1000);
 const codeRequestsPerPhone = createRateLimiter(1, 60 * 1000);
 
-/** The challenge a ticket names, when it is open and the bot has seen the number send its code. */
+/** The challenge a ticket names, when it is open and the right code was typed for it. */
 async function verifiedChallenge(ticket: string | undefined): Promise<PhoneChallenge | null> {
   if (!ticket) return null;
-  const challenge = await readPhoneChallenge(ticket, "ticket");
+  const challenge = await readPhoneChallenge(ticket);
   return challenge?.verified ? challenge : null;
 }
+
+/** Seconds a screen waits before it may ask for another code for the same number. */
+const RESEND_AFTER_SECONDS = 60;
+
+/** Meta's code for a number that has no WhatsApp account. */
+const NOT_ON_WHATSAPP = 131026;
 
 function loginRequestId(req: Parameters<typeof getIncomingHeader>[0]): string {
   const incoming = getIncomingHeader(req, "x-request-id")?.trim();
@@ -103,8 +110,7 @@ export const localAuthRouter = router({
         phone: z.string().min(11, "رقم التليفون لازم يكون 11 رقم").max(11),
         email: z.string().email("الإيميل مش صحيح").optional().or(z.literal("")),
         password: z.string().min(6, "الباسورد لازم يكون 6 أحرف على الأقل"),
-        referralCode: z.string().optional(),
-        /** From `generateVerificationCode`, once the bot has seen the number send its code. */
+        /** From `generateVerificationCode`, once `confirmVerificationCode` accepted the code sent on WhatsApp. */
         verificationTicket: z.string().max(200).optional(),
       }),
     )
@@ -134,8 +140,8 @@ export const localAuthRouter = router({
       const settings = await getSystemSettings();
       const otpEnabled = settings["whatsapp_otp_enabled"];
 
-      // With verification on, the account is created only for the browser holding the ticket of a challenge the
-      // bot verified for this very number, not for any request that names a number someone else verified.
+      // With verification on, the account is created only for the screen holding the ticket of a challenge verified
+      // for this very number, not for any request that names a number someone else verified.
       let proof: PhoneChallenge | null = null;
       if (otpEnabled === "true") {
         proof = await verifiedChallenge(input.verificationTicket);
@@ -146,14 +152,6 @@ export const localAuthRouter = router({
 
       const hashedPassword = await hashPassword(input.password);
       const referral = generateReferralCode();
-
-      let referredBy: number | null = null;
-      if (input.referralCode) {
-        const referrer = await db.query.localUsers.findFirst({
-          where: eq(localUsers.referralCode, input.referralCode),
-        });
-        if (referrer) referredBy = referrer.id;
-      }
 
       // The proof is spent in the transaction that creates the account: two tabs with one ticket get one account,
       // and an insert that fails gives the proof back.
@@ -169,9 +167,8 @@ export const localAuthRouter = router({
             email: input.email || null,
             password: hashedPassword,
 
+            // Each account keeps a code of its own for when the stores allow referral offers (decision 0042).
             referralCode: referral,
-            referredBy: referredBy,
-            referredByType: referredBy ? "local" : null,
           })
           .$returningId();
         return created;
@@ -185,14 +182,7 @@ export const localAuthRouter = router({
         getSessionMetadata(ctx.req, ctx.ip),
       );
 
-      if (ctx.resHeaders) {
-        const isProd = process.env.NODE_ENV === "production";
-        const secureFlag = isProd ? "; Secure" : "";
-        ctx.resHeaders.append(
-          "Set-Cookie",
-          `smartspend_token=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800${secureFlag}`,
-        );
-      }
+      if (ctx.resHeaders) ctx.resHeaders.append("Set-Cookie", sessionCookie(token, ctx.req));
 
       return {
         success: true,
@@ -236,29 +226,74 @@ export const localAuthRouter = router({
 
       const cleanPhone = cleanPhoneNumber(input.phone);
 
+      // Fail closed: with verification on and WhatsApp not set up, no code can reach anyone.
+      const whatsapp = whatsAppConfig();
+      if (!whatsapp) {
+        throw new TRPCError({
+          code: "SERVICE_UNAVAILABLE",
+          message: "مش قادرين نبعت كود على واتساب دلوقتي. جرّب تاني بعد شوية.",
+        });
+      }
+
       await codeRequestsPerIp.hit(`otp-code-ip:${clientIp}`, "طلبت أكواد كتير من الجهاز ده. جرّب تاني بعد شوية.");
       await codeRequestsPerPhone.hit(`otp-code-phone:${cleanPhone}`, "استنى دقيقة قبل ما تطلب كود جديد لنفس الرقم.");
 
-      // The code is shown on the page for the user to send from their WhatsApp; the ticket stays in this tab and
-      // is what turns the verified challenge into an account; the watch token only follows it.
+      // The code goes to the number's WhatsApp and nowhere else; the ticket stays with this screen and is what turns
+      // the verified challenge into an account or a session.
       const challenge = await startPhoneChallenge(cleanPhone);
+      try {
+        await sendMessageNow(
+          { to: cleanPhone, purpose: "verification", message: verificationMessage(challenge.code) },
+          whatsapp,
+        );
+      } catch (error) {
+        if (error instanceof WhatsAppApiError && error.code === NOT_ON_WHATSAPP) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "الرقم ده مش عليه واتساب. اتأكد من الرقم وجرّب تاني." });
+        }
+        throw new TRPCError({
+          code: "SERVICE_UNAVAILABLE",
+          message: "مش قادرين نبعت كود على واتساب دلوقتي. جرّب تاني بعد شوية.",
+        });
+      }
       return {
         success: true,
-        code: challenge.code,
         ticket: challenge.ticket,
-        watch: challenge.watch,
         expiresInSeconds: Math.round(PHONE_CHALLENGE_TTL_MS / 1000),
+        resendInSeconds: RESEND_AFTER_SECONDS,
       };
+    }),
+
+  /** The code the person received on WhatsApp, typed back with the ticket of the same screen. */
+  confirmVerificationCode: strictPublicProcedure
+    .input(
+      z.object({
+        verificationTicket: z.string().min(1).max(200),
+        code: z.string().trim().regex(/^[0-9٠-٩]{6}$/, "الكود 6 أرقام"),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      // Arabic-Indic digits are read as the same code.
+      const code = input.code.replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660));
+      const { outcome, attemptsLeft } = await confirmPhoneChallenge(input.verificationTicket, code);
+      if (outcome === "verified") return { verified: true };
+      if (outcome === "wrong") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: attemptsLeft === 1 ? "الكود غلط. فاضل محاولة واحدة." : `الكود غلط. فاضل ${attemptsLeft} محاولات.`,
+        });
+      }
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          outcome === "closed"
+            ? "جربت كتير بكود غلط. اطلب كود جديد."
+            : "الكود انتهى. اطلب كود جديد.",
+      });
     }),
 
   getVerificationSettings: publicProcedure.query(async () => {
     const settings = await getSystemSettings();
     return { enabled: settings["whatsapp_otp_enabled"] === "true" };
-  }),
-
-  getBotPhoneNumber: publicProcedure.query(() => {
-    const status = whatsappService.getStatus();
-    return status.phoneNumber || "201000000000"; // Fallback if not connected yet
   }),
 
   login: publicProcedure
@@ -326,14 +361,7 @@ export const localAuthRouter = router({
           getSessionMetadata(ctx.req, ctx.ip),
         );
 
-        if (ctx.resHeaders) {
-          const isProd = process.env.NODE_ENV === "production";
-          const secureFlag = isProd ? "; Secure" : "";
-          ctx.resHeaders.append(
-            "Set-Cookie",
-            `smartspend_token=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800${secureFlag}`,
-          );
-        }
+        if (ctx.resHeaders) ctx.resHeaders.append("Set-Cookie", sessionCookie(token, ctx.req));
 
         return {
           success: true,
@@ -353,9 +381,8 @@ export const localAuthRouter = router({
     }),
 
   /**
-   * Sign-in by WhatsApp: a session for the number the bot saw send the code, given to the browser that holds the
-   * challenge's ticket, once. It used to take a phone and a code from anyone and never asked whether the message
-   * had arrived.
+   * Sign-in by WhatsApp: a session for the number whose code was typed back, given to the screen that holds the
+   * challenge's ticket, once.
    */
   verifyOtp: strictPublicProcedure
     .input(z.object({ verificationTicket: z.string().min(1).max(200) }))
@@ -388,14 +415,74 @@ export const localAuthRouter = router({
         getSessionMetadata(ctx.req, ctx.ip),
       );
 
-      if (ctx.resHeaders) {
-        const isProd = process.env.NODE_ENV === "production";
-        const secureFlag = isProd ? "; Secure" : "";
-        ctx.resHeaders.append(
-          "Set-Cookie",
-          `smartspend_token=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800${secureFlag}`,
-        );
+      if (ctx.resHeaders) ctx.resHeaders.append("Set-Cookie", sessionCookie(token, ctx.req));
+
+      return {
+        success: true,
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          phone: user.phone,
+          role: user.role,
+          plan: user.plan,
+        },
+      };
+    }),
+
+  /**
+   * Reset forgotten password with a verified phone challenge ticket (AUTH-04, GAP-22, GAP-23, GAP-27, GAP-29).
+   */
+  resetPassword: strictPublicProcedure
+    .input(
+      z.object({
+        verificationTicket: z.string().min(1).max(200),
+        newPassword: z.string().min(6, "الباسورد لازم يكون 6 أحرف على الأقل").max(1_024),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const challenge = await verifiedChallenge(input.verificationTicket);
+      if (!challenge) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "الرقم لسه ماتوثقش، أو التوثيق انتهى" });
       }
+
+      const user = await db.query.localUsers.findFirst({
+        where: eq(localUsers.phone, challenge.phone),
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "الحساب غير موجود",
+        });
+      }
+
+      const hashedPassword = await hashPassword(input.newPassword);
+
+      await db.transaction(async (tx) => {
+        if (!(await consumePhoneChallenge(challenge, { tx }))) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "التوثيق ده اتستخدم قبل كده" });
+        }
+
+        await tx
+          .update(localUsers)
+          .set({ password: hashedPassword })
+          .where(eq(localUsers.id, user.id));
+      });
+
+      // Revoke all existing sessions for this user on password reset (GAP-27)
+      await revokeAllSessions("local", user.id);
+
+      // Issue a fresh new session for this login (GAP-28, GAP-29)
+      const token = await generateToken(user.id, "local");
+      await createSession(
+        user.id,
+        "local",
+        token,
+        getSessionMetadata(ctx.req, ctx.ip),
+      );
+
+      if (ctx.resHeaders) ctx.resHeaders.append("Set-Cookie", sessionCookie(token, ctx.req));
 
       return {
         success: true,

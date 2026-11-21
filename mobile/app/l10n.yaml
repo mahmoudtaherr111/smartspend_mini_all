@@ -1,0 +1,8 @@
+# Arabic is the source language (docs/decisions/0020-optional-english-interface.md): every key starts in
+# app_ar.arb. `flutter pub get` and every build regenerate lib/src/l10n/app_localizations*.dart.
+arb-dir: lib/src/l10n
+template-arb-file: app_ar.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false
+format: true

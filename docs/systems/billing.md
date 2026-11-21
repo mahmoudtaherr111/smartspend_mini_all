@@ -1,7 +1,8 @@
 # Plans and payments
 
-The Free, Pro and Ultra plans, buying Pro through Paymob's hosted checkout, the webhook that grants a plan, the daily
-job that ends subscriptions, referral codes, and the Ultra members page.
+The Free, Pro and Ultra plans, buying Pro through Paymob's hosted checkout or inside the phone stores, the webhooks that
+grant a plan, the daily job that ends subscriptions, and the Ultra members page. There are no discount or referral
+codes ([decision 0042](../decisions/0042-no-codes-until-store-offers.md)).
 
 - Facts generated from the code, with diagrams: [docs/atlas/systems/billing.md](../atlas/systems/billing.md)
 - The same story for readers who do not read code: [docs/ar/systems/billing.md](../ar/systems/billing.md)
@@ -16,7 +17,10 @@ job that ends subscriptions, referral codes, and the Ultra members page.
   plan (`feature_<feature>_<plan>`), and the numbers that had no setting — active goals, the per-minute AI burst
   guard, chat, receipt and goal token caps, the offline queue — are `<name>_<plan>` settings. Both are declared once,
   with their defaults, in `contracts/plan-features.ts`; the defaults are the values that used to be hard-coded
-  (these features for Pro and Ultra, the WhatsApp report for Pro, three active goals on Free).
+  (these features for Pro and Ultra, the WhatsApp report for Pro, three active goals on Free). The monthly number of
+  payments recorded from bank messages (`capture_monthly_limit_<plan>`, 50 on Free, none on Pro and Ultra) is one of
+  them; while bank-message capture is open the plans screen lists it, and for no limit says that what was missed in
+  the last two months is recorded on subscribing ([bank and wallet messages](bank-messages.md)).
 - The server gates those features with one builder per feature from `api/middleware.ts` (`businessProcedure`,
   `businessAiProcedure`, `receiptsProcedure`, `proReportProcedure`, `goalAnalysisProcedure`), which read the switch
   for the caller's plan; an admin always passes. `proProcedure` and `ultraProcedure` remain for plan checks without a
@@ -30,14 +34,13 @@ job that ends subscriptions, referral codes, and the Ultra members page.
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Plans screen | `src/pages/Pro.tsx#Pro`, `src/hooks/usePro.ts` | The current plan and its end date, the plan cards, checkout, cancelling, the referral code |
+| Plans screen | `src/pages/Pro.tsx#Pro`, `src/hooks/usePro.ts` | The current plan and its end date, the plan cards, checkout, cancelling |
 | Ultra page | `src/pages/UltraLounge.tsx` | A placeholder for Ultra members |
 | Plan API | `api/pro-router.ts` | `pro.myPlan`, `pro.createCheckoutSession`, `pro.upgrade`, `pro.cancel`, `pro.listSubscriptions` |
 | Paymob checkout | `api/lib/paymob.ts#createPaymobHostedCheckoutUrl` | The order, the payment key and the hosted checkout address |
 | Webhook | the `/api/webhooks/paymob` route in `api/boot.ts` | Verifies Paymob's callback and grants the plan |
 | Grant | `api/lib/subscription-service.ts#grantProSubscription` | One transaction: the subscription row, the user's plan, the session refresh |
 | Expiry | `api/jobs/subscription-expiry-job.ts#runSubscriptionExpiryJob` | Ends subscriptions whose period is over |
-| Referrals | `api/referral-router.ts` | The user's code, applying someone's code, the referral lists |
 
 ## Buying Pro, step by step
 1. The Pro card's button calls `pro.createCheckoutSession` for `pro_monthly`.
@@ -50,8 +53,9 @@ job that ends subscriptions, referral codes, and the Ultra members page.
 4. Paymob calls `POST /api/webhooks/paymob`:
    - the log gets the transaction id, its success and pending flags, the amount and whether it was signed — never
      the payload, which carries the payer's card metadata and billing details (golden rule 10);
-   - in production without `PAYMOB_HMAC_SECRET` the callback is refused;
-   - with the secret, the `hmac` query value must equal the HMAC-SHA512 of Paymob's transaction fields, compared in
+   - without `PAYMOB_HMAC_SECRET` every callback is refused with 503, in every environment, so no callback is believed
+     unless its signature can be checked;
+   - the `hmac` query value must equal the HMAC-SHA512 of Paymob's transaction fields, compared in
      constant time;
    - a successful transaction that is not pending must carry a valid user and plan in its extras and exactly the plan's
      amount, or it is refused; other callbacks are acknowledged and ignored.
@@ -63,7 +67,7 @@ job that ends subscriptions, referral codes, and the Ultra members page.
 The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob-upgrade.c4`.
 
 ## Ending and cancelling
-- `pro.cancel` marks the user's active subscriptions `cancelled`; the plan stays until the end date.
+- `pro.cancel` marks the user's active subscriptions `cancelled`; the plan stays until the end date. A store subscription renews at the store whatever this row says, so the mobile app does not call it: its cancel screen opens the person's subscriptions page in Google Play or the App Store.
 - `daily-subscription-expiry` runs at 06:00 on replicas with `ENABLE_CRONS=true`: subscriptions that are active or
   cancelled and past their end date become `expired`, and a user without another running subscription goes back to
   Free, with the auth version bumped. One run handles up to 500 subscriptions. The same run then reminds users whose
@@ -72,12 +76,11 @@ The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob
 - `pro.myPlan` also expires the latest subscription when it finds it past its end date, and returns the plan, the role,
   that subscription and a fixed list of paid features.
 
-## Referral codes
-- `referral.myCode` returns the user's code (created on first use and checked against users of the same kind and the
-  discount codes), how many people used it, and the discount percentage in the `promo_code_discount` setting.
-- `referral.applyCode` records that the caller joined through someone's code: once per user, with a unique index
-  guarding races, and never with one's own code. Phone users can also enter a code when they register.
-- `referral.myReferrals` and the admin `referral.listAll` list referrals.
+## Discount and referral codes
+There are none ([decision 0042](../decisions/0042-no-codes-until-store-offers.md)): no screen asks for or shows a code,
+and no procedure creates or applies one. The `discount_codes` and `referrals` tables and each account's
+`referral_code` (still given at sign-up) are kept for a later offer, and account deletion still clears them. Phone
+sign-up ignores a `referralCode` an older build sends.
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -85,7 +88,7 @@ The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob
 | Prices, durations and what a plan grants | `contracts/plans.ts` | `api/lib/billing-plans.test.ts` |
 | The plans screen | `src/pages/Pro.tsx` | |
 | Checkout | `api/lib/paymob.ts`, `pro.createCheckoutSession` in `api/pro-router.ts` | |
-| Webhook verification | the Paymob route in `api/boot.ts` | |
+| Webhook verification | the Paymob route in `api/boot.ts` | `tests/security/paymob-webhook.test.ts` |
 | What a payment grants | `api/lib/subscription-service.ts` | |
 | When plans end | `api/jobs/subscription-expiry-job.ts` and its schedule in `api/boot.ts` | |
 | Which plan gets a feature, or a plan's limit | the admin console (Settings → plans), no code | `api/lib/plan-features.test.ts` |
@@ -100,29 +103,42 @@ The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob
    plan must commit with something else, as the grant does — so the cached session never keeps a plan the
    row no longer has (`tests/knowledge/architecture.test.ts`).
 
+## Store subscriptions
+Google Play and the App Store sell Pro inside the app. The code lives in `api/lib/store-billing/`, and nothing sells until
+the owner configures a store; `pro.storeBilling` tells the app which ones are on.
+- **Trust.** What a request says is never believed. A Google notification passes only with a Google-signed OIDC token for
+  this endpoint and service account (`verifyGooglePlayWebhookAuth`), and even then the state is read from the Play
+  Developer API (`fetchGoogleSubscription`). An Apple transaction or notification passes only when its signature chains to
+  Apple's root (`decodeAndVerifyJWS`). `BILLING_SIMULATE=true` refuses to start in production.
+- **State.** `store_purchases` holds one row per purchase, unique per store and key, and `store_events` one row per event.
+  `applyStoreEvent` in `api/lib/store-billing/ledger.ts` is the only writer: in one transaction it records the event, locks
+  the purchase, refuses another account, drops an older delivery, and sets the plan from everything the person pays for,
+  the website's subscriptions included. Nothing is kept in process memory, so replicas agree.
+- **Ownership.** `storeAccountToken` is a value derived from the account that the app passes with a purchase; a purchase
+  carrying another account's value is refused.
+- **Acknowledging.** Google refunds a purchase left unacknowledged for three days, so a confirmed purchase is acknowledged
+  (`acknowledgeGooglePurchase`).
+
 ## Tests
-`api/lib/billing-plans.test.ts` covers the plan contract.
+`api/lib/billing-plans.test.ts` covers the plan contract. `tests/security/paymob-webhook.test.ts` posts callbacks to the
+webhook: refused without the secret, unsigned, signed with another secret, changed after signing or with another
+amount; granted only when correctly signed, settled and of the plan's amount (the grant itself is mocked).
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Gap.** Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that `src/App.tsx` guards only with a
-   sign-in, not with `UltraFeatureRoute`; no procedure uses `ultraProcedure`; and the yearly Pro plan has no screen.
-2. **Gap.** Referrals give nothing yet: checkout always charges the plan's full price and nothing rewards the referrer, so
-   `referral.myCode` returns no discount (`REFERRAL_DISCOUNT_APPLIED_AT_CHECKOUT` in `api/referral-router.ts`) and the
-   plans screen promises none; the discount codes admins create in `discount_codes` are never applied.
-3. **Gap.** Nothing renews a subscription, since each Paymob payment is a one-time charge: the user is reminded three days
+1. **Gap.** Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that sends anyone not on Ultra back to
+   the plans; no procedure uses `ultraProcedure`; and the yearly Pro plan has no screen.
+2. **Gap.** Nothing renews a subscription, since each Paymob payment is a one-time charge: the user is reminded three days
    and one day before the end and pays again; in the last week the subscription card on the plans screen
    (`src/pages/Pro.tsx`) offers the same plan in one tap (`pro.createCheckoutSession` with the current plan), and the
    paid period starts where the current one ends. Charging a stored card needs Paymob's recurring flow. `pro.cancel` only changes the status the plans screen shows, and there is no
    refund path.
-4. **Security.** Outside production without `PAYMOB_HMAC_SECRET`, the webhook accepts unsigned callbacks and grants plans
-   from them.
-5. **Debt.** In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
-6. **Debt.** No test covers the webhook's verification, the grant, the expiry job or referrals.
+3. **Debt.** In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
+4. **Debt.** No test covers the grant's transaction (`grantProSubscription` against a database) or the expiry job.
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): the user rows that carry the plan, and the auth version.
-- [Admin console, support and growth tools](admin.md): subscriptions, plans and discount codes in the admin console.
+- [Admin console, support and growth tools](admin.md): subscriptions and plans in the admin console.
 - [AI providers and usage limits](ai-platform.md): the plan-dependent AI limits.
 - [Server platform and data](platform.md): the Hono app that hosts the webhook, and the job scheduler.
 - [Web and mobile app shell](web-app.md): the More page and the route guards.

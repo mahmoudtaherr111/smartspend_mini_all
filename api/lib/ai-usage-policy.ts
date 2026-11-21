@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { db } from "../queries/connection";
 import { businessDayRange } from "./app-time";
+import { assertAiSwitchOn, assertDailyAiCost } from "./feature-switches";
 import {
   classificationLogs,
   localUsers,
@@ -18,7 +19,8 @@ export type AiUsageChannel =
   | "report"
   | "image"
   | "sms"
-  | "goal";
+  | "goal"
+  | "business";
 
 export interface AiUsageUser {
   id: number;
@@ -45,6 +47,7 @@ const HARD_REQUEST_TOKEN_CAP: Record<PlanId, Record<AiUsageChannel, number>> = {
     image: 2_500,
     sms: 800,
     goal: 500,
+    business: 0,
   },
   pro: {
     parse: 6_000,
@@ -53,6 +56,7 @@ const HARD_REQUEST_TOKEN_CAP: Record<PlanId, Record<AiUsageChannel, number>> = {
     image: 2_500,
     sms: 1_500,
     goal: 3_500,
+    business: 3_000,
   },
   ultra: {
     parse: 8_000,
@@ -61,6 +65,7 @@ const HARD_REQUEST_TOKEN_CAP: Record<PlanId, Record<AiUsageChannel, number>> = {
     image: 3_500,
     sms: 2_000,
     goal: 5_000,
+    business: 4_000,
   },
 };
 
@@ -160,6 +165,14 @@ export function resolvePlanMaxPerRequest(
     };
     return parseSafeInt(cfg[`goal_max_tokens_${plan}`], defaults[plan]);
   }
+  if (channel === "business") {
+    const defaults: Record<PlanId, number> = {
+      free: 0,
+      pro: 2_048,
+      ultra: 4_096,
+    };
+    return parseSafeInt(cfg[`business_max_tokens_${plan}`], defaults[plan]);
+  }
   const defaults: Record<PlanId, number> = {
     free: 384,
     pro: 1_024,
@@ -248,12 +261,25 @@ export function clampOutputTokens(
   return Math.max(64, Math.min(perRequestMax, safeRemaining));
 }
 
+/** A request's required tokens, including any system context and output it must pay for. */
+export function assertAiBudgetRemaining(budget: AiBudget, requiredTokens: number): void {
+  if (budget.remaining > 0 && requiredTokens <= budget.remaining) return;
+  const upgradeTo = budget.plan === "free" ? "Pro" : "Ultra";
+  throw new TRPCError({
+    code: "FORBIDDEN",
+    message: `استهلكت حد الذكاء الاصطناعي المتاح (${budget.limit.toLocaleString()} توكن). الترقية إلى ${upgradeTo} تفتح حدًا أعلى.`,
+  });
+}
+
 export async function assertAiBudget(
   user: AiUsageUser,
   channel: AiUsageChannel,
   estimatedInputTokens = 0,
   cfg?: Record<string, string>,
 ): Promise<AiBudget> {
+  // Bank messages have their own switch and cap (api/lib/capture/ai-reader.ts).
+  if (channel !== "sms") await assertAiSwitchOn(channel, cfg);
+  await assertDailyAiCost(cfg);
   await assertAiAbuseGuard(user, channel);
   const budget = await getAiBudget(user, channel, cfg);
 
@@ -272,13 +298,7 @@ export async function assertAiBudget(
     });
   }
 
-  if (budget.remaining <= 0 || estimatedInputTokens > budget.remaining) {
-    const upgradeTo = budget.plan === "free" ? "Pro" : "Ultra";
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: `استهلكت حد الذكاء الاصطناعي المتاح (${budget.limit.toLocaleString()} توكن). الترقية إلى ${upgradeTo} تفتح حدًا أعلى.`,
-    });
-  }
+  assertAiBudgetRemaining(budget, estimatedInputTokens);
   return budget;
 }
 
@@ -314,6 +334,30 @@ export async function countDailyAiRequests(
       ),
     );
   return Number(row?.count || 0);
+}
+
+/**
+ * After a paid call: the tokens go on the user's running count and an `ai_<channel>` event, which the monthly budget
+ * and the burst guard read. What the call cost is the ledger's (`recordAiLedger`). Never fails the caller.
+ */
+export async function trackAiTokens(
+  user: { id: number; type: UserType },
+  tokens: number,
+  channel: AiUsageChannel,
+  model?: string,
+): Promise<void> {
+  if (!tokens || tokens <= 0) return;
+  try {
+    const added = sql`COALESCE(ai_tokens_used, 0) + ${tokens}`;
+    if (user.type === "oauth") {
+      await db.update(users).set({ aiTokensUsed: added }).where(eq(users.id, user.id));
+    } else {
+      await db.update(localUsers).set({ aiTokensUsed: added }).where(eq(localUsers.id, user.id));
+    }
+    await recordAiUsageEvent({ userId: user.id, userType: user.type, channel, model, tokens });
+  } catch {
+    // Accounting must never fail the user's request; the ledger row is written separately.
+  }
 }
 
 export async function recordAiUsageEvent(input: {

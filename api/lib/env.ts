@@ -10,6 +10,10 @@ const envSchema = z.object({
   GOOGLE_REDIRECT_URI: z
     .string()
     .default("http://localhost:3000/api/auth/google/callback"),
+  // The OAuth client ids of the mobile app (decision 0022), comma-separated (the store build and the dev build
+  // have one each). `auth.signInWithGoogle` accepts only ID tokens issued to one of them; unset, it refuses all.
+  GOOGLE_ANDROID_CLIENT_IDS: z.string().optional(),
+  GOOGLE_IOS_CLIENT_IDS: z.string().optional(),
 
   // JWT
   JWT_SECRET: z.string().min(1),
@@ -53,6 +57,15 @@ const envSchema = z.object({
   PAYMOB_HMAC_SECRET: z.string().optional(),
   /** When "true", allows demo transaction ids in `pro.upgrade` (never enable in production). */
   BILLING_SIMULATE: z.enum(["true", "false"]).optional(),
+  // Store Billing
+  /** Service account JSON with access to the Play Developer API. */
+  GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: z.string().optional(),
+  GOOGLE_PLAY_PACKAGE_NAME: z.string().default("com.smartspend.app"),
+  /** The audience and the service account set on the Pub/Sub push subscription. */
+  GOOGLE_PLAY_PUBSUB_AUDIENCE: z.string().optional(),
+  GOOGLE_PLAY_PUBSUB_SERVICE_ACCOUNT: z.string().optional(),
+  APPLE_STORE_BILLING_ENABLED: z.enum(["true", "false"]).optional(),
+  APPLE_BUNDLE_ID: z.string().default("com.smartspend.app"),
   // Bot & Abuse Protection (Cloudflare Turnstile)
   TURNSTILE_SECRET_KEY: z.string().optional(),
   TRUST_PROXY: z.string().optional(),
@@ -72,10 +85,13 @@ const envSchema = z.object({
     .default(10),
   LOGIN_ACCOUNT_MAX_FAILURES: z.coerce.number().int().min(3).max(20).default(5),
   LOGIN_PAIR_MAX_FAILURES: z.coerce.number().int().min(3).max(20).default(5),
+  /**
+   * The website (the PWA in `src/`, built to `dist/public`) is parked (decision 0050): the server serves the phone
+   * apps' API and the admin console only. "true" serves a website build again.
+   */
+  SERVE_WEB_APP: z.enum(["true", "false"]).default("false"),
   /** Background jobs are opt-in in development and explicit in production. */
   ENABLE_CRONS: z.enum(["true", "false"]).optional(),
-  /** Baileys must not connect merely because credentials happen to be on disk. */
-  ENABLE_WHATSAPP: z.enum(["true", "false"]).optional(),
   REDIS_URL: z.string().optional(),
   AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION: z.enum(["true", "false"]).optional(),
   SENTRY_DSN: z.string().optional(),
@@ -86,6 +102,15 @@ const envSchema = z.object({
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
   VAPID_SUBJECT: z.string().default("mailto:contact@smartspend.com"),
+
+  // WhatsApp Business Platform, Meta's Cloud API (decision 0038). Without the token and the phone number id nothing is
+  // sent; without the app secret and the verify token the webhook refuses everything.
+  WHATSAPP_CLOUD_ACCESS_TOKEN: z.string().optional(),
+  WHATSAPP_CLOUD_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_CLOUD_WABA_ID: z.string().optional(),
+  WHATSAPP_CLOUD_APP_SECRET: z.string().optional(),
+  WHATSAPP_CLOUD_VERIFY_TOKEN: z.string().optional(),
+  WHATSAPP_CLOUD_API_VERSION: z.string().regex(/^v\d+\.\d+$/).default("v23.0"),
 
   // Firebase FCM
   FIREBASE_PROJECT_ID: z.string().optional(),
@@ -106,6 +131,13 @@ export function parseServerEnv(source: NodeJS.ProcessEnv) {
   return envSchema
     .superRefine((value, ctx) => {
       if (value.NODE_ENV !== "production") return;
+      if (value.BILLING_SIMULATE === "true") {
+        ctx.addIssue({
+          code: "custom",
+          path: ["BILLING_SIMULATE"],
+          message: "BILLING_SIMULATE grants paid plans without payment and cannot be on in production",
+        });
+      }
       for (const key of PRODUCTION_SECRETS) {
         const secret = value[key];
         if (secret !== undefined && secret.length < MIN_PRODUCTION_SECRET_LENGTH) {

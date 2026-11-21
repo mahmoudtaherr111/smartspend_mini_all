@@ -29,6 +29,7 @@ import {
   generateToken,
   createSession,
   getSessionMetadata,
+  sessionCookie,
 } from "./local-auth-utils";
 import { env } from "./lib/env";
 import { getIncomingHeader } from "./lib/get-client-ip";
@@ -343,6 +344,8 @@ export const webauthnRouter = router({
         token,
         getSessionMetadata(ctx.req, ctx.ip),
       );
+      // The website signs in with the cookie alone, as after a password.
+      if (ctx.resHeaders) ctx.resHeaders.append("Set-Cookie", sessionCookie(token, ctx.req));
 
       return { success: true, token };
     }),

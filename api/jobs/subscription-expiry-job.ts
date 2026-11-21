@@ -1,5 +1,5 @@
 import { db } from "../queries/connection";
-import { proSubscriptions } from "../../db/schema";
+import { proSubscriptions, storePurchases } from "../../db/schema";
 import { and, eq, lte, or, inArray, gt } from "drizzle-orm";
 import { setPlan } from "../lib/access-control";
 import { createLogger } from "../lib/log";
@@ -83,7 +83,7 @@ export async function runSubscriptionExpiryJob(): Promise<{
 }> {
   const now = new Date();
 
-  // Find active or cancelled subscriptions past their end date
+  // 1. Find active or cancelled web subscriptions past their end date
   const expiredSubs = await db
     .select({
       id: proSubscriptions.id,
@@ -102,29 +102,55 @@ export async function runSubscriptionExpiryJob(): Promise<{
     )
     .limit(500);
 
-  if (expiredSubs.length === 0) {
-    return { expiredCount: 0 };
+  if (expiredSubs.length > 0) {
+    const expiredIds = expiredSubs.map((s) => s.id);
+    await db
+      .update(proSubscriptions)
+      .set({ status: "expired" })
+      .where(inArray(proSubscriptions.id, expiredIds));
   }
 
-  const expiredIds = expiredSubs.map((s) => s.id);
+  // 2. Find active or cancelled mobile store purchases past their expiresAt date
+  const expiredStoreSubs = await db
+    .select({
+      id: storePurchases.id,
+      userId: storePurchases.userId,
+      userType: storePurchases.userType,
+    })
+    .from(storePurchases)
+    .where(
+      and(
+        or(
+          eq(storePurchases.status, "active"),
+          eq(storePurchases.status, "cancelled"),
+        ),
+        lte(storePurchases.expiresAt, now),
+      ),
+    )
+    .limit(500);
 
-  // 1. Mark subscriptions as expired in bulk
-  await db
-    .update(proSubscriptions)
-    .set({ status: "expired" })
-    .where(inArray(proSubscriptions.id, expiredIds));
+  if (expiredStoreSubs.length > 0) {
+    const expiredStoreIds = expiredStoreSubs.map((s) => s.id);
+    await db
+      .update(storePurchases)
+      .set({ status: "expired" })
+      .where(inArray(storePurchases.id, expiredStoreIds));
+  }
 
-  // 2. For each user, check if they have an active renewal subscription before downgrading
+  // 3. For each user, check if they have any active renewal subscription across web or store before downgrading
   const userMap = new Map<string, { userId: number; userType: "oauth" | "local" }>();
-  for (const sub of expiredSubs) {
-    const key = `${sub.userType}:${sub.userId}`;
-    if (!userMap.has(key)) {
-      userMap.set(key, { userId: sub.userId, userType: sub.userType as "oauth" | "local" });
+  for (const sub of [...expiredSubs, ...expiredStoreSubs]) {
+    if (sub.userId) {
+      const key = `${sub.userType}:${sub.userId}`;
+      if (!userMap.has(key)) {
+        userMap.set(key, { userId: sub.userId, userType: sub.userType as "oauth" | "local" });
+      }
     }
   }
 
   for (const { userId, userType } of userMap.values()) {
     try {
+      // Check active web subscription
       const activeRenewals = await db
         .select({ id: proSubscriptions.id })
         .from(proSubscriptions)
@@ -139,24 +165,49 @@ export async function runSubscriptionExpiryJob(): Promise<{
         .limit(1);
 
       if (activeRenewals.length > 0) {
-        console.log(
-          `[SubscriptionExpiryJob] User ${userType}:${userId} has active renewal subscription (${activeRenewals[0].id}). Skipping downgrade.`,
+        log.info(
+          { userId, userType },
+          "User has active renewal web subscription; skipping downgrade",
+        );
+        continue;
+      }
+
+      // Check active store subscription
+      const activeStoreRenewals = await db
+        .select({ id: storePurchases.id })
+        .from(storePurchases)
+        .where(
+          and(
+            eq(storePurchases.userId, userId),
+            eq(storePurchases.userType, userType),
+            eq(storePurchases.status, "active"),
+            gt(storePurchases.expiresAt, now),
+          ),
+        )
+        .limit(1);
+
+      if (activeStoreRenewals.length > 0) {
+        log.info(
+          { userId, userType },
+          "User has active renewal store subscription; skipping downgrade",
         );
         continue;
       }
 
       await setPlan(userType, userId, "free");
     } catch (err) {
-      console.error(
-        `[SubscriptionExpiryJob] Failed to process downgrade for user ${userType}:${userId}:`,
-        err,
+      log.error(
+        { userId, userType, err },
+        "Failed to process downgrade for user",
       );
     }
   }
 
-  console.log(
-    `[SubscriptionExpiryJob] Successfully processed ${expiredSubs.length} expired subscriptions.`,
+  const totalExpired = expiredSubs.length + expiredStoreSubs.length;
+  log.info(
+    { totalExpired, webExpired: expiredSubs.length, storeExpired: expiredStoreSubs.length },
+    "Subscription expiry job finished",
   );
 
-  return { expiredCount: expiredSubs.length };
+  return { expiredCount: totalExpired };
 }

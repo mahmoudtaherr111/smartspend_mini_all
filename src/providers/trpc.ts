@@ -1,7 +1,6 @@
 import { createTRPCReact } from "@trpc/react-query";
 import { httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "../../api/router";
-import { getApiUrl } from "@/lib/api-url";
 
 export const trpc = createTRPCReact<AppRouter>();
 
@@ -173,18 +172,15 @@ export function preserveActiveFormDrafts(): void {
 }
 
 /**
- * Whether this device believed it was signed in: a phone account's token, or the identity any sign-in leaves for
- * offline starts. Only then does a 401 mean a session ended. A first visit, or a sign-up refused with 401, used to
- * greet people with "the session ended, sign in again".
+ * Whether this device believed it was signed in: the identity every sign-in leaves for offline starts. Only then does
+ * a 401 mean a session ended. A first visit, or a sign-up refused with 401, used to greet people with "the session
+ * ended, sign in again".
  */
 export function deviceHadSession(): boolean {
   try {
     return (
       typeof localStorage !== "undefined" &&
-      Boolean(
-        localStorage.getItem("local_auth_token") ||
-          localStorage.getItem("smartspend_offline_identity_v1"),
-      )
+      Boolean(localStorage.getItem("smartspend_offline_identity_v1"))
     );
   } catch {
     return false;
@@ -265,19 +261,51 @@ export function handleUnauthenticatedSession(
   }
 }
 
+/**
+ * Resolves the API base URL and enforces HTTPS in production environments.
+ * - In production: rejects plain HTTP URLs (except localhost, 127.0.0.1, ::1, or .local).
+ * - In development: permits HTTP and defaults to relative '/api/trpc' for Vite proxying.
+ */
+export function resolveApiBaseUrl(
+  apiUrl?: string,
+  isProduction: boolean = Boolean((import.meta as unknown as { env?: { PROD?: boolean } })?.env?.PROD),
+): string {
+  if (!apiUrl || apiUrl.trim() === "") {
+    return "/api/trpc";
+  }
+  const trimmed = apiUrl.trim().replace(/\/+$/, "");
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    throw new Error(`Invalid VITE_API_URL format: ${apiUrl}`);
+  }
+
+  const isLocalhost =
+    parsed.hostname === "localhost" ||
+    parsed.hostname === "127.0.0.1" ||
+    parsed.hostname === "::1" ||
+    parsed.hostname.endsWith(".local");
+
+  if (isProduction && parsed.protocol !== "https:" && !isLocalhost) {
+    throw new Error(
+      `Insecure API URL rejected in production. VITE_API_URL must use HTTPS: ${apiUrl}`,
+    );
+  }
+
+  return `${trimmed}/api/trpc`;
+}
+
 // VITE_API_URL → backend deployed separately (e.g. https://api.smartspend.app)
 // Falls back to relative /api/trpc for monorepo dev mode (Vite dev server proxies to Hono)
-const API_BASE_URL = getApiUrl("/api/trpc");
+// Using `as any` cast to stay compatible with both tsconfig.app (vite/client) and tsconfig.server (node)
+const _viteMeta = (import.meta as any)?.env as
+  | Record<string, string>
+  | undefined;
+const _viteApiUrl = _viteMeta?.["VITE_API_URL"];
+const _isProd = Boolean(_viteMeta?.["PROD"]);
+const API_BASE_URL = resolveApiBaseUrl(_viteApiUrl, _isProd);
 
-export function getTrpcHeaders(): Record<string, string> {
-  const token =
-    typeof localStorage !== "undefined"
-      ? localStorage.getItem("local_auth_token")
-      : null;
-  return {
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
 
 export const trpcClient = trpc.createClient({
   links: [
@@ -353,9 +381,6 @@ export const trpcClient = trpc.createClient({
           }
           throw new Error("وصل رد غير متوقع من الخادم. حاول تحديث الصفحة.");
         }
-      },
-      headers() {
-        return getTrpcHeaders();
       },
     }),
   ],

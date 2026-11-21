@@ -62,7 +62,7 @@ const Landing = lazy(() => import("@/pages/Landing"));
 const Login = lazy(() => import("@/pages/Login"));
 const Home = lazy(() => import("@/pages/Home"));
 const Settings = lazy(() => import("@/pages/Settings"));
-const BankSyncPage = lazy(() => import("@/pages/BankSyncPage"));
+const WalletsPage = lazy(() => import("@/pages/WalletsPage"));
 const AuthCallback = lazy(() => import("@/pages/AuthCallback"));
 const Support = lazy(() => import("@/pages/Support"));
 const Admin = lazy(() => import("@/pages/Admin"));
@@ -148,7 +148,7 @@ export const BOTTOM_NAV_ROUTES = [
   "/settings",
   "/support",
   "/pro",
-  "/bank-sync",
+  "/wallets",
   "/plan",
   "/more",
 ];
@@ -430,11 +430,11 @@ function AnimatedRoutes() {
         }
       />
       <Route
-        path="/bank-sync"
+        path="/wallets"
         element={
           <ProtectedRoute>
             <PageTransition>
-              <BankSyncPage />
+              <WalletsPage />
             </PageTransition>
           </ProtectedRoute>
         }

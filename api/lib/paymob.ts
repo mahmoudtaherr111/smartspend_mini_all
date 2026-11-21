@@ -16,10 +16,6 @@ export function isPaymobConfigured(): boolean {
   );
 }
 
-export function isPaymobWebhookVerificationConfigured(): boolean {
-  return Boolean(env.PAYMOB_HMAC_SECRET);
-}
-
 async function paymobPost<T>(
   path: string,
   body: Record<string, unknown>,

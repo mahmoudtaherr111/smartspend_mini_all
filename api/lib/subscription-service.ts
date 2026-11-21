@@ -14,7 +14,7 @@ export async function grantProSubscription(input: {
   transactionId: string;
 }): Promise<{ endDate: Date; alreadyProcessed: boolean }> {
   try {
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       // 1. Check idempotency: if transaction was already processed, return existing end date
       const existingTx = await tx
         .select({ id: proSubscriptions.id, endDate: proSubscriptions.endDate })
@@ -72,10 +72,10 @@ export async function grantProSubscription(input: {
       });
 
       // 4. Update user entitlement tier
-      // Written through the transaction so the entitlement and the subscription row commit together, and
-      // through the same helper as every other plan change so the cached session sees it at once.
+      // Written through the transaction with deferInvalidation: true so the cache is invalidated only after
+      // the MySQL transaction successfully commits, preventing race conditions with concurrent requests (DEF-06).
       const { setPlan } = await import("./access-control");
-      await setPlan(input.userType, input.userId, billingPlan.entitlement, { tx });
+      await setPlan(input.userType, input.userId, billingPlan.entitlement, { tx, deferInvalidation: true });
 
       // 5. Track analytics event
       await tx
@@ -93,6 +93,12 @@ export async function grantProSubscription(input: {
 
       return { endDate, alreadyProcessed: false };
     });
+
+    // Invalidate Redis session cache AFTER MySQL transaction successfully commits
+    const { invalidatePrincipal } = await import("./access-control");
+    await invalidatePrincipal(input.userType, input.userId);
+
+    return result;
   } catch (error: any) {
     // Gracefully handle duplicate key race condition
     if (

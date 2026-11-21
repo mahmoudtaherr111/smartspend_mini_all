@@ -457,7 +457,7 @@ describe("app_help", () => {
   it("returns the guide's steps and a screen to open", async () => {
     const result = await appHelpTool.run({ question: "إزاي أربط رسايل البنك SMS" }, ctx);
     expect(result.response).toMatchObject({ ok: true, found: true });
-    expect(result.card).toMatchObject({ kind: "guide", route: "/bank-sync" });
+    expect(result.card).toMatchObject({ kind: "guide", route: "/dashboard" });
   });
 
   it("says what the call can do by its profile: only the coach keeps reminders, and none leave the app", async () => {

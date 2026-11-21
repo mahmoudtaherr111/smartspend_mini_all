@@ -4,7 +4,7 @@
       "count": 13
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 10
+      "count": 9
     },
     "no-console": {
       "count": 5
@@ -12,18 +12,7 @@
   },
   "api/admin-whatsapp-router.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "api/ads-router.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
+      "count": 2
     }
   },
   "api/ai-router.ts": {
@@ -31,10 +20,10 @@
       "count": 25
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 23
+      "count": 22
     },
     "no-console": {
-      "count": 19
+      "count": 18
     },
     "no-empty": {
       "count": 2
@@ -67,7 +56,7 @@
       "count": 1
     },
     "no-console": {
-      "count": 25
+      "count": 21
     }
   },
   "api/business-router.security.test.ts": {
@@ -138,13 +127,13 @@
   },
   "api/expense-router.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 16
+      "count": 9
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
     },
     "no-console": {
-      "count": 9
+      "count": 3
     },
     "no-empty": {
       "count": 3
@@ -175,14 +164,8 @@
     }
   },
   "api/jobs/monthly-report-job.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "no-console": {
-      "count": 10
+      "count": 1
     }
   },
   "api/jobs/rollup-reconciliation-job.ts": {
@@ -191,11 +174,6 @@
     },
     "no-console": {
       "count": 4
-    }
-  },
-  "api/jobs/subscription-expiry-job.ts": {
-    "no-console": {
-      "count": 3
     }
   },
   "api/lib/ai-gateway.ts": {
@@ -374,7 +352,7 @@
   },
   "api/lib/redis-client.ts": {
     "no-console": {
-      "count": 11
+      "count": 10
     }
   },
   "api/lib/relationship-normalizer.ts": {
@@ -401,11 +379,6 @@
       "count": 1
     }
   },
-  "api/lib/sms-ai-parser.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
   "api/lib/stt-corrections.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -423,7 +396,7 @@
   },
   "api/local-auth-router.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 23
+      "count": 20
     }
   },
   "api/middleware.ts": {
@@ -475,14 +448,6 @@
       "count": 1
     }
   },
-  "api/referral-router.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "api/scripts/test-extract.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -500,7 +465,7 @@
   },
   "api/services/action-runtime/extended-actions.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 3
+      "count": 2
     }
   },
   "api/services/action-runtime/goal-create.ts": {
@@ -561,28 +526,12 @@
       "count": 2
     }
   },
-  "api/services/batch-ai-service.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 4
-    }
-  },
   "api/services/expense-rollups.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
-    }
-  },
-  "api/services/firebase.ts": {
-    "no-console": {
-      "count": 3
     }
   },
   "api/services/lifestyle-inference-engine.ts": {
@@ -623,7 +572,7 @@
   },
   "api/services/user-profile-service.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 9
+      "count": 8
     },
     "no-empty": {
       "count": 2
@@ -637,29 +586,7 @@
       "count": 1
     }
   },
-  "api/services/whatsapp-service.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "prefer-const": {
-      "count": 1
-    }
-  },
-  "api/sms-router.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 10
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "api/support-router.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
@@ -667,9 +594,6 @@
   "api/wallet-router.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 3
     }
   },
   "api/webauthn-router.ts": {
@@ -799,27 +723,8 @@
     }
   },
   "src/components/admin/AdminAdsTab.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 4
-    }
-  },
-  "src/components/admin/AdminAuditTab.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
-  "src/components/admin/AdminRawSmsTab.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
     }
   },
   "src/components/admin/AdminRulesTab.tsx": {
@@ -840,7 +745,7 @@
       "count": 1
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 3
+      "count": 1
     }
   },
   "src/components/admin/ClarificationsTab.tsx": {
@@ -888,11 +793,6 @@
       "count": 4
     }
   },
-  "src/components/admin/settings/AdminCodesTab.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/components/admin/settings/AdminKeysTab.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
@@ -919,30 +819,6 @@
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
-    }
-  },
-  "src/components/bank-sync/AndroidSetupFlow.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "src/components/bank-sync/DigitalBankingSuite.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 6
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 4
-    }
-  },
-  "src/components/bank-sync/IosSetupFlow.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
     }
   },
   "src/components/dashboard/BehaviorInsights.tsx": {
@@ -992,28 +868,18 @@
       "count": 3
     }
   },
-  "src/components/dashboard/UserIntelligencePanel.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/components/expenses/ExpenseForm.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 21
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 6
+      "count": 5
     },
     "no-empty": {
       "count": 8
     },
     "no-useless-escape": {
       "count": 3
-    }
-  },
-  "src/components/expenses/ReceiptCapture.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
     }
   },
   "src/components/expenses/RecentExpenses.tsx": {
@@ -1077,14 +943,6 @@
   },
   "src/components/settings/PeopleSettingsView.tsx": {
     "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "src/components/settings/SmsWebhookSettings.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
@@ -1213,17 +1071,11 @@
   "src/lib/biometricAuth.test.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 10
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
     }
   },
   "src/lib/biometricAuth.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "no-empty": {
-      "count": 11
     }
   },
   "src/lib/transactionDisplay.ts": {
@@ -1247,11 +1099,6 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 11
-    }
-  },
-  "src/pages/BankSyncPage.tsx": {
-    "react-refresh/only-export-components": {
-      "count": 1
     }
   },
   "src/pages/Home.tsx": {
@@ -1323,7 +1170,7 @@
   },
   "tests/adversarial-challenger-2.test.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 3
+      "count": 1
     }
   },
   "tests/auth-hot-path.test.ts": {

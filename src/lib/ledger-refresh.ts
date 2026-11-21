@@ -13,5 +13,6 @@ export function refreshLedgerViews(utils: Utils): void {
   void utils.expense.invalidate();
   void utils.budget.invalidate();
   void utils.wallet.invalidate();
+  void utils.coach.overview.invalidate();
   void utils.ai.getUserLimits.invalidate();
 }

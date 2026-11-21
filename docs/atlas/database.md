@@ -12,11 +12,11 @@ Foreign-key constraints declared in the schema: **0**. Every relationship below 
 
 | Class | Name | Lifetime | Storage rule | Tables |
 | --- | --- | --- | --- | --- |
-| `A` | Identity & Config | Forever | MySQL; small; cached aggressively in Redis with explicit invalidation | 21 |
-| `B` | Core Ledger | Forever | MySQL; narrow hot table; covering indexes; never auto-deleted | 1 |
-| `C` | Derived / Rollup | Forever (cheap) | MySQL; tiny; rebuildable from B at any time | 13 |
-| `D` | Operational / Ephemeral | Minutes -> days | Redis primary, MySQL as durable fallback/audit | 7 |
-| `E` | Telemetry / Logs | 30–365 days | MySQL; chunk-pruned on a schedule, rolled up before deletion | 12 |
+| `A` | Identity & Config | Forever | MySQL; small; cached aggressively in Redis with explicit invalidation | 31 |
+| `B` | Core Ledger | Forever | MySQL; narrow hot table; covering indexes; never auto-deleted | 2 |
+| `C` | Derived / Rollup | Forever (cheap) | MySQL; tiny; rebuildable from B at any time | 17 |
+| `D` | Operational / Ephemeral | Minutes -> days | Redis primary, MySQL as durable fallback/audit | 11 |
+| `E` | Telemetry / Logs | 30–365 days | MySQL; chunk-pruned on a schedule, rolled up before deletion | 20 |
 | `F` | AI Memory | Forever (items), rebuildable (vectors) | Text/metadata in MySQL; vectors in vector store or quantized binary | 6 |
 | `G` | Conversation | 90 days raw | MySQL raw for a window, then summarized and pruned | 2 |
 
@@ -28,27 +28,37 @@ Users, credentials, settings, providers, templates, categories
 
 | Table | Export | Columns | Indexes | Owner pair | Relations | Read by | Written by |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `ads` | `ads` | 14 | 2 | — | `clicks → ad_clicks` | `api/admin-router.ts`, `api/ads-router.ts` | `api/ads-router.ts` |
-| `ai_models` | `aiModels` | 18 | 3 | — | `provider → ai_providers` | `api/admin-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/ai-pricing.ts` | `api/admin-router.ts` |
-| `ai_providers` | `aiProviders` | 13 | 2 | — | `ledgers → ai_token_ledgers`, `models → ai_models` | `api/admin-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/ai-pricing.ts` | `api/admin-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/provider-health.ts` |
-| `business_categories` | `businessCategories` | 12 | 1 | — | `business → user_businesses` | `api/ai-router.ts`, `api/business-router.ts`, `api/expense-router.ts` | `api/business-router.ts`, `api/services/user-purge-service.ts` |
-| `discount_codes` | `discountCodes` | 9 | 1 | — | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/referral-router.ts` | `api/admin-router.ts` |
+| `ads` | `ads` | 16 | 2 | — | `clicks → ad_clicks` | `api/admin-router.ts`, `api/ads-router.ts` | `api/ads-router.ts` |
+| `ai_models` | `aiModels` | 18 | 3 | — | `provider → ai_providers` | `api/admin-router.ts`, `api/ai-setup-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/ai-pricing.ts` | `api/admin-router.ts`, `api/ai-setup-router.ts` |
+| `ai_providers` | `aiProviders` | 13 | 2 | — | `ledgers → ai_token_ledgers`, `models → ai_models` | `api/admin-router.ts`, `api/ai-setup-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/ai-pricing.ts`, `api/services/server-status.ts` | `api/admin-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/provider-health.ts` |
+| `business_categories` | `businessCategories` | 12 | 1 | — | `business → user_businesses` | `api/ai-router.ts`, `api/business-router.ts`, `api/expense-router.ts`, `api/lib/understanding/context.ts` | `api/business-router.ts`, `api/services/user-purge-service.ts` |
+| `capture_consents` | `captureConsents` | 7 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/consent.ts`, `api/lib/capture/operations.ts` | `api/lib/capture/care.ts`, `api/lib/capture/consent.ts`, `api/services/user-purge-service.ts` |
+| `capture_devices` | `captureDevices` | 16 | 3 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-console-router.ts`, `api/lib/capture/care.ts`, `api/lib/capture/devices.ts`, `api/lib/capture/operations.ts` | `api/lib/capture/care.ts`, `api/lib/capture/devices.ts`, `api/services/user-purge-service.ts` |
+| `capture_markers` | `captureMarkers` | 6 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/care.ts`, `api/lib/capture/identity-links.ts`, `api/lib/capture/markers.ts`, `api/lib/capture/operations.ts`, `api/services/wallet-balance-policy.ts` | `api/lib/capture/care.ts`, `api/lib/capture/identity-links.ts`, `api/lib/capture/markers.ts`, `api/services/user-purge-service.ts`, `api/wallet-router.ts` |
+| `capture_memory` | `captureMemory` | 8 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/memory.ts` | `api/lib/capture/care.ts`, `api/lib/capture/memory.ts`, `api/services/user-purge-service.ts` |
+| `capture_sources` | `captureSources` | 16 | 1 | — | — | `api/capture-admin-router.ts`, `api/lib/capture/catalog.ts` | `api/capture-admin-router.ts`, `api/lib/capture/catalog.ts` |
+| `capture_user_pairs` | `captureUserPairs` | 9 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/memory.ts` | `api/lib/capture/care.ts`, `api/lib/capture/memory.ts`, `api/services/user-purge-service.ts` |
+| `discount_codes` | `discountCodes` | 9 | 1 | — | `localUser → local_users`, `oauthUser → users` | — | — |
 | `expense_categories` | `expenseCategories` | 8 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/expense-router.ts` | `api/expense-router.ts`, `api/services/user-purge-service.ts` |
-| `local_users` | `localUsers` | 18 | 3 | — | `adClicks → ad_clicks`, `aiActionAuditLogs → ai_action_audit_logs`, `aiActionMemory → ai_action_memory`, `aiConversationSummaries → ai_conversation_summaries`, `aiMemoryEmbeddings → ai_memory_embeddings`, `aiMemoryItems → ai_memory_items`, `aiPendingActions → ai_pending_actions`, `aiSummaries → ai_summaries`, `apiKeyErrors → api_key_errors`, `authChallenges → auth_challenges`, `businesses → user_businesses`, `categories → expense_categories`, `chatConversations → chat_conversations`, `classificationLogs → classification_logs`, `coachingPlans → coaching_plans`, `contacts → user_contacts`, `discountCodes → discount_codes`, `expenses → expenses`, `goals → financial_goals`, `inAppNotifications → in_app_notifications`, `installmentPlans → installment_plans`, `monthlyBehaviorSnapshots → monthly_behavior_snapshots`, `monthlyReports → monthly_reports`, `notificationLogs → notification_logs`, `pendingClarifications → pending_clarifications`, `proSubscriptions → pro_subscriptions`, `profileLearningEvents → profile_learning_events`, `pushSubscriptions → push_subscriptions`, `rawSmsEvents → raw_sms_events`, `referralsMade → referrals`, `referralsReceived → referrals`, `scheduledCashflows → scheduled_cashflows`, `sessions → sessions`, `supportTickets → support_tickets`, `userAnalytics → user_analytics`, `userBudgets → user_budgets`, `userCredentials → user_credentials`, `userDictionaries → user_dictionaries`, `userProfiles → user_profiles`, `voiceUsage → voice_usage`, `wallets → user_wallets`, `webhookTokens → webhook_tokens` | `api/admin-router.ts`, `api/admin-whatsapp-router.ts`, `api/ai-router.ts`, `api/analytics-router.ts`, `api/context.ts`, `api/export-router.ts`, `api/jobs/monthly-report-job.ts`, `api/lib/ai-usage-policy.ts`, `api/local-auth-router.ts`, `api/notification-engine.ts`, `api/pro-router.ts`, `api/profile-router.ts`, `api/referral-router.ts`, `api/services/ai-memory/slot-store.ts`, `api/services/user-profile-service.ts`, `api/services/user-purge-service.ts`, `api/services/voice/app-calls.ts`, `api/services/voice/brain/snapshot.ts`, `api/sms-router.ts`, `api/support-router.ts`, `api/webauthn-router.ts` | `api/admin-router.ts`, `api/ai-router.ts`, `api/chat-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/access-control.ts`, `api/lib/ai-gateway.ts`, `api/local-auth-router.ts`, `api/profile-router.ts`, `api/referral-router.ts`, `api/services/user-purge-service.ts` |
+| `local_users` | `localUsers` | 18 | 3 | — | `adClicks → ad_clicks`, `aiActionAuditLogs → ai_action_audit_logs`, `aiActionMemory → ai_action_memory`, `aiConversationSummaries → ai_conversation_summaries`, `aiMemoryEmbeddings → ai_memory_embeddings`, `aiMemoryItems → ai_memory_items`, `aiPendingActions → ai_pending_actions`, `aiSummaries → ai_summaries`, `apiKeyErrors → api_key_errors`, `authChallenges → auth_challenges`, `businesses → user_businesses`, `categories → expense_categories`, `chatConversations → chat_conversations`, `classificationLogs → classification_logs`, `coachingPlans → coaching_plans`, `commitmentHints → commitment_hints`, `commitmentOverrides → commitment_overrides`, `commitmentQuestions → commitment_questions`, `commitmentReminders → commitment_reminders`, `commitmentScheduleItems → commitment_schedule_items`, `contacts → user_contacts`, `discountCodes → discount_codes`, `expenses → expenses`, `goals → financial_goals`, `inAppNotifications → in_app_notifications`, `installmentPlans → installment_plans`, `monthlyBehaviorSnapshots → monthly_behavior_snapshots`, `monthlyReports → monthly_reports`, `notificationLogs → notification_logs`, `pendingClarifications → pending_clarifications`, `proSubscriptions → pro_subscriptions`, `profileLearningEvents → profile_learning_events`, `pushSubscriptions → push_subscriptions`, `referralsMade → referrals`, `referralsReceived → referrals`, `scheduledCashflows → scheduled_cashflows`, `sessions → sessions`, `supportTickets → support_tickets`, `userAnalytics → user_analytics`, `userBudgets → user_budgets`, `userCredentials → user_credentials`, `userDictionaries → user_dictionaries`, `userProfiles → user_profiles`, `voiceUsage → voice_usage`, `wallets → user_wallets` | `api/admin-console-router.ts`, `api/admin-router.ts`, `api/admin-whatsapp-router.ts`, `api/ai-router.ts`, `api/analytics-router.ts`, `api/context.ts`, `api/export-router.ts`, `api/jobs/monthly-report-job.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/capture/admission.ts`, `api/lib/capture/ai-queue.ts`, `api/lib/capture/consent.ts`, `api/lib/capture/intake.ts`, `api/lib/whatsapp/outbox.ts`, `api/local-auth-router.ts`, `api/notification-engine.ts`, `api/pro-router.ts`, `api/profile-router.ts`, `api/services/admin-alerts.ts`, `api/services/ai-memory/slot-store.ts`, `api/services/coach/reminders.ts`, `api/services/ledger-writer.ts`, `api/services/server-status.ts`, `api/services/user-profile-service.ts`, `api/services/user-purge-service.ts`, `api/services/voice/app-calls.ts`, `api/services/voice/brain/snapshot.ts`, `api/support-router.ts`, `api/webauthn-router.ts` | `api/admin-router.ts`, `api/chat-router.ts`, `api/lib/access-control.ts`, `api/lib/ai-gateway.ts`, `api/lib/ai-usage-policy.ts`, `api/local-auth-router.ts`, `api/profile-router.ts`, `api/services/ledger-writer.ts`, `api/services/user-purge-service.ts` |
 | `notification_templates` | `notificationTemplates` | 15 | 2 | — | `logs → notification_logs` | `api/admin-router.ts`, `api/notification-engine.ts` | `api/admin-router.ts`, `api/notification-engine.ts` |
 | `onboarding_questions` | `onboardingQuestions` | 8 | 0 | — | — | `api/admin-router.ts`, `api/profile-router.ts` | — |
-| `pro_subscriptions` | `proSubscriptions` | 12 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/jobs/subscription-expiry-job.ts`, `api/lib/subscription-service.ts`, `api/pro-router.ts` | `api/jobs/subscription-expiry-job.ts`, `api/lib/subscription-service.ts`, `api/pro-router.ts`, `api/services/user-purge-service.ts` |
+| `pro_subscriptions` | `proSubscriptions` | 12 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/jobs/subscription-expiry-job.ts`, `api/lib/store-billing/ledger.ts`, `api/lib/subscription-service.ts`, `api/pro-router.ts` | `api/jobs/subscription-expiry-job.ts`, `api/lib/subscription-service.ts`, `api/pro-router.ts`, `api/services/user-purge-service.ts` |
 | `push_subscriptions` | `pushSubscriptions` | 9 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/notification-engine.ts`, `api/profile-router.ts` | `api/notification-engine.ts`, `api/profile-router.ts`, `api/services/user-purge-service.ts` |
-| `referrals` | `referrals` | 9 | 2 | — | `referredLocalUser → local_users`, `referredOauthUser → users`, `referrerLocalUser → local_users`, `referrerOauthUser → users` | `api/referral-router.ts` | `api/referral-router.ts`, `api/services/user-purge-service.ts` |
+| `referrals` | `referrals` | 9 | 2 | — | `referredLocalUser → local_users`, `referredOauthUser → users`, `referrerLocalUser → local_users`, `referrerOauthUser → users` | — | `api/services/user-purge-service.ts` |
 | `seo_pages` | `seoPages` | 8 | 0 | — | — | `api/seo-router.ts` | `api/seo-router.ts` |
-| `support_tickets` | `supportTickets` | 12 | 3 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/support-router.ts` | `api/services/user-purge-service.ts`, `api/support-router.ts` |
-| `system_settings` | `systemSettings` | 3 | 0 | — | — | `api/admin-router.ts`, `api/lib/settings-cache.ts` | `api/admin-router.ts`, `api/admin-whatsapp-router.ts` |
-| `user_businesses` | `userBusinesses` | 11 | 2 | `user_id` + `user_type` | `categories → business_categories`, `contacts → user_contacts`, `expenses → expenses`, `localUser → local_users`, `oauthUser → users` | `api/ai-router.ts`, `api/business-router.ts`, `api/expense-router.ts`, `api/lib/ownership-guard.ts`, `api/services/user-purge-service.ts` | `api/business-router.ts`, `api/services/user-purge-service.ts` |
-| `user_contacts` | `userContacts` | 12 | 5 | `user_id` + `user_type` | `business → user_businesses`, `expenses → expenses`, `localUser → local_users`, `oauthUser → users` | `api/business-router.ts`, `api/expense-router.ts`, `api/lib/ownership-guard.ts`, `api/profile-router.ts`, `api/services/ai-kernel/index.ts`, `api/services/coach/cashflows.ts`, `api/services/debt-ledger.ts`, `api/services/finance-semantic-layer/resolvers.ts`, `api/services/user-profile-service.ts` | `api/business-router.ts`, `api/expense-router.ts`, `api/profile-router.ts`, `api/services/user-profile-service.ts`, `api/services/user-purge-service.ts` |
+| `store_purchases` | `storePurchases` | 12 | 3 | `user_id` + `user_type` | — | `api/admin-console-router.ts`, `api/admin-router.ts`, `api/jobs/subscription-expiry-job.ts`, `api/lib/store-billing/ledger.ts`, `api/pro-router.ts` | `api/jobs/subscription-expiry-job.ts`, `api/lib/store-billing/ledger.ts`, `api/pro-router.ts`, `api/services/user-purge-service.ts` |
+| `subscription_catalog` | `subscriptionCatalog` | 21 | 1 | — | — | `api/capture-admin-router.ts`, `api/lib/capture/brand-logos.ts`, `api/lib/capture/catalog.ts`, `api/services/coach/commitments.ts` | `api/capture-admin-router.ts`, `api/lib/capture/brand-logos.ts`, `api/lib/capture/catalog.ts` |
+| `support_assignments` | `supportAssignments` | 4 | 1 | — | — | `api/admin-console-router.ts` | `api/services/user-purge-service.ts`, `api/support-router.ts` |
+| `support_tickets` | `supportTickets` | 12 | 3 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-console-router.ts`, `api/admin-router.ts`, `api/services/user-purge-service.ts`, `api/support-router.ts` | `api/services/user-purge-service.ts`, `api/support-router.ts` |
+| `system_settings` | `systemSettings` | 3 | 0 | — | — | `api/admin-router.ts`, `api/lib/settings-cache.ts`, `api/services/financial-migration.ts` | `api/admin-router.ts`, `api/admin-whatsapp-router.ts`, `api/lib/capture/operations.ts`, `api/services/financial-migration.ts` |
+| `user_businesses` | `userBusinesses` | 11 | 2 | `user_id` + `user_type` | `categories → business_categories`, `contacts → user_contacts`, `expenses → expenses`, `localUser → local_users`, `oauthUser → users` | `api/ai-router.ts`, `api/business-router.ts`, `api/expense-router.ts`, `api/lib/ownership-guard.ts`, `api/lib/understanding/context.ts`, `api/services/recording/read-sentence.ts`, `api/services/user-purge-service.ts` | `api/business-router.ts`, `api/services/user-purge-service.ts` |
+| `user_contacts` | `userContacts` | 12 | 5 | `user_id` + `user_type` | `business → user_businesses`, `expenses → expenses`, `localUser → local_users`, `oauthUser → users` | `api/business-router.ts`, `api/expense-router.ts`, `api/lib/capture/identity-links.ts`, `api/lib/ownership-guard.ts`, `api/lib/understanding/context.ts`, `api/profile-router.ts`, `api/services/ai-kernel/index.ts`, `api/services/coach/cashflows.ts`, `api/services/coach/commitments.ts`, `api/services/debt-ledger.ts`, `api/services/finance-semantic-layer/resolvers.ts`, `api/services/ledger-writer.ts`, `api/services/user-profile-service.ts` | `api/business-router.ts`, `api/profile-router.ts`, `api/services/ledger-writer.ts`, `api/services/user-profile-service.ts`, `api/services/user-purge-service.ts` |
 | `user_credentials` | `userCredentials` | 10 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/webauthn-router.ts` | `api/services/user-purge-service.ts`, `api/webauthn-router.ts` |
 | `user_profiles` | `userProfiles` | 19 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/jobs/monthly-behavior-job.ts`, `api/notification-engine.ts`, `api/profile-router.ts`, `api/services/finance-semantic-layer/resolvers.ts`, `api/services/user-profile-service.ts`, `api/services/voice/brain/profile-questions.ts` | `api/profile-router.ts`, `api/services/user-profile-service.ts`, `api/services/user-purge-service.ts`, `api/services/voice/brain/profile-questions.ts` |
-| `user_wallets` | `userWallets` | 10 | 1 | `user_id` + `user_type` | `expenses → expenses`, `localUser → local_users`, `oauthUser → users` | `api/lib/ownership-guard.ts`, `api/services/action-runtime/extended-actions.ts`, `api/services/coach/cashflows.ts`, `api/services/finance-semantic-layer/resolvers.ts`, `api/wallet-router.ts` | `api/services/action-runtime/extended-actions.ts`, `api/services/user-purge-service.ts`, `api/wallet-router.ts` |
-| `users` | `users` | 17 | 3 | — | `adClicks → ad_clicks`, `aiActionAuditLogs → ai_action_audit_logs`, `aiActionMemory → ai_action_memory`, `aiConversationSummaries → ai_conversation_summaries`, `aiMemoryEmbeddings → ai_memory_embeddings`, `aiMemoryItems → ai_memory_items`, `aiPendingActions → ai_pending_actions`, `aiSummaries → ai_summaries`, `apiKeyErrors → api_key_errors`, `authChallenges → auth_challenges`, `businesses → user_businesses`, `categories → expense_categories`, `chatConversations → chat_conversations`, `classificationLogs → classification_logs`, `coachingPlans → coaching_plans`, `contacts → user_contacts`, `discountCodes → discount_codes`, `expenses → expenses`, `goals → financial_goals`, `inAppNotifications → in_app_notifications`, `installmentPlans → installment_plans`, `monthlyBehaviorSnapshots → monthly_behavior_snapshots`, `monthlyReports → monthly_reports`, `notificationLogs → notification_logs`, `pendingClarifications → pending_clarifications`, `proSubscriptions → pro_subscriptions`, `profileLearningEvents → profile_learning_events`, `pushSubscriptions → push_subscriptions`, `rawSmsEvents → raw_sms_events`, `referralsMade → referrals`, `referralsReceived → referrals`, `scheduledCashflows → scheduled_cashflows`, `sessions → sessions`, `supportTickets → support_tickets`, `userAnalytics → user_analytics`, `userBudgets → user_budgets`, `userCredentials → user_credentials`, `userDictionaries → user_dictionaries`, `userProfiles → user_profiles`, `voiceUsage → voice_usage`, `wallets → user_wallets`, `webhookTokens → webhook_tokens` | `api/admin-router.ts`, `api/admin-whatsapp-router.ts`, `api/ai-router.ts`, `api/analytics-router.ts`, `api/auth-router.ts`, `api/context.ts`, `api/export-router.ts`, `api/jobs/monthly-report-job.ts`, `api/lib/ai-usage-policy.ts`, `api/notification-engine.ts`, `api/pro-router.ts`, `api/referral-router.ts`, `api/services/ai-memory/slot-store.ts`, `api/services/user-profile-service.ts`, `api/services/user-purge-service.ts`, `api/services/voice/app-calls.ts`, `api/services/voice/brain/snapshot.ts`, `api/sms-router.ts`, `api/support-router.ts`, `api/webauthn-router.ts` | `api/admin-router.ts`, `api/ai-router.ts`, `api/auth-router.ts`, `api/chat-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/access-control.ts`, `api/lib/ai-gateway.ts`, `api/profile-router.ts`, `api/referral-router.ts`, `api/services/user-purge-service.ts` |
+| `user_wallets` | `userWallets` | 10 | 1 | `user_id` + `user_type` | `expenses → expenses`, `localUser → local_users`, `oauthUser → users` | `api/lib/capture/care.ts`, `api/lib/capture/intake.ts`, `api/lib/capture/markers.ts`, `api/lib/ownership-guard.ts`, `api/lib/understanding/context.ts`, `api/services/action-runtime/extended-actions.ts`, `api/services/coach/cashflows.ts`, `api/services/finance-semantic-layer/resolvers.ts`, `api/services/ledger-writer.ts`, `api/wallet-router.ts` | `api/lib/capture/care.ts`, `api/lib/capture/intake.ts`, `api/services/action-runtime/extended-actions.ts`, `api/services/user-purge-service.ts`, `api/wallet-router.ts` |
+| `users` | `users` | 17 | 3 | — | `adClicks → ad_clicks`, `aiActionAuditLogs → ai_action_audit_logs`, `aiActionMemory → ai_action_memory`, `aiConversationSummaries → ai_conversation_summaries`, `aiMemoryEmbeddings → ai_memory_embeddings`, `aiMemoryItems → ai_memory_items`, `aiPendingActions → ai_pending_actions`, `aiSummaries → ai_summaries`, `apiKeyErrors → api_key_errors`, `authChallenges → auth_challenges`, `businesses → user_businesses`, `categories → expense_categories`, `chatConversations → chat_conversations`, `classificationLogs → classification_logs`, `coachingPlans → coaching_plans`, `commitmentHints → commitment_hints`, `commitmentOverrides → commitment_overrides`, `commitmentQuestions → commitment_questions`, `commitmentReminders → commitment_reminders`, `commitmentScheduleItems → commitment_schedule_items`, `contacts → user_contacts`, `discountCodes → discount_codes`, `expenses → expenses`, `goals → financial_goals`, `inAppNotifications → in_app_notifications`, `installmentPlans → installment_plans`, `monthlyBehaviorSnapshots → monthly_behavior_snapshots`, `monthlyReports → monthly_reports`, `notificationLogs → notification_logs`, `pendingClarifications → pending_clarifications`, `proSubscriptions → pro_subscriptions`, `profileLearningEvents → profile_learning_events`, `pushSubscriptions → push_subscriptions`, `referralsMade → referrals`, `referralsReceived → referrals`, `scheduledCashflows → scheduled_cashflows`, `sessions → sessions`, `supportTickets → support_tickets`, `userAnalytics → user_analytics`, `userBudgets → user_budgets`, `userCredentials → user_credentials`, `userDictionaries → user_dictionaries`, `userProfiles → user_profiles`, `voiceUsage → voice_usage`, `wallets → user_wallets` | `api/admin-console-router.ts`, `api/admin-router.ts`, `api/admin-whatsapp-router.ts`, `api/ai-router.ts`, `api/analytics-router.ts`, `api/auth-router.ts`, `api/context.ts`, `api/export-router.ts`, `api/jobs/monthly-report-job.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/capture/admission.ts`, `api/lib/capture/ai-queue.ts`, `api/lib/capture/consent.ts`, `api/lib/capture/intake.ts`, `api/notification-engine.ts`, `api/pro-router.ts`, `api/services/admin-alerts.ts`, `api/services/ai-memory/slot-store.ts`, `api/services/coach/reminders.ts`, `api/services/ledger-writer.ts`, `api/services/server-status.ts`, `api/services/user-profile-service.ts`, `api/services/user-purge-service.ts`, `api/services/voice/app-calls.ts`, `api/services/voice/brain/snapshot.ts`, `api/support-router.ts`, `api/webauthn-router.ts` | `api/admin-router.ts`, `api/auth-router.ts`, `api/chat-router.ts`, `api/lib/access-control.ts`, `api/lib/ai-gateway.ts`, `api/lib/ai-usage-policy.ts`, `api/profile-router.ts`, `api/services/ledger-writer.ts`, `api/services/user-purge-service.ts` |
+| `whatsapp_contacts` | `whatsappContacts` | 13 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-whatsapp-router.ts`, `api/jobs/monthly-report-job.ts`, `api/lib/whatsapp/outbox.ts` | `api/lib/whatsapp/outbox.ts`, `api/services/user-purge-service.ts` |
 
 ### Class B — Core Ledger
 
@@ -56,7 +66,8 @@ expenses — the truth about user money
 
 | Table | Export | Columns | Indexes | Owner pair | Relations | Read by | Written by |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `expenses` | `expenses` | 22 | 11 | `user_id` + `user_type` | `business → user_businesses`, `clarifications → pending_clarifications`, `classificationLog → classification_logs`, `contact → user_contacts`, `localUser → local_users`, `oauthUser → users`, `wallet → user_wallets` | `api/admin-router.ts`, `api/ai-router.ts`, `api/analytics-router.ts`, `api/expense-router.ts`, `api/export-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/jobs/monthly-behavior-job.ts`, `api/jobs/rollup-reconciliation-job.ts`, `api/jobs/taxonomy-migration-job.ts`, `api/lib/muscle-memory.ts`, `api/lib/smart-pipeline.ts`, `api/local-auth-router.ts`, `api/profile-router.ts`, `api/services/action-runtime/extended-actions.ts`, `api/services/budget-status.ts`, `api/services/coach/cashflows.ts`, `api/services/debt-ledger.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/resolvers.ts`, `api/services/lifestyle-inference-engine.ts`, `api/services/voice/app-calls.ts`, `api/services/voice/brain/snapshot.ts`, `api/wallet-router.ts` | `api/business-router.ts`, `api/expense-router.ts`, `api/image-router.ts`, `api/jobs/taxonomy-migration-job.ts`, `api/profile-router.ts`, `api/services/action-runtime/extended-actions.ts`, `api/services/sms-ledger.ts`, `api/services/user-purge-service.ts`, `api/wallet-router.ts` |
+| `admin_audit_logs` | `adminAuditLogs` | 9 | 4 | — | — | `api/admin-router.ts` | `api/lib/admin-audit.ts` |
+| `expenses` | `expenses` | 22 | 11 | `user_id` + `user_type` | `business → user_businesses`, `clarifications → pending_clarifications`, `classificationLog → classification_logs`, `contact → user_contacts`, `localUser → local_users`, `oauthUser → users`, `wallet → user_wallets` | `api/admin-console-router.ts`, `api/admin-router.ts`, `api/ai-router.ts`, `api/analytics-router.ts`, `api/expense-router.ts`, `api/export-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/jobs/monthly-behavior-job.ts`, `api/jobs/rollup-reconciliation-job.ts`, `api/jobs/taxonomy-migration-job.ts`, `api/lib/capture/activity.ts`, `api/lib/capture/fees.ts`, `api/lib/capture/intake.ts`, `api/lib/capture/questions.ts`, `api/lib/capture/simulator.ts`, `api/lib/muscle-memory.ts`, `api/lib/smart-pipeline.ts`, `api/lib/understanding/context.ts`, `api/local-auth-router.ts`, `api/profile-router.ts`, `api/services/action-runtime/extended-actions.ts`, `api/services/budget-status.ts`, `api/services/coach/cashflows.ts`, `api/services/coach/commitments.ts`, `api/services/coach/reminders.ts`, `api/services/debt-ledger.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/resolvers.ts`, `api/services/financial-migration.ts`, `api/services/ledger-bundles.ts`, `api/services/ledger-writer.ts`, `api/services/lifestyle-inference-engine.ts`, `api/services/voice/app-calls.ts`, `api/services/voice/brain/snapshot.ts`, `api/wallet-router.ts` | `api/business-router.ts`, `api/jobs/taxonomy-migration-job.ts`, `api/lib/capture/fees.ts`, `api/lib/capture/intake.ts`, `api/profile-router.ts`, `api/services/action-runtime/extended-actions.ts`, `api/services/financial-migration.ts`, `api/services/ledger-writer.ts`, `api/services/user-purge-service.ts`, `api/wallet-router.ts` |
 
 ### Class C — Derived / Rollup
 
@@ -67,15 +78,19 @@ Pre-aggregated facts computed from B; rebuildable at any time
 | `ad_stats_daily` | `adStatsDaily` | 5 | 1 | — | — | — | `api/jobs/data-retention-job.ts` |
 | `ai_cost_monthly` | `aiCostMonthly` | 12 | 1 | `user_id` + `user_type` | — | — | `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts` |
 | `ai_summaries` | `aiSummaries` | 8 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/ai-router.ts`, `api/services/voice/brain/tools/reports.ts` | `api/ai-router.ts`, `api/services/user-purge-service.ts` |
-| `cashflow_settlements` | `cashflowSettlements` | 9 | 3 | `user_id` + `user_type` | `cashflow → scheduled_cashflows`, `expense → expenses`, `localUser → local_users`, `oauthUser → users` | `api/expense-router.ts`, `api/services/coach/cashflows.ts` | `api/services/coach/cashflows.ts`, `api/services/user-purge-service.ts` |
+| `capture_usage` | `captureUsage` | 12 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/intake.ts`, `api/lib/capture/operations.ts` | `api/lib/capture/access.ts`, `api/lib/capture/intake.ts`, `api/services/user-purge-service.ts` |
+| `cashflow_settlements` | `cashflowSettlements` | 10 | 3 | `user_id` + `user_type` | `cashflow → scheduled_cashflows`, `expense → expenses`, `localUser → local_users`, `oauthUser → users` | `api/expense-router.ts`, `api/lib/understanding/context.ts`, `api/services/coach/cashflows.ts`, `api/services/coach/commitments.ts`, `api/services/coach/reminders.ts` | `api/services/coach/cashflows.ts`, `api/services/user-purge-service.ts` |
 | `coaching_plans` | `coachingPlans` | 16 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users`, `steps → coaching_steps` | `api/services/coach/plans.ts` | `api/services/coach/plans.ts`, `api/services/user-purge-service.ts` |
 | `coaching_steps` | `coachingSteps` | 17 | 3 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users`, `plan → coaching_plans` | `api/services/coach/plans.ts` | `api/services/coach/plans.ts`, `api/services/user-purge-service.ts` |
+| `commitment_hints` | `commitmentHints` | 8 | 2 | `user_id` + `user_type` | `cashflow → scheduled_cashflows`, `localUser → local_users`, `oauthUser → users` | `api/services/coach/commitments.ts` | `api/services/coach/commitments.ts`, `api/services/user-purge-service.ts` |
+| `commitment_overrides` | `commitmentOverrides` | 9 | 2 | `user_id` + `user_type` | `cashflow → scheduled_cashflows`, `localUser → local_users`, `oauthUser → users` | `api/services/coach/cashflows.ts` | `api/services/coach/commitments.ts`, `api/services/user-purge-service.ts` |
+| `commitment_schedule_items` | `commitmentScheduleItems` | 7 | 2 | `user_id` + `user_type` | `cashflow → scheduled_cashflows`, `localUser → local_users`, `oauthUser → users` | `api/services/coach/cashflows.ts`, `api/services/coach/commitments.ts` | `api/services/coach/commitments.ts`, `api/services/user-purge-service.ts` |
 | `expense_daily_rollups` | `expenseDailyRollups` | 12 | 2 | `user_id` + `user_type` | — | `api/admin-router.ts`, `api/expense-router.ts`, `api/jobs/rollup-reconciliation-job.ts`, `api/notification-engine.ts`, `api/services/expense-rollups.ts` | `api/services/expense-rollups.ts`, `api/services/user-purge-service.ts` |
 | `financial_goals` | `financialGoals` | 13 | 2 | `user_id` + `user_type` | `budgets → user_budgets`, `localUser → local_users`, `oauthUser → users` | `api/goals-router.ts`, `api/lib/ownership-guard.ts`, `api/services/action-runtime/extended-actions.ts`, `api/services/action-runtime/goal-create.ts`, `api/services/finance-semantic-layer/resolvers.ts` | `api/goals-router.ts`, `api/services/action-runtime/extended-actions.ts`, `api/services/action-runtime/goal-create.ts`, `api/services/user-purge-service.ts` |
-| `installment_plans` | `installmentPlans` | 11 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/expense-router.ts`, `api/services/coach/cashflows.ts` | `api/expense-router.ts`, `api/services/user-purge-service.ts` |
+| `installment_plans` | `installmentPlans` | 12 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/expense-router.ts`, `api/services/coach/cashflows.ts`, `api/services/coach/commitments.ts` | `api/expense-router.ts`, `api/services/coach/commitments.ts`, `api/services/user-purge-service.ts` |
 | `monthly_behavior_snapshots` | `monthlyBehaviorSnapshots` | 15 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/services/finance-semantic-layer/monthly-report-facts.ts`, `api/services/finance-semantic-layer/proactive-insights.ts` | `api/ai-router.ts`, `api/profile-router.ts`, `api/services/user-purge-service.ts` |
 | `monthly_reports` | `monthlyReports` | 14 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/jobs/monthly-report-job.ts`, `api/services/voice/brain/tools/reports.ts` | `api/jobs/monthly-report-job.ts`, `api/services/user-purge-service.ts` |
-| `scheduled_cashflows` | `scheduledCashflows` | 18 | 2 | `user_id` + `user_type` | `contact → user_contacts`, `installmentPlan → installment_plans`, `localUser → local_users`, `oauthUser → users`, `settlements → cashflow_settlements` | `api/expense-router.ts`, `api/services/coach/cashflows.ts` | `api/profile-router.ts`, `api/services/coach/cashflows.ts`, `api/services/user-purge-service.ts` |
+| `scheduled_cashflows` | `scheduledCashflows` | 36 | 2 | `user_id` + `user_type` | `beneficiary → user_contacts`, `contact → user_contacts`, `hints → commitment_hints`, `installmentPlan → installment_plans`, `localUser → local_users`, `oauthUser → users`, `originExpense → expenses`, `overrides → commitment_overrides`, `reminders → commitment_reminders`, `scheduleItems → commitment_schedule_items`, `settlements → cashflow_settlements` | `api/expense-router.ts`, `api/lib/understanding/context.ts`, `api/services/coach/cashflows.ts`, `api/services/coach/commitments.ts`, `api/services/coach/reminders.ts` | `api/profile-router.ts`, `api/services/coach/cashflows.ts`, `api/services/coach/commitments.ts`, `api/services/user-purge-service.ts` |
 | `user_budgets` | `userBudgets` | 13 | 3 | `user_id` + `user_type` | `linkedGoal → financial_goals`, `localUser → local_users`, `oauthUser → users` | `api/budget-router.ts`, `api/jobs/taxonomy-migration-job.ts`, `api/services/budget-status.ts` | `api/budget-router.ts`, `api/goals-router.ts`, `api/jobs/taxonomy-migration-job.ts`, `api/services/action-runtime/extended-actions.ts`, `api/services/budget-status.ts`, `api/services/user-purge-service.ts` |
 
 ### Class D — Operational / Ephemeral
@@ -86,11 +101,15 @@ Sessions, challenges, OTPs, pending actions
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `ai_pending_actions` | `aiPendingActions` | 17 | 4 | `user_id` + `user_type` | `auditLogs → ai_action_audit_logs`, `conversation → chat_conversations`, `localUser → local_users`, `oauthUser → users` | `api/chat-router.ts`, `api/services/action-runtime/index.ts` | `api/jobs/data-retention-job.ts`, `api/services/action-runtime/index.ts`, `api/services/user-purge-service.ts` |
 | `auth_challenges` | `authChallenges` | 5 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/webauthn-router.ts` | `api/boot.ts`, `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts`, `api/webauthn-router.ts` |
-| `in_app_notifications` | `inAppNotifications` | 8 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/profile-router.ts` | `api/notification-engine.ts`, `api/profile-router.ts`, `api/services/coach/plans.ts`, `api/services/user-purge-service.ts` |
-| `pending_clarifications` | `pendingClarifications` | 9 | 3 | `user_id` + `user_type` | `expense → expenses`, `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/ai-router.ts`, `api/expense-router.ts`, `api/services/voice/app-calls.ts`, `api/services/voice/brain/tools/reports.ts` | `api/admin-router.ts`, `api/ai-router.ts`, `api/expense-router.ts`, `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts`, `api/services/voice/app-calls.ts` |
-| `sessions` | `sessions` | 9 | 3 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/lib/access-control.ts`, `api/lib/session-validation.ts`, `api/session-router.ts` | `api/lib/access-control.ts`, `api/local-auth-utils.ts`, `api/services/user-purge-service.ts` |
-| `webhook_tokens` | `webhookTokens` | 6 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/profile-router.ts`, `api/sms-router.ts` | `api/profile-router.ts`, `api/services/user-purge-service.ts`, `api/sms-router.ts` |
-| `whatsapp_otp_codes` | `whatsappOtpCodes` | 6 | 1 | — | — | `api/services/phone-challenge.ts` | `api/services/phone-challenge.ts` |
+| `capture_ai_accounts` | `captureAiAccounts` | 6 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/admission.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/admission.ts`, `api/services/user-purge-service.ts` |
+| `capture_ai_days` | `captureAiDays` | 3 | 0 | — | — | `api/lib/capture/admission.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/admission.ts` |
+| `capture_ai_jobs` | `captureAiJobs` | 15 | 4 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/activity.ts`, `api/lib/capture/ai-queue.ts`, `api/lib/capture/intake.ts`, `api/lib/capture/operations.ts`, `api/lib/capture/simulator.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/ai-queue.ts`, `api/lib/capture/care.ts`, `api/lib/capture/intake.ts`, `api/services/ledger-writer.ts`, `api/services/user-purge-service.ts` |
+| `capture_ai_reservations` | `captureAiReservations` | 10 | 3 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/admission.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/admission.ts`, `api/services/user-purge-service.ts` |
+| `commitment_questions` | `commitmentQuestions` | 13 | 2 | `user_id` + `user_type` | `cashflow → scheduled_cashflows`, `expense → expenses`, `localUser → local_users`, `oauthUser → users` | `api/services/coach/commitments.ts` | `api/services/coach/commitments.ts`, `api/services/user-purge-service.ts` |
+| `in_app_notifications` | `inAppNotifications` | 8 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/profile-router.ts`, `api/services/admin-alerts.ts` | `api/lib/capture/care.ts`, `api/lib/capture/intake.ts`, `api/notification-engine.ts`, `api/profile-router.ts`, `api/services/admin-alerts.ts`, `api/services/coach/plans.ts`, `api/services/coach/reminders.ts`, `api/services/user-purge-service.ts`, `api/support-router.ts` |
+| `pending_clarifications` | `pendingClarifications` | 9 | 3 | `user_id` + `user_type` | `expense → expenses`, `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/expense-router.ts`, `api/services/voice/app-calls.ts`, `api/services/voice/brain/tools/reports.ts` | `api/admin-router.ts`, `api/ai-router.ts`, `api/expense-router.ts`, `api/jobs/data-retention-job.ts`, `api/services/recording/read-sentence.ts`, `api/services/user-purge-service.ts`, `api/services/voice/app-calls.ts` |
+| `sessions` | `sessions` | 9 | 3 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-console-router.ts`, `api/admin-router.ts`, `api/lib/access-control.ts`, `api/lib/session-validation.ts`, `api/session-router.ts` | `api/lib/access-control.ts`, `api/local-auth-utils.ts`, `api/services/user-purge-service.ts` |
+| `whatsapp_otp_codes` | `whatsappOtpCodes` | 7 | 1 | — | — | `api/services/phone-challenge.ts` | `api/services/phone-challenge.ts` |
 
 ### Class E — Telemetry / Logs
 
@@ -99,17 +118,25 @@ Classification logs, token ledgers, analytics, notification logs
 | Table | Export | Columns | Indexes | Owner pair | Relations | Read by | Written by |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `ad_clicks` | `adClicks` | 6 | 2 | `user_id` + `user_type` | `ad → ads`, `localUser → local_users`, `oauthUser → users` | `api/jobs/data-retention-job.ts` | `api/ads-router.ts`, `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts` |
+| `ad_impressions` | `adImpressions` | 8 | 3 | `user_id` + `user_type` | — | `api/ads-router.ts` | `api/ads-router.ts`, `api/services/user-purge-service.ts` |
 | `ai_action_audit_logs` | `aiActionAuditLogs` | 9 | 3 | `user_id` + `user_type` | `action → ai_pending_actions`, `localUser → local_users`, `oauthUser → users` | — | `api/jobs/data-retention-job.ts`, `api/services/action-runtime/index.ts`, `api/services/user-purge-service.ts` |
-| `ai_token_ledgers` | `aiTokenLedgers` | 28 | 4 | `user_id` + `user_type` | `classificationLog → classification_logs`, `conversation → chat_conversations`, `localUser → local_users`, `oauthUser → users`, `provider → ai_providers` | `api/admin-router.ts`, `api/jobs/data-retention-job.ts` | `api/jobs/data-retention-job.ts`, `api/lib/ai-ledger.ts`, `api/services/user-purge-service.ts` |
-| `api_key_errors` | `apiKeyErrors` | 10 | 5 | — | `localUser → local_users`, `oauthUser → users` | `api/lib/error-logger.ts` | `api/jobs/data-retention-job.ts`, `api/lib/error-logger.ts` |
-| `classification_logs` | `classificationLogs` | 22 | 3 | `user_id` + `user_type` | `expenses → expenses`, `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/expense-router.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/muscle-memory.ts`, `api/services/finance-semantic-layer/resolvers.ts` | `api/ai-router.ts`, `api/boot.ts`, `api/expense-router.ts`, `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts` |
-| `notification_logs` | `notificationLogs` | 8 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users`, `template → notification_templates` | `api/admin-router.ts`, `api/notification-engine.ts` | `api/jobs/data-retention-job.ts`, `api/notification-engine.ts`, `api/services/user-purge-service.ts` |
+| `ai_token_ledgers` | `aiTokenLedgers` | 28 | 4 | `user_id` + `user_type` | `classificationLog → classification_logs`, `conversation → chat_conversations`, `localUser → local_users`, `oauthUser → users`, `provider → ai_providers` | `api/admin-console-router.ts`, `api/admin-router.ts`, `api/jobs/data-retention-job.ts`, `api/lib/ai-ledger.ts` | `api/jobs/data-retention-job.ts`, `api/lib/ai-ledger.ts`, `api/services/user-purge-service.ts` |
+| `api_key_errors` | `apiKeyErrors` | 10 | 5 | — | `localUser → local_users`, `oauthUser → users` | `api/admin-console-router.ts`, `api/lib/error-logger.ts` | `api/jobs/data-retention-job.ts`, `api/lib/error-logger.ts` |
+| `capture_events` | `captureEvents` | 31 | 5 | `user_id` + `user_type` | `expense → expenses`, `localUser → local_users`, `oauthUser → users` | `api/lib/capture/activity.ts`, `api/lib/capture/care.ts`, `api/lib/capture/fees.ts`, `api/lib/capture/intake.ts`, `api/lib/capture/operations.ts`, `api/lib/capture/simulator.ts`, `api/services/ledger-writer.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/care.ts`, `api/lib/capture/fees.ts`, `api/lib/capture/intake.ts`, `api/lib/capture/operations.ts`, `api/services/ledger-writer.ts`, `api/services/user-purge-service.ts` |
+| `capture_questions` | `captureQuestions` | 12 | 4 | `user_id` + `user_type` | `event → capture_events`, `expense → expenses`, `localUser → local_users`, `oauthUser → users` | `api/lib/capture/questions.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/care.ts`, `api/lib/capture/questions.ts`, `api/services/user-purge-service.ts` |
+| `capture_samples` | `captureSamples` | 16 | 3 | `user_id` + `user_type` | `event → capture_events`, `localUser → local_users`, `oauthUser → users` | `api/lib/capture/samples.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/care.ts`, `api/lib/capture/consent.ts`, `api/lib/capture/samples.ts`, `api/services/user-purge-service.ts` |
+| `capture_signals` | `captureSignals` | 13 | 4 | `user_id` + `user_type` | `device → capture_devices`, `event → capture_events`, `localUser → local_users`, `oauthUser → users` | `api/lib/capture/ai-queue.ts`, `api/lib/capture/intake.ts`, `api/lib/capture/simulator.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/ai-queue.ts`, `api/lib/capture/care.ts`, `api/lib/capture/intake.ts`, `api/services/user-purge-service.ts` |
+| `classification_logs` | `classificationLogs` | 22 | 3 | `user_id` + `user_type` | `expenses → expenses`, `localUser → local_users`, `oauthUser → users` | `api/admin-console-router.ts`, `api/admin-router.ts`, `api/expense-router.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/muscle-memory.ts`, `api/services/finance-semantic-layer/resolvers.ts`, `api/services/recording/reading-log.ts` | `api/ai-router.ts`, `api/boot.ts`, `api/expense-router.ts`, `api/jobs/data-retention-job.ts`, `api/services/recording/read-sentence.ts`, `api/services/user-purge-service.ts` |
+| `commitment_reminders` | `commitmentReminders` | 8 | 2 | `user_id` + `user_type` | `cashflow → scheduled_cashflows`, `localUser → local_users`, `oauthUser → users` | `api/services/coach/reminders.ts` | `api/services/coach/reminders.ts`, `api/services/user-purge-service.ts` |
+| `notification_logs` | `notificationLogs` | 8 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users`, `template → notification_templates` | `api/admin-router.ts`, `api/notification-engine.ts` | `api/admin-router.ts`, `api/jobs/data-retention-job.ts`, `api/notification-engine.ts`, `api/services/user-purge-service.ts` |
 | `profile_learning_events` | `profileLearningEvents` | 9 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/services/user-profile-service.ts` | `api/jobs/data-retention-job.ts`, `api/services/user-profile-service.ts`, `api/services/user-purge-service.ts` |
-| `raw_sms_events` | `rawSmsEvents` | 9 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/profile-router.ts`, `api/services/sms-ledger.ts`, `api/sms-router.ts` | `api/jobs/data-retention-job.ts`, `api/services/sms-ledger.ts`, `api/services/user-purge-service.ts`, `api/sms-router.ts` |
-| `user_analytics` | `userAnalytics` | 6 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/analytics-router.ts`, `api/lib/ai-usage-policy.ts`, `api/services/ai-cost-analytics.ts` | `api/analytics-router.ts`, `api/jobs/data-retention-job.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/subscription-service.ts`, `api/services/user-purge-service.ts`, `api/session-router.ts` |
+| `scheduled_job_runs` | `scheduledJobRuns` | 7 | 1 | — | — | `api/services/job-runs.ts`, `api/services/server-status.ts` | `api/jobs/data-retention-job.ts`, `api/services/job-runs.ts` |
+| `store_events` | `storeEvents` | 7 | 2 | — | — | — | `api/lib/store-billing/ledger.ts` |
+| `user_analytics` | `userAnalytics` | 6 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-console-router.ts`, `api/analytics-router.ts`, `api/lib/ai-usage-policy.ts`, `api/services/ai-cost-analytics.ts` | `api/analytics-router.ts`, `api/jobs/data-retention-job.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/client-platform.ts`, `api/lib/subscription-service.ts`, `api/services/user-purge-service.ts`, `api/session-router.ts` |
 | `voice_call_incidents` | `voiceCallIncidents` | 7 | 3 | `user_id` + `user_type` | `call → voice_calls`, `localUser → local_users`, `oauthUser → users` | `api/services/voice/admin-stats.ts` | `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts`, `api/services/voice/gateway/persistence.ts` |
 | `voice_calls` | `voiceCalls` | 26 | 3 | `user_id` + `user_type` | `incidents → voice_call_incidents`, `localUser → local_users`, `oauthUser → users` | `api/services/entitlements/voice.ts`, `api/services/voice/admin-stats.ts`, `api/services/voice/gateway/persistence.ts`, `api/services/voice/gateway/start-call.ts`, `api/services/voice/post-call.ts`, `api/voice-router.ts` | `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts`, `api/services/voice/gateway/persistence.ts`, `api/services/voice/gateway/start-call.ts`, `api/services/voice/post-call.ts` |
 | `voice_usage` | `voiceUsage` | 7 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/ai-router.ts`, `api/services/entitlements/voice.ts` | `api/ai-router.ts`, `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts` |
+| `whatsapp_messages` | `whatsappMessages` | 20 | 5 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-whatsapp-router.ts`, `api/lib/whatsapp/outbox.ts` | `api/admin-whatsapp-router.ts`, `api/jobs/data-retention-job.ts`, `api/lib/whatsapp/outbox.ts`, `api/services/user-purge-service.ts` |
 
 ### Class F — AI Memory
 
@@ -121,8 +148,8 @@ Memory items + embeddings
 | `ai_conversation_summaries` | `aiConversationSummaries` | 10 | 3 | `user_id` + `user_type` | `conversation → chat_conversations`, `localUser → local_users`, `oauthUser → users` | `api/services/ai-memory/memory-retriever.ts`, `api/services/ai-memory/memory-writer.ts` | `api/chat-router.ts`, `api/services/ai-memory/memory-writer.ts`, `api/services/ai-memory/slot-store.ts`, `api/services/user-purge-service.ts` |
 | `ai_memory_embeddings` | `aiMemoryEmbeddings` | 10 | 2 | `user_id` + `user_type` | `localUser → local_users`, `memoryItem → ai_memory_items`, `oauthUser → users` | `api/services/ai-memory/embedding-backfill.ts`, `api/services/ai-memory/memory-retriever.ts`, `api/services/ai-memory/memory-writer.ts` | `api/chat-router.ts`, `api/services/ai-memory/embedding-backfill.ts`, `api/services/ai-memory/memory-writer.ts`, `api/services/user-purge-service.ts`, `api/services/voice/brain/tools/memory.ts` |
 | `ai_memory_items` | `aiMemoryItems` | 13 | 6 | `user_id` + `user_type` | `embeddings → ai_memory_embeddings`, `localUser → local_users`, `oauthUser → users`, `sourceConversation → chat_conversations`, `sourceMessage → chat_messages` | `api/chat-router.ts`, `api/services/ai-memory/embedding-backfill.ts`, `api/services/ai-memory/memory-retriever.ts`, `api/services/ai-memory/memory-writer.ts`, `api/services/ai-memory/slot-store.ts`, `api/services/voice/brain/snapshot.ts`, `api/services/voice/brain/tools/memory.ts`, `api/services/voice/post-call.ts` | `api/chat-router.ts`, `api/services/ai-memory/memory-writer.ts`, `api/services/ai-memory/slot-store.ts`, `api/services/user-purge-service.ts`, `api/services/voice/brain/tools/memory.ts`, `api/services/voice/post-call.ts` |
-| `user_correction_rules` | `userCorrectionRules` | 15 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users`, `sourceLog → classification_logs` | `api/jobs/taxonomy-migration-job.ts`, `api/lib/correction-rules.ts` | `api/jobs/taxonomy-migration-job.ts`, `api/lib/correction-rules.ts`, `api/services/user-purge-service.ts` |
-| `user_dictionaries` | `userDictionaries` | 7 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/ai-router.ts`, `api/expense-router.ts`, `api/image-router.ts`, `api/jobs/taxonomy-migration-job.ts` | `api/admin-router.ts`, `api/ai-router.ts`, `api/jobs/taxonomy-migration-job.ts`, `api/services/user-purge-service.ts` |
+| `user_correction_rules` | `userCorrectionRules` | 15 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users`, `sourceLog → classification_logs` | `api/jobs/taxonomy-migration-job.ts`, `api/lib/correction-rules.ts`, `api/lib/understanding/context.ts` | `api/jobs/taxonomy-migration-job.ts`, `api/lib/correction-rules.ts`, `api/services/user-purge-service.ts` |
+| `user_dictionaries` | `userDictionaries` | 7 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/ai-router.ts`, `api/expense-router.ts`, `api/image-router.ts`, `api/jobs/taxonomy-migration-job.ts`, `api/lib/understanding/context.ts` | `api/admin-router.ts`, `api/ai-router.ts`, `api/jobs/taxonomy-migration-job.ts`, `api/services/user-purge-service.ts` |
 
 ### Class G — Conversation
 
@@ -177,6 +204,38 @@ chat_messages and conversation threads
 | `auth_challenges` | `localUser` | one | `local_users` | `user_id` |
 | `auth_challenges` | `oauthUser` | one | `users` | `user_id` |
 | `business_categories` | `business` | one | `user_businesses` | `business_id` |
+| `capture_ai_accounts` | `localUser` | one | `local_users` | `user_id` |
+| `capture_ai_accounts` | `oauthUser` | one | `users` | `user_id` |
+| `capture_ai_jobs` | `localUser` | one | `local_users` | `user_id` |
+| `capture_ai_jobs` | `oauthUser` | one | `users` | `user_id` |
+| `capture_ai_reservations` | `localUser` | one | `local_users` | `user_id` |
+| `capture_ai_reservations` | `oauthUser` | one | `users` | `user_id` |
+| `capture_consents` | `localUser` | one | `local_users` | `user_id` |
+| `capture_consents` | `oauthUser` | one | `users` | `user_id` |
+| `capture_devices` | `localUser` | one | `local_users` | `user_id` |
+| `capture_devices` | `oauthUser` | one | `users` | `user_id` |
+| `capture_events` | `expense` | one | `expenses` | `expense_id` |
+| `capture_events` | `localUser` | one | `local_users` | `user_id` |
+| `capture_events` | `oauthUser` | one | `users` | `user_id` |
+| `capture_markers` | `localUser` | one | `local_users` | `user_id` |
+| `capture_markers` | `oauthUser` | one | `users` | `user_id` |
+| `capture_memory` | `localUser` | one | `local_users` | `user_id` |
+| `capture_memory` | `oauthUser` | one | `users` | `user_id` |
+| `capture_questions` | `event` | one | `capture_events` | `event_id` |
+| `capture_questions` | `expense` | one | `expenses` | `expense_id` |
+| `capture_questions` | `localUser` | one | `local_users` | `user_id` |
+| `capture_questions` | `oauthUser` | one | `users` | `user_id` |
+| `capture_samples` | `event` | one | `capture_events` | `event_id` |
+| `capture_samples` | `localUser` | one | `local_users` | `user_id` |
+| `capture_samples` | `oauthUser` | one | `users` | `user_id` |
+| `capture_signals` | `device` | one | `capture_devices` | `device_id` |
+| `capture_signals` | `event` | one | `capture_events` | `event_id` |
+| `capture_signals` | `localUser` | one | `local_users` | `user_id` |
+| `capture_signals` | `oauthUser` | one | `users` | `user_id` |
+| `capture_usage` | `localUser` | one | `local_users` | `user_id` |
+| `capture_usage` | `oauthUser` | one | `users` | `user_id` |
+| `capture_user_pairs` | `localUser` | one | `local_users` | `user_id` |
+| `capture_user_pairs` | `oauthUser` | one | `users` | `user_id` |
 | `cashflow_settlements` | `cashflow` | one | `scheduled_cashflows` | `cashflow_id` |
 | `cashflow_settlements` | `expense` | one | `expenses` | `expense_id` |
 | `cashflow_settlements` | `localUser` | one | `local_users` | `user_id` |
@@ -199,6 +258,22 @@ chat_messages and conversation threads
 | `coaching_steps` | `localUser` | one | `local_users` | `user_id` |
 | `coaching_steps` | `oauthUser` | one | `users` | `user_id` |
 | `coaching_steps` | `plan` | one | `coaching_plans` | `plan_id` |
+| `commitment_hints` | `cashflow` | one | `scheduled_cashflows` | `cashflow_id` |
+| `commitment_hints` | `localUser` | one | `local_users` | `user_id` |
+| `commitment_hints` | `oauthUser` | one | `users` | `user_id` |
+| `commitment_overrides` | `cashflow` | one | `scheduled_cashflows` | `cashflow_id` |
+| `commitment_overrides` | `localUser` | one | `local_users` | `user_id` |
+| `commitment_overrides` | `oauthUser` | one | `users` | `user_id` |
+| `commitment_questions` | `cashflow` | one | `scheduled_cashflows` | `cashflow_id` |
+| `commitment_questions` | `expense` | one | `expenses` | `expense_id` |
+| `commitment_questions` | `localUser` | one | `local_users` | `user_id` |
+| `commitment_questions` | `oauthUser` | one | `users` | `user_id` |
+| `commitment_reminders` | `cashflow` | one | `scheduled_cashflows` | `cashflow_id` |
+| `commitment_reminders` | `localUser` | one | `local_users` | `user_id` |
+| `commitment_reminders` | `oauthUser` | one | `users` | `user_id` |
+| `commitment_schedule_items` | `cashflow` | one | `scheduled_cashflows` | `cashflow_id` |
+| `commitment_schedule_items` | `localUser` | one | `local_users` | `user_id` |
+| `commitment_schedule_items` | `oauthUser` | one | `users` | `user_id` |
 | `discount_codes` | `localUser` | one | `local_users` | `created_by` |
 | `discount_codes` | `oauthUser` | one | `users` | `created_by` |
 | `expense_categories` | `localUser` | one | `local_users` | `user_id` |
@@ -232,6 +307,11 @@ chat_messages and conversation threads
 | `local_users` | `chatConversations` | many | `chat_conversations` | — |
 | `local_users` | `classificationLogs` | many | `classification_logs` | — |
 | `local_users` | `coachingPlans` | many | `coaching_plans` | — |
+| `local_users` | `commitmentHints` | many | `commitment_hints` | — |
+| `local_users` | `commitmentOverrides` | many | `commitment_overrides` | — |
+| `local_users` | `commitmentQuestions` | many | `commitment_questions` | — |
+| `local_users` | `commitmentReminders` | many | `commitment_reminders` | — |
+| `local_users` | `commitmentScheduleItems` | many | `commitment_schedule_items` | — |
 | `local_users` | `contacts` | many | `user_contacts` | — |
 | `local_users` | `discountCodes` | many | `discount_codes` | — |
 | `local_users` | `expenses` | many | `expenses` | — |
@@ -245,7 +325,6 @@ chat_messages and conversation threads
 | `local_users` | `proSubscriptions` | many | `pro_subscriptions` | — |
 | `local_users` | `profileLearningEvents` | many | `profile_learning_events` | — |
 | `local_users` | `pushSubscriptions` | many | `push_subscriptions` | — |
-| `local_users` | `rawSmsEvents` | many | `raw_sms_events` | — |
 | `local_users` | `referralsMade` | many | `referrals` | — |
 | `local_users` | `referralsReceived` | many | `referrals` | — |
 | `local_users` | `scheduledCashflows` | many | `scheduled_cashflows` | — |
@@ -258,7 +337,6 @@ chat_messages and conversation threads
 | `local_users` | `userProfiles` | many | `user_profiles` | — |
 | `local_users` | `voiceUsage` | many | `voice_usage` | — |
 | `local_users` | `wallets` | many | `user_wallets` | — |
-| `local_users` | `webhookTokens` | many | `webhook_tokens` | — |
 | `monthly_behavior_snapshots` | `localUser` | one | `local_users` | `user_id` |
 | `monthly_behavior_snapshots` | `oauthUser` | one | `users` | `user_id` |
 | `monthly_reports` | `localUser` | one | `local_users` | `user_id` |
@@ -276,16 +354,20 @@ chat_messages and conversation threads
 | `profile_learning_events` | `oauthUser` | one | `users` | `user_id` |
 | `push_subscriptions` | `localUser` | one | `local_users` | `user_id` |
 | `push_subscriptions` | `oauthUser` | one | `users` | `user_id` |
-| `raw_sms_events` | `localUser` | one | `local_users` | `user_id` |
-| `raw_sms_events` | `oauthUser` | one | `users` | `user_id` |
 | `referrals` | `referredLocalUser` | one | `local_users` | `referred_id` |
 | `referrals` | `referredOauthUser` | one | `users` | `referred_id` |
 | `referrals` | `referrerLocalUser` | one | `local_users` | `referrer_id` |
 | `referrals` | `referrerOauthUser` | one | `users` | `referrer_id` |
+| `scheduled_cashflows` | `beneficiary` | one | `user_contacts` | `beneficiary_contact_id` |
 | `scheduled_cashflows` | `contact` | one | `user_contacts` | `contact_id` |
+| `scheduled_cashflows` | `hints` | many | `commitment_hints` | — |
 | `scheduled_cashflows` | `installmentPlan` | one | `installment_plans` | `installment_plan_id` |
 | `scheduled_cashflows` | `localUser` | one | `local_users` | `user_id` |
 | `scheduled_cashflows` | `oauthUser` | one | `users` | `user_id` |
+| `scheduled_cashflows` | `originExpense` | one | `expenses` | `origin_expense_id` |
+| `scheduled_cashflows` | `overrides` | many | `commitment_overrides` | — |
+| `scheduled_cashflows` | `reminders` | many | `commitment_reminders` | — |
+| `scheduled_cashflows` | `scheduleItems` | many | `commitment_schedule_items` | — |
 | `scheduled_cashflows` | `settlements` | many | `cashflow_settlements` | — |
 | `sessions` | `localUser` | one | `local_users` | `user_id` |
 | `sessions` | `oauthUser` | one | `users` | `user_id` |
@@ -332,6 +414,11 @@ chat_messages and conversation threads
 | `users` | `chatConversations` | many | `chat_conversations` | — |
 | `users` | `classificationLogs` | many | `classification_logs` | — |
 | `users` | `coachingPlans` | many | `coaching_plans` | — |
+| `users` | `commitmentHints` | many | `commitment_hints` | — |
+| `users` | `commitmentOverrides` | many | `commitment_overrides` | — |
+| `users` | `commitmentQuestions` | many | `commitment_questions` | — |
+| `users` | `commitmentReminders` | many | `commitment_reminders` | — |
+| `users` | `commitmentScheduleItems` | many | `commitment_schedule_items` | — |
 | `users` | `contacts` | many | `user_contacts` | — |
 | `users` | `discountCodes` | many | `discount_codes` | — |
 | `users` | `expenses` | many | `expenses` | — |
@@ -345,7 +432,6 @@ chat_messages and conversation threads
 | `users` | `proSubscriptions` | many | `pro_subscriptions` | — |
 | `users` | `profileLearningEvents` | many | `profile_learning_events` | — |
 | `users` | `pushSubscriptions` | many | `push_subscriptions` | — |
-| `users` | `rawSmsEvents` | many | `raw_sms_events` | — |
 | `users` | `referralsMade` | many | `referrals` | — |
 | `users` | `referralsReceived` | many | `referrals` | — |
 | `users` | `scheduledCashflows` | many | `scheduled_cashflows` | — |
@@ -358,7 +444,6 @@ chat_messages and conversation threads
 | `users` | `userProfiles` | many | `user_profiles` | — |
 | `users` | `voiceUsage` | many | `voice_usage` | — |
 | `users` | `wallets` | many | `user_wallets` | — |
-| `users` | `webhookTokens` | many | `webhook_tokens` | — |
 | `voice_call_incidents` | `call` | one | `voice_calls` | `call_id` |
 | `voice_call_incidents` | `localUser` | one | `local_users` | `user_id` |
 | `voice_call_incidents` | `oauthUser` | one | `users` | `user_id` |
@@ -367,14 +452,16 @@ chat_messages and conversation threads
 | `voice_calls` | `oauthUser` | one | `users` | `user_id` |
 | `voice_usage` | `localUser` | one | `local_users` | `user_id` |
 | `voice_usage` | `oauthUser` | one | `users` | `user_id` |
-| `webhook_tokens` | `localUser` | one | `local_users` | `user_id` |
-| `webhook_tokens` | `oauthUser` | one | `users` | `user_id` |
+| `whatsapp_contacts` | `localUser` | one | `local_users` | `user_id` |
+| `whatsapp_contacts` | `oauthUser` | one | `users` | `user_id` |
+| `whatsapp_messages` | `localUser` | one | `local_users` | `user_id` |
+| `whatsapp_messages` | `oauthUser` | one | `users` | `user_id` |
 
 ## Checks
 
 | Check | Tables |
 | --- | --- |
-| No relations in db/relations.ts | `ad_stats_daily`, `ai_cost_monthly`, `expense_daily_rollups`, `onboarding_questions`, `seo_pages`, `system_settings`, `whatsapp_otp_codes` |
-| Not read or written by any runtime file | — |
-| Written but never read by runtime code | `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly` |
+| No relations in db/relations.ts | `ad_impressions`, `ad_stats_daily`, `admin_audit_logs`, `ai_cost_monthly`, `capture_ai_days`, `capture_sources`, `expense_daily_rollups`, `onboarding_questions`, `scheduled_job_runs`, `seo_pages`, `store_events`, `store_purchases`, `subscription_catalog`, `support_assignments`, `system_settings`, `whatsapp_otp_codes` |
+| Not read or written by any runtime file | `discount_codes` |
+| Written but never read by runtime code | `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `referrals`, `store_events` |
 | Read but never written by runtime code | `onboarding_questions` |

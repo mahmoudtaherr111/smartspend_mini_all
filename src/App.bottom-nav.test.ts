@@ -8,7 +8,7 @@ describe("App Bottom Navigation Routing", () => {
     expect(BOTTOM_NAV_ROUTES).toContain("/settings");
     expect(BOTTOM_NAV_ROUTES).toContain("/support");
     expect(BOTTOM_NAV_ROUTES).toContain("/pro");
-    expect(BOTTOM_NAV_ROUTES).toContain("/bank-sync");
+    expect(BOTTOM_NAV_ROUTES).toContain("/wallets");
     expect(BOTTOM_NAV_ROUTES).toContain("/plan");
     expect(BOTTOM_NAV_ROUTES).toContain("/more");
     expect(BOTTOM_NAV_ROUTES.length).toBe(8);
@@ -29,7 +29,6 @@ describe("App Bottom Navigation Routing", () => {
     expect(hasBottomNav("/settings/security")).toBe(false);
     expect(hasBottomNav("/support")).toBe(true);
     expect(hasBottomNav("/pro")).toBe(true);
-    expect(hasBottomNav("/bank-sync")).toBe(true);
     expect(hasBottomNav("/more")).toBe(true);
   });
 

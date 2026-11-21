@@ -374,6 +374,22 @@ export const supportTickets = mysqlTable(
   ],
 );
 
+/**
+ * Who on the team handles a ticket: the staff member's id with its account type, since a Google and a phone account
+ * can share an id (`support_tickets.assigned_to` holds an id alone and is not used). Kept apart from the ticket so
+ * that reading or writing tickets never depends on this table existing.
+ */
+export const supportAssignments = mysqlTable(
+  "support_assignments",
+  {
+    ticketId: int("ticket_id").primaryKey(),
+    staffId: int("staff_id").notNull(),
+    staffType: varchar("staff_type", { length: 50 }).notNull(),
+    assignedAt: datetime("assigned_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [index("support_assignments_staff_idx").on(t.staffId, t.staffType)],
+);
+
 // ─── Discount Codes ───
 export const discountCodes = mysqlTable("discount_codes", {
   id: int("id").primaryKey().autoincrement(),
@@ -422,6 +438,8 @@ export const ads = mysqlTable("ads", {
   linkUrl: varchar("link_url", { length: 500 }),
   placement: varchar("placement", { length: 100 }).notNull().default("sidebar"), // sidebar | banner | popup
   targetPlan: varchar("target_plan", { length: 50 }).default("free"), // free | all
+  platformTarget: varchar("platform_target", { length: 50 }).notNull().default("all"), // all | android | ios | web
+  frequencyCapPerDay: int("frequency_cap_per_day").notNull().default(0), // 0 = unlimited
   startDate: datetime("start_date"),
   endDate: datetime("end_date"),
   clicks: int("clicks").default(0),
@@ -448,6 +466,26 @@ export const adClicks = mysqlTable("ad_clicks", {
   index("ad_clicks_ad_idx").on(t.adId),
   index("ad_clicks_user_idx").on(t.userId, t.userType)
 ]);
+
+// ─── Ad Impressions (ADS-02, BUG-06) ───
+export const adImpressions = mysqlTable(
+  "ad_impressions",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    adId: int("ad_id").notNull(),
+    userId: int("user_id"),
+    userType: varchar("user_type", { length: 50 }),
+    placement: varchar("placement", { length: 100 }).notNull(),
+    impressionToken: varchar("impression_token", { length: 128 }).notNull(),
+    ipAddress: varchar("ip_address", { length: 100 }),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    uniqueIndex("ad_impressions_token_idx").on(t.impressionToken),
+    index("ad_impressions_user_idx").on(t.userId, t.userType),
+    index("ad_impressions_ad_user_idx").on(t.adId, t.userId, t.createdAt),
+  ],
+);
 
 // ─── Referrals ───
 export const referrals = mysqlTable(
@@ -496,6 +534,50 @@ export const proSubscriptions = mysqlTable(
   (t) => [
     index("pro_sub_user_idx").on(t.userId, t.userType),
     uniqueIndex("pro_sub_transaction_unique_idx").on(t.transactionId),
+  ],
+);
+
+// ─── Store Purchases (Google Play & Apple App Store) ───
+export const storePurchases = mysqlTable(
+  "store_purchases",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    store: varchar("store", { length: 50 }).notNull(),
+    storeProductId: varchar("store_product_id", { length: 100 }).notNull(),
+    originalTransactionId: varchar("original_transaction_id", { length: 255 }).notNull(),
+    purchaseToken: text("purchase_token").notNull(),
+    status: varchar("status", { length: 50 }).notNull().default("active"),
+    expiresAt: datetime("expires_at"),
+    lastEventAt: datetime("last_event_at", { fsp: 3 }),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(
+      sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
+    ),
+  },
+  (t) => [
+    uniqueIndex("store_purchases_store_key_idx").on(t.store, t.originalTransactionId),
+    index("store_purchases_user_idx").on(t.userId, t.userType),
+    index("store_purchases_expiry_idx").on(t.status, t.expiresAt),
+  ],
+);
+
+// Every store event once, so a replay cannot change a subscription twice.
+export const storeEvents = mysqlTable(
+  "store_events",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    store: varchar("store", { length: 50 }).notNull(),
+    eventId: varchar("event_id", { length: 191 }).notNull(),
+    eventType: varchar("event_type", { length: 100 }).notNull(),
+    purchaseKey: varchar("purchase_key", { length: 255 }).notNull(),
+    eventTime: datetime("event_time", { fsp: 3 }).notNull(),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    uniqueIndex("store_events_event_idx").on(t.store, t.eventId),
+    index("store_events_created_idx").on(t.createdAt),
   ],
 );
 
@@ -685,22 +767,6 @@ export const voiceUsage = mysqlTable(
   (t) => [index("voice_user_month_idx").on(t.userId, t.userType, t.month)],
 );
 
-// ─── Webhook Tokens (For External Automations like Shortcuts) ───
-export const webhookTokens = mysqlTable(
-  "webhook_tokens",
-  {
-    id: int("id").primaryKey().autoincrement(),
-    userId: int("user_id").notNull(),
-    userType: varchar("user_type", { length: 50 }).notNull(),
-    token: varchar("token", { length: 255 }).notNull().unique(),
-    name: varchar("name", { length: 100 }).default("Default Token"),
-    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-  },
-  (t) => [
-    index("webhook_tokens_user_idx").on(t.userId, t.userType),
-  ],
-);
-
 // ─── Financial Goals (Free stub + Pro AI plans) ───
 export const financialGoals = mysqlTable(
   "financial_goals",
@@ -745,6 +811,8 @@ export const installmentPlans = mysqlTable(
     totalInstallments: int("total_installments").notNull(),
     paidBefore: int("paid_before").notNull().default(0),
     status: varchar("status", { length: 30 }).notNull().default("active"),
+    /** The commitment this plan became (docs/decisions/0051-commitments-ecosystem.md); the plan is kept for old apps. */
+    cashflowId: int("cashflow_id"),
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
     updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
   },
@@ -809,6 +877,44 @@ export const scheduledCashflows = mysqlTable(
     /** The installment plan this schedule belongs to, so a plan is never a second, separate commitment. */
     installmentPlanId: int("installment_plan_id"),
     contactId: int("contact_id"),
+    /**
+     * The logic of the commitment (docs/decisions/0051-commitments-ecosystem.md): fixed (equal installments, a count),
+     * schedule (dated payments of their own amounts: school, an apartment), recurring (open-ended: rent, bills, salary),
+     * balance (a debt with a person) or gam3eya (contributions, then one payout). Null on rows from before: recurring.
+     */
+    shape: varchar("shape", { length: 12 }),
+    /** Who is paid or who collects: valU, a bank, a shop, a school. A person is `contactId`. */
+    provider: varchar("provider", { length: 80 }),
+    /** A known subscription from `subscription_catalog` (netflix, shahid): its logo, names and match tokens. */
+    catalogSlug: varchar("catalog_slug", { length: 60 }),
+    /** Whom it is for: the child a school fee is for. */
+    beneficiaryContactId: int("beneficiary_contact_id"),
+    /** Every how many recurrence units (3 monthly = quarterly). */
+    intervalCount: int("interval_count").notNull().default(1),
+    /** Fixed: the number of installments in all; gam3eya: the months. Null: open-ended. */
+    occurrenceCount: int("occurrence_count"),
+    /** Fixed: installments paid before `startDay`, the first one still owed. */
+    paidBeforeCount: int("paid_before_count").notNull().default(0),
+    /** Balance: what the debt is in all; null for the other shapes. */
+    totalAmount: decimal("total_amount", { precision: 12, scale: 2 }),
+    /** The amount changes from time to time (bills): a due date's amount is an estimate. */
+    amountVaries: boolean("amount_varies").notNull().default(false),
+    /** cash | app | auto_debit | salary | card: how it is usually paid. */
+    paymentMethod: varchar("payment_method", { length: 20 }),
+    /** Gam3eya: the user's turn, 1-based. */
+    gam3eyaTurn: int("gam3eya_turn"),
+    /** A gam3eya's payout (direction in) belongs to its contributions' row; null otherwise. */
+    parentId: int("parent_id"),
+    /** Where a linked payment is filed when the user did not say; null: the shape's default. */
+    category: varchar("category", { length: 100 }),
+    subCategory: varchar("sub_category", { length: 100 }),
+    /** Balance: the ledger row the debt began with ("سلفت فريدة 1000"). */
+    originExpenseId: int("origin_expense_id"),
+    /** Days before a due date to remind; null: the admin's default for the shape. */
+    remindDaysBefore: int("remind_days_before"),
+    /** Hour of the day, Cairo time; null: the admin's default. */
+    remindHour: int("remind_hour"),
+    remindersEnabled: boolean("reminders_enabled").notNull().default(true),
     /** active | paused | ended */
     status: varchar("status", { length: 20 }).notNull().default("active"),
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -817,6 +923,125 @@ export const scheduledCashflows = mysqlTable(
   (t) => [
     index("scheduled_cashflows_user_idx").on(t.userId, t.userType, t.status),
     uniqueIndex("scheduled_cashflows_plan_unique").on(t.userId, t.userType, t.installmentPlanId),
+  ],
+);
+
+/** The dated payments of a schedule-shaped commitment (a school's three installments, an apartment's plan). */
+export const commitmentScheduleItems = mysqlTable(
+  "commitment_schedule_items",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    cashflowId: int("cashflow_id").notNull(),
+    dueDay: date("due_day", { mode: "string" }).notNull(),
+    amount: decimal("amount", { precision: 12, scale: 2 }),
+    /** "مقدم", "وديعة صيانة", "الباص". */
+    label: varchar("label", { length: 80 }),
+  },
+  (t) => [
+    index("commitment_schedule_items_user_idx").on(t.userId, t.userType, t.cashflowId),
+    uniqueIndex("commitment_schedule_items_day_unique").on(t.cashflowId, t.dueDay),
+  ],
+);
+
+/**
+ * One due date changed by the user: skipped ("اتلغت المرة دي"), moved to another day, or another amount this time.
+ * Keyed by the date the schedule computes, so the rule and its exceptions stay apart (like a calendar's exceptions).
+ */
+export const commitmentOverrides = mysqlTable(
+  "commitment_overrides",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    cashflowId: int("cashflow_id").notNull(),
+    dueDay: date("due_day", { mode: "string" }).notNull(),
+    /** skip | move | amount */
+    action: varchar("action", { length: 10 }).notNull(),
+    newDay: date("new_day", { mode: "string" }),
+    amount: decimal("amount", { precision: 12, scale: 2 }),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("commitment_overrides_user_idx").on(t.userId, t.userType, t.cashflowId),
+    uniqueIndex("commitment_overrides_day_unique").on(t.cashflowId, t.dueDay),
+  ],
+);
+
+/**
+ * What a commitment is recognised by, learned from the user's confirmations: the words they record it with, the
+ * sender of the bank message that pays it. Normalized text only; never a phone number or a message's text.
+ */
+export const commitmentHints = mysqlTable(
+  "commitment_hints",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    cashflowId: int("cashflow_id").notNull(),
+    /** phrase | sender */
+    kind: varchar("kind", { length: 12 }).notNull(),
+    value: varchar("value", { length: 160 }).notNull(),
+    /** Confirmations minus undos; at zero or below the hint no longer counts. */
+    weight: int("weight").notNull().default(1),
+    lastSeenAt: datetime("last_seen_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("commitment_hints_user_idx").on(t.userId, t.userType),
+    uniqueIndex("commitment_hints_value_unique").on(t.cashflowId, t.kind, t.value),
+  ],
+);
+
+/** A reminder that went out: one row per due date, stage and channel, so a retry or a second replica sends nothing twice. */
+export const commitmentReminders = mysqlTable(
+  "commitment_reminders",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    cashflowId: int("cashflow_id").notNull(),
+    dueDay: date("due_day", { mode: "string" }).notNull(),
+    /** before | due | after | week1 | week2 */
+    stage: varchar("stage", { length: 10 }).notNull(),
+    /** push | whatsapp */
+    channel: varchar("channel", { length: 10 }).notNull(),
+    sentAt: datetime("sent_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("commitment_reminders_user_idx").on(t.userId, t.userType, t.sentAt),
+    uniqueIndex("commitment_reminders_once").on(t.cashflowId, t.dueDay, t.stage, t.channel),
+  ],
+);
+
+/**
+ * A question waiting for the user, asked with buttons when the app opens: whether a due date was paid
+ * (`due_check`), or which commitment a recorded payment belongs to (`link`). One per date or payment (`dedupeKey`).
+ */
+export const commitmentQuestions = mysqlTable(
+  "commitment_questions",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    /** due_check | link */
+    kind: varchar("kind", { length: 12 }).notNull(),
+    /** due:<cashflowId>:<day> or link:<expenseId> */
+    dedupeKey: varchar("dedupe_key", { length: 80 }).notNull(),
+    cashflowId: int("cashflow_id"),
+    dueDay: date("due_day", { mode: "string" }),
+    expenseId: int("expense_id"),
+    /** link: the candidate due dates, [{ cashflowId, dueDay, amount }]. */
+    candidates: json("candidates"),
+    /** open | answered | skipped */
+    status: varchar("status", { length: 12 }).notNull().default("open"),
+    answer: varchar("answer", { length: 40 }),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    answeredAt: datetime("answered_at"),
+  },
+  (t) => [
+    index("commitment_questions_user_idx").on(t.userId, t.userType, t.status),
+    uniqueIndex("commitment_questions_once").on(t.userId, t.userType, t.dedupeKey),
   ],
 );
 
@@ -838,6 +1063,8 @@ export const cashflowSettlements = mysqlTable(
     amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
     /** linked: to a ledger row; declared: the user said it was paid, nothing recorded. */
     source: varchar("source", { length: 20 }).notNull(),
+    /** user: a tap; auto: matched with certainty when saved; question: the user picked it when asked; voice | chat. */
+    matchedBy: varchar("matched_by", { length: 12 }).notNull().default("user"),
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (t) => [
@@ -916,25 +1143,403 @@ export const coachingSteps = mysqlTable(
   ],
 );
 
-// ─── Raw SMS Events (For Audit & Parsing Logs) ───
-export const rawSmsEvents = mysqlTable(
-  "raw_sms_events",
+/**
+ * Every bank, wallet, payment network, fintech, telecom operator and SMS app whose notifications SmartSpend reads:
+ * the phones' allowlist and the parser's evidence of who sent a message. Shared by all users and holds no user data.
+ * Rows come from the seed in `api/lib/capture/seed-sources.ts` (`origin: seed`) or from an admin; an admin edit sets
+ * `adminEditedAt`, and the seed never overwrites such a row again. Only facts checked against a real source belong
+ * here: an app id from Google Play, a sender id from a real message; an unknown one stays empty, never guessed.
+ */
+export const captureSources = mysqlTable(
+  "capture_sources",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    slug: varchar("slug", { length: 60 }).notNull().unique(),
+    /** bank | wallet | payment_network | fintech | telecom | sms_app */
+    kind: varchar("kind", { length: 20 }).notNull(),
+    nameAr: varchar("name_ar", { length: 120 }).notNull(),
+    nameEn: varchar("name_en", { length: 120 }).notNull(),
+    /** ISO country codes where the source operates. */
+    countries: json("countries").notNull(),
+    /** Android package names, each confirmed on Google Play. */
+    androidPackages: json("android_packages").notNull(),
+    /** SMS sender ids (alphanumeric or short codes), each confirmed from a real message. */
+    senderIds: json("sender_ids").notNull(),
+    /** Names the source goes by inside message text, matched as whole tokens. */
+    aliases: json("aliases").notNull(),
+    /** What a person should know, such as an alert threshold below which the bank sends nothing. */
+    notes: text("notes"),
+    /** Order for template work and lists; lower comes first. */
+    priority: int("priority").notNull().default(100),
+    /** active | disabled */
+    status: varchar("status", { length: 12 }).notNull().default("active"),
+    /** seed | admin */
+    origin: varchar("origin", { length: 10 }).notNull().default("admin"),
+    adminEditedAt: datetime("admin_edited_at"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [index("capture_sources_status_idx").on(t.status, t.kind)],
+);
+
+/**
+ * Subscriptions people pay by card, wallet or app store (Netflix, Shahid, Spotify, ChatGPT, Claude…), so a charge
+ * can be recognised as one. `matchTokens` are words that name the service inside a card statement's merchant name
+ * ("NETFLIX.COM", "OPENAI *CHATGPT SUBSCR"); a `store` (Google Play, Apple) bills for other developers, so its charge
+ * names the store, not the service. Categories are ids from `contracts/categories.ts`. Shared, no user data; seeded
+ * and edited like `capture_sources`.
+ */
+export const subscriptionCatalog = mysqlTable(
+  "subscription_catalog",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    slug: varchar("slug", { length: 60 }).notNull().unique(),
+    name: varchar("name", { length: 100 }).notNull(),
+    nameAr: varchar("name_ar", { length: 100 }).notNull(),
+    /** service | store */
+    kind: varchar("kind", { length: 12 }).notNull().default("service"),
+    matchTokens: json("match_tokens").notNull(),
+    categoryId: varchar("category_id", { length: 40 }).notNull(),
+    subCategoryId: varchar("sub_category_id", { length: 40 }).notNull(),
+    /** weekly | monthly | quarterly | yearly | varies */
+    cycle: varchar("cycle", { length: 12 }).notNull().default("monthly"),
+    /** "#E50914": the badge the apps draw when there is no logo. */
+    brandColor: varchar("brand_color", { length: 9 }),
+    /** An https image the admin set for the service's logo (commitments, the calendar); it wins over a fetched one. */
+    logoUrl: varchar("logo_url", { length: 300 }),
+    /** The service's own Android app: its store listing gives its real icon (api/lib/capture/brand-logos.ts). */
+    appPackage: varchar("app_package", { length: 160 }),
+    /** Its official site ("netflix.com"), the icon's second source. */
+    website: varchar("website", { length: 160 }),
+    /** Its official Microsoft Store app (12 letters and digits), a third icon source (Apple's iCloud for Windows). */
+    msStoreId: varchar("ms_store_id", { length: 20 }),
+    /** The icon fetched from its own listing or site and stored by the server; the seed never writes it. */
+    fetchedLogoUrl: varchar("fetched_logo_url", { length: 300 }),
+    /** When a fetch was last tried, so a failed one waits before the next try. */
+    logoFetchedAt: datetime("logo_fetched_at"),
+    /** active | disabled */
+    status: varchar("status", { length: 12 }).notNull().default("active"),
+    /** seed | admin */
+    origin: varchar("origin", { length: 10 }).notNull().default("admin"),
+    adminEditedAt: datetime("admin_edited_at"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [index("subscription_catalog_status_idx").on(t.status)],
+);
+
+// ─── Capture: the phones that send bank and wallet notifications (decision 0028) ───
+// One row per app installation. The device token is shown once and stored only as its SHA-256; a revoked device
+// stops at its next request.
+export const captureDevices = mysqlTable(
+  "capture_devices",
   {
     id: int("id").primaryKey().autoincrement(),
     userId: int("user_id").notNull(),
     userType: varchar("user_type", { length: 50 }).notNull(),
-    message: text("message").notNull(),
-    sender: varchar("sender", { length: 100 }),
-    smsTimestamp: varchar("sms_timestamp", { length: 100 }),
-    status: varchar("status", { length: 50 }).default("pending"), // pending | processed | ignored | error
-    metadata: json("metadata"),
+    platform: varchar("platform", { length: 10 }).notNull(), // android | ios
+    installationId: varchar("installation_id", { length: 64 }).notNull(),
+    tokenHash: varchar("token_hash", { length: 64 }).notNull(),
+    label: varchar("label", { length: 80 }),
+    appVersion: varchar("app_version", { length: 32 }),
+    osVersion: varchar("os_version", { length: 32 }),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    lastSeenAt: datetime("last_seen_at"),
+    lastSignalAt: datetime("last_signal_at"),
+    /** The phone's last health report (decision 0034): whether it may still read notifications, what waits to be sent. */
+    lastHeartbeatAt: datetime("last_heartbeat_at"),
+    health: json("health"),
+    /** When the user was last told this phone stopped capturing; told again only after it reports once more. */
+    silentNoticeAt: datetime("silent_notice_at"),
+    revokedAt: datetime("revoked_at"),
+  },
+  (t) => [
+    index("capture_devices_user_idx").on(t.userId, t.userType),
+    uniqueIndex("capture_devices_token_idx").on(t.tokenHash),
+    uniqueIndex("capture_devices_installation_idx").on(t.userId, t.userType, t.installationId),
+  ],
+);
+
+// What the user agreed to for capture, one row per grant: the scope, the version of the text they read, and when
+// they took it back. Kept as a record of consent (Law 151/2020).
+export const captureConsents = mysqlTable(
+  "capture_consents",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    scope: varchar("scope", { length: 20 }).notNull(), // capture | ai_reading | message_samples | purpose_questions
+    textVersion: varchar("text_version", { length: 20 }).notNull(),
+    grantedAt: datetime("granted_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    revokedAt: datetime("revoked_at"),
+  },
+  (t) => [index("capture_consents_user_scope_idx").on(t.userId, t.userType, t.scope)],
+);
+
+// A notification a phone sent that reads as a transaction. Kept 30 days: the text is redacted, and nothing that is
+// not a transaction is stored at all. Every signal belongs to one event (one payment); several signals of the same
+// payment (the bank's SMS and its app's notification) share it.
+export const captureSignals = mysqlTable(
+  "capture_signals",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    deviceId: int("device_id").notNull(),
+    clientSignalId: varchar("client_signal_id", { length: 64 }).notNull(),
+    channel: varchar("channel", { length: 16 }).notNull(),
+    sourceSlug: varchar("source_slug", { length: 64 }),
+    eventId: int("event_id"),
+    /** HMAC of the text, to recognise the same message sent twice without keeping it. */
+    textHmac: varchar("text_hmac", { length: 64 }).notNull(),
+    textRedacted: text("text_redacted"),
+    /** The reader's fields (`api/lib/capture/intake.ts#SignalReading`), read before anything was redacted. */
+    reading: json("reading").notNull(),
+    receivedAt: datetime("received_at").notNull(),
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (t) => [
-    index("raw_sms_user_idx").on(t.userId, t.userType),
-    index("raw_sms_status_idx").on(t.status),
+    uniqueIndex("capture_signals_client_idx").on(t.userId, t.userType, t.clientSignalId),
+    index("capture_signals_user_text_idx").on(t.userId, t.userType, t.textHmac, t.receivedAt),
+    index("capture_signals_event_idx").on(t.eventId),
+    index("capture_signals_created_idx").on(t.createdAt),
   ],
 );
+
+// One payment as capture understands it (decision 0029): the keys its signals are matched on, whether it waits for
+// the user, was recorded, dismissed or deleted from the ledger, and its ledger row. No message text: a deleted one
+// stays as a tombstone so a late signal of the same payment never brings it back.
+export const captureEvents = mysqlTable(
+  "capture_events",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    status: varchar("status", { length: 16 }).notNull().default("review"), // review | recorded | dismissed | deleted
+    kind: varchar("kind", { length: 32 }).notNull(),
+    direction: varchar("direction", { length: 10 }),
+    amount: decimal("amount", { precision: 14, scale: 2 }).notNull(),
+    currency: varchar("currency", { length: 3 }).notNull(),
+    amountEgp: decimal("amount_egp", { precision: 14, scale: 2 }),
+    occurredAt: datetime("occurred_at").notNull(),
+    firstReceivedAt: datetime("first_received_at").notNull(),
+    cardSuffix: varchar("card_suffix", { length: 4 }),
+    accountSuffix: varchar("account_suffix", { length: 8 }),
+    merchantKey: varchar("merchant_key", { length: 120 }),
+    referenceHmac: varchar("reference_hmac", { length: 64 }),
+    balanceAfter: decimal("balance_after", { precision: 14, scale: 2 }),
+    ownAccount: boolean("own_account").notNull().default(false),
+    /**
+     * The first signal's reader fields, while the event waits for an answer or is held: a held event outlives its
+     * signals (60 days against 30). Cleared when the event is answered.
+     */
+    reading: json("reading"),
+    /** The Cairo month ("2026-10") whose limit this event counts in; null when it counts in none. */
+    quotaPeriod: varchar("quota_period", { length: 7 }),
+    /** Recorded without a question, under an allowed pair (decision 0030); its notice offers "undo". */
+    autoRecorded: boolean("auto_recorded").notNull().default(false),
+    /** The catalog source and the reader (or model prompt) version of its first signal, kept after the signals go. */
+    sourceSlug: varchar("source_slug", { length: 64 }),
+    readerVersion: varchar("reader_version", { length: 32 }),
+    /** One entry per device and channel the payment arrived through ("12:sms:CIB"). */
+    channels: json("channels").notNull(),
+    primarySignalId: int("primary_signal_id").notNull(),
+    possibleDuplicateOf: int("possible_duplicate_of"),
+    linkedEventId: int("linked_event_id"),
+    walletId: int("wallet_id"),
+    expenseId: int("expense_id"),
+    deviceId: int("device_id").notNull(),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    resolvedAt: datetime("resolved_at"),
+  },
+  (t) => [
+    index("capture_events_user_status_idx").on(t.userId, t.userType, t.status, t.createdAt),
+    index("capture_events_user_received_idx").on(t.userId, t.userType, t.firstReceivedAt),
+    index("capture_events_user_reference_idx").on(t.userId, t.userType, t.referenceHmac),
+    index("capture_events_created_idx").on(t.createdAt),
+    index("capture_events_source_created_idx").on(t.sourceSlug, t.createdAt),
+  ],
+);
+
+// How many new payments a user's capture took in one Cairo month, against the plan's limit (decision 0028), how
+// many were held over it, whether the user was told the limit was reached, and how many questions were sent today.
+export const captureUsage = mysqlTable(
+  "capture_usage",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    period: varchar("period", { length: 7 }).notNull(),
+    reserved: int("reserved").notNull().default(0),
+    held: int("held").notNull().default(0),
+    limitNoticed: boolean("limit_noticed").notNull().default(false),
+    questionDay: varchar("question_day", { length: 10 }),
+    questions: int("questions").notNull().default(0),
+    /** The Cairo day and how many signals the user's phones sent on it, against the daily cap. */
+    signalDay: varchar("signal_day", { length: 10 }),
+    signals: int("signals").notNull().default(0),
+    updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [uniqueIndex("capture_usage_user_period_idx").on(t.userId, t.userType, t.period)],
+);
+
+// What a user filed a merchant or a person under, from their own answers and edits (decision 0030): the first place
+// a captured payment's filing comes from. The key is "m:<merchant key>" or "p:<HMAC of the person's number, address
+// or name>", never the name itself.
+/** Optional purpose questions asked only after a movement has already been saved. */
+export const captureQuestions = mysqlTable("capture_questions", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  eventId: int("event_id").notNull(),
+  expenseId: int("expense_id").notNull(),
+  status: varchar("status", { length: 16 }).notNull().default("pending"),
+  expectedCategory: varchar("expected_category", { length: 100 }).notNull(),
+  expectedSubCategory: varchar("expected_sub_category", { length: 100 }).notNull(),
+  shownDay: varchar("shown_day", { length: 10 }),
+  shownAt: datetime("shown_at"),
+  resolvedAt: datetime("resolved_at"),
+  createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  uniqueIndex("capture_questions_owner_event_idx").on(t.userId, t.userType, t.eventId),
+  index("capture_questions_owner_status_idx").on(t.userId, t.userType, t.status, t.id),
+  index("capture_questions_owner_day_idx").on(t.userId, t.userType, t.shownDay),
+  index("capture_questions_created_idx").on(t.createdAt),
+]);
+
+export const captureMemory = mysqlTable(
+  "capture_memory",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    memoryKey: varchar("memory_key", { length: 140 }).notNull(),
+    categoryId: varchar("category_id", { length: 60 }).notNull(),
+    subCategoryId: varchar("sub_category_id", { length: 60 }).notNull(),
+    uses: int("uses").notNull().default(1),
+    updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [uniqueIndex("capture_memory_user_key_idx").on(t.userId, t.userType, t.memoryKey)],
+);
+
+// One user's record per bank and kind of message (decision 0030): how many captured payments in a row they recorded
+// as read, whether they were offered recording on its own, and whether they took it.
+export const captureUserPairs = mysqlTable(
+  "capture_user_pairs",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    sourceSlug: varchar("source_slug", { length: 64 }).notNull(),
+    kind: varchar("kind", { length: 32 }).notNull(),
+    streak: int("streak").notNull().default(0),
+    autoEnabled: boolean("auto_enabled").notNull().default(false),
+    askedAt: datetime("asked_at"),
+    updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [uniqueIndex("capture_user_pairs_user_pair_idx").on(t.userId, t.userType, t.sourceSlug, t.kind)],
+);
+
+// What a user asked capture to ignore (decision 0033): a card or account by its last digits (a family member's or a
+// work card), or a phrase. Matching messages are dropped before anything is kept.
+export const captureMarkers = mysqlTable(
+  "capture_markers",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    /** ignore_card or ignore_phrase. */
+    kind: varchar("kind", { length: 16 }).notNull(),
+    value: varchar("value", { length: 120 }).notNull(),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [uniqueIndex("capture_markers_user_value_idx").on(t.userId, t.userType, t.kind, t.value)],
+);
+
+// A captured message the reader was unsure of, waiting for the admin's model (decision 0031): one row per signal,
+// claimed with a lease so one replica reads it; the notice the reading produced waits here until the phone fetches it.
+export const captureAiJobs = mysqlTable(
+  "capture_ai_jobs",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    deviceId: int("device_id").notNull(),
+    signalId: int("signal_id").notNull(),
+    /** queued, running, done. */
+    status: varchar("status", { length: 16 }).notNull().default("queued"),
+    attempts: int("attempts").notNull().default(0),
+    nextAt: datetime("next_at").notNull(),
+    leaseUntil: datetime("lease_until"),
+    /** How it ended: read, not_transaction, or why the model was not used (an id, never message content). */
+    outcome: varchar("outcome", { length: 32 }),
+    eventId: int("event_id"),
+    lang: varchar("lang", { length: 2 }).notNull().default("ar"),
+    notice: json("notice"),
+    noticeDeliveredAt: datetime("notice_delivered_at"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    uniqueIndex("capture_ai_jobs_signal_idx").on(t.signalId),
+    index("capture_ai_jobs_due_idx").on(t.status, t.nextAt),
+    index("capture_ai_jobs_user_device_idx").on(t.userId, t.userType, t.deviceId, t.noticeDeliveredAt),
+    index("capture_ai_jobs_created_idx").on(t.createdAt),
+  ],
+);
+
+/**
+ * Redacted bank messages and what the model read from them, kept only with the `message_samples` consent, to build
+ * and measure a reader that needs no model (plan v7 §8). The text holds numbered markers, never a name, phone, card or
+ * code; the user's final answer is read from the event and its ledger row at export time, not copied here.
+ */
+export const captureSamples = mysqlTable(
+  "capture_samples",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    signalId: int("signal_id").notNull(),
+    eventId: int("event_id"),
+    sourceSlug: varchar("source_slug", { length: 64 }),
+    channel: varchar("channel", { length: 16 }).notNull(),
+    textRedacted: text("text_redacted").notNull(),
+    textHmac: varchar("text_hmac", { length: 64 }).notNull(),
+    promptVersion: varchar("prompt_version", { length: 16 }).notNull(),
+    provider: varchar("provider", { length: 64 }),
+    model: varchar("model", { length: 128 }),
+    modelReply: json("model_reply"),
+    posting: json("posting"),
+    receivedMonth: varchar("received_month", { length: 7 }).notNull(),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    uniqueIndex("capture_samples_signal_idx").on(t.signalId),
+    index("capture_samples_user_idx").on(t.userId, t.userType),
+    index("capture_samples_created_idx").on(t.createdAt),
+  ],
+);
+
+/** Atomic capture-only resource accounting. Reservations survive an uncertain provider timeout. */
+export const captureAiDays = mysqlTable("capture_ai_days", {
+  day: varchar("day", { length: 10 }).primaryKey(),
+  costUsd: decimal("cost_usd", { precision: 16, scale: 8 }).notNull().default("0"),
+  createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+export const captureAiAccounts = mysqlTable("capture_ai_accounts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(), userType: varchar("user_type", { length: 50 }).notNull(),
+  period: varchar("period", { length: 7 }).notNull(), tokens: int("tokens").notNull().default(0),
+  createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [uniqueIndex("capture_ai_accounts_owner_period").on(t.userId, t.userType, t.period), index("capture_ai_accounts_created").on(t.createdAt)]);
+export const captureAiReservations = mysqlTable("capture_ai_reservations", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: int("user_id").notNull(), userType: varchar("user_type", { length: 50 }).notNull(),
+  day: varchar("day", { length: 10 }).notNull(), period: varchar("period", { length: 7 }).notNull(),
+  tokens: int("tokens").notNull(), costUsd: decimal("cost_usd", { precision: 16, scale: 8 }).notNull(),
+  status: varchar("status", { length: 16 }).notNull().default("reserved"),
+  leaseUntil: datetime("lease_until").notNull(),
+  createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [index("capture_ai_reservations_owner").on(t.userId, t.userType, t.period), index("capture_ai_reservations_leases").on(t.status, t.leaseUntil), index("capture_ai_reservations_created").on(t.createdAt)]);
 
 // ─── WhatsApp OTP Codes ───
 export const whatsappOtpCodes = mysqlTable(
@@ -942,7 +1547,10 @@ export const whatsappOtpCodes = mysqlTable(
   {
     id: int("id").primaryKey().autoincrement(),
     phone: varchar("phone", { length: 20 }).notNull(),
-    code: varchar("code", { length: 20 }).notNull(),
+    /** HMAC of the six-digit code we sent on WhatsApp (decision 0038); the code itself is never stored. */
+    codeHash: varchar("code_hash", { length: 64 }).notNull(),
+    /** Wrong codes typed for this challenge; five close it. */
+    attempts: int("attempts").notNull().default(0),
     verified: boolean("verified").notNull().default(false),
     expiresAt: datetime("expires_at").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
@@ -950,6 +1558,80 @@ export const whatsappOtpCodes = mysqlTable(
   (t) => [
     index("whatsapp_otp_phone_idx").on(t.phone),
   ]
+);
+
+// ─── WhatsApp Business Platform (decision 0038) ───
+/**
+ * One message we send through Meta's Cloud API, from the moment it is queued until Meta reports it read or failed.
+ * Never its text or a verification code: only the template, its non-secret parameters and what happened to it.
+ */
+export const whatsappMessages = mysqlTable(
+  "whatsapp_messages",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    /** The person it is for, when it is for an account (a verification code may precede the account). */
+    userId: int("user_id"),
+    userType: varchar("user_type", { length: 50 }),
+    /** International digits ("2010…"); cleared by the retention job after 30 days. */
+    recipient: varchar("recipient", { length: 20 }),
+    /** verification, report, reminder, admin_direct, broadcast. */
+    purpose: varchar("purpose", { length: 32 }).notNull(),
+    templateName: varchar("template_name", { length: 128 }),
+    language: varchar("language", { length: 10 }),
+    /** Template parameters; a verification code is never stored here. */
+    params: json("params"),
+    /** queued, sending, sent, delivered, read, failed, cancelled. */
+    status: varchar("status", { length: 16 }).notNull().default("queued"),
+    /** Meta's message id (wamid), which status webhooks name. */
+    metaMessageId: varchar("meta_message_id", { length: 128 }),
+    errorCode: int("error_code"),
+    attempts: int("attempts").notNull().default(0),
+    nextAttemptAt: datetime("next_attempt_at"),
+    broadcastId: int("broadcast_id"),
+    /** What Meta billed it as (authentication, utility, marketing, service), from the status webhook. */
+    pricingCategory: varchar("pricing_category", { length: 32 }),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    sentAt: datetime("sent_at"),
+    deliveredAt: datetime("delivered_at"),
+    readAt: datetime("read_at"),
+    failedAt: datetime("failed_at"),
+  },
+  (t) => [
+    uniqueIndex("whatsapp_messages_meta_idx").on(t.metaMessageId),
+    index("whatsapp_messages_user_idx").on(t.userId, t.userType, t.createdAt),
+    index("whatsapp_messages_due_idx").on(t.status, t.nextAttemptAt),
+    index("whatsapp_messages_broadcast_idx").on(t.broadcastId),
+    index("whatsapp_messages_created_idx").on(t.createdAt),
+  ],
+);
+
+/**
+ * What one account agreed to receive on WhatsApp, and when it last wrote to us (the 24-hour window in which a free
+ * reply is allowed). Consent is recorded with its time and where it was given (Law 151 of 2020).
+ */
+export const whatsappContacts = mysqlTable(
+  "whatsapp_contacts",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    /** Meta's business-scoped user id, which webhooks carry even when the person hides their number. */
+    bsuid: varchar("bsuid", { length: 160 }),
+    reportsConsent: boolean("reports_consent").notNull().default(false),
+    remindersConsent: boolean("reminders_consent").notNull().default(false),
+    marketingConsent: boolean("marketing_consent").notNull().default(false),
+    marketingConsentAt: datetime("marketing_consent_at"),
+    /** Where marketing consent was given or withdrawn: settings, sign_up, reply. */
+    marketingConsentSource: varchar("marketing_consent_source", { length: 32 }),
+    optedOutAt: datetime("opted_out_at"),
+    lastInboundAt: datetime("last_inbound_at"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    uniqueIndex("whatsapp_contacts_user_idx").on(t.userId, t.userType),
+    index("whatsapp_contacts_bsuid_idx").on(t.bsuid),
+  ],
 );
 
 // ─── API Key Error Logs (Admin Monitoring) ───
@@ -974,6 +1656,25 @@ export const apiKeyErrors = mysqlTable(
     index("api_key_errors_date_idx").on(t.createdAt),
     index("api_key_errors_user_idx").on(t.userId),
   ],
+);
+
+// ─── Scheduled job runs ───
+/**
+ * One run of a background job (`withScheduledJobLock`): when it started, how long it took and whether it failed, by
+ * the error's class only. It holds no user data. Kept 14 days (`api/jobs/data-retention-job.ts`).
+ */
+export const scheduledJobRuns = mysqlTable(
+  "scheduled_job_runs",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    jobName: varchar("job_name", { length: 80 }).notNull(),
+    startedAt: datetime("started_at").notNull(),
+    durationMs: int("duration_ms").notNull(),
+    status: varchar("status", { length: 16 }).notNull(), // ok | failed
+    errorName: varchar("error_name", { length: 120 }),
+    host: varchar("host", { length: 120 }),
+  },
+  (t) => [index("job_runs_name_started_idx").on(t.jobName, t.startedAt)],
 );
 
 // ─── Web Push Subscriptions ───
@@ -1560,4 +2261,29 @@ export const voiceCallIncidents = mysqlTable(
     index("voice_call_incidents_created_idx").on(t.createdAt),
   ],
 );
+
+// ─── Admin Action Audit Logs (GAP-36) ───
+export const adminAuditLogs = mysqlTable(
+  "admin_audit_logs",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    adminId: int("admin_id").notNull(),
+    adminType: varchar("admin_type", { length: 50 }).notNull(),
+    action: varchar("action", { length: 100 }).notNull(),
+    targetType: varchar("target_type", { length: 100 }).notNull(),
+    targetId: varchar("target_id", { length: 255 }).notNull(),
+    details: json("details"),
+    ipAddress: varchar("ip_address", { length: 100 }),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("admin_audit_admin_idx").on(t.adminId, t.adminType),
+    index("admin_audit_action_idx").on(t.action),
+    index("admin_audit_target_idx").on(t.targetType, t.targetId),
+    index("admin_audit_created_idx").on(t.createdAt),
+  ],
+);
+export type AdminAuditLog = typeof adminAuditLogs.$inferSelect;
+export type NewAdminAuditLog = typeof adminAuditLogs.$inferInsert;
+
 

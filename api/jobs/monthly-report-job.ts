@@ -1,8 +1,9 @@
 import { previousBusinessMonth } from "../lib/app-time";
 import { and, eq, inArray } from "drizzle-orm";
 import { getDb } from "../queries/connection";
-import { users, localUsers, systemSettings, monthlyReports } from "../../db/schema";
-import { whatsappService } from "../services/whatsapp-service";
+import { users, localUsers, monthlyReports, whatsappContacts } from "../../db/schema";
+import { enqueueMessage } from "../lib/whatsapp/outbox";
+import { monthlyReportMessage } from "../lib/whatsapp/templates";
 import { getSmartProfile } from "../services/user-profile-service";
 import { buildMonthlyReportFactsPack } from "../services/finance-semantic-layer";
 import { recordAICostMetric, resolveAICostPolicy } from "../services/ai-cost-policy";
@@ -10,6 +11,8 @@ import { callFireworksAPI } from "../lib/fireworks-client";
 import { createLogger, phoneTail } from "../lib/log";
 import { PLAN_IDS, isPlanFeatureEnabled } from "../../contracts/plan-features";
 import { providerSlugForBaseUrl, recordAiLedger } from "../lib/ai-ledger";
+import { assertAiBudget, estimateTokensFromText, trackAiTokens } from "../lib/ai-usage-policy";
+import { mapModelName } from "../lib/model-mapper";
 
 const log = createLogger("monthly-report");
 
@@ -154,7 +157,7 @@ export function reportMonthFor(now = new Date()): string {
 }
 
 export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJobOptions) {
-  console.log("[MonthlyReportJob] Starting execution...");
+  log.info({ event: "monthly_report.start" }, "Monthly report job started");
 
   const db = getDb();
   const options: MonthlyReportJobOptions =
@@ -188,7 +191,7 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
     };
 
     if (!aiConfig.apiKey) {
-      console.warn("[MonthlyReportJob] Missing AI API Key. Deterministic fallback reports will be used.");
+      log.warn({ event: "monthly_report.no_ai_key" }, "No AI key: deterministic reports will be used");
     }
 
     // 2. Fetch the users whose plan gets the WhatsApp report (feature_whatsapp_report_<plan>;
@@ -211,21 +214,21 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
       const isLocal = "phone" in u;
       const userType = isLocal ? "local" : "oauth";
 
-      let targetPhone = isLocal ? (u as any).phone : null;
+      let targetPhone: string | null | undefined = isLocal ? (u as { phone?: string | null }).phone : null;
       const profile = await getSmartProfile(u.id, userType);
 
       if (!targetPhone && profile.basicInfo.phone) {
-        targetPhone = profile.basicInfo.phone;
+        targetPhone = String(profile.basicInfo.phone);
       }
 
       if (!targetPhone) {
-        console.warn(`[MonthlyReportJob] Skipping user ${u.id} - No phone number.`);
+        log.warn({ event: "monthly_report.no_phone", userId: u.id }, "Skipped a user without a phone number");
         continue;
       }
 
       if (!wantsWhatsappReport(profile.preferences)) continue;
 
-      console.log(`[MonthlyReportJob] Preparing semantic report for user ${u.id}...`);
+      log.info({ event: "monthly_report.prepare", userId: u.id }, "Preparing a report");
       const reportStartedAt = Date.now();
 
       const [cachedReport] = await db
@@ -247,8 +250,16 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
 
       let reportSource = reportContent ? "monthly_report_cache" : "monthly_report_semantic_facts";
 
+      let formattedSpent = "0 ج.م";
+      let topCategoryName = "عام";
+      if (cachedReport) {
+        formattedSpent = `${Math.round(Number(cachedReport.totalAmount || 0))} ج.م`;
+        const cats = Array.isArray(cachedReport.topCategories) ? (cachedReport.topCategories as { category?: string }[]) : [];
+        topCategoryName = cats[0]?.category || "عام";
+      }
+
       if (reportContent) {
-        console.log(`[MonthlyReportJob] Reusing cached report for user ${u.id}, month ${month}.`);
+        log.info({ event: "monthly_report.cached", userId: u.id, month }, "Reusing a cached report");
       }
 
       try {
@@ -267,7 +278,9 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
           const netFlow = numberFact(facts, "net_flow");
           const dailyAverage = numberFact(facts, "daily_average_expense");
           const topCategories = parseTopCategories(valueOfFact(facts, "top_categories"));
-          const userName = String((u as any).name || profile.basicInfo.name || "صديقنا");
+          formattedSpent = `${Math.round(totalExpense)} ج.م`;
+          topCategoryName = topCategories[0]?.category || "عام";
+          const userName = String((u as { name?: string | null }).name || profile.basicInfo.name || "صديقنا");
 
           if (aiConfig.apiKey) {
             const systemPrompt =
@@ -280,53 +293,78 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
               'Output JSON فقط: {"response_text":"..."}',
             ].join("\n");
 
-            const aiResult = await callFireworksAPI(
-              aiConfig.apiKey,
-              aiConfig.model,
-              systemPrompt,
-              userPrompt,
-              aiConfig.maxTokens,
-            );
-            reportContent = parseReportText(aiResult.text);
-            reportSource = "monthly_report_semantic_llm";
-            void recordAiLedger({
-              userId: u.id,
-              userType,
-              channel: "report",
-              providerSlug: providerSlugForBaseUrl(aiConfig.baseUrl),
-              modelId: aiConfig.model,
-              promptTokens: aiResult.promptTokens ?? aiResult.tokensUsed,
-              completionTokens: aiResult.completionTokens ?? 0,
-              cachedTokens: aiResult.cachedTokens ?? 0,
-              metadata: { job: "monthly_report" },
-            });
+            const estimatedInputTokens = estimateTokensFromText(systemPrompt + "\n" + userPrompt);
+            let budgetAllowed = false;
+            try {
+              await assertAiBudget(
+                { id: u.id, type: userType, plan: (u as { plan?: string | null }).plan || "pro" },
+                "report",
+                estimatedInputTokens,
+                s,
+              );
+              budgetAllowed = true;
+            } catch {
+              log.warn({ event: "monthly_report.budget_exceeded", userId: u.id }, "AI budget exceeded");
+            }
 
-            const estimatedInputTokens = Math.ceil((systemPrompt.length + userPrompt.length) / 3.5);
-            void recordAICostMetric({
-              userId: u.id,
-              userType,
-              channel: "report",
-              plan: "pro",
-              intentKind: "report_request",
-              model: aiConfig.model,
-              inputTokens: estimatedInputTokens,
-              outputTokens: Math.max(0, aiResult.tokensUsed - estimatedInputTokens),
-              totalTokens: aiResult.tokensUsed,
-              llmCalls: 1,
-              toolCalls: 0,
-              latencyMs: Date.now() - reportStartedAt,
-              metadata: {
-                month,
-                source: reportSource,
-                factsSource: factsPack.source,
-                factsCacheKey: factsPack.cacheKey,
-                maxOutputTokens: aiConfig.maxTokens,
-                cacheVersion: MONTHLY_REPORT_CACHE_VERSION,
-                forceRefresh,
-                cachedPromptTokens: aiResult.cachedTokens ?? 0,
-              },
-            });
-            console.log(`[MonthlyReportJob] Used ${aiResult.tokensUsed} tokens for user ${u.id}.`);
+            if (budgetAllowed) {
+              const modelToUse = mapModelName(aiConfig.model);
+              const aiResult = await callFireworksAPI(
+                aiConfig.apiKey,
+                modelToUse,
+                systemPrompt,
+                userPrompt,
+                aiConfig.maxTokens,
+              );
+              reportContent = parseReportText(aiResult.text);
+              reportSource = "monthly_report_semantic_llm";
+              void recordAiLedger({
+                userId: u.id,
+                userType,
+                channel: "report",
+                providerSlug: providerSlugForBaseUrl(aiConfig.baseUrl),
+                modelId: modelToUse,
+                promptTokens: aiResult.promptTokens ?? aiResult.tokensUsed,
+                completionTokens: aiResult.completionTokens ?? 0,
+                cachedTokens: aiResult.cachedTokens ?? 0,
+                metadata: { job: "monthly_report" },
+              });
+
+              if (aiResult.tokensUsed > 0) {
+                await trackAiTokens(
+                  { id: u.id, type: userType },
+                  aiResult.tokensUsed,
+                  "report",
+                  modelToUse,
+                );
+              }
+
+              void recordAICostMetric({
+                userId: u.id,
+                userType,
+                channel: "report",
+                plan: "pro",
+                intentKind: "report_request",
+                model: modelToUse,
+                inputTokens: estimatedInputTokens,
+                outputTokens: Math.max(0, aiResult.tokensUsed - estimatedInputTokens),
+                totalTokens: aiResult.tokensUsed,
+                llmCalls: 1,
+                toolCalls: 0,
+                latencyMs: Date.now() - reportStartedAt,
+                metadata: {
+                  month,
+                  source: reportSource,
+                  factsSource: factsPack.source,
+                  factsCacheKey: factsPack.cacheKey,
+                  maxOutputTokens: aiConfig.maxTokens,
+                  cacheVersion: MONTHLY_REPORT_CACHE_VERSION,
+                  forceRefresh,
+                  cachedPromptTokens: aiResult.cachedTokens ?? 0,
+                },
+              });
+              log.info({ event: "monthly_report.tokens", userId: u.id, tokens: aiResult.tokensUsed }, "Report model call finished");
+            }
           }
 
           if (!reportContent) {
@@ -374,23 +412,42 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
             await db.insert(monthlyReports).values(reportRow);
           }
         }
-      } catch (err: any) {
+      } catch (err) {
         log.error({ err, event: "monthly_report.failed", userId: u.id }, "Monthly report generation failed");
         // Fallback message
         reportContent = `🌟 *تقريرك الشهري من SmartSpend* 🌟\n\nأهلاً بك!\nتم تجهيز ملخص شهر ${month}. يرجى فتح التطبيق للاطلاع على التفاصيل.`;
       }
 
-      // 4. Send via WhatsApp
+      // 4. Send via WhatsApp Cloud API
       if (sendWhatsApp) {
-        await whatsappService.sendMessage(targetPhone, reportContent);
-        log.info({ event: "monthly_report.sent", userId: u.id, phone: phoneTail(targetPhone) }, "Monthly report sent");
+        const [contact] = await db
+          .select({ reportsConsent: whatsappContacts.reportsConsent, optedOutAt: whatsappContacts.optedOutAt })
+          .from(whatsappContacts)
+          .where(and(eq(whatsappContacts.userId, u.id), eq(whatsappContacts.userType, userType)))
+          .limit(1);
+
+        if (contact?.reportsConsent && !contact?.optedOutAt) {
+          const outcome = await enqueueMessage({
+            owner: { userId: u.id, userType: userType as "local" | "oauth" },
+            to: targetPhone,
+            purpose: "report",
+            message: monthlyReportMessage(month, formattedSpent, topCategoryName),
+          });
+          if (outcome.enqueued) {
+            log.info({ event: "monthly_report.enqueued", userId: u.id, phone: phoneTail(targetPhone) }, "Monthly report enqueued to outbox");
+          } else {
+            log.warn({ event: "monthly_report.enqueue_refused", userId: u.id, error: outcome.error }, "Monthly report enqueue was refused");
+          }
+        } else {
+          log.info({ event: "monthly_report.skipped_consent", userId: u.id }, "User has not consented to WhatsApp reports");
+        }
       } else {
-        console.log(`[MonthlyReportJob] Generated report for user ${u.id}; WhatsApp send skipped.`);
+        log.info({ event: "monthly_report.send_skipped", userId: u.id }, "Report generated without a WhatsApp send");
       }
     }
 
-    console.log("[MonthlyReportJob] Finished successfully.");
+    log.info({ event: "monthly_report.done" }, "Monthly report job finished");
   } catch (err) {
-    console.error("[MonthlyReportJob] Error executing job:", err);
+    log.error({ event: "monthly_report.failed", err }, "Monthly report job failed");
   }
 }

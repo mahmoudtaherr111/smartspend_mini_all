@@ -17,7 +17,9 @@
  * Every changed expense keeps its old values in `parsed_metadata.legacy_taxonomy`; the
  * rollback is to restore them from there (and reverse the rollup delta the same way).
  */
-import { and, eq, inArray, or, type SQL } from "drizzle-orm";
+import { and, eq, inArray, or, sql, type SQL } from "drizzle-orm";
+import { financialMovement, normalizeFinancialMovement } from "../../contracts/ledger-movement";
+import { getSystemSettings } from "../lib/settings-cache";
 import { db } from "../queries/connection";
 import {
   expenses,
@@ -30,13 +32,14 @@ import {
   resolveLegacyTaxonomy,
   type LegacyTaxonomyResult,
 } from "../../contracts/categories";
-import { applyExpenseRollupDelta, expenseToRollupDelta } from "../services/expense-rollups";
+import { applyExpenseRollupDelta, expenseToRollupDelta, ledgerAmount } from "../services/expense-rollups";
 import { bumpFinanceCacheGen } from "../services/finance-semantic-layer";
 import { createLogger } from "../lib/log";
 
 const log = createLogger("taxonomy-migration");
 
 export interface StoredTaxonomyRow {
+  parsedMetadata?: unknown;
   category: string;
   subCategory: string | null;
   type: string;
@@ -60,7 +63,7 @@ export function planTaxonomyChange(row: StoredTaxonomyRow): TaxonomyRowChange | 
   const change: TaxonomyRowChange = {
     category: resolved.category,
     subCategory: resolved.subCategory,
-    type: resolved.type ?? row.type,
+    type: financialMovement(row) ? row.type : resolved.type ?? row.type,
     ...(resolved.direction ? { direction: resolved.direction } : {}),
   };
   const unchanged =
@@ -75,6 +78,7 @@ function legacyRowFilter(
   categoryColumn: typeof expenses.category,
   subColumn: typeof expenses.subCategory,
   typeColumn?: typeof expenses.type,
+  ledger = false,
 ): SQL {
   const clauses: SQL[] = [];
   for (const rule of LEGACY_TAXONOMY) {
@@ -86,6 +90,7 @@ function legacyRowFilter(
       // A pair that stays where it is only changes when it was booked as spending or income.
       if (!typeColumn) continue;
       parts.push(inArray(typeColumn, ["expense", "income"]));
+      if (ledger) parts.push(sql`COALESCE(JSON_EXTRACT(${expenses.parsedMetadata}, '$.financial.version'), 0) <> 1`);
     }
     clauses.push(and(...parts) as SQL);
   }
@@ -126,34 +131,37 @@ export async function runTaxonomyMigrationJob(batchSize = 500): Promise<{
       parsedMetadata: expenses.parsedMetadata,
     })
     .from(expenses)
-    .where(legacyRowFilter(expenses.category, expenses.subCategory, expenses.type))
+    .where(legacyRowFilter(expenses.category, expenses.subCategory, expenses.type, true))
     .limit(batchSize);
 
   const touchedUsers = new Map<string, { userId: number; userType: string }>();
   let migratedExpenses = 0;
 
   for (const row of rows) {
-    const change = planTaxonomyChange(row);
-    if (!change) continue;
-    const metadata = withLegacy(row.parsedMetadata, row, change);
-
-    await db.transaction(async (tx) => {
-      await tx
-        .update(expenses)
-        .set({
-          category: change.category,
-          subCategory: change.subCategory,
-          type: change.type,
-          parsedMetadata: metadata,
-        })
-        .where(and(eq(expenses.id, row.id), eq(expenses.userId, row.userId), eq(expenses.userType, row.userType)));
-
-      // Money moves between the rollup's columns only when the type changed.
-      if (change.type !== row.type) {
-        await applyExpenseRollupDelta(tx, expenseToRollupDelta(row, -1));
-        await applyExpenseRollupDelta(tx, expenseToRollupDelta({ ...row, type: change.type }, 1));
+    const changed = await db.transaction(async (tx) => {
+      const own = and(eq(expenses.id, row.id), eq(expenses.userId, row.userId), eq(expenses.userType, row.userType));
+      const [current] = await tx.select().from(expenses).where(own).for("update");
+      if (!current) return false;
+      const change = planTaxonomyChange(current);
+      if (!change) return false;
+      const metadata = withLegacy(current.parsedMetadata, current, change);
+      const mode = (await getSystemSettings(tx, { keys: ["capture_financial_version"], lock: true })).capture_financial_version;
+      const financial = mode === "cashflow-v1" || financialMovement(current)
+        ? normalizeFinancialMovement({ ...current, ...change, parsedMetadata: metadata, direction: String(metadata.direction ?? change.direction ?? "") }) : null;
+      if (financial) {
+        metadata.financial = financial.financial;
+        metadata.direction = financial.financial.movement === "in" ? "incoming" : "outgoing";
       }
+      const after = { ...current, category: change.category, subCategory: change.subCategory,
+        type: financial?.type ?? change.type,
+        amount: financial ? ledgerAmount(financial.type, financial.financial.movement === "in" ? "incoming" : "outgoing", current.amount).toString() : current.amount,
+        parsedMetadata: metadata };
+      await tx.update(expenses).set({ category: after.category, subCategory: after.subCategory, type: after.type, amount: after.amount, parsedMetadata: metadata }).where(own);
+      await applyExpenseRollupDelta(tx, expenseToRollupDelta(current, -1));
+      await applyExpenseRollupDelta(tx, expenseToRollupDelta(after, 1));
+      return true;
     });
+    if (!changed) continue;
 
     migratedExpenses++;
     touchedUsers.set(`${row.userType}:${row.userId}`, { userId: row.userId, userType: row.userType });

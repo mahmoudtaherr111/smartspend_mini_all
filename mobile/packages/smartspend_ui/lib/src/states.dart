@@ -1,0 +1,328 @@
+import 'package:flutter/material.dart';
+
+import 'buttons.dart';
+import 'motion.dart';
+import 'theme.dart';
+import 'tokens.dart';
+
+/// Every screen is designed in five states: loading, empty, error, offline and filled (rule 7.3 of
+/// docs/guides/mobile-design.md). These are the first four.
+
+/// What an [InlineMessage] is about, which sets its colour and icon.
+enum MessageTone {
+  /// Something failed.
+  danger,
+
+  /// Waiting, or close to a limit.
+  warning,
+
+  /// Worth knowing, nothing is wrong.
+  info,
+
+  /// It worked.
+  success,
+}
+
+/// A message beside a form or a section. The colour is in the icon and the tint; the words stay in the main text
+/// colour, which reads at 4.5:1 on the tint in both themes (rule 6.1 of docs/guides/mobile-design.md). Screen
+/// readers announce it when it appears. An [action] such as "upgrade" sits at the end of the row.
+class InlineMessage extends StatelessWidget {
+  const InlineMessage(
+    this.text, {
+    super.key,
+    this.tone = MessageTone.danger,
+    this.icon,
+    this.action,
+  });
+
+  final String text;
+  final MessageTone tone;
+
+  /// Replaces the tone's own icon.
+  final IconData? icon;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.smartSpendColors;
+    final (color, toneIcon) = switch (tone) {
+      MessageTone.danger => (colors.danger, Icons.error_outline_rounded),
+      MessageTone.warning => (colors.warning, Icons.info_outline_rounded),
+      MessageTone.info => (colors.info, Icons.info_outline_rounded),
+      MessageTone.success => (
+        colors.accent,
+        Icons.check_circle_outline_rounded,
+      ),
+    };
+    final action = this.action;
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.all(SmartSpendSpacing.md),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon ?? toneIcon, color: color, size: 20),
+            const SizedBox(width: SmartSpendSpacing.sm),
+            Expanded(
+              child: Text(
+                text,
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: colors.foreground),
+              ),
+            ),
+            if (action != null) ...[
+              const SizedBox(width: SmartSpendSpacing.sm),
+              action,
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A short label on a tinted pill: «حساس», «مكتمل». Colour never carries it alone, the word does (rule 6.2).
+class StatusTag extends StatelessWidget {
+  const StatusTag(this.label, {super.key, this.color});
+
+  final String label;
+
+  /// The accent by default.
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.smartSpendColors;
+    final tint = color ?? colors.accent;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SmartSpendSpacing.sm,
+        vertical: SmartSpendSpacing.xs / 2,
+      ),
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.pill),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall
+            ?.copyWith(color: colors.foreground),
+      ),
+    );
+  }
+}
+
+/// Nothing to show yet, said as an invitation: a brand-washed glyph circle, what belongs here and the action that
+/// fills it (FND-03, design brief §6). Only shown after loading has finished.
+class EmptyState extends StatelessWidget {
+  const EmptyState({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.smartSpendColors;
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.all(SmartSpendSpacing.xl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ExcludeSemantics(
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                gradient: colors.wash(Directionality.of(context)),
+                border: Border.all(
+                  color: colors.accent.withValues(alpha: 0.22),
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 34, color: colors.accent),
+            ),
+          ),
+          const SizedBox(height: SmartSpendSpacing.lg),
+          Text(title, style: textTheme.titleLarge, textAlign: TextAlign.center),
+          const SizedBox(height: SmartSpendSpacing.sm),
+          Text(
+            message,
+            style: textTheme.bodyMedium?.copyWith(
+              color: colors.mutedForeground,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(height: SmartSpendSpacing.xl),
+            SmartSpendButton(label: actionLabel!, onPressed: onAction),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Something failed: what happened, in the guide's voice, and a way to try again (rule 7.4).
+class ErrorState extends StatelessWidget {
+  const ErrorState({
+    super.key,
+    required this.message,
+    required this.retryLabel,
+    required this.onRetry,
+  });
+
+  final String message;
+  final String retryLabel;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.smartSpendColors;
+    return Padding(
+      padding: const EdgeInsets.all(SmartSpendSpacing.xl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.cloud_off_rounded,
+            size: 40,
+            color: colors.mutedForeground,
+          ),
+          const SizedBox(height: SmartSpendSpacing.md),
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: SmartSpendSpacing.lg),
+          SmartSpendButton(
+            label: retryLabel,
+            onPressed: onRetry,
+            variant: ButtonVariant.secondary,
+            icon: Icons.refresh_rounded,
+            expand: false,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A thin bar saying the phone is offline and what still works, above the content it applies to.
+class OfflineBanner extends StatelessWidget {
+  const OfflineBanner(this.message, {super.key});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.smartSpendColors;
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: SmartSpendSpacing.lg,
+          vertical: SmartSpendSpacing.sm,
+        ),
+        color: colors.surfaceRaised,
+        child: Row(
+          children: [
+            Icon(Icons.wifi_off_rounded, size: 18, color: colors.warning),
+            const SizedBox(width: SmartSpendSpacing.sm),
+            Expanded(
+              child: Text(
+                message,
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: colors.foreground),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A grey block standing for content that is loading, in the shape of what will replace it (Nielsen Norman Group,
+/// skeleton screens). It breathes slowly, and stays still when the person turned animations off.
+class Skeleton extends StatefulWidget {
+  const Skeleton({
+    super.key,
+    this.width,
+    this.height = 16,
+    this.radius = SmartSpendRadii.sm,
+  });
+
+  final double? width;
+  final double height;
+  final double radius;
+
+  @override
+  State<Skeleton> createState() => _SkeletonState();
+}
+
+class _SkeletonState extends State<Skeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (SmartSpendMotion.of(context, SmartSpendMotion.short) == Duration.zero) {
+      _pulse.stop();
+    } else if (!_pulse.isAnimating) {
+      _pulse.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.smartSpendColors;
+    return ExcludeSemantics(
+      child: AnimatedBuilder(
+        animation: _pulse,
+        builder: (context, _) => Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            color: Color.lerp(
+              colors.surfaceRaised,
+              colors.border,
+              _pulse.value * 0.6,
+            ),
+            borderRadius: BorderRadius.circular(widget.radius),
+          ),
+        ),
+      ),
+    );
+  }
+}

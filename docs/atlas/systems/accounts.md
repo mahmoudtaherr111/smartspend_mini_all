@@ -18,15 +18,15 @@ flowchart LR
     page_Settings["Settings screen"]
     screens_admin["Screens of Admin console, support and growth tools"]
     screens_ai_center["Screens of AI Center"]
+    screens_billing["Screens of Plans and payments"]
     screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
     screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
     http__api_auth["HTTP /api/auth/… · 2 routes"]
-    http__api_sse["GET /api/sse/otp"]
     job_daily_auth_cleanup["Job · daily-auth-cleanup"]
-    router_auth["auth API · 4 procedures"]
-    router_localAuth["localAuth API · 12 procedures"]
+    router_auth["auth API · 5 procedures"]
+    router_localAuth["localAuth API · 13 procedures"]
     router_profile["profile API · 6 procedures"]
     router_session["session API · 5 procedures"]
     router_webauthn["webauthn API · 6 procedures"]
@@ -39,6 +39,8 @@ flowchart LR
   end
   subgraph g_tables["MySQL tables"]
     tbl_ad_clicks[("ad_clicks")]
+    tbl_ad_impressions[("ad_impressions")]
+    tbl_admin_audit_logs[("admin_audit_logs")]
     tbl_ai_action_audit_logs[("ai_action_audit_logs")]
     tbl_ai_action_memory[("ai_action_memory")]
     tbl_ai_conversation_summaries[("ai_conversation_summaries")]
@@ -50,12 +52,30 @@ flowchart LR
     tbl_ai_token_ledgers[("ai_token_ledgers")]
     tbl_auth_challenges[("auth_challenges")]
     tbl_business_categories[("business_categories")]
+    tbl_capture_ai_accounts[("capture_ai_accounts")]
+    tbl_capture_ai_jobs[("capture_ai_jobs")]
+    tbl_capture_ai_reservations[("capture_ai_reservations")]
+    tbl_capture_consents[("capture_consents")]
+    tbl_capture_devices[("capture_devices")]
+    tbl_capture_events[("capture_events")]
+    tbl_capture_markers[("capture_markers")]
+    tbl_capture_memory[("capture_memory")]
+    tbl_capture_questions[("capture_questions")]
+    tbl_capture_samples[("capture_samples")]
+    tbl_capture_signals[("capture_signals")]
+    tbl_capture_usage[("capture_usage")]
+    tbl_capture_user_pairs[("capture_user_pairs")]
     tbl_cashflow_settlements[("cashflow_settlements")]
     tbl_chat_conversations[("chat_conversations")]
     tbl_chat_messages[("chat_messages")]
     tbl_classification_logs[("classification_logs")]
     tbl_coaching_plans[("coaching_plans")]
     tbl_coaching_steps[("coaching_steps")]
+    tbl_commitment_hints[("commitment_hints")]
+    tbl_commitment_overrides[("commitment_overrides")]
+    tbl_commitment_questions[("commitment_questions")]
+    tbl_commitment_reminders[("commitment_reminders")]
+    tbl_commitment_schedule_items[("commitment_schedule_items")]
     tbl_expense_categories[("expense_categories")]
     tbl_expense_daily_rollups[("expense_daily_rollups")]
     tbl_expenses[("expenses")]
@@ -70,10 +90,11 @@ flowchart LR
     tbl_pro_subscriptions[("pro_subscriptions")]
     tbl_profile_learning_events[("profile_learning_events")]
     tbl_push_subscriptions[("push_subscriptions")]
-    tbl_raw_sms_events[("raw_sms_events")]
     tbl_referrals[("referrals")]
     tbl_scheduled_cashflows[("scheduled_cashflows")]
     tbl_sessions[("sessions")]
+    tbl_store_purchases[("store_purchases")]
+    tbl_support_assignments[("support_assignments")]
     tbl_support_tickets[("support_tickets")]
     tbl_user_analytics[("user_analytics")]
     tbl_user_budgets[("user_budgets")]
@@ -88,20 +109,22 @@ flowchart LR
     tbl_voice_call_incidents[("voice_call_incidents")]
     tbl_voice_calls[("voice_calls")]
     tbl_voice_usage[("voice_usage")]
-    tbl_webhook_tokens[("webhook_tokens")]
+    tbl_whatsapp_contacts[("whatsapp_contacts")]
+    tbl_whatsapp_messages[("whatsapp_messages")]
     tbl_whatsapp_otp_codes[("whatsapp_otp_codes")]
   end
+  ext_google_oauth{{"Google OAuth 2.0"}}
   ext_turnstile{{"Cloudflare Turnstile"}}
+  sys_bank_messages[["Bank and wallet messages (system)"]]
   sys_notifications[["Notifications and WhatsApp (system)"]]
   sys_platform[["Server platform and data (system)"]]
   sys_web_app[["Web and mobile app shell (system)"]]
   http__api_auth --> sys_platform
-  http__api_sse --> mod_auth
-  http__api_sse --> mod_security
-  http__api_sse --> sys_notifications
   job_daily_auth_cleanup --> mod_auth
   job_daily_auth_cleanup ==> tbl_auth_challenges
+  mod_accounts --> sys_bank_messages
   mod_accounts ==> tbl_ad_clicks
+  mod_accounts ==> tbl_ad_impressions
   mod_accounts ==> tbl_ai_action_audit_logs
   mod_accounts ==> tbl_ai_action_memory
   mod_accounts ==> tbl_ai_conversation_summaries
@@ -113,12 +136,30 @@ flowchart LR
   mod_accounts ==> tbl_ai_token_ledgers
   mod_accounts ==> tbl_auth_challenges
   mod_accounts ==> tbl_business_categories
+  mod_accounts ==> tbl_capture_ai_accounts
+  mod_accounts ==> tbl_capture_ai_jobs
+  mod_accounts ==> tbl_capture_ai_reservations
+  mod_accounts ==> tbl_capture_consents
+  mod_accounts ==> tbl_capture_devices
+  mod_accounts ==> tbl_capture_events
+  mod_accounts ==> tbl_capture_markers
+  mod_accounts ==> tbl_capture_memory
+  mod_accounts ==> tbl_capture_questions
+  mod_accounts ==> tbl_capture_samples
+  mod_accounts ==> tbl_capture_signals
+  mod_accounts ==> tbl_capture_usage
+  mod_accounts ==> tbl_capture_user_pairs
   mod_accounts ==> tbl_cashflow_settlements
   mod_accounts ==> tbl_chat_conversations
   mod_accounts ==> tbl_chat_messages
   mod_accounts ==> tbl_classification_logs
   mod_accounts ==> tbl_coaching_plans
   mod_accounts ==> tbl_coaching_steps
+  mod_accounts ==> tbl_commitment_hints
+  mod_accounts ==> tbl_commitment_overrides
+  mod_accounts ==> tbl_commitment_questions
+  mod_accounts ==> tbl_commitment_reminders
+  mod_accounts ==> tbl_commitment_schedule_items
   mod_accounts ==> tbl_expense_categories
   mod_accounts ==> tbl_expense_daily_rollups
   mod_accounts ==> tbl_expenses
@@ -133,10 +174,11 @@ flowchart LR
   mod_accounts ==> tbl_pro_subscriptions
   mod_accounts ==> tbl_profile_learning_events
   mod_accounts ==> tbl_push_subscriptions
-  mod_accounts ==> tbl_raw_sms_events
   mod_accounts ==> tbl_referrals
   mod_accounts ==> tbl_scheduled_cashflows
   mod_accounts ==> tbl_sessions
+  mod_accounts ==> tbl_store_purchases
+  mod_accounts ==> tbl_support_assignments
   mod_accounts ==> tbl_support_tickets
   mod_accounts ==> tbl_user_analytics
   mod_accounts ==> tbl_user_budgets
@@ -151,8 +193,11 @@ flowchart LR
   mod_accounts ==> tbl_voice_call_incidents
   mod_accounts ==> tbl_voice_calls
   mod_accounts ==> tbl_voice_usage
-  mod_accounts ==> tbl_webhook_tokens
+  mod_accounts ==> tbl_whatsapp_contacts
+  mod_accounts ==> tbl_whatsapp_messages
+  mod_auth --> ext_google_oauth
   mod_auth --> mod_security
+  mod_auth --> sys_bank_messages
   mod_auth --> sys_platform
   mod_auth ==> tbl_local_users
   mod_auth ==> tbl_sessions
@@ -164,6 +209,7 @@ flowchart LR
   mod_security -.-> tbl_user_businesses
   mod_security -.-> tbl_user_contacts
   mod_security -.-> tbl_user_wallets
+  mod_security ==> tbl_admin_audit_logs
   mod_web_account --> ext_turnstile
   mod_web_account --> sys_platform
   mod_web_account --> sys_web_app
@@ -206,6 +252,8 @@ flowchart LR
   screens_admin --> router_localAuth
   screens_ai_center --> router_auth
   screens_ai_center --> router_localAuth
+  screens_billing --> router_auth
+  screens_billing --> router_localAuth
   screens_money --> router_auth
   screens_money --> router_localAuth
   screens_web_app --> router_auth
@@ -219,8 +267,8 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `accounts` — Account lifecycle | Account deletion: purgeUserData removes every row a user owns, inside the caller's transaction. | 1 |
-| `auth` — Authentication and sessions | Password hashing, JWT session creation, session validation, login brute-force protection, the one module that changes a role, a plan or a session and invalidates the cached principal with it, and the phone challenges that prove a number over WhatsApp before a sign-up or a WhatsApp sign-in. | 5 |
-| `security` — Request security | HTTPS redirection and security headers, rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging. | 11 |
+| `auth` — Authentication and sessions | Password hashing, JWT session creation, session validation, login brute-force protection, the one module that changes a role, a plan or a session and invalidates the cached principal with it, and the phone challenges that prove a number over WhatsApp before a sign-up or a WhatsApp sign-in, and the check of a Google ID token from the mobile app (Google's signature, issuer, expiry, and an audience and authorized party that are the app's own client ids). | 6 |
+| `security` — Request security | HTTPS redirection and security headers, rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging. | 12 |
 | `web-account` — Account UI | Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt. | 14 |
 
 ## API procedures
@@ -229,18 +277,20 @@ flowchart LR
 | --- | --- | --- | --- | --- | --- |
 | `auth.googleCallback` | mutation | `strictPublicProcedure` | `users` | `users` | — |
 | `auth.googleUrl` | query | `publicProcedure` | — | — | `Login` |
-| `auth.logout` | mutation | `authedProcedure` | — | — | `AICenter`, `Admin`, `App shell`, `Home`, `More`, `Settings`, `Support` |
-| `auth.me` | query | `publicProcedure` | `users` | — | `AICenter`, `Admin`, `App shell`, `Home`, `More`, `Settings`, `Support` |
+| `auth.logout` | mutation | `authedProcedure` | — | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support`, `UltraLounge` |
+| `auth.me` | query | `publicProcedure` | `users` | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support`, `UltraLounge` |
+| `auth.signInWithGoogle` | mutation | `strictPublicProcedure` | `users` | `users` | — |
+| `localAuth.confirmVerificationCode` | mutation | `strictPublicProcedure` | — | — | `Login` |
 | `localAuth.deleteUser` | mutation | `adminProcedure` | — | — | — |
 | `localAuth.generateVerificationCode` | mutation | `strictPublicProcedure` | — | — | `Login` |
-| `localAuth.getBotPhoneNumber` | query | `publicProcedure` | — | — | `Login` |
 | `localAuth.getStats` | query | `adminProcedure` | `expenses`, `local_users` | — | — |
 | `localAuth.getVerificationSettings` | query | `publicProcedure` | — | — | `Login` |
 | `localAuth.listUsers` | query | `adminProcedure` | `expenses`, `local_users` | — | — |
 | `localAuth.login` | mutation | `publicProcedure` | `local_users` | `local_users` | `Login` |
-| `localAuth.logout` | mutation | `publicProcedure` | — | — | `AICenter`, `Admin`, `App shell`, `Home`, `More`, `Settings`, `Support` |
-| `localAuth.me` | query | `publicProcedure` | `local_users` | — | `AICenter`, `Admin`, `App shell`, `Home`, `More`, `Settings`, `Support` |
+| `localAuth.logout` | mutation | `publicProcedure` | — | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support`, `UltraLounge` |
+| `localAuth.me` | query | `publicProcedure` | `local_users` | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support`, `UltraLounge` |
 | `localAuth.register` | mutation | `strictPublicProcedure` | `local_users` | `local_users` | `Login` |
+| `localAuth.resetPassword` | mutation | `strictPublicProcedure` | `local_users` | `local_users` | — |
 | `localAuth.updateRole` | mutation | `adminProcedure` | — | — | — |
 | `localAuth.verifyOtp` | mutation | `strictPublicProcedure` | `local_users` | — | — |
 | `profile.confirmPhoneChange` | mutation | `authedProcedure` | `local_users` | `local_users` | — |
@@ -248,7 +298,7 @@ flowchart LR
 | `profile.getMyProfile` | query | `authedProcedure` | `user_profiles` | — | — |
 | `profile.requestPhoneChange` | mutation | `authedProcedure` | `local_users` | — | — |
 | `profile.updateProfile` | mutation | `authedProcedure` | — | `user_profiles` | — |
-| `profile.updateUserInfo` | mutation | `authedProcedure` | `local_users` | `local_users`, `users` | `More`, `Settings` |
+| `profile.updateUserInfo` | mutation | `authedProcedure` | — | `local_users`, `users` | `More`, `Settings` |
 | `session.listAll` | query | `adminProcedure` | `sessions` | — | — |
 | `session.listMine` | query | `authedProcedure` | `sessions` | — | — |
 | `session.revokeMine` | mutation | `authedProcedure` | — | — | — |
@@ -267,7 +317,6 @@ flowchart LR
 | --- | --- | --- |
 | `GET /api/auth/google/callback` | http | `api/boot.ts` |
 | `GET /api/auth/google/start` | http | `api/boot.ts` |
-| `GET /api/sse/otp` | sse | `api/boot.ts` |
 | `daily-auth-cleanup` | job, `0 0 * * *` | `api/boot.ts` |
 
 ## Data
@@ -277,6 +326,8 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
 | `ad_clicks` | E | `accounts` | — |
+| `ad_impressions` | E | `accounts` | — |
+| `admin_audit_logs` | B | `security` | — |
 | `ai_action_audit_logs` | E | `accounts` | — |
 | `ai_action_memory` | F | `accounts` | — |
 | `ai_conversation_summaries` | F | `accounts` | — |
@@ -288,19 +339,37 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ai_token_ledgers` | E | `accounts` | — |
 | `auth_challenges` | D | `accounts`, `daily-auth-cleanup`, `webauthn.generateAuthenticationOptions`, `webauthn.generateRegistrationOptions`, `webauthn.verifyAuthentication`, `webauthn.verifyRegistration` | `webauthn.verifyAuthentication`, `webauthn.verifyRegistration` |
 | `business_categories` | A | `accounts` | — |
+| `capture_ai_accounts` | D | `accounts` | — |
+| `capture_ai_jobs` | D | `accounts` | — |
+| `capture_ai_reservations` | D | `accounts` | — |
+| `capture_consents` | A | `accounts` | — |
+| `capture_devices` | A | `accounts` | — |
+| `capture_events` | E | `accounts` | — |
+| `capture_markers` | A | `accounts` | — |
+| `capture_memory` | A | `accounts` | — |
+| `capture_questions` | E | `accounts` | — |
+| `capture_samples` | E | `accounts` | — |
+| `capture_signals` | E | `accounts` | — |
+| `capture_usage` | C | `accounts` | — |
+| `capture_user_pairs` | A | `accounts` | — |
 | `cashflow_settlements` | C | `accounts` | — |
 | `chat_conversations` | G | `accounts` | `accounts` |
 | `chat_messages` | G | `accounts` | — |
 | `classification_logs` | E | `accounts` | — |
 | `coaching_plans` | C | `accounts` | — |
 | `coaching_steps` | C | `accounts` | — |
+| `commitment_hints` | C | `accounts` | — |
+| `commitment_overrides` | C | `accounts` | — |
+| `commitment_questions` | D | `accounts` | — |
+| `commitment_reminders` | E | `accounts` | — |
+| `commitment_schedule_items` | C | `accounts` | — |
 | `expense_categories` | A | `accounts` | — |
 | `expense_daily_rollups` | C | `accounts` | — |
 | `expenses` | B | `accounts` | `localAuth.getStats`, `localAuth.listUsers` |
 | `financial_goals` | C | `accounts` | `security` |
 | `in_app_notifications` | D | `accounts` | — |
 | `installment_plans` | C | `accounts` | — |
-| `local_users` | A | `accounts`, `auth`, `localAuth.login`, `localAuth.register`, `profile.confirmPhoneChange`, `profile.updateUserInfo` | `accounts`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.login`, `localAuth.me`, `localAuth.register`, `localAuth.verifyOtp`, `profile.confirmPhoneChange`, `profile.deleteMyAccount`, `profile.requestPhoneChange`, `profile.updateUserInfo`, `webauthn.generateRegistrationOptions` |
+| `local_users` | A | `accounts`, `auth`, `localAuth.login`, `localAuth.register`, `localAuth.resetPassword`, `profile.confirmPhoneChange`, `profile.updateUserInfo` | `accounts`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.login`, `localAuth.me`, `localAuth.register`, `localAuth.resetPassword`, `localAuth.verifyOtp`, `profile.confirmPhoneChange`, `profile.deleteMyAccount`, `profile.requestPhoneChange`, `webauthn.generateRegistrationOptions` |
 | `monthly_behavior_snapshots` | C | `accounts` | — |
 | `monthly_reports` | C | `accounts` | — |
 | `notification_logs` | E | `accounts` | — |
@@ -308,11 +377,12 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `pro_subscriptions` | A | `accounts` | — |
 | `profile_learning_events` | E | `accounts` | — |
 | `push_subscriptions` | A | `accounts` | — |
-| `raw_sms_events` | E | `accounts` | — |
 | `referrals` | A | `accounts` | — |
 | `scheduled_cashflows` | C | `accounts` | — |
 | `sessions` | D | `accounts`, `auth` | `auth`, `session.listAll`, `session.listMine`, `session.stats` |
-| `support_tickets` | A | `accounts` | — |
+| `store_purchases` | A | `accounts` | — |
+| `support_assignments` | A | `accounts` | — |
+| `support_tickets` | A | `accounts` | `accounts` |
 | `user_analytics` | E | `accounts`, `session.trackEvent` | — |
 | `user_budgets` | C | `accounts` | — |
 | `user_businesses` | A | `accounts` | `accounts`, `security` |
@@ -322,22 +392,24 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `user_dictionaries` | F | `accounts` | — |
 | `user_profiles` | A | `accounts`, `profile.updateProfile` | `profile.getMyProfile` |
 | `user_wallets` | A | `accounts` | `security` |
-| `users` | A | `accounts`, `auth`, `auth.googleCallback`, `profile.updateUserInfo` | `accounts`, `auth.googleCallback`, `auth.me`, `webauthn.generateRegistrationOptions` |
+| `users` | A | `accounts`, `auth`, `auth.googleCallback`, `auth.signInWithGoogle`, `profile.updateUserInfo` | `accounts`, `auth.googleCallback`, `auth.me`, `auth.signInWithGoogle`, `webauthn.generateRegistrationOptions` |
 | `voice_call_incidents` | E | `accounts` | — |
 | `voice_calls` | E | `accounts` | — |
 | `voice_usage` | E | `accounts` | — |
-| `webhook_tokens` | D | `accounts` | — |
+| `whatsapp_contacts` | A | `accounts` | — |
+| `whatsapp_messages` | E | `accounts` | — |
 | `whatsapp_otp_codes` | D | `auth` | `auth` |
 
 ## Outside systems
 
 | System | Kind | Modules |
 | --- | --- | --- |
+| Google OAuth 2.0 | identity | `auth` |
 | Cloudflare Turnstile | bot-protection | `security`, `web-account` |
 
 ## Other systems
 
-Depends on: [Admin console, support and growth tools](admin.md), [AI providers and usage limits](ai-platform.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Depends on: [Admin console, support and growth tools](admin.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
@@ -353,7 +425,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 | `LOGIN_IP_BURST_MAX_FAILURES` | yes | `api/lib/login-protection.ts` |
 | `LOGIN_IP_MAX_FAILURES` | yes | `api/lib/login-protection.ts` |
 | `LOGIN_PAIR_MAX_FAILURES` | yes | `api/lib/login-protection.ts` |
-| `NODE_ENV` | yes | `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/security-logger.ts`, `api/services/turnstile-service.ts` |
+| `NODE_ENV` | yes | `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/security-logger.ts`, `api/local-auth-utils.ts`, `api/services/turnstile-service.ts` |
 | `PORT` | yes | `api/lib/origin-policy.ts` |
 | `RATE_LIMIT_KEY_SECRET` | yes | `api/lib/login-protection.ts` |
 | `TRUSTED_PROXY_HEADER` | yes | `api/lib/get-client-ip.ts` |
@@ -365,17 +437,18 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/accounts.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>49 files and declarations</summary>
+<details><summary>50 files and declarations</summary>
 
 - `api/auth-router.ts`
 - `api/boot.ts#GET /api/auth/google/callback`
 - `api/boot.ts#GET /api/auth/google/start`
-- `api/boot.ts#GET /api/sse/otp`
 - `api/boot.ts#job:daily-auth-cleanup`
 - `api/lib/access-control.ts`
+- `api/lib/admin-audit.ts`
 - `api/lib/admin-safe-fields.ts`
 - `api/lib/anonymizer.ts`
 - `api/lib/get-client-ip.ts`
+- `api/lib/google-id-token.ts`
 - `api/lib/http-origin-security.ts`
 - `api/lib/image-magic-bytes.ts`
 - `api/lib/login-protection.ts`

@@ -35,6 +35,7 @@ vi.mock("./local-auth-utils", () => ({
   generateReferralCode: vi.fn(() => "SSTEST"),
   cleanPhoneNumber: vi.fn((phone: string) => phone.replace(/\D/g, "")),
   getSessionMetadata: vi.fn((_req, ip: string) => ({ ipAddress: ip })),
+  sessionCookie: vi.fn((token: string) => `smartspend_token=${token}; HttpOnly; SameSite=Lax; Path=/`),
 }));
 
 vi.mock("./lib/login-protection", () => ({
@@ -61,12 +62,7 @@ vi.mock("./lib/settings-cache", () => ({
   getSystemSettings: vi.fn(async () => ({})),
 }));
 
-vi.mock("./services/whatsapp-service", () => ({
-  whatsappService: {
-    getStatus: vi.fn(() => ({})),
-    sendMessage: vi.fn(),
-  },
-}));
+vi.mock("./lib/whatsapp/outbox", () => ({ enqueueMessage: vi.fn(), sendMessageNow: vi.fn() }));
 
 vi.mock("./services/user-purge-service", () => ({
   purgeUserData: vi.fn(),

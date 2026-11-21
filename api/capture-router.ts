@@ -1,0 +1,186 @@
+/**
+ * Capture for the signed-in app (decision 0028). `sources` is what a phone needs from the capture catalog before it
+ * reads a notification (api/lib/capture/catalog.ts): the active banks, wallets and apps with their Android packages and
+ * confirmed SMS sender ids, and a `version` so a phone keeps its copy until the catalog changes.
+ *
+ * The rest sets capture up and answers it: `registerDevice` gives the installation the device token its native code
+ * sends signals with (`/api/capture/v1`, api/capture-v1-routes.ts), `setConsent` records what the user agreed to,
+ * `pending` lists the transactions waiting for the user, and `answer` records or dismisses one through the ledger
+ * writer. `ignored`, `ignore` and `unignore` keep the cards and phrases the user asked capture to ignore (decision 0033);
+ * `walletOffers` suggests a wallet for a card seen in messages, and `deleteMyData` forgets what capture keeps (0034).
+ */
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import { router, authedProcedure } from "./middleware";
+import { CAPTURE_ACTIONS, CAPTURE_CONSENT_SCOPES } from "../contracts/capture-intake";
+import { CAPTURE_WALLET_KINDS } from "../contracts/capture";
+import { getCaptureCatalog, sourcesForPhones } from "./lib/capture/catalog";
+import { CAPTURE_CONSENT_TEXT_VERSION, captureConsentsOf, setCaptureConsent } from "./lib/capture/consent";
+import { listCaptureDevices, registerCaptureDevice, revokeCaptureDevice } from "./lib/capture/devices";
+import { answerEvent, captureLimitOf, captureUsageOf, pendingEvents, releaseHeldEvents } from "./lib/capture/intake";
+import { autoOffers, setPairAuto } from "./lib/capture/memory";
+import { captureOpenFor } from "./lib/capture/access";
+import { acceptWalletOffer, declineWalletOffer, deleteMyCaptureData, walletOffers } from "./lib/capture/care";
+import { CAPTURE_IGNORE_KINDS, addCaptureMarker, listCaptureMarkers, removeCaptureMarker, walletBalanceKind, setWalletBalanceKind } from "./lib/capture/markers";
+import { planNumber } from "../contracts/plan-features";
+import { createRateLimiter } from "./lib/rate-limit";
+import { getSystemSettings } from "./lib/settings-cache";
+import { captureActivity } from "./lib/capture/activity";
+import { answerPurposeQuestion, nextPurposeQuestion } from "./lib/capture/questions";
+import { MOVEMENT_KINDS } from "../contracts/ledger-movement";
+
+// A stolen session should not mint device tokens in bulk.
+const deviceRegistrations = createRateLimiter(10, 3_600_000);
+
+const ownerOf = (ctx: { user: { id: number; type: string } | null }) => ({ userId: ctx.user!.id, userType: ctx.user!.type });
+
+export const captureRouter = router({
+  nextQuestion: authedProcedure.mutation(({ ctx }) => nextPurposeQuestion(ownerOf(ctx))),
+  answerQuestion: authedProcedure.input(z.object({ questionId: z.number().int().positive(), action: z.enum(["set", "keep", "skip"]),
+    categoryId: z.string().max(60).optional(), subCategoryId: z.string().max(60).optional(), purpose: z.string().trim().min(1).max(200).optional(), movementKind: z.enum(MOVEMENT_KINDS).optional(), contactId: z.number().int().positive().nullable().optional(),
+  }).refine((input) => input.action !== "set" || !!input.categoryId || !!input.purpose || !!input.movementKind, "اختار فئة أو اكتب الغرض من العملية.")).mutation(({ ctx, input }) => answerPurposeQuestion(ownerOf(ctx), input.questionId, input)),
+  activity: authedProcedure.input(z.object({ limit: z.number().int().min(1).max(50).default(30) }).optional()).query(({ ctx, input }) => captureActivity(ownerOf(ctx), input?.limit)),
+  walletKind: authedProcedure.input(z.object({ walletId: z.number().int().positive() })).query(({ ctx, input }) => walletBalanceKind(ownerOf(ctx), input.walletId)),
+  setWalletKind: authedProcedure.input(z.object({ walletId: z.number().int().positive(), kind: z.enum(CAPTURE_WALLET_KINDS) })).mutation(async ({ ctx, input }) => {
+    await setWalletBalanceKind(ownerOf(ctx), input.walletId, input.kind);
+    return { success: true };
+  }),
+  sources: authedProcedure.query(async () => {
+    const catalog = await getCaptureCatalog();
+    return { version: catalog.version, sources: sourcesForPhones(catalog) };
+  }),
+
+  /** Whether capture is open, what the user agreed to, and the consent text version the app must show. */
+  status: authedProcedure.query(async ({ ctx }) => {
+    const [settings, usage] = await Promise.all([
+      getSystemSettings(),
+      captureUsageOf(ownerOf(ctx), ctx.user!.plan),
+    ]);
+    const consentTextVersion = CAPTURE_CONSENT_TEXT_VERSION;
+    const consent = await captureConsentsOf(ownerOf(ctx), undefined, consentTextVersion);
+    return { enabled: captureOpenFor(settings, ownerOf(ctx)), mode: "automatic" as const,
+      // The admin allows questions after saving; each user turns them on for themselves (`purpose_questions`).
+      questionsEnabled: settings.capture_questions_enabled !== "false",
+      walletTypesEnabled: settings.capture_financial_version === "cashflow-v1",
+      // The samples consent is offered only while the admin keeps samples (v7 §8).
+      samplesOffered: settings.capture_samples_enabled === "true",
+      consent, consentTextVersion, usage };
+  }),
+
+  /** The device token for this installation, shown once; registering the same installation again replaces it. */
+  registerDevice: authedProcedure
+    .input(
+      z.object({
+        platform: z.enum(["android", "ios"]),
+        installationId: z.string().min(8).max(64).regex(/^[A-Za-z0-9_-]+$/),
+        label: z.string().max(80).optional(),
+        appVersion: z.string().max(32).optional(),
+        osVersion: z.string().max(32).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const owner = ownerOf(ctx);
+      const settings = await getSystemSettings();
+      if (!captureOpenFor(settings, owner, input.platform)) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "تسجيل رسايل البنك مش متاح دلوقتي" });
+      }
+      await deviceRegistrations.hit(`capture:register:${owner.userType}:${owner.userId}`);
+      return registerCaptureDevice(owner, input, planNumber(settings, ctx.user!.plan, "capture_devices"));
+    }),
+
+  devices: authedProcedure.query(async ({ ctx }) => listCaptureDevices(ownerOf(ctx))),
+
+  /** Cards and accounts seen in the user's messages with no wallet yet. */
+  walletOffers: authedProcedure.query(async ({ ctx }) => walletOffers(ownerOf(ctx))),
+
+  /** Adds the suggested wallet, or stops suggesting it. */
+  answerWalletOffer: authedProcedure
+    .input(z.object({ sourceSlug: z.string().min(1).max(64), suffix: z.string().regex(/^\d{3}$/), accept: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!input.accept) {
+        await declineWalletOffer(ownerOf(ctx), input.sourceSlug, input.suffix);
+        return { walletId: null };
+      }
+      const added = await acceptWalletOffer(ownerOf(ctx), input.sourceSlug, input.suffix);
+      if (!added) throw new TRPCError({ code: "NOT_FOUND", message: "الاقتراح ده مش موجود" });
+      return added;
+    }),
+
+  /** Forgets what capture keeps about the user and stops it on every phone; the ledger stays. */
+  deleteMyData: authedProcedure.mutation(async ({ ctx }) => deleteMyCaptureData(ownerOf(ctx))),
+
+  /** The cards and phrases the user asked capture to ignore. */
+  ignored: authedProcedure.query(async ({ ctx }) => listCaptureMarkers(ownerOf(ctx))),
+
+  /** Ignores a card or account by its last digits, or a phrase: matching messages are dropped from now on. */
+  ignore: authedProcedure
+    .input(z.object({ kind: z.enum(CAPTURE_IGNORE_KINDS), value: z.string().trim().min(1).max(120) }))
+    .mutation(async ({ ctx, input }) => addCaptureMarker(ownerOf(ctx), input.kind, input.value)),
+
+  unignore: authedProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+    await removeCaptureMarker(ownerOf(ctx), input.id);
+    return { success: true };
+  }),
+
+  revokeDevice: authedProcedure.input(z.object({ deviceId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+    if (!(await revokeCaptureDevice(ownerOf(ctx), input.deviceId))) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "الجهاز ده مش موجود" });
+    }
+    return { success: true };
+  }),
+
+  setConsent: authedProcedure
+    .input(z.object({ scope: z.enum(CAPTURE_CONSENT_SCOPES), granted: z.boolean(), textVersion: z.string().min(1).max(20) }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.granted && input.textVersion !== CAPTURE_CONSENT_TEXT_VERSION) {
+        throw new TRPCError({ code: "CONFLICT", message: "نص الموافقة اتغير، حدّث التطبيق" });
+      }
+      await setCaptureConsent(ownerOf(ctx), input.scope, input.granted, input.textVersion);
+      return captureConsentsOf(ownerOf(ctx));
+    }),
+
+  /** The captured transactions waiting for the user, newest first, with where each would be filed. */
+  pending: authedProcedure.query(async ({ ctx }) => {
+    // After an upgrade, what was held comes back here first.
+    if ((await captureLimitOf(ctx.user!.plan)) === 0) await releaseHeldEvents(ownerOf(ctx));
+    return pendingEvents(ownerOf(ctx));
+  }),
+
+  /**
+   * The banks and kinds of message the user recorded as read three times in a row and was not asked about yet: the
+   * app offers to record them on their own (decision 0030).
+   */
+  autoOffers: authedProcedure.query(async ({ ctx }) => {
+    const catalog = await getCaptureCatalog();
+    const offers = await autoOffers(ownerOf(ctx));
+    return offers.map((offer) => {
+      const source = catalog.sources.find((item) => item.slug === offer.sourceSlug);
+      return { ...offer, sourceName: source ? { ar: source.nameAr, en: source.nameEn } : null };
+    });
+  }),
+
+  /** The user's answer to an offer: record this bank and kind on their own from now on, or keep asking. */
+  setAuto: authedProcedure
+    .input(z.object({ sourceSlug: z.string().min(1).max(64), kind: z.string().min(1).max(32), enabled: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!(await setPairAuto(ownerOf(ctx), input.sourceSlug, input.kind, input.enabled))) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "مفيش عرض بالشكل ده" });
+      }
+      return { success: true };
+    }),
+
+  answer: authedProcedure
+    .input(
+      z.object({
+        eventId: z.number().int().positive(),
+        action: z.enum(CAPTURE_ACTIONS),
+        categoryId: z.string().max(60).optional(),
+        subCategoryId: z.string().max(60).optional(),
+        amountEgp: z.number().positive().max(100_000_000).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { eventId, ...answer } = input;
+      return answerEvent(ownerOf(ctx), eventId, answer);
+    }),
+});

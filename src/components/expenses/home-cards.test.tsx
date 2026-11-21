@@ -24,17 +24,14 @@ vi.mock("@/providers/trpc", () => {
 });
 
 import { PendingQuestionsCard } from "./PendingQuestionsCard";
-import { SmsSuggestionsCard } from "../bank-sync/SmsSuggestionsCard";
 import { BudgetsPanel } from "../budgets/BudgetsPanel";
 
 describe("Home cards with an unexpected reply", () => {
   it.each([{}, null, "error", 42])("render nothing for %j instead of throwing", (reply) => {
     replies["expense.getPendingClarifications"] = reply;
-    replies["profile.getSmsSuggestions"] = reply;
     const { container } = render(
       <>
         <PendingQuestionsCard />
-        <SmsSuggestionsCard />
       </>,
     );
     expect(container).toBeEmptyDOMElement();

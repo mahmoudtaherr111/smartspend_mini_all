@@ -133,7 +133,10 @@ export const SETTINGS: SettingDef[] = [
   { key: "ultra_max_per_request", default: "1024" },
 
   // ── Feature toggles ──
-  { key: "free_ai_analysis", default: "false" },
+  // AI parsing and AI analysis (monthly report, month comparison, yearly analysis) per plan. The server reads a
+  // missing row as on, so every default is on: a free default of "false" once showed the switch off in the console
+  // while free users still got the analysis.
+  { key: "free_ai_analysis", default: "true" },
   { key: "pro_ai_analysis", default: "true" },
   { key: "ultra_ai_analysis", default: "true" },
   { key: "free_ai_parse", default: "true" },
@@ -191,6 +194,29 @@ export const SETTINGS: SettingDef[] = [
   { key: "parser_review_threshold", default: "50" },
   { key: "parser_escalate_threshold", default: "85" },
 
+  // ── Provider trips for reading a sentence: the wait for one route, and for the whole chain, in milliseconds ──
+  { key: "llm_timeout_ms", default: "8000" },
+  { key: "llm_trip_deadline_ms", default: "15000" },
+
+  // ── Recording engine (docs/decisions/0052-understanding-engine.md) ──
+  // "rules": the classification pipeline. "understanding": a model reads the sentence and code verifies the reading
+  // (api/services/recording/read-sentence.ts).
+  { key: "recording_engine", default: "rules" },
+  // The understanding engine's policy (api/lib/understanding/policy.ts). "false" shows every reading before saving.
+  { key: "understanding_auto_save", default: "false" },
+  // At or above this amount (EGP), a category the user never saved before is shown first.
+  { key: "understanding_review_amount", default: "5000" },
+  // More events than this in one sentence are shown first.
+  { key: "understanding_auto_max_events", default: "6" },
+  // "true" shows an entry dated on another day before saving it.
+  { key: "understanding_review_dated", default: "true" },
+  // The guard's limits: the largest amount one event may carry, and how many days back a stated date may be.
+  { key: "understanding_max_amount", default: "10000000" },
+  { key: "understanding_max_days_back", default: "366" },
+  // "compact" sends a shorter prompt (subcategory ids without their wording, fewer examples) for provider tiers
+  // with a small tokens-per-minute allowance; "full" is the default.
+  { key: "understanding_prompt_detail", default: "full" },
+
   // ── Prompt settings ──
   { key: "ai_response_length", default: "medium" },
   { key: "ai_focus", default: "balanced" },
@@ -220,11 +246,50 @@ export const SETTINGS: SettingDef[] = [
   { key: "rag_model", default: "" },
 
   // ── Misc ──
-  { key: "sms_limit_free", default: "5" },
-  { key: "sms_limit_pro", default: "999999" },
-  { key: "sms_limit_ultra", default: "999999" },
-  { key: "promo_code_discount", default: "20" },
-  { key: "pipeline_version", default: "v1" },
+  // The model that reads every bank message (api/lib/capture/model-reader.ts, decision 0049). "false" stops
+  // every call.
+  { key: "sms_ai_enabled", default: "true" },
+  // USD a Cairo day across all AI work; past it AI stops until midnight (api/lib/feature-switches.ts). 0 means no cap.
+  { key: "ai_daily_cost_cap_usd", default: "50" },
+  // "true" stops one AI feature for everyone (api/lib/feature-switches.ts, read by clients through appConfig.get).
+  { key: "ai_off_parse", default: "false" },
+  { key: "ai_off_chat", default: "false" },
+  { key: "ai_off_speech", default: "false" },
+  { key: "ai_off_image", default: "false" },
+  { key: "ai_off_report", default: "false" },
+  { key: "ai_off_goal", default: "false" },
+  { key: "ai_off_business", default: "false" },
+  // The oldest mobile build the server still works with, and where to update; empty requires nothing.
+  { key: "mobile_min_version_android", default: "" },
+  { key: "mobile_min_version_ios", default: "" },
+  { key: "mobile_store_url_android", default: "" },
+  { key: "mobile_store_url_ios", default: "" },
+  // Capture from phones (/api/capture/v1, decision 0028). "false" refuses every signal and tells phones to stop; off
+  // until the closed beta.
+  // Capture for everyone who installs the app and agrees (decision 0049); the admin can turn it off at once.
+  { key: "capture_enabled", default: "true" },
+  // Who capture is open to while capture_enabled is on (decision 0033): the platforms ("android,ios"), and when not
+  // empty, only these users ("local:12,oauth:7") for a closed beta.
+  { key: "capture_platforms", default: "android,ios" },
+  { key: "capture_beta_users", default: "" },
+  // Signals one user's phones may send a Cairo day; past it the phone is told to wait until midnight. 0 means none.
+  { key: "capture_daily_signal_limit", default: "1000" },
+  // Sources whose payments are never recorded on their own (a bank that changed its messages), comma separated slugs.
+  { key: "capture_paused_sources", default: "" },
+  // Question notifications a user gets a Cairo day; the rest wait in the app.
+  { key: "capture_daily_question_notices", default: "2" },
+  // "cashflow-v1" once the ledger's two-kind cutover ran (decision 0045); boot runs it on a clean ledger.
+  { key: "capture_financial_version", default: "" },
+  // Whether the app may ask "what was this for?" after saving; each user turns it on for themselves (decision 0049).
+  { key: "capture_questions_enabled", default: "true" },
+  // Keep redacted messages and their readings (v7 §8) from users who gave the `message_samples` consent. Off until the
+  // retention period is approved by the lawyer.
+  { key: "capture_samples_enabled", default: "false" },
+  // USD a Cairo day across all users for reading bank messages, priced from the admin's model prices; past it the
+  // messages wait for the next day. Must be above 0.
+  { key: "capture_ai_daily_cost_cap_usd", default: "50" },
+  { key: "capture_ai_tokens_free", default: "2000000" },
+  { key: "capture_ai_concurrency", default: "64" },
   { key: "whatsapp_otp_enabled", default: "true" },
   // EGP per USD for the AI cost ledger's EGP column (api/lib/ai-pricing.ts); the admin updates it as the rate moves.
   { key: "usd_to_egp_rate", default: "48.5" },
@@ -236,6 +301,22 @@ export const SETTINGS: SettingDef[] = [
     key: `chatbot_enabled_${plan}`,
     default: "true",
   })),
+  // ── Commitments (docs/decisions/0051-commitments-ecosystem.md): defaults the user can change per commitment ──
+  { key: "commitments_remind_days_default", default: "3" },
+  { key: "commitments_remind_hour_default", default: "10" },
+  /** Weekly reminders after the day-after one, while a date stays unpaid. */
+  { key: "commitments_overdue_followups", default: "2" },
+  /** Ask "was it paid?" when the app opens on or after a due date that has no payment. */
+  { key: "commitments_due_prompt_enabled", default: "true" },
+  /** Link a recorded payment on its own when the five rules hold; off: always ask. */
+  { key: "commitments_auto_link_enabled", default: "true" },
+  { key: "commitments_whatsapp_enabled", default: "false" },
+  /** The approved Meta template the reminders use, and its language code. */
+  { key: "commitments_whatsapp_template", default: "" },
+  { key: "commitments_whatsapp_template_lang", default: "ar" },
+  /** Cairo hours WhatsApp reminders may go out, "from-to". */
+  { key: "commitments_whatsapp_hours", default: "9-21" },
+  { key: "commitments_whatsapp_daily_cap", default: "3" },
   ...planSettingDefinitions(),
 ];
 

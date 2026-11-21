@@ -1,7 +1,7 @@
 # Accounts, sign-in and security
 
 How people get in and stay in: Google sign-in, phone numbers with passwords, passkeys, sessions and logout, the app
-lock on the device, and the protections every request passes through (origins, headers, client IP, rate limits, login
+lock on the device, the sign-in of the Flutter app in `mobile/`, and the protections every request passes through (origins, headers, client IP, rate limits, login
 protection, ownership checks, upload checks, bot protection). Also account changes and account deletion.
 
 - Facts generated from the code, with diagrams: [docs/atlas/systems/accounts.md](../atlas/systems/accounts.md)
@@ -22,6 +22,8 @@ account of the same person.
 | Sign-in suggestion | `src/hooks/useBiometricOnboarding.ts`, `src/components/auth/BiometricOnboardingModal.tsx`, `src/hooks/usePasskeyEnrolment.ts` | The sheet that offers fingerprint / Face ID sign-in and registers the passkey in place |
 | Client session | `src/hooks/useAuth.ts`, `src/providers/trpc.ts` | Who is signed in, the offline identity, tab sync, logout; the token header on every call |
 | Google sign-in | the `/api/auth/google/start` and `/api/auth/google/callback` routes in `api/boot.ts`, `api/auth-router.ts` | OAuth with a state cookie, account creation, the `google_session` cookie |
+| Google sign-in from the mobile app | `auth.signInWithGoogle` in `api/auth-router.ts`, `api/lib/google-id-token.ts` | Checks the ID token of the phone's Google SDK and answers a session token |
+| Mobile app sign-in | `mobile/app/lib/src/features/auth/` | Phone login, sign-up with WhatsApp verification and Google in the Flutter app; the token in the Keychain or Keystore; the route guard |
 | Phone accounts | `api/local-auth-router.ts`, `api/local-auth-utils.ts` | Register, login, WhatsApp verification codes, logout |
 | Passkeys | `api/webauthn-router.ts` | Register a passkey while signed in, sign in with it |
 | Sessions | `api/context.ts#createContext`, `api/lib/session-validation.ts`, `api/session-router.ts` | Resolving the caller from a token, the Redis cache, revocation |
@@ -35,48 +37,88 @@ account of the same person.
 
 ### Google
 1. The Login screen asks `auth.googleUrl`, which points at `/api/auth/google/start` when Google is configured, and
-   navigates to `getApiUrl(googleUrl)` (`src/lib/api-url.ts`) so Capacitor shells also reach the API host.
+   navigates to `getApiUrl(googleUrl)` (`src/lib/api-url.ts`) so Capacitor shells also reach the API host. A
+   `next` path under `/admin/` is kept in an `oauth_next` cookie and the callback returns there instead of
+   `/dashboard`; any other value is ignored. In development the origin policy also trusts port 3100, the admin
+   console's dev server.
 2. The start route builds the redirect address from the request's origin, which must be an allowed web origin, sets a
    random `oauth_state` cookie and the redirect address for ten minutes, and redirects to Google
    (`api/auth-router.ts#buildGoogleAuthorizationUrl`).
 3. The callback route compares the state with the cookie in constant time and calls `auth.googleCallback`, which
-   exchanges the code, finds the user by Google id or creates one with a referral code, updates the last sign-in and
+   exchanges the code, finds the user by Google id or creates one (with a `referral_code` kept for later offers), updates the last sign-in and
    creates a session.
 4. The route sets the `google_session` cookie (HttpOnly, seven days) and redirects to the dashboard; any failure
    returns to the login screen.
+5. Both Google flows share the account step (`findOrCreateGoogleUser`, keyed by Google's account id in
+   `users.union_id`) and the session step (`startGoogleSession`).
+
+### Google, in the mobile app
+A native app has no cookie to receive, so it signs in with the phone's own Google SDK (`google_sign_in`: Credential
+Manager on Android, the Google Sign-In SDK on iOS) and sends the ID token it gets to `auth.signInWithGoogle`
+(`strictPublicProcedure`, input `{ idToken, nonce }`).
+1. `verifyGoogleIdToken` (`api/lib/google-id-token.ts`) checks the RS256 signature against Google's published keys
+   (fetched with `jose` and cached; an unknown key id fetches them again), the issuer `accounts.google.com`, the expiry
+   with a minute of tolerance, and a verified email.
+2. It checks who the token was issued to. The app asks for a token for the server, so its audience (`aud`) is the web
+   client `GOOGLE_CLIENT_ID`, or the iOS client when the iOS SDK signs in on its own; its authorized party (`azp`, or
+   the audience when absent) must be one of `GOOGLE_ANDROID_CLIENT_IDS` or `GOOGLE_IOS_CLIENT_IDS` (comma-separated,
+   for the store and dev builds). A token the website obtained for itself is refused.
+3. It checks that the token belongs to this sign-in. For each sign-in the app makes a random value (32 bytes,
+   base64url, `newGoogleNonce` in `mobile/app/lib/src/features/auth/google_identity.dart`), gives Google only its
+   SHA-256 in hex, and sends the value itself as `nonce` (32 to 128 characters). The token's `nonce` claim must equal
+   that hash (`googleNonceHash`), so a token that leaked without the value signs no one in. After the checks the
+   procedure marks the hash as used for an hour and a minute (`stateClaim` in `api/lib/redis-client.ts`, `SET NX`), so
+   the same token and value sent again are refused as `replayed`, on any replica ([decision 0036](../decisions/0036-google-sign-in-nonce.md)).
+4. With neither variable set the procedure answers `SERVICE_UNAVAILABLE`; a token that fails a check, or a value used
+   before, answers `UNAUTHORIZED`, and Google's keys being unreachable `SERVICE_UNAVAILABLE`. It logs `auth.google_id_token.*` with the
+   reason or the user id, never the token or the email.
+5. The account and session are made as in the redirect flow, and the token comes back in the answer; no cookie is set.
+
+The app shows the Google button only when the build has `GOOGLE_SERVER_CLIENT_ID` (the web client id) and, on iOS,
+`GOOGLE_IOS_CLIENT_ID` with its reversed form in `mobile/app/ios/Flutter/GoogleSignIn.xcconfig`.
 
 ### Phone number and password
 - **Register** (`localAuth.register`): an Egyptian mobile number starting with 010, 011, 012 or 015
   (`api/local-auth-utils.ts#validatePhone`, Arabic digits accepted) that is not registered yet; a password of at least
   six characters, hashed with bcrypt; an optional referral code of another phone user. When `whatsapp_otp_enabled` is
-  `true`, the request must carry the ticket of a challenge the bot verified for this very number, and the challenge is
+  `true`, the request must carry the ticket of a challenge verified for this very number, and the challenge is
   spent in the transaction that creates the account (see WhatsApp verification).
 - **Login** (`localAuth.login`): the attempt passes login protection first; an unknown number is compared with a fixed
   hash, so it fails with the same message and takes as long as a wrong password.
-- Both create a session, set the `smartspend_token` cookie (HttpOnly, seven days) and return the token, which the web
-  app also keeps in `localStorage` and sends as a Bearer header.
+- Both create a session, set the `smartspend_token` cookie (`sessionCookie` in `api/local-auth-utils.ts`: HttpOnly,
+  `SameSite=Lax`, seven days, `Secure` in production or over https) and return the token. The website signs in with the
+  cookie alone and never stores, reads or sends the token; the mobile app keeps it in the Keychain or Keystore and
+  sends it as a Bearer header ([decision 0037](../decisions/0037-website-session-cookie-only.md)). A passkey sign-in
+  (`webauthn.verifyAuthentication`) and a WhatsApp code sign-in set the same cookie.
 
 ### WhatsApp verification
-Reverse verification: the user proves the number by sending a code to the bot from it, so the message is the proof
-and the code only a label (`api/services/phone-challenge.ts`).
+We send a six-digit code to the number's WhatsApp and the person types it back (`api/services/phone-challenge.ts`,
+[decision 0038](../decisions/0038-whatsapp-cloud-api.md)). Delivery to that WhatsApp account proves the number, also
+when the person hides it behind a WhatsApp username.
 1. `localAuth.generateVerificationCode` passes the Turnstile check (`api/services/turnstile-service.ts`: in production
-   only a token Cloudflare accepts, and nothing at all without `TURNSTILE_SECRET_KEY`), then limits counted across
-   replicas: five codes per address in ten minutes, one per number a minute. It opens a challenge in
-   `whatsapp_otp_codes`, valid for ten minutes, and returns its code (`SS-` and six digits), a `ticket` and a `watch`
-   token, both HMACs of the row under a key derived from `JWT_SECRET`.
-2. The Login screen shows the code with a WhatsApp link that sends it to the bot, and follows the challenge on
-   `getApiUrl("/api/sse/otp?challenge=...")` (`/api/sse/otp?challenge=<watch>`). The form shows the Turnstile widget
-   when the build has `VITE_TURNSTILE_SITE_KEY`. Note that `src/components/notifications/PushNotificationPrompt.tsx`
-   only appears once push support (`isSupported`, i.e. Firebase or `VITE_VAPID_PUBLIC_KEY`) is present, so a build
-   without push keys never offers an unusable permission prompt after sign-in.
-3. The bot (`receiveVerificationCode` in `api/services/whatsapp-service.ts`) finds the open challenge with that code
-   and marks it verified only when the sender is the challenge's own number or its WhatsApp LID. A code from any
-   other number is refused and counted, and three block the sender for 15 minutes. The page hears `verified`,
-   `wrong_sender` or `expired`, never a phone number: at once when its stream reached the bot's process, and from the
-   database within three seconds on any other replica.
-4. On `verified` the page calls `localAuth.register` with the ticket; `localAuth.verifyOtp` does the same for an
-   existing account and returns a session. Both spend the challenge with a conditional delete, so a ticket works
-   once. Challenges nobody finished are deleted by the nightly `daily-auth-cleanup`.
+   only a token Cloudflare accepts, and nothing at all without `TURNSTILE_SECRET_KEY`). With WhatsApp not set up
+   (`whatsAppConfig()` null) it refuses with `SERVICE_UNAVAILABLE` before anything else, so nobody waits for a code
+   that cannot come. Then limits counted across replicas: five codes per address in ten minutes, one per number a
+   minute.
+2. It opens a challenge in `whatsapp_otp_codes`, valid for ten minutes, holding only an HMAC of the code under a key
+   derived from `JWT_SECRET`, and sends the code in the `smartspend_verification` authentication template
+   (`sendMessageNow`, recorded in `whatsapp_messages` without the code). The answer is the `ticket` (an HMAC of the row),
+   the ten minutes and `resendInSeconds` (60), never the code. A number without WhatsApp (Meta's 131026) answers
+   «الرقم ده مش عليه واتساب»; any other refusal asks to try again later.
+3. `localAuth.confirmVerificationCode` takes the ticket and six digits (Arabic-Indic digits read as the same code)
+   and marks the challenge verified. A wrong code is counted in the same statement that checks the limit, so five wrong
+   codes close the challenge even when guessed in parallel; the answer says how many tries are left, then asks for a
+   new code.
+4. `localAuth.register` then takes the ticket; `localAuth.verifyOtp` does the same for an existing account and returns
+   a session. Both spend the challenge with a conditional delete, so a ticket works once. Challenges nobody finished
+   are deleted by the nightly `daily-auth-cleanup`.
+
+The Login screen shows a six-box code field (`autocomplete="one-time-code"`) that confirms itself when full, the time
+left and a resend button after the wait. The mobile app's sign-up (`RegisterScreen`) runs the same steps with a code
+field the keyboard fills (`AutofillHints.oneTimeCode`; Android suggests WhatsApp's authentication codes), and shows the
+Turnstile widget again before a resend when the build has `TURNSTILE_SITE_KEY`. `src/components/notifications/PushNotificationPrompt.tsx`
+only appears once push support (`isSupported`, i.e. Firebase or `VITE_VAPID_PUBLIC_KEY`) is present, so a build without
+push keys never offers an unusable permission prompt after sign-in.
 
 ### Passkeys
 - In Settings, a signed-in user registers a passkey: `webauthn.generateRegistrationOptions` stores a five-minute
@@ -107,11 +149,20 @@ and the code only a label (`api/services/phone-challenge.ts`).
   row must exist and be unexpired (`validateActiveSessionToken`), and the role and plan are read from the user table.
 - **Revocation.** Logout deletes the session row and its cached copy and clears the cookies. Bumping the auth version
   (`bumpAuthVersion`) drops every cached session of a user at once; phone changes and `session.revokeMine` do it.
-- **Cleanup.** `daily-auth-cleanup` deletes expired sessions and passkey challenges every night at midnight on replicas
-  with `ENABLE_CRONS=true`.
+  Revoking every session (`revokeAllSessions`: sign-out everywhere, a password change) also revokes the device tokens
+  phones send captured bank notifications with ([bank and wallet messages](bank-messages.md),
+  `api/lib/capture/devices.ts#revokeAllCaptureDevices`).
+- **Cleanup.** `daily-auth-cleanup` deletes expired sessions, passkey challenges and phone challenges every night at midnight
+  on replicas with `ENABLE_CRONS=true`.
 - **In the browser** (`src/hooks/useAuth.ts`): both `auth.me` and `localAuth.me` are asked; a short offline snapshot
   keeps the name and plan visible without a network; logins and logouts are shared between tabs; logout clears the
   token, the offline queues and both server sessions.
+- **In the mobile app** (`SessionController` in `mobile/app/lib/src/features/auth/session_controller.dart`): the token
+  sits in `SessionStore` (Keychain or Keystore). On start the app opens the tabs on a stored token at once, even
+  offline, and asks `auth.me` and `localAuth.me`; when both answer null, or any call that carried the token is refused
+  as `UNAUTHORIZED` (`TrpcClient`'s `onSessionRejected`), it forgets the token and the router shows sign-in with
+  «الجلسة خلصت». The router (`sessionRedirect`) lets a signed-out person reach only the sign-in screens. Sign-out calls
+  `localAuth.logout`, which revokes the Bearer token's session of either kind, then clears the token.
 - **App lock.** Settings can turn on a lock screen for this device (`src/providers/BiometricLockProvider.tsx`,
   `src/lib/biometricAuth.ts`): biometrics (using native `LAContext` Face ID / Touch ID via
   `src/lib/native-ios-bridge.ts` and `ios/App/App/Plugins/SmartSpendNativePlugin.swift` on Capacitor iOS, and WebAuthn
@@ -143,18 +194,26 @@ Then, per procedure:
 - **Ownership** (`assertEntityOwnership` and its batch form): a wallet, business, goal or contact id that is not the
   caller's is refused (`api/AGENTS.md`, rule 2).
 - **Uploads** (`verifyImageMagicBytes`): receipts must really be JPEG, PNG or WebP.
-- **Redaction** (`redactSensitiveData`): card numbers, phone numbers, codes and names are removed from bank messages
-  before they are stored or sent to a model.
+- **Redaction** (`redactSensitiveData`, and `redactWithFindings`, which also returns the card endings it removed):
+  card and account digits, IBANs, Egyptian phone numbers, reference numbers, e-mail addresses, one-time codes and the
+  names after من، إلى، لـ، to, from or Dear are replaced by markers. Explicit holder labels (باسم، بإسم، بأسم، registered as, to name) are read first and also mask lowercase Latin names, while keeping the label and financial values. Amounts, balances, dates and merchants stay. It
+  runs on the expense lines a report prompt quotes. Bank-message capture uses it with `names: false`
+  ([bank messages](bank-messages.md), decision 0049): names stay for the model, identifying numbers are masked, and
+  any leftover run of ten digits becomes a reference marker instead of the message being refused.
 - **Admin answers** select fields from `api/lib/admin-safe-fields.ts`, so credentials and session tokens never leave.
 
 ## Account changes and deletion
-- `profile.updateUserInfo` changes the name and avatar. A new phone number needs a code: `profile.requestPhoneChange`
-  sends one over WhatsApp when verification is on and keeps it for ten minutes as shared state (`stateSet` in
-  `api/lib/redis-client.ts`: Redis, or the process's memory where there is no Redis), so the confirmation may reach any
-  replica; `profile.confirmPhoneChange` checks it, saves the number, bumps the auth version and returns a one-time
-  grant that `profile.updateUserInfo` also accepts for fifteen minutes.
+- `profile.updateUserInfo` changes the name and avatar. A new phone number goes through the WhatsApp challenge:
+  `profile.requestPhoneChange` refuses a number another account holds and sends a code to the new number, and
+  `profile.confirmPhoneChange` takes the code typed back and moves the account in one transaction that spends the challenge.
+  Without WhatsApp configured the change is refused with a plain message.
 - `purgeUserData` first locks the identity row, which delayed memory writers also lock; it deletes, inside the caller's transaction, every user-owned row (conversations and memory, the ledger,
-  goals, contacts, sessions, passkeys, the profile, logs, voice usage and live calls with their incidents, and referrals)
+  goals, contacts, sessions, passkeys, the profile, logs, voice usage and live calls with their incidents, the capture
+  devices, consents, signals, events, monthly use, memory and pairs, the model's queue, the redacted message samples, the cards and phrases it ignores, the
+  WhatsApp messages sent to them and their WhatsApp consents, their commitments with their schedule items, overrides,
+  learned hints, sent reminders and questions, and referrals, and the assignments of their support
+  tickets and, for a staff member, the tickets given to them; before migration 0049 there is no assignment table and
+  that step is skipped)
   and then the identity row. `admin.deleteUser`, `localAuth.deleteUser` and `profile.deleteMyAccount` call it, then
   drop the cached principal (`invalidatePrincipal`), so a session resolved before the deletion stops answering at once;
   `tests/knowledge/architecture.test.ts` fails when a user-owned table is left out.
@@ -168,8 +227,10 @@ Then, per procedure:
 | To change | Edit | Check with |
 | --- | --- | --- |
 | Google sign-in | the Google routes in `api/boot.ts`, `api/auth-router.ts` | |
+| Google sign-in from the mobile app | `api/lib/google-id-token.ts`, `auth.signInWithGoogle` in `api/auth-router.ts`, the `GOOGLE_*_CLIENT_IDS` variables in `api/lib/env.ts`, `mobile/app/lib/src/features/auth/google_identity.dart` | `api/lib/google-id-token.test.ts`, `api/auth-router.google-id-token.test.ts`, `mobile/app/test/sign_in_screen_test.dart` |
+| The mobile app's sign-in, sign-up and route guard | `mobile/app/lib/src/features/auth/`, `mobile/app/lib/src/routing/app_router.dart` | the tests in `mobile/app/test/` (`flutter test`) |
 | Phone registration and login | `api/local-auth-router.ts`, `api/local-auth-utils.ts`, `src/pages/Login.tsx` | `api/local-auth-router.security.test.ts` |
-| Proving a phone number | `api/services/phone-challenge.ts`, `receiveVerificationCode` in `api/services/whatsapp-service.ts`, `/api/sse/otp` in `api/boot.ts`, `src/pages/Login.tsx` | `api/local-auth-router.phone.test.ts`, `api/services/whatsapp-service.receive.test.ts`, `tests/phone-challenge.test.ts` (database) |
+| Proving a phone number | `api/services/phone-challenge.ts`, `generateVerificationCode` and `confirmVerificationCode` in `api/local-auth-router.ts`, `src/pages/Login.tsx`, `mobile/app/lib/src/features/auth/register_screen.dart` | `api/local-auth-router.phone.test.ts`, `tests/phone-challenge.test.ts` (database), `mobile/app/test/register_screen_test.dart` |
 | The robot check | `api/services/turnstile-service.ts`, `src/components/auth/TurnstileWidget.tsx` | `tests/security/r3-turnstile-defense.test.ts` |
 | Login limits | `api/lib/login-protection.ts` and the `LOGIN_*` variables in `api/lib/env.ts` | `api/lib/login-protection.test.ts`, `api/lib/login-protection.integration.test.ts` |
 | Passkeys | `api/webauthn-router.ts`, `src/components/auth/PasskeySettings.tsx` | |
@@ -191,8 +252,8 @@ Then, per procedure:
    may write `role` or `plan` or delete a session (`tests/knowledge/architecture.test.ts`).
 5. A new user-owned table is added to `purgeUserData`.
 6. Never log tokens, codes or phone numbers (golden rule 10).
-7. A phone number is proved only through `api/services/phone-challenge.ts`: the bot marks the challenge verified, and
-   the ticket of the browser that started it spends it once. Never accept a phone number and a code from the client
+7. A phone number is proved only through `api/services/phone-challenge.ts`: the code we sent on WhatsApp, typed back,
+   marks the challenge verified, and the ticket of the screen that started it spends it once. Never accept a phone number and a code from the client
    as proof.
 
 ## Tests
@@ -201,7 +262,14 @@ Then, per procedure:
 `api/admin-router.security.test.ts`, `api/business-router.security.test.ts`, `api/middleware.test.ts`,
 `api/lib/login-protection.test.ts`, `api/lib/login-protection.integration.test.ts`, `api/lib/origin-policy.test.ts`,
 `api/lib/get-client-ip.test.ts`, `api/lib/rate-limit.test.ts`, the suites in `tests/security/` and, for the app lock,
-`src/providers/BiometricLockProvider.test.tsx` and `src/components/auth/BiometricAuth.test.tsx`.
+`src/providers/BiometricLockProvider.test.tsx` and `src/components/auth/BiometricAuth.test.tsx`. Google ID tokens:
+`api/lib/google-id-token.test.ts` and `api/auth-router.google-id-token.test.ts`. The mobile app: `flutter test` in
+`mobile/app` (sign-in, sign-up with verification, route guard, answer shapes) and `dart test` in
+`mobile/packages/smartspend_api` (the client's session hook and the challenge stream).
+
+## Forgotten password
+`localAuth.resetPassword` takes a verified phone challenge and a new password, spends the challenge in the same
+transaction, ends every session of the account, and opens a new one.
 
 ## Known issues
 Checked against the code; each one names where it lives.
@@ -210,20 +278,44 @@ Checked against the code; each one names where it lives.
 2. **Gap.** In production, verification needs both Turnstile keys: `TURNSTILE_SECRET_KEY` on the server and
    `VITE_TURNSTILE_SITE_KEY` in the web build. With verification on and either missing, nobody can sign up with a phone
    number.
-3. **Gap.** Changing a phone number has no screen, and with verification off its code is never sent; the profile shows the
-   number read-only.
-4. **Gap.** Users cannot see or end their sessions: `session.listMine` and `session.revokeMine` have no screen.
-5. **Security.** The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read
-   it (`src/AGENTS.md`, rule 4). In production the content security policy runs no inline script it does not know by
-   hash, which narrows that risk without removing it.
-6. **Gap.** The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
-7. **Security.** The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the
-   same storage.
+3. **Gap.** Changing a phone number and seeing sessions have screens in the mobile app only; the website shows the number
+   read-only and has no sessions screen. A phone change needs WhatsApp to be configured.
+5. **Gap.** The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
+6. **Security.** The website's app lock hashes its PIN with PBKDF2 and a random salt, but the hash and the lockout counter sit in
+   `localStorage`, so it stops a passer-by and not anyone who can open the browser's tools (`src/lib/biometricAuth.ts`).
+7. **Gap.** Google sign-in in the mobile app is off until it is configured on both sides: `GOOGLE_ANDROID_CLIENT_IDS` or
+   `GOOGLE_IOS_CLIENT_IDS` on the server, `GOOGLE_SERVER_CLIENT_ID` (and on iOS `GOOGLE_IOS_CLIENT_ID` with the reversed id
+   in `GoogleSignIn.xcconfig`) in the app build. None of these values is set yet, so the app hides the button.
+8. **Gap.** In the mobile app Turnstile runs in a web view loaded as the API's origin, so the site key must list the
+   API's host. A build without `TURNSTILE_SITE_KEY` sends no token, and a production server with verification on then
+   refuses its sign-ups, as known issue 2 says for the web.
+9. **Gap.** The mobile app has no passkey sign-in, and neither the app nor the web's Login screen offers WhatsApp
+    sign-in (`localAuth.verifyOtp`).
 
 ## Related systems
-- [Notifications and WhatsApp](notifications.md): the WhatsApp bot that receives the codes, and push subscriptions.
+- [Notifications and WhatsApp](notifications.md): the WhatsApp Cloud API that sends the codes, and push subscriptions.
 - [Server platform and data](platform.md): the Hono app, the order of its middleware, Redis.
 - [Admin console, support and growth tools](admin.md): user management, roles and deletion.
 - [Plans and payments](billing.md): the plan stored on the user.
 - [Money](money.md): the people and business screens inside Settings.
 - [Web and mobile app shell](web-app.md): route guards, the More page and the app lock provider.
+
+## Capture token boundary
+`redactWithPrivateTokens` uses the same redaction policy with numbered markers per kind. Its local resolver holds
+original values in a closure; JSON serialization emits only the redacted text. Repeated equal values reuse their
+marker within one call, and no map is shared across calls. Card tails are read through a method returning a copy.
+Arabic and Persian digits are supported in fixed Egyptian phone prefixes as well as the rest of the number.
+An overlong name sets `incompleteName` rather than claiming the entire name was removed. Existing redaction callers
+keep legacy markers. Capture asks for no names to be masked, so the incomplete finding does not refuse its messages.
+This bounded matcher is not proof that an arbitrary unlabelled name has been detected.
+
+Capture consent writes now lock the identity row before changing consent, so deletion cannot race a late grant
+into recreating user data. Its transactional reader accepts the existing transaction, avoiding a second connection
+while holding a user lock. The purge also clears capture AI reservations and per-user resource counters; global daily
+cost aggregates contain no identity and remain.
+
+
+Capture's automatic-consent scope has its own version and never inherits the older unclear-message grant. Renewal
+revokes the prior active version atomically. Newly introduced optional capture question/resource tables are checked
+through the same transaction before account purge, allowing a disabled expand/contract deployment to retain account
+deletion. Private three-digit card/account tails now receive the same redaction treatment as four-digit tails.

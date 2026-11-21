@@ -91,9 +91,12 @@ import type {
 import { displayFinanceCategory } from "./services/finance-semantic-layer/category-matcher";
 import { createLogger } from "./lib/log";
 import { providerSlugForBaseUrl, recordAiLedger } from "./lib/ai-ledger";
+import { ANTHROPIC_DEFAULT_BASE_URL } from "./lib/anthropic-client";
 import { resolveAdminRoutes } from "./lib/ai-gateway";
 import { env } from "./lib/env";
-import { defaultGeminiModelForPlan } from "./lib/model-mapper";
+import { defaultGeminiModelForPlan, mapModelName } from "./lib/model-mapper";
+import { assertAiBudget, estimateTokensFromText, trackAiTokens } from "./lib/ai-usage-policy";
+import { assertAiSwitchOn } from "./lib/feature-switches";
 
 const log = createLogger("chat");
 
@@ -103,7 +106,7 @@ const log = createLogger("chat");
 const GEMINI_OPENAI_BASE =
   "https://generativelanguage.googleapis.com/v1beta/openai";
 
-type ChatModel = { apiKey: string; baseUrl: string; model: string };
+type ChatModel = { apiKey: string; baseUrl: string; model: string; protocol?: string };
 
 /**
  * The chat's models, in the order to ask them: the models the admin assigned to "chat" in the console for this plan,
@@ -118,19 +121,20 @@ async function chatModels(
   const routes = await resolveAdminRoutes("chat", tier).catch(() => null);
   const models: ChatModel[] = (routes?.routes ?? [])
     .filter(
-      (route) => route.protocol === "openai" || route.protocol === "gemini",
+      (route) => route.protocol === "openai" || route.protocol === "gemini" || route.protocol === "anthropic",
     )
     .map((route) => ({
       apiKey: route.apiKey,
-      baseUrl: route.protocol === "gemini" ? GEMINI_OPENAI_BASE : route.baseUrl,
-      model: route.model.replace(/^models\//, ""),
+      baseUrl: route.protocol === "gemini" ? GEMINI_OPENAI_BASE : route.protocol === "anthropic" ? route.baseUrl || ANTHROPIC_DEFAULT_BASE_URL : route.baseUrl,
+      model: route.protocol === "anthropic" ? route.model : mapModelName(route.model.replace(/^models\//, "")),
+      protocol: route.protocol,
     }));
   const chatbotKey = s.chatbot_api_key || s.fireworks_api_key || "";
   if (chatbotKey) {
     models.push({
       apiKey: chatbotKey,
       baseUrl: s.chatbot_base_url || "https://api.fireworks.ai/inference/v1",
-      model: s.chatbot_model || "accounts/fireworks/models/deepseek-v4-flash",
+      model: mapModelName(s.chatbot_model || "accounts/fireworks/models/deepseek-v4-flash"),
     });
   }
   const geminiKey = s.ai_api_key || env.GEMINI_API_KEY || "";
@@ -138,13 +142,14 @@ async function chatModels(
     models.push({
       apiKey: geminiKey,
       baseUrl: GEMINI_OPENAI_BASE,
-      model: defaultGeminiModelForPlan(tier),
+      model: mapModelName(defaultGeminiModelForPlan(tier)),
     });
   return models;
 }
 
 async function loadChatConfig(plan: string): Promise<{
   fallbacks: ChatModel[];
+  protocol?: string;
   apiKey: string;
   baseUrl: string;
   model: string;
@@ -160,6 +165,7 @@ async function loadChatConfig(plan: string): Promise<{
 
   return {
     fallbacks,
+    protocol: first?.protocol,
     apiKey: first?.apiKey ?? "",
     baseUrl: first?.baseUrl ?? GEMINI_OPENAI_BASE,
     model: first?.model ?? "",
@@ -668,12 +674,10 @@ export const chatRouter = router({
         process.env.NODE_ENV !== "production";
 
       if (!devQaBypassDailyLimit && todayCount >= dailyLimit) {
-        const now = new Date();
-        const midnight = new Date(now);
-        midnight.setHours(24, 0, 0, 0);
+        const today = businessDayRange();
         const retryAfterSeconds = Math.max(
           60,
-          Math.floor((midnight.getTime() - now.getTime()) / 1000),
+          Math.floor((today.endExclusive.getTime() - Date.now()) / 1000),
         );
 
         throw new TRPCError({
@@ -997,14 +1001,31 @@ export const chatRouter = router({
         };
       }
 
+      await assertAiSwitchOn("chat", config.settings);
+
+      if (!devQaBypassDailyLimit) {
+        const promptTokensEstimate = estimateTokensFromText(input.message);
+        await assertAiBudget(
+          { id: user.id, type: user.type, plan: user.plan },
+          "parse",
+          promptTokensEstimate,
+          config.settings,
+        );
+      }
+
       let kernelFailed = false;
+      const effectiveMaxTokens = Math.min(
+        chatPolicy.maxOutputTokens,
+        config.maxTokens[plan] || chatPolicy.maxOutputTokens,
+      );
       const kernelPrimary = aiKernelActive
         ? await runAIKernelActive(kernelRequest, {
             apiKey: config.apiKey,
             baseUrl: config.baseUrl,
             model: config.model,
+            protocol: config.protocol,
             fallbacks: config.fallbacks,
-            maxTokens: chatPolicy.maxOutputTokens,
+            maxTokens: effectiveMaxTokens,
           }).catch((error: unknown) => {
             log.warn(
               { err: error, event: "chat.kernel.failed" },
@@ -1311,22 +1332,15 @@ export const chatRouter = router({
           ),
         );
 
-      // 9. Update user's AI tokens used
+      // 9. Update user's AI tokens used and record event for burst guard (DEBT-18)
       const tokensToAdd = result.tokensUsed;
-      if (user.type === "oauth") {
-        await db
-          .update(users)
-          .set({
-            aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokensToAdd}`,
-          })
-          .where(eq(users.id, user.id));
-      } else {
-        await db
-          .update(localUsers)
-          .set({
-            aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokensToAdd}`,
-          })
-          .where(eq(localUsers.id, user.id));
+      if (tokensToAdd > 0) {
+        await trackAiTokens(
+          { id: user.id, type: user.type },
+          tokensToAdd,
+          "parse",
+          result.model,
+        );
       }
 
       return {

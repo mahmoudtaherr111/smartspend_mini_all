@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Server, Trash2, Cpu, RefreshCw, CheckCircle2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
-import { PUBLISHED_RATES } from "@contracts/ai-models";
+import { AI_ROUTED_PURPOSES, PUBLISHED_RATES } from "@contracts/ai-models";
 import { AiModelEditDialog, type EditableModel } from "../modals/AiModelEditDialog";
 
 interface ProviderState {
@@ -440,7 +440,7 @@ export function AiProviderManagerTab() {
                           <div className="flex flex-wrap gap-1">
                             {purposes.map((p) => (
                               <Badge key={p} variant="outline" className="text-[10px] border-slate-700 bg-slate-950">
-                                {p}
+                                {AI_ROUTED_PURPOSES.find((purpose) => purpose.id === p)?.label ?? p}
                               </Badge>
                             ))}
                           </div>

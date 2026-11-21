@@ -64,12 +64,6 @@ export function buildPlanCatalogEntry(
     value: voiceMonthly <= 0 ? "بدون حد" : `${Math.round(voiceMonthly / 60)} دقيقة في الشهر`,
   });
 
-  rows.push({
-    key: "bank_messages",
-    label: "رسايل البنك والمحافظ",
-    value: count(intSetting(settings, `sms_limit_${plan}`), "رسالة في الشهر"),
-  });
-
   const chatOn = settings[`chatbot_enabled_${plan}`] !== "false";
   rows.push({
     key: "chat",
@@ -98,6 +92,17 @@ export function buildPlanCatalogEntry(
     label: "الأهداف المالية النشطة",
     value: goals === 0 ? "بدون حد" : `${goals} أهداف`,
   });
+
+  // Recording from bank messages, once the admin has opened it: over a limit, payments are held and recorded on an
+  // upgrade (the owner's decision, docs/decisions/0028-capture-intake-from-phones.md).
+  if (settings.capture_enabled !== "false") {
+    const captured = planNumber(settings, plan, "capture_monthly_limit");
+    rows.push({
+      key: "bank_messages",
+      label: "تسجيل من رسايل البنك",
+      value: captured === 0 ? "بدون حد، وأي عملية فاتتك في آخر شهرين بتتسجل أول ما تشترك" : `${captured} عملية في الشهر`,
+    });
+  }
 
   for (const feature of Object.keys(PLAN_FEATURE_LABELS) as PlanFeature[]) {
     rows.push({

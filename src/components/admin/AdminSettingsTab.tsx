@@ -7,14 +7,12 @@ import {
   BrainCircuit,
   Database,
   Lock,
-  Calendar,
   Info,
   Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPlansTab } from "./settings/AdminPlansTab";
 import { AdminKeysTab } from "./settings/AdminKeysTab";
-import { AdminCodesTab } from "./settings/AdminCodesTab";
 
 export function AdminSettingsTab() {
   const { data: settings, refetch } = trpc.admin.getSettings.useQuery();
@@ -140,12 +138,6 @@ export function AdminSettingsTab() {
           >
             <Lock className="w-4 h-4" /> خزنة المفاتيح
           </TabsTrigger>
-          <TabsTrigger
-            value="codes"
-            className="gap-2 py-3 px-5 rounded-xl data-[state=active]:bg-white/90 data-[state=active]:dark:bg-slate-700 data-[state=active]:shadow-sm data-[state=active]:text-emerald-600 font-bold transition-all"
-          >
-            <Calendar className="w-4 h-4" /> الخصومات والدعوات
-          </TabsTrigger>
         </TabsList>
 
         <form onSubmit={handleSubmit}>
@@ -168,12 +160,6 @@ export function AdminSettingsTab() {
             />
           </TabsContent>
 
-          <TabsContent value="codes" className="space-y-8">
-            <AdminCodesTab
-              formData={formData}
-              updateField={updateField}
-            />
-          </TabsContent>
         </form>
       </Tabs>
     </div>

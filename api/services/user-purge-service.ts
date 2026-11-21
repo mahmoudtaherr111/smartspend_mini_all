@@ -1,6 +1,8 @@
 import { and, eq, inArray, or } from "drizzle-orm";
+import { optionalCaptureTables } from "../lib/capture/schema-state";
 import {
   adClicks,
+  adImpressions,
   adStatsDaily,
   aiActionAuditLogs,
   aiActionMemory,
@@ -28,16 +30,22 @@ import {
   pendingClarifications,
   profileLearningEvents,
   proSubscriptions,
+  storePurchases,
   pushSubscriptions,
-  rawSmsEvents,
   referrals,
   sessions,
+  supportAssignments,
   supportTickets,
   userAnalytics,
   userBudgets,
   installmentPlans,
   scheduledCashflows,
   cashflowSettlements,
+  commitmentScheduleItems,
+  commitmentOverrides,
+  commitmentHints,
+  commitmentReminders,
+  commitmentQuestions,
   coachingPlans,
   coachingSteps,
   userBusinesses,
@@ -49,9 +57,23 @@ import {
   userWallets,
   users,
   voiceUsage,
+  captureSignals,
+  captureEvents,
+  captureQuestions,
+  captureSamples,
+  captureUsage,
+  captureMemory,
+  captureUserPairs,
+  captureAiJobs,
+  captureAiAccounts,
+  captureAiReservations,
+  whatsappMessages,
+  whatsappContacts,
+  captureMarkers,
+  captureConsents,
+  captureDevices,
   voiceCalls,
   voiceCallIncidents,
-  webhookTokens,
 } from "../../db/schema";
 
 export type PurgeUserType = "oauth" | "local";
@@ -102,6 +124,24 @@ export async function purgeUserData(
   await tx.delete(aiActionMemory).where(userScope(aiActionMemory, userId, userType));
   await tx.delete(pendingClarifications).where(userScope(pendingClarifications, userId, userType));
 
+  // Capture: the notifications waiting for an answer, the consents and the phones (decision 0028).
+  await tx.delete(captureAiJobs).where(userScope(captureAiJobs, userId, userType));
+  const captureTables = await optionalCaptureTables(tx);
+  if (captureTables.has("capture_ai_reservations")) await tx.delete(captureAiReservations).where(userScope(captureAiReservations, userId, userType));
+  if (captureTables.has("capture_ai_accounts")) await tx.delete(captureAiAccounts).where(userScope(captureAiAccounts, userId, userType));
+  await tx.delete(whatsappMessages).where(userScope(whatsappMessages, userId, userType));
+  await tx.delete(whatsappContacts).where(userScope(whatsappContacts, userId, userType));
+  await tx.delete(captureMarkers).where(userScope(captureMarkers, userId, userType));
+  await tx.delete(captureSignals).where(userScope(captureSignals, userId, userType));
+  await tx.delete(captureEvents).where(userScope(captureEvents, userId, userType));
+  if (captureTables.has("capture_questions")) await tx.delete(captureQuestions).where(userScope(captureQuestions, userId, userType));
+  if (captureTables.has("capture_samples")) await tx.delete(captureSamples).where(userScope(captureSamples, userId, userType));
+  await tx.delete(captureUsage).where(userScope(captureUsage, userId, userType));
+  await tx.delete(captureMemory).where(userScope(captureMemory, userId, userType));
+  await tx.delete(captureUserPairs).where(userScope(captureUserPairs, userId, userType));
+  await tx.delete(captureConsents).where(userScope(captureConsents, userId, userType));
+  await tx.delete(captureDevices).where(userScope(captureDevices, userId, userType));
+
   await tx.delete(expenses).where(userScope(expenses, userId, userType));
   await tx.delete(expenseDailyRollups).where(userScope(expenseDailyRollups, userId, userType));
   await tx.delete(aiCostMonthly).where(userScope(aiCostMonthly, userId, userType));
@@ -111,6 +151,11 @@ export async function purgeUserData(
   await tx.delete(userBudgets).where(userScope(userBudgets, userId, userType));
   await tx.delete(installmentPlans).where(userScope(installmentPlans, userId, userType));
   await tx.delete(cashflowSettlements).where(userScope(cashflowSettlements, userId, userType));
+  await tx.delete(commitmentQuestions).where(userScope(commitmentQuestions, userId, userType));
+  await tx.delete(commitmentReminders).where(userScope(commitmentReminders, userId, userType));
+  await tx.delete(commitmentHints).where(userScope(commitmentHints, userId, userType));
+  await tx.delete(commitmentOverrides).where(userScope(commitmentOverrides, userId, userType));
+  await tx.delete(commitmentScheduleItems).where(userScope(commitmentScheduleItems, userId, userType));
   await tx.delete(scheduledCashflows).where(userScope(scheduledCashflows, userId, userType));
   await tx.delete(coachingSteps).where(userScope(coachingSteps, userId, userType));
   await tx.delete(coachingPlans).where(userScope(coachingPlans, userId, userType));
@@ -127,13 +172,29 @@ export async function purgeUserData(
   await tx.delete(sessions).where(userScope(sessions, userId, userType));
   await tx.delete(userCredentials).where(userScope(userCredentials, userId, userType));
   await tx.delete(authChallenges).where(userScope(authChallenges, userId, userType));
-  await tx.delete(webhookTokens).where(userScope(webhookTokens, userId, userType));
   await tx.delete(pushSubscriptions).where(userScope(pushSubscriptions, userId, userType));
 
   await tx.delete(userProfiles).where(userScope(userProfiles, userId, userType));
   await tx.delete(userAnalytics).where(userScope(userAnalytics, userId, userType));
+  // A ticket's assignment goes with the ticket, and a staff member's assignments go with the staff member. Before
+  // migration 0049 the table does not exist; that must not stop an account from being deleted.
+  try {
+    await tx.delete(supportAssignments).where(
+      or(
+        and(eq(supportAssignments.staffId, userId), eq(supportAssignments.staffType, userType)),
+        inArray(
+          supportAssignments.ticketId,
+          tx.select({ id: supportTickets.id }).from(supportTickets).where(userScope(supportTickets, userId, userType)),
+        ),
+      ),
+    );
+  } catch (error) {
+    const code = (error as { code?: string; cause?: { code?: string } })?.cause?.code ?? (error as { code?: string })?.code;
+    if (code !== "ER_NO_SUCH_TABLE") throw error;
+  }
   await tx.delete(supportTickets).where(userScope(supportTickets, userId, userType));
   await tx.delete(proSubscriptions).where(userScope(proSubscriptions, userId, userType));
+  await tx.delete(storePurchases).where(userScope(storePurchases, userId, userType));
   await tx.delete(aiSummaries).where(userScope(aiSummaries, userId, userType));
   await tx.delete(profileLearningEvents).where(userScope(profileLearningEvents, userId, userType));
   await tx.delete(monthlyBehaviorSnapshots).where(userScope(monthlyBehaviorSnapshots, userId, userType));
@@ -142,8 +203,8 @@ export async function purgeUserData(
   await tx.delete(voiceUsage).where(userScope(voiceUsage, userId, userType));
   await tx.delete(voiceCallIncidents).where(userScope(voiceCallIncidents, userId, userType));
   await tx.delete(voiceCalls).where(userScope(voiceCalls, userId, userType));
-  await tx.delete(rawSmsEvents).where(userScope(rawSmsEvents, userId, userType));
   await tx.delete(adClicks).where(userScope(adClicks, userId, userType));
+  await tx.delete(adImpressions).where(userScope(adImpressions, userId, userType));
   await tx.delete(inAppNotifications).where(userScope(inAppNotifications, userId, userType));
   await tx.delete(notificationLogs).where(userScope(notificationLogs, userId, userType));
   await tx.delete(referrals).where(

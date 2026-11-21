@@ -4,78 +4,60 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (12 of 80 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 79 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-18 2bbf17c | 2026-10-01 85479c6 | 18 | — | — | 2 | — |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-21 0abf2ed4 | 2026-11-21 0abf2ed4 | 5 | — | — | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-11-21 0abf2ed4 | 2026-11-21 0abf2ed4 | 10 | — | — | 4 | 2 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 6 | — | — | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-21 0abf2ed4 | 2026-11-21 0abf2ed4 | 8 | — | 3 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 6 | — | 1 | 7 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-21 0abf2ed4 | 2026-11-21 0abf2ed4 | 14 | **2** | — | 5 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-17 6d541cd | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-21 0abf2ed4 | 2026-11-21 0abf2ed4 | 1 | **1** | 1 | 3 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 4 | — | 2 | 5 | 1 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-18 2bbf17c | 2026-10-01 b5d9955 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-21 0abf2ed4 | 2026-11-21 0abf2ed4 | 5 | — | — | — | 6 |
-| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-21 0abf2ed4 | 2026-11-21 0abf2ed4 | 10 | **1** | — | 2 | 2 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-21 de463a99 | 2026-11-21 de463a99 | 18 | — | — | 1 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-21 0abf2ed4 | behind the English page | 8 | — | — | 5 | 1 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-11-21 0abf2ed4 | behind the English page | 10 | — | — | 4 | 2 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 6 | — | — | 2 | 2 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-21 0abf2ed4 | behind the English page | 9 | — | 2 | 3 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-21 20483aa7 | 2026-11-21 20483aa7 | 11 | — | 1 | 10 | 1 |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-21 0abf2ed4 | behind the English page | 16 | **1** | — | 7 | — |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-05 df6216e1 | 2026-11-03 ff028180 | 2 | — | — | 2 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-21 0abf2ed4 | behind the English page | 4 | — | — | 3 | 1 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-21 20483aa7 | 2026-11-21 20483aa7 | 7 | — | — | 5 | — |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-21 20483aa7 | 2026-11-21 20483aa7 | 10 | — | — | 3 | 5 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-21 0abf2ed4 | behind the English page | 5 | — | — | 1 | 7 |
+| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-21 0abf2ed4 | behind the English page | 10 | — | — | 3 | 1 |
 
 
 ## Where the risk is
 
 Every system's explanation names at least one test.
 
-## What is waiting (80 issue(s))
+## What is waiting (79 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
-### Security (5)
+### Security (1)
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
-- The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read it (`src/AGENTS.md`, rule 4). In production the content security policy runs no inline script it does not know by hash, which narrows that risk without removing it.
-- The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the same storage.
+- The website's app lock hashes its PIN with PBKDF2 and a random salt, but the hash and the lockout counter sit in `localStorage`, so it stops a passer-by and not anyone who can open the browser's tools (`src/lib/biometricAuth.ts`).
 
-**Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
-- Outside production without `PAYMOB_HMAC_SECRET`, the webhook accepts unsigned callbacks and grants plans from them.
-
-**Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
-- WhatsApp broadcasts are automated bulk messages through an unofficial client, spaced by random pauses and varied wording, which risks a ban of the number; the queue lives in process memory and is lost on restart, and nothing checks that recipients agreed.
-
-**Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
-- The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
-
-### Bugs (7)
+### Bugs (3)
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
 - With a facts pack, the report prompt ignores the admin's report settings and never includes the personal and family context `generateMonthlyInsights` builds; the model sees the facts, the name, the salary day and the financial month only.
 - Numbers in a model-written report are measured against the facts but not enforced: unlike the chat, a report with unsupported numbers is shown as it is.
-- Month boundaries use server-local dates and `toISOString()` (golden rule 6). With a salary day, the previous period is derived from `toISOString().slice(0, 7)` of a local date, which is a month too early on a server whose clock is ahead of UTC; snapshot days are grouped by UTC date.
 
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
 - The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 
-**Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
-- The activity checks (`checkAndTriggerSmartActivityNotifications` in `api/notification-engine.ts`) page through users in batches of 1,000 per account table until none remain un-logged, but users with `preferences.alertsEnabled === false` are skipped without writing `notification_logs`, so a batch filled with them is matched again on every pass; and a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
-
-**Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
-- Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero.
-- Discount codes are created here but checkout never applies them ([billing](billing.md)).
-
-### Gaps (43)
+### Gaps (49)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
-- A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
-- `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
+- `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app (a corrected category is learned by `expense.update` through `recordCorrection`, not by `ai.learnWord`), and The website has no receipt capture. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
-- The APK behind `/downloads/smartspend-sync.apk` is a debug build that `.github/workflows/build-apk.yml` commits when `android-app/` changes; it is signed with the runner's throwaway debug key, so a newer build cannot install over an older one until a release key is configured.
-- The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY` directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
-- Only a merchant the engine knows well changes the fixed map (a card payment, or a refund from it, which is saved as a negative expense in that merchant's category): a card payment to any other merchant is `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
-- Raw messages are deleted 90 days after they arrive (`RETENTION_POLICIES` in `api/jobs/data-retention-job.ts`), a suggestion left unanswered included; until then the full text, with account digits and balances, is stored as received.
+- iPhone capture is not built: iOS gives apps no SMS. Nothing has run on a real phone: this machine cannot run an Android emulator, so the path was proved from the phone's HTTP calls to the ledger with a real model.
+- The SMS build (`-Psmartspend.sms=true`, the `smartspend-sms-apk` artifact of `.github/workflows/android-release.yml`) may not go to Google Play before the SMS declaration is approved; the store build has notifications only.
+- A payment announced by the bank's SMS and its app's notification is joined when both name the same card, account or merchant, or the same balance (`matchSignal`); if neither message names any of them, two rows appear.
+- No export of `capture_samples` exists yet (`api/lib/capture/samples.ts`).
+- Without an admin route for `sms`, only Gemini on the server's key reads; a second provider needs its key and prices in the console.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - A call does not go on with the screen locked or the app in the background: the page keeps the microphone only in the foreground, and the call resumes if the app comes back within the hold (`src/lib/voice/call-connection.ts`). Keeping it alive needs native work in the Android and iOS shells.
@@ -97,47 +79,58 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP (`src/components/goals/FinancialGoalsPanel.tsx`).
 - `business.suggestCategories` calls a fixed Gemini model without `mapModelName` or a budget check (its cost does reach the AI cost ledger); `business.get` returns the user's first business even when it is inactive.
 - `expense.getYearlyStats` has no screen.
-- A bank message's refund nets its category only when the merchant is one the engine knows well (`categorizeSms` with `readsAsSmsRefund` in `api/services/sms-ledger.ts`); any other refund arrives as an incoming credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative spending in a month when the purchase fell in an earlier one.
+- Refunds the old bank-message intake recorded netted their category only when the merchant was one the engine knew well; the others were saved as income under دخل آخر and keep that filing, as do rows saved before decision 0010. A category can show net negative spending in a month when the purchase fell in an earlier one.
 - Commitments, plans and wallet balances are the personal ledger's only: `business_id` exists on `scheduled_cashflows` and `coaching_plans` but nothing writes or reads it yet (`api/services/coach/`).
-- Reminders reach the in-app notifications only, not web push (`api/services/coach/plans.ts#deliverDueReminders`).
+- Coaching-plan step reminders reach the in-app notifications only, not push (`api/services/coach/plans.ts#deliverDueReminders`); commitment reminders do reach push.
+- A service an admin adds without an Android app, a Microsoft Store app or a site icon shows its initials on its brand colour until the admin sets a logo (`mobile/app/lib/src/features/commitments/subscription_brands.dart`, [bank messages](bank-messages.md)); every service the seed ships has its real logo.
+- WhatsApp commitment reminders stay off until the admin sets an approved Utility template (`commitments_whatsapp_template`) and turns them on; the template's two variables are the title and the text (`api/services/coach/reminders.ts`).
+- The parked website's «خطتك والتزاماتك» page (`src/pages/PlanPage.tsx`) still adds and settles through `coach.*` and knows nothing of shapes, overrides or questions (decision 0050 parks it).
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
 - Verification is the setting `whatsapp_otp_enabled` (shown and switched in the admin console's WhatsApp tab, [notifications](notifications.md)): while it is off any number registers without proof that it belongs to the person.
 - In production, verification needs both Turnstile keys: `TURNSTILE_SECRET_KEY` on the server and `VITE_TURNSTILE_SITE_KEY` in the web build. With verification on and either missing, nobody can sign up with a phone number.
-- Changing a phone number has no screen, and with verification off its code is never sent; the profile shows the number read-only.
-- Users cannot see or end their sessions: `session.listMine` and `session.revokeMine` have no screen.
+- Changing a phone number and seeing sessions have screens in the mobile app only; the website shows the number read-only and has no sessions screen. A phone change needs WhatsApp to be configured.
 - The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
+- Google sign-in in the mobile app is off until it is configured on both sides: `GOOGLE_ANDROID_CLIENT_IDS` or `GOOGLE_IOS_CLIENT_IDS` on the server, `GOOGLE_SERVER_CLIENT_ID` (and on iOS `GOOGLE_IOS_CLIENT_ID` with the reversed id in `GoogleSignIn.xcconfig`) in the app build. None of these values is set yet, so the app hides the button.
+- In the mobile app Turnstile runs in a web view loaded as the API's origin, so the site key must list the API's host. A build without `TURNSTILE_SITE_KEY` sends no token, and a production server with verification on then refuses its sign-ups, as known issue 2 says for the web.
+- The mobile app has no passkey sign-in, and neither the app nor the web's Login screen offers WhatsApp sign-in (`localAuth.verifyOtp`).
 
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
-- Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that `src/App.tsx` guards only with a sign-in, not with `UltraFeatureRoute`; no procedure uses `ultraProcedure`; and the yearly Pro plan has no screen.
-- Referrals give nothing yet: checkout always charges the plan's full price and nothing rewards the referrer, so `referral.myCode` returns no discount (`REFERRAL_DISCOUNT_APPLIED_AT_CHECKOUT` in `api/referral-router.ts`) and the plans screen promises none; the discount codes admins create in `discount_codes` are never applied.
+- Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that sends anyone not on Ultra back to the plans; no procedure uses `ultraProcedure`; and the yearly Pro plan has no screen.
 - Nothing renews a subscription, since each Paymob payment is a one-time charge: the user is reminded three days and one day before the end and pays again; in the last week the subscription card on the plans screen (`src/pages/Pro.tsx`) offers the same plan in one tap (`pro.createCheckoutSession` with the current plan), and the paid period starts where the current one ends. Charging a stored card needs Paymob's recurring flow. `pro.cancel` only changes the status the plans screen shows, and there is no refund path.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
-- The logging reminder the permission prompt mentions reaches only users with a streak whose last recorded day was 12 to 36 hours ago.
+- The logging reminder reaches whoever last recorded 12 to 36 hours ago, so someone who signed up and never recorded gets none.
 - A default template an admin edited keeps its old text, which may still carry emoji or the old Pro upsell's 30% discount that checkout never gives ([billing](billing.md)); unedited ones were replaced.
-- Push cannot be turned off from the app, a device cannot be removed, the bell has no clearing, and nothing prunes `in_app_notifications` or `notification_logs` apart from account deletion. Bell items keep no type, so the icon is read from the destination; the Capacitor shells have no native push (no channels or small icon of their own).
+- A device cannot be removed from the web, and the retention job does not prune `in_app_notifications`. It prunes `notification_logs` older than 90 days when enabled (`api/jobs/data-retention-job.ts`). Bell items keep no type, so the icon is read from the destination; the Capacitor shells have no native push of their own.
 
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
-- Nothing records what admins do. The audit tab lists recent sessions, and changing a role or plan, editing settings, deleting an account or sending a message leaves no trail.
-- The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the browser; nothing backs up the database.
-- Answering a ticket does not notify the user, while the support page promises a reply within a day. The reply box is drawn for moderators too, though they cannot reach the console and `support.respond` refuses them, and `support.assign` has no screen.
-- Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it would list `/admin` and a hard-coded `https://smartspend.app`. No screen edits SEO pages either (`seo.upsert`, `seo.list` and `seo.delete` have no caller).
-- Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one), `support.getById`, `support.assign` and every statistic of `analytics`.
+- `logAdminAction` in `api/lib/admin-audit.ts` records actions in `admin_audit_logs` and the audit tab shows them, but not every procedure of `api/admin-router.ts` calls it yet, and a failed write of the trail does not stop the action.
+- Nothing backs up the database from the console; `admin.triggerBackupDemo` (settings with secrets masked, onboarding questions and ads) has no screen.
+- No screen edits SEO pages (`seo.upsert`, `seo.list` and `seo.delete` have no caller); the sitemap is served at `/sitemap.xml` from the app's address.
+- Ads show only in the mobile app (`mobile/app/lib/src/features/ads/sponsored_card.dart`), which records impressions and clicks; the website shows none.
+- Procedures without a screen: `admin.sendPushNotification` (web push only), `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.updateUserPlan` (the console uses the `V2` one), `admin.getAICostOverview`, `admin.getAIClassificationStats`, `admin.getVoiceUsageStats`, `admin.getUserAiQuota`, `admin.getUserSmartProfile`, `admin.listAllUsers`, `admin.listSubscriptionsAdmin`, `admin.listStorePurchasesAdmin`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getActivityLog`, `admin.getUserSessions`, `admin.discoverProviderModels`, `admin.saveAiModels`, the discount codes (store billing has none), `support.getById` and every statistic of `analytics`. The console's own procedures cover what these showed.
 
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
 - Two accountings remain: the `ai_cost_*` events of `recordAICostMetric` estimate tokens on their own and the screen that would show them is not mounted ([admin](admin.md)); the ledger is the priced one.
 - Speech-to-text reports one token count, so its row is priced at the model's text input rate although the input is audio, and models the admin adds without a price are recorded as unpriced until a price is entered.
-- `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` — the dot on each provider's card — is only ever written by the breaker during real traffic ([admin](admin.md)).
+- Nobody has called Claude with a real key from this code yet: the adapter is tested against recorded response shapes, and a call with an invented key reached Anthropic and came back as `auth`.
+
+**Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
+- The only alert channel is the in-app notification: an admin who opens neither the app nor the console learns nothing, and there is no e-mail or chat channel yet.
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
-- `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
+- `/ultra` sends anyone not on Ultra to the plans page itself, while the page tells the reader it is protected by `UltraFeatureRoute`. Both gates in gate components are unused, so the plan is checked on the server only.
+- The Capacitor shells (`android/`, `ios/`) serve the build from `https://localhost` and call the API on another site, where a `SameSite=Lax` cookie is not sent, so they cannot keep a session since the website stopped holding the token. The Flutter app replaces them (decision 0022); until they are retired they only reach the sign-in screen.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (25)
+### Debt (26)
+
+**Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
+- **Clarifications save immediately with undo (Decision 0039).** A clarification saves as soon as it is answered; the saved items are shown afterwards with an immediate "تراجع" (Undo) banner rather than requiring a blocking confirmation modal. This design eliminates friction during frequent Egyptian micro-transaction and voice recording; undo and post-save edits remain instant and safe. Questions stored before the source was kept save a spoken sentence as `manual`.
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
-- `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
+- The phone sends any message with a keyword, so a one-time code that mentions a purchase reaches the server, which drops it before storing (`looksLikeOneTimeCode`); a code the rule misses would reach the model.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - **Bug (provider).** On `gemini-3.8-live-extended-thinking`, a tool call sometimes never reaches the app: the model says a line, stays IN_PROGRESS, then apologises for a "system error" with no `toolCall` message and no provider error. In matched probes the standard model called the tool in 26 of 26 attempts. On 2026-09-30 at LOW, 42 of 49 single-tool probe runs passed (86%, 95% interval 73–93%) against 26 of 26 for the standard model, the same with a minimal raw setup and with the app's; between the filler and the apology only ~62 text tokens reach the model's context, so the call is also absent in the minimal harness; its internal cause is not established (`api/services/voice/engine/gemini-live.ts`). `LostToolCallGuard` keeps the apology from the user and asks again. The rate varies with time: in one later batch of 20 the first call was lost in 13, the retries rescued 10 and 3 still failed. The extended model also takes about 4.6 seconds longer to call a tool and ~6× the tokens per turn. Ultra Thinking stays off until it is qualified.
@@ -150,33 +143,33 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
 - `saveSmartProfile` never writes `last_ai_refresh_at`, and `getSmartProfile` adds missing `user_profiles` columns with `ALTER TABLE` when a read fails, outside the migrations in `db/`.
 - The behaviour snapshots are written but not read: `getProactiveInsights` in `api/services/finance-semantic-layer/proactive-insights.ts` has no caller, and no caller asks the facts pack to prefer a snapshot.
-- Unused code: `api/services/batch-ai-service.ts` only simulates a Gemini batch job; `buildProReportPrompt` and `analyzeAndLogBehavior` have no caller; `profile.getQuestions` and the `onboarding_questions` table it reads are not part of the question flow; `ai.generateYearlyInsights` has no screen; `profile.refreshInferences` is called only from `src/components/dashboard/UserIntelligencePanel.tsx`, which no screen shows.
+- Unused code: `buildProReportPrompt` and `analyzeAndLogBehavior` have no caller; `profile.getQuestions` and the `onboarding_questions` table it reads are not part of the question flow; `ai.generateYearlyInsights` has no screen; `profile.refreshInferences` is called by no screen.
+
+**Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
+- Writers outside `api/expense-router.ts` still write `expenses` with their own steps instead of the ledger writer: receipts (`api/image-router.ts#parseReceipt`), the AI Center's actions (`api/services/action-runtime/extended-actions.ts`), business, profile and wallet changes (`api/business-router.ts`, `api/profile-router.ts`, `api/wallet-router.ts`), the taxonomy migration and account purge. Each moves to it as its own change (decision 0027).
 
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
 - In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
-- No test covers the webhook's verification, the grant, the expiry job or referrals.
+- No test covers the grant's transaction (`grantProSubscription` against a database) or the expiry job.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
-- Nothing tests notification delivery, the templates, the activity checks or the WhatsApp connection and its sending.
-- The WhatsApp session is a folder on one server's disk, lost with the container and not shareable between replicas.
-
-**Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
-- Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`, `admin.getClassificationLogs` and `admin.getVoiceUsageStats` and displays none of them: the panel that would show them, `src/pages/Admin.tsx#ClassificationDashboard`, is never mounted. The classification quality itself is shown by the command center's quality card (`admin.getClassificationQuality`).
+- The activity checks and scheduled templates have no test against a real database; `api/notification-engine.delivery.test.ts` covers the push payloads only.
 
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
-- `executeAiGateway` — the execution half of the "universal gateway", with its own price-based cost calculation and ledger write — has one caller, the rebuilt voice call's `think` tool. Elsewhere only its route resolution is used, by `api/lib/smart-pipeline.ts`.
+- `executeAiGateway` — the execution half of the "universal gateway", with its own price-based cost calculation and ledger write — has one caller, the voice call's `think` tool. Elsewhere only its route resolution is used, by `api/lib/smart-pipeline.ts`.
 - `api/lib/ai-provider-registry.ts` carries a model catalogue with tiers, purposes and prices, "last verified" in a comment, and nothing reads it: `isKnownModel`, `getModelEntry`, `listModels`, `resolveApiKey` and the per-plan defaults have no caller, and only `DEPRECATED_MODEL_MAP` is used. Model defaults live a second time in `api/lib/model-mapper.ts` and a third time in the fixed lists of `admin.getAvailableModels`.
 - The breaker is per process, so during an outage each replica learns on its own that a provider is down.
-- The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat, report, SMS and voice paths do not.
+- The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat, report and voice paths do not. The running token count and its event are written by four copies of the same code (`trackTokens` in `api/ai-router.ts`, `trackAiTokens` in `api/lib/ai-usage-policy.ts`, and one each in `api/image-router.ts` and `api/goals-router.ts`).
+- **Limit.** A model has one place in one order and serves the cross product of its purposes and plans: a model ranked above another is above it in every list both are in, and a model cannot serve one purpose for Free and another for Pro only. The same model id under two connectors is two rows.
 
 **Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
-- Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8): `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and public URL; the embedding warm-up in `api/boot.ts` reads the Fireworks key.
+- Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8): `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and public URL; `GROQ_API_KEY` in `api/ai-router.ts`, `GEMINI_API_KEY` in `api/lib/ai-gateway.ts`, and `NODE_ENV` in `api/chat-router.ts`, `api/local-auth-router.ts` and `api/middleware.ts` are read directly too.
 - `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the history the admin screens show ends where the ninety-day pruning starts.
-- `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
+- `db/seed.ts` is an empty stub that nothing runs: no npm script calls it.
 - `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library update can silently turn into zeroes.
 - The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the entry and `NODE_ENV=production`; `api/server.ts` repeats the server setup for the standalone deployment. Both route the voice socket (`/api/voice/v2`) through the one `createVoiceUpgradeHandler` in `api/services/voice/gateway/index.ts`, so only its options and the paths their `upgrade` listeners pass on have to be kept in step by hand.
+- The weekly `classification-log-cleanup` job in `api/boot.ts` deletes classification logs after 180 days, but the retention policy for the same table deletes them after ninety, so the job removes nothing.
 - The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten: they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that print `error.message` as text print provider, socket and storage errors today, or failed reads whose values are ids and dates (`api/ai-router.ts`, `api/services/storage/s3-driver.ts`); moving a file to `createLogger()` removes the difference.
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
-- `src/components/ProductTour.tsx` is never mounted, and `src/lib/backButtonManager.ts` only re-exports `src/lib/back-button-manager.ts` for an importer that no longer exists.
 - The list of routes that show the tab bar lives in `BOTTOM_NAV_ROUTES` next to the route table, so a new screen has to be added in both places or it loses its navigation.

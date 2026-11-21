@@ -14,15 +14,16 @@ specification {
   tag classE
   tag classF
   tag classG
+  tag commitments
   tag dualOwner
   tag goalAnalysis
   tag http
+  tag moderator
   tag mutation
   tag proReport
   tag public
   tag query
   tag receipts
-  tag sse
   tag strictPublic
   tag trpc
   tag uncalled

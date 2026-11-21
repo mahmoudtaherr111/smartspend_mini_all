@@ -24,14 +24,17 @@ export const KNOWLEDGE_INPUTS = [
   "AGENTS.md",
   "CLAUDE.md",
   "README.md",
-  "android-app/README.md",
   ".agents/rules",
   ".opencode/opencode.json",
   "package.json",
 ];
 
-/** Folders written by `npm run atlas`. */
-export const GENERATED_PATHS = ["docs/atlas", "docs/architecture/generated"];
+/** Folders written by `npm run atlas` (`GENERATED_DIRS` in scripts/atlas/outputs.ts). */
+export const GENERATED_PATHS = [
+  "docs/atlas",
+  "docs/architecture/generated",
+  "mobile/packages/smartspend_api/lib/src/generated",
+];
 
 const NON_INTERACTIVE = { ...process.env, GIT_TERMINAL_PROMPT: "0", GCM_INTERACTIVE: "never" };
 

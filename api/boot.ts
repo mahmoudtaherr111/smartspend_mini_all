@@ -9,9 +9,8 @@ import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./router";
 import { createContext } from "./context";
 import { env } from "./lib/env";
-import { getClientIp } from "./lib/get-client-ip";
-import { smsApp } from "./sms-router";
 import { createHmac, timingSafeEqual } from "crypto";
+import { hasValidSignature, parseWebhook, subscriptionChallenge } from "./lib/whatsapp/webhook";
 import { grantProSubscription } from "./lib/subscription-service";
 import { buildGoogleAuthorizationUrl, createOAuthState } from "./auth-router";
 import {
@@ -19,35 +18,33 @@ import {
   hasExactPlanAmount,
   isBillingPlan,
 } from "../contracts/plans";
-import { isPaymobWebhookVerificationConfigured } from "./lib/paymob";
 import cron from "node-cron";
 import { createOriginPolicy } from "./lib/origin-policy";
 import { applyOriginSecurity } from "./lib/http-origin-security";
-import { streamSSE } from "hono/streaming";
-import { otpEvents } from "./services/whatsapp-service";
 import { db } from "./queries/connection";
 import { classificationLogs, authChallenges } from "../db/schema";
 import { lt } from "drizzle-orm";
 import { installProviderHealthReporter } from "./lib/provider-health";
 import { refreshGatewayCache } from "./lib/ai-gateway";
-import { purgeExpiredPhoneChallenges, readPhoneChallenge } from "./services/phone-challenge";
-import { createRateLimiter } from "./lib/rate-limit";
+import { purgeExpiredPhoneChallenges } from "./services/phone-challenge";
 import { purgeExpiredSessions } from "./lib/access-control";
 import { createLogger } from "./lib/log";
 import { initErrorReporting } from "./lib/error-reporting";
-import fs from "fs";
-import path from "path";
-import { whatsappService } from "./services/whatsapp-service";
 import {
   processScheduledNotifications,
   seedDefaultTemplates,
   checkAndTriggerSmartActivityNotifications,
 } from "./notification-engine";
+import { registerJobSchedule } from "./services/job-runs";
+import { watchOperations } from "./services/admin-alerts";
 import { withScheduledJobLock } from "./services/scheduler-lock";
+import { syncCaptureSeed } from "./lib/capture/catalog";
+import { registerCaptureRoutes } from "./capture-v1-routes";
 import { runMonthlyReportJob } from "./jobs/monthly-report-job";
 import { runMonthlyBehaviorJob } from "./jobs/monthly-behavior-job";
 import { runRollupReconciliationJob } from "./jobs/rollup-reconciliation-job";
 import { runDataRetentionJob } from "./jobs/data-retention-job";
+import { runCashflowCutoverJob } from "./jobs/cashflow-cutover-job";
 import { runSubscriptionExpiryJob, runRenewalReminders } from "./jobs/subscription-expiry-job";
 
 function directPeerAddress(c: HonoContext): string | undefined {
@@ -63,6 +60,8 @@ function directPeerAddress(c: HonoContext): string | undefined {
 initErrorReporting();
 
 const paymobLog = createLogger("paymob-webhook");
+const whatsappWebhookLog = createLogger("whatsapp-webhook");
+const storeBillingLog = createLogger("store-billing");
 
 const cronsEnabled = env.ENABLE_CRONS === "true";
 
@@ -71,6 +70,8 @@ function scheduleProtectedJob(
   jobName: string,
   task: () => Promise<void>,
 ) {
+  // Every process knows the schedule, so the console can say what should have run whichever process answers it.
+  registerJobSchedule(jobName, expression);
   if (!cronsEnabled) return;
   // The hours below are Cairo business time (golden rule 6), not the server's clock: on a UTC host the 20:00
   // activity reminder reached people at 23:00 in summer.
@@ -90,6 +91,18 @@ if (cronsEnabled) {
   }).catch((err) =>
     console.error("[Boot] Failed to seed notification templates:", err),
   );
+  // The banks, wallets and subscriptions the capture catalog ships with; rows an admin edited stay as they are.
+  void withScheduledJobLock("seed-capture-catalog", async () => {
+    await syncCaptureSeed();
+    // Then the services' real logos: on a new server, or after a redeploy lost files kept on the server's own disk.
+    const { refreshMissingBrandLogos } = await import("./lib/capture/brand-logos");
+    await refreshMissingBrandLogos();
+  }).catch((err) => createLogger("boot").error({ err, event: "capture.seed.failed" }, "Capture catalog seed failed"));
+  // The ledger's two-kind cutover runs at once on a new database, so capture records from the first message.
+  // Its own lock name: the migration and the activation hold their own row and flag locks either way.
+  void withScheduledJobLock("cashflow-cutover-at-boot", async () => {
+    await runCashflowCutoverJob();
+  }).catch((err) => createLogger("boot").error({ err, event: "cashflow.cutover_failed" }, "Cashflow cutover failed"));
 } else {
   console.info(
     "[Boot] Background jobs disabled; set ENABLE_CRONS=true on one or more replicas.",
@@ -97,6 +110,11 @@ if (cronsEnabled) {
 }
 
 // Cron job to clean up sessions and expiring WebAuthn challenges daily.
+// Late or failing jobs and failing server checks reach the admins in the app, each once per quiet period.
+scheduleProtectedJob("*/15 * * * *", "ops-watch", async () => {
+  await watchOperations();
+});
+
 scheduleProtectedJob("0 0 * * *", "daily-auth-cleanup", async () => {
   const now = new Date();
   await Promise.all([
@@ -132,6 +150,59 @@ scheduleProtectedJob(
 scheduleProtectedJob("*/5 * * * *", "coaching-reminders", async () => {
   const { deliverDueReminders } = await import("./services/coach/plans");
   await deliverDueReminders();
+});
+
+// Commitment reminders (docs/decisions/0051-commitments-ecosystem.md): days before a due date, on it, the day after and
+// weekly while unpaid; one row per date, stage and channel is claimed before sending, so nothing goes out twice.
+scheduleProtectedJob("*/5 * * * *", "commitment-reminders", async () => {
+  const { deliverCommitmentReminders } = await import("./services/coach/reminders");
+  await deliverCommitmentReminders();
+});
+
+// Payments recorded from bank messages, linked to the commitment they pay by the same strict rules as typed ones.
+scheduleProtectedJob("*/10 * * * *", "commitment-match-sweep", async () => {
+  const { sweepCapturedPayments } = await import("./services/coach/reminders");
+  await sweepCapturedPayments();
+});
+
+// The real logos of known services, fetched from each one's own store listing or site (decision 0051): the ones
+// still missing (a failed try waits a week) and those older than 90 days.
+scheduleProtectedJob("23 4 * * *", "brand-logos", async () => {
+  const { refreshMissingBrandLogos } = await import("./lib/capture/brand-logos");
+  await refreshMissingBrandLogos();
+});
+
+// Captured messages waiting for the model that no request's wake picked up: a restart, or a lease that ran out
+// (decision 0031). The request that queued one normally reads it within seconds.
+// WhatsApp messages queued in whatsapp_messages: sent, retried or given up (decision 0038). Nothing to do until the
+// owner sets the Cloud API token and number.
+scheduleProtectedJob("* * * * *", "whatsapp-outbox", async () => {
+  const { processOutbox } = await import("./lib/whatsapp/outbox");
+  await processOutbox();
+});
+
+// Until the ledger's cutover is active (decision 0049): a no-op afterwards.
+scheduleProtectedJob("*/10 * * * *", "cashflow-cutover", async () => {
+  await runCashflowCutoverJob();
+});
+
+scheduleProtectedJob("* * * * *", "capture-ai-sweep", async () => {
+  const { drainCaptureModel } = await import("./lib/capture/ai-queue");
+  await drainCaptureModel(100);
+  const { checkModelQueue } = await import("./lib/capture/operations");
+  await checkModelQueue();
+});
+
+// A phone that stopped reporting for two days: its user is told once, in the app (decision 0034).
+scheduleProtectedJob("0 11 * * *", "capture-silent-devices", async () => {
+  const { runSilentDevices } = await import("./lib/capture/care");
+  await runSilentDevices();
+});
+
+// A bank whose recordings on their own are taken back too often is asked about again (decision 0032).
+scheduleProtectedJob("*/15 * * * *", "capture-breaker", async () => {
+  const { runCaptureBreaker } = await import("./lib/capture/operations");
+  await runCaptureBreaker();
 });
 
 // Stored rows move to the current category taxonomy in bounded batches; once every row is
@@ -222,8 +293,9 @@ installProviderHealthReporter();
 
 // Loading the providers is what moves their keys to the current secret (api/lib/provider-key-crypto.ts), so
 // doing it at boot makes a deploy with a new AI_GATEWAY_SECRET enough, without waiting for a model call.
-// Tests that import this module never reach the database.
-if (env.NODE_ENV !== "test") void refreshGatewayCache();
+if (env.NODE_ENV !== "test") {
+  void refreshGatewayCache();
+}
 
 const app = new Hono();
 
@@ -278,7 +350,8 @@ applyOriginSecurity(app, originPolicy);
 // Error handling
 app.onError((err, c) => {
   if (err instanceof HTTPException) return err.getResponse();
-  console.error("Hono Error:", err);
+  // Through the logger, which writes an error without the values it carries (golden rule 10).
+  createLogger("http").error({ err, event: "http.unhandled_error", method: c.req.method, path: c.req.path }, "Unhandled route error");
   const isProd = env.NODE_ENV === "production";
   const message = isProd
     ? "حدث خطأ داخلي في الخادم. برجاء المحاولة لاحقاً."
@@ -290,7 +363,19 @@ app.onError((err, c) => {
 let indexHtml: Promise<string> | null = null;
 
 app.notFound(async (c) => {
-  if (env.NODE_ENV === "production" && !c.req.path.startsWith("/api/")) {
+  if (env.NODE_ENV === "production" && c.req.path.startsWith("/admin/")) {
+    // Every console route opens the console's page, which routes on its own.
+    try {
+      const fs = await import("fs");
+      const path = await import("path");
+      c.header("Cache-Control", "no-store");
+      c.header("X-Robots-Tag", "noindex, nofollow");
+      return c.html(await fs.promises.readFile(path.resolve("./dist/admin/index.html"), "utf-8"));
+    } catch {
+      return c.json({ error: "Not Found" }, 404);
+    }
+  }
+  if (env.NODE_ENV === "production" && env.SERVE_WEB_APP === "true" && !c.req.path.startsWith("/api/")) {
     try {
       if (!indexHtml) {
         const fs = await import("fs");
@@ -310,6 +395,12 @@ app.notFound(async (c) => {
   console.warn("404 Not Found:", c.req.url);
   return c.json({ error: "Not Found" }, 404);
 });
+
+/** A path on this site to land on after signing in; anything else (another host, a protocol-relative URL) is ignored. */
+function safeReturnPath(value: string | undefined): string | null {
+  if (!value) return null;
+  return /^\/admin\/[\w\-/]*$/.test(value) ? value : null;
+}
 
 function readCookie(
   cookieHeader: string | undefined,
@@ -353,6 +444,7 @@ app.get("/api/auth/google/start", (c) => {
   }
   const dynamicRedirectUri = `${requestOrigin}/api/auth/google/callback`;
   const googleUrl = buildGoogleAuthorizationUrl(state, dynamicRedirectUri);
+  const next = safeReturnPath(c.req.query("next"));
   if (!googleUrl)
     return c.json({ error: "Google OAuth is not configured" }, 503);
   c.header(
@@ -363,6 +455,13 @@ app.get("/api/auth/google/start", (c) => {
     c.header(
       "Set-Cookie",
       `oauth_redirect_uri=${encodeURIComponent(dynamicRedirectUri)}; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=600${secureCookieSuffix(requestOrigin)}`,
+      { append: true },
+    );
+  }
+  if (next) {
+    c.header(
+      "Set-Cookie",
+      `oauth_next=${encodeURIComponent(next)}; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=600${secureCookieSuffix(dynamicRedirectUri)}`,
       { append: true },
     );
   }
@@ -409,7 +508,13 @@ app.get("/api/auth/google/callback", async (c) => {
       `oauth_redirect_uri=; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=0${secureCookieSuffix(redirectUriCookie)}`,
       { append: true },
     );
-    return c.redirect(`/dashboard`);
+    const next = safeReturnPath(readCookie(c.req.header("cookie"), "oauth_next"));
+    c.header(
+      "Set-Cookie",
+      `oauth_next=; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=0${secureCookieSuffix(redirectUriCookie)}`,
+      { append: true },
+    );
+    return c.redirect(next ?? `/dashboard`);
   } catch (error) {
     return c.redirect(`/login?error=auth_failed`);
   }
@@ -425,62 +530,8 @@ app.use(
   }),
 );
 
-// Counted in Redis across replicas; the per-address map this replaces was never pruned.
-const otpStreamsPerIp = createRateLimiter(5, 5 * 60 * 1000);
-const CHALLENGE_POLL_MS = 3_000;
-const STREAM_PING_MS = 15_000;
-
-// ─── The sign-up page follows its phone challenge here ───
-// By challenge, never by phone number: the stream used to answer for any number and to put the sender's number
-// in its "fraud" event. The watch token can follow one challenge and do nothing else; the ticket that spends it
-// never appears in a URL (api/services/phone-challenge.ts). The bot's event arrives at once when this stream
-// reached the process that holds WhatsApp; on any other replica the database says the same a few seconds later.
-app.get("/api/sse/otp", async (c) => {
-  const watch = c.req.query("challenge") ?? "";
-  const challenge = watch ? await readPhoneChallenge(watch, "watch") : null;
-  if (!challenge) return c.text("Unknown or expired challenge", 404);
-
-  const clientIp = getClientIp(c.req.raw, directPeerAddress(c)) || "unknown";
-  try {
-    await otpStreamsPerIp.hit(`otp-sse:${clientIp}`);
-  } catch {
-    return c.text("Too many SSE connections", 429);
-  }
-
-  return streamSSE(c, async (stream) => {
-    let finished = false;
-    const finish = async (status: "verified" | "wrong_sender" | "expired") => {
-      if (finished) return;
-      finished = true;
-      await stream.writeSSE({ data: JSON.stringify({ status }) });
-    };
-    const eventName = `challenge:${challenge.id}`;
-    const listener = (event: { status: "verified" | "wrong_sender" }) => void finish(event.status);
-    otpEvents.on(eventName, listener);
-
-    try {
-      if (challenge.verified) await finish("verified");
-      let lastPing = Date.now();
-      while (!finished && !c.req.raw.signal.aborted) {
-        await stream.sleep(CHALLENGE_POLL_MS);
-        if (finished || c.req.raw.signal.aborted) break;
-        // Gone means expired or already spent; either way this page has nothing left to wait for.
-        const current = await readPhoneChallenge(watch, "watch");
-        if (!current) await finish("expired");
-        else if (current.verified) await finish("verified");
-        else if (Date.now() - lastPing >= STREAM_PING_MS) {
-          lastPing = Date.now();
-          await stream.writeSSE({ event: "ping", data: "ping" });
-        }
-      }
-    } finally {
-      otpEvents.off(eventName, listener);
-    }
-  });
-});
-
-// SMS Ingestion endpoints
-app.route("/api/sms", smsApp);
+// ─── Captured bank and wallet notifications from phones, with a device token (decision 0028) ───
+registerCaptureRoutes(app);
 
 app.post("/api/webhooks/paymob", async (c) => {
   const hmacParam = c.req.query("hmac");
@@ -505,75 +556,71 @@ app.post("/api/webhooks/paymob", async (c) => {
     "Paymob callback received",
   );
 
+  // A callback is believed only when this server can check its signature, in every environment: an unsigned one
+  // would grant whatever plan its body names. Without the secret nothing can be checked, so nothing is accepted.
   const secret = env.PAYMOB_HMAC_SECRET;
-  if (
-    env.NODE_ENV === "production" &&
-    !isPaymobWebhookVerificationConfigured()
-  ) {
+  if (!secret) {
     paymobLog.error(
       { event: "paymob.webhook.unconfigured" },
       "Paymob callback rejected: PAYMOB_HMAC_SECRET is not configured",
     );
     return c.json({ error: "Webhook verification is unavailable" }, 503);
   }
-  if (secret) {
-    if (!hmacParam) {
-      paymobLog.warn({ event: "paymob.webhook.unsigned" }, "Paymob callback rejected: no signature");
-      return c.json({ error: "Missing signature" }, 401);
-    }
-    const obj = parsed.obj;
-    if (!obj) {
-      return c.json({ error: "Invalid payload: obj missing" }, 400);
-    }
+  if (!hmacParam) {
+    paymobLog.warn({ event: "paymob.webhook.unsigned" }, "Paymob callback rejected: no signature");
+    return c.json({ error: "Missing signature" }, 401);
+  }
+  const obj = parsed.obj;
+  if (!obj) {
+    return c.json({ error: "Invalid payload: obj missing" }, 400);
+  }
 
-    // Concatenate standard Paymob HMAC fields in exact order
-    const fields = [
-      obj.amount_cents,
-      obj.created_at,
-      obj.currency,
-      obj.error_occured,
-      obj.has_parent_transaction,
-      obj.id,
-      obj.integration_id,
-      obj.is_3d_secure,
-      obj.is_auth,
-      obj.is_capture,
-      obj.is_voided,
-      obj.is_refunded,
-      obj.owner,
-      obj.pending,
-      obj.source_data?.pan,
-      obj.source_data?.sub_type,
-      obj.source_data?.type,
-      obj.success,
-    ];
+  // Concatenate standard Paymob HMAC fields in exact order
+  const fields = [
+    obj.amount_cents,
+    obj.created_at,
+    obj.currency,
+    obj.error_occured,
+    obj.has_parent_transaction,
+    obj.id,
+    obj.integration_id,
+    obj.is_3d_secure,
+    obj.is_auth,
+    obj.is_capture,
+    obj.is_voided,
+    obj.is_refunded,
+    obj.owner,
+    obj.pending,
+    obj.source_data?.pan,
+    obj.source_data?.sub_type,
+    obj.source_data?.type,
+    obj.success,
+  ];
 
-    // Convert values to strings matching Paymob's serialization
-    const hmacSource = fields
-      .map((val) => {
-        if (val === undefined || val === null) return "";
-        if (typeof val === "boolean") return val ? "true" : "false";
-        return String(val);
-      })
-      .join("");
+  // Convert values to strings matching Paymob's serialization
+  const hmacSource = fields
+    .map((val) => {
+      if (val === undefined || val === null) return "";
+      if (typeof val === "boolean") return val ? "true" : "false";
+      return String(val);
+    })
+    .join("");
 
-    const calculatedHmac = createHmac("sha512", secret)
-      .update(hmacSource)
-      .digest("hex");
-    const calculatedBuffer = Buffer.from(calculatedHmac, "hex");
-    const receivedBuffer = Buffer.from(hmacParam, "hex");
-    if (
-      calculatedBuffer.length !== receivedBuffer.length ||
-      !timingSafeEqual(calculatedBuffer, receivedBuffer)
-    ) {
-      paymobLog.warn({ event: "paymob.webhook.bad_signature" }, "Paymob callback rejected: signature mismatch");
-      return c.json({ error: "Invalid signature" }, 401);
-    }
+  const calculatedHmac = createHmac("sha512", secret)
+    .update(hmacSource)
+    .digest("hex");
+  const calculatedBuffer = Buffer.from(calculatedHmac, "hex");
+  const receivedBuffer = Buffer.from(hmacParam, "hex");
+  if (
+    calculatedBuffer.length !== receivedBuffer.length ||
+    !timingSafeEqual(calculatedBuffer, receivedBuffer)
+  ) {
+    paymobLog.warn({ event: "paymob.webhook.bad_signature" }, "Paymob callback rejected: signature mismatch");
+    return c.json({ error: "Invalid signature" }, 401);
   }
 
   // Handle successful transaction
-  const obj = parsed.obj;
-  if (obj && obj.success === true && !obj.pending) {
+  if (obj.success === true && !obj.pending) {
     const extraData =
       obj.payment_key_claims?.extra?.extras ||
       obj.payment_key_claims?.extra ||
@@ -631,6 +678,121 @@ app.post("/api/webhooks/paymob", async (c) => {
   return c.json({ ok: true });
 });
 
+// ─── WhatsApp Business Platform webhooks (decision 0038) ───
+// Meta subscribes the address once with our verify token, then signs every event with the app secret.
+app.get("/api/webhooks/whatsapp", (c) => {
+  const challenge = subscriptionChallenge(
+    { mode: c.req.query("hub.mode"), token: c.req.query("hub.verify_token"), challenge: c.req.query("hub.challenge") },
+    env.WHATSAPP_CLOUD_VERIFY_TOKEN,
+  );
+  return challenge === null ? c.text("Forbidden", 403) : c.text(challenge, 200);
+});
+
+app.post("/api/webhooks/whatsapp", async (c) => {
+  const raw = await c.req.text();
+  if (!hasValidSignature(raw, c.req.header("x-hub-signature-256"), env.WHATSAPP_CLOUD_APP_SECRET)) {
+    whatsappWebhookLog.warn({ event: "whatsapp.webhook.bad_signature" }, "WhatsApp webhook refused: signature");
+    return c.json({ error: "Invalid signature" }, 401);
+  }
+  let body: unknown;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    return c.json({ error: "Invalid JSON" }, 400);
+  }
+  const { handleWebhookEvents } = await import("./lib/whatsapp/outbox");
+  await handleWebhookEvents(parseWebhook(body));
+  return c.json({ ok: true });
+});
+
+// ─── Store Billing Webhooks (Google Play & Apple App Store) ───
+app.post("/api/webhooks/google-play", async (c) => {
+  const { applyStoreEvent, fetchGoogleSubscription, googlePurchaseKey, parseGooglePlayPush, verifyGooglePlayWebhookAuth } =
+    await import("./lib/store-billing");
+  if (!(await verifyGooglePlayWebhookAuth(c.req.header("authorization")))) {
+    storeBillingLog.warn({ event: "google_play.webhook.unauthorized" }, "Rejected a Google Play notification");
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const push = parseGooglePlayPush(await c.req.json().catch(() => null));
+  // A push that is not ours is acknowledged, or Pub/Sub would deliver it for a week.
+  if (!push) return c.json({ ok: true });
+
+  const purchase = await fetchGoogleSubscription(push.purchaseToken, { notificationType: push.notificationType });
+  if (!purchase) return c.json({ ok: true });
+  const result = await applyStoreEvent({
+    store: "google_play",
+    purchaseKey: googlePurchaseKey(push.purchaseToken),
+    replacesPurchaseKey: purchase.linkedPurchaseToken ? googlePurchaseKey(purchase.linkedPurchaseToken) : null,
+    purchaseToken: push.purchaseToken,
+    productId: purchase.productId,
+    state: purchase.state,
+    expiresAt: purchase.expiresAt,
+    eventId: push.messageId,
+    eventType: `rtdn:${push.notificationType}`,
+    eventTime: push.eventTime,
+    owner: null,
+  });
+  return c.json({ ok: true, outcome: result.outcome });
+});
+
+app.post("/api/webhooks/apple-asn", async (c) => {
+  const { applyStoreEvent, parseAndVerifyAppleASN } = await import("./lib/store-billing");
+  const parsed = parseAndVerifyAppleASN(await c.req.json().catch(() => null));
+  if (!parsed) {
+    storeBillingLog.warn({ event: "apple_asn.webhook.rejected" }, "Rejected an App Store notification");
+    return c.json({ error: "Invalid notification" }, 400);
+  }
+  const result = await applyStoreEvent({
+    store: "app_store",
+    purchaseKey: parsed.originalTransactionId,
+    purchaseToken: parsed.transactionId,
+    productId: parsed.productId,
+    state: parsed.state,
+    expiresAt: parsed.expiresAt,
+    eventId: parsed.notificationUUID,
+    eventType: `asn:${parsed.notificationType}`,
+    eventTime: parsed.signedAt,
+    owner: null,
+  });
+  return c.json({ ok: true, outcome: result.outcome });
+});
+
+// What search engines read: the public pages, never the signed-in app or the admin console. Without the website
+// there is nothing to index.
+app.get("/sitemap.xml", async (c) => {
+  if (env.SERVE_WEB_APP !== "true") return c.json({ error: "Not Found" }, 404);
+  const { buildSitemapXml } = await import("./seo-router");
+  return c.body(await buildSitemapXml(), 200, { "content-type": "application/xml; charset=utf-8" });
+});
+app.get("/robots.txt", (c) =>
+  c.text(
+    env.SERVE_WEB_APP === "true"
+      ? `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ${env.APP_URL.replace(/\/$/, "")}/sitemap.xml\n`
+      : "User-agent: *\nDisallow: /\n",
+  ),
+);
+// The server's own front door when no website is served: what it is, nothing else.
+app.get("/", (c, next) => (env.SERVE_WEB_APP === "true" ? next() : c.json({ service: "smartspend-api", console: "/admin/" })));
+
+// Known services' logos (decision 0051): fetched from each service's own listing, stored, and served from here so a
+// phone never asks a third party for one. The name carries the content hash, so a file never changes.
+app.get("/api/brand-logos/:file", async (c) => {
+  const { BRAND_LOGO_FILE } = await import("./lib/capture/brand-logos");
+  const file = c.req.param("file");
+  if (!BRAND_LOGO_FILE.test(file)) return c.notFound();
+  const { getStorageDriver } = await import("./services/storage");
+  const bytes = await getStorageDriver().download(`brand-logos/${file}`).catch(() => null);
+  if (!bytes) return c.notFound();
+  const types: Record<string, string> = { png: "image/png", jpg: "image/jpeg", webp: "image/webp", gif: "image/gif", ico: "image/x-icon" };
+  return new Response(new Uint8Array(bytes), {
+    headers: {
+      "content-type": types[file.split(".").pop()!] ?? "application/octet-stream",
+      "cache-control": "public, max-age=31536000, immutable",
+      "x-content-type-options": "nosniff",
+    },
+  });
+});
+
 // Health check
 app.get("/health", (c) =>
   c.json({ status: "ok", timestamp: new Date().toISOString() }),
@@ -642,7 +804,22 @@ if (env.NODE_ENV === "production" && isDirectBootEntry) {
   const { serve } = await import("@hono/node-server");
   const { serveStatic } = await import("@hono/node-server/serve-static");
 
+  // The admin console (admin/) is a site of its own at /admin, served whether or not the web app is deployed.
+  app.get("/admin", (c) => c.redirect("/admin/"));
   app.use(
+    "/admin/*",
+    serveStatic({
+      root: "./dist/admin",
+      rewriteRequestPath: (requestPath) => requestPath.replace(/^\/admin/, ""),
+      onFound: (filePath, c) => {
+        const cc = filePath.includes("/assets/") ? "public, max-age=31536000, immutable" : "no-store";
+        c.header("Cache-Control", cc);
+        c.header("X-Robots-Tag", "noindex, nofollow");
+      },
+    }),
+  );
+
+  if (env.SERVE_WEB_APP === "true") app.use(
     "/*",
     serveStatic({
       root: "./dist/public",
@@ -689,23 +866,6 @@ if (env.NODE_ENV === "production" && isDirectBootEntry) {
     const path = new URL(request.url || "", "http://localhost").pathname;
     if (path.startsWith("/api/voice/v2")) handleVoiceUpgrade(request, socket, head);
   });
-}
-
-// WhatsApp is explicit because a stale credential file must not create an
-// outbound Baileys connection during local development or every replica boot.
-const sessionDir = path.join(process.cwd(), "whatsapp_auth_info");
-if (
-  env.ENABLE_WHATSAPP === "true" &&
-  fs.existsSync(path.join(sessionDir, "creds.json"))
-) {
-  console.log("[WhatsApp] Starting explicitly enabled service...");
-  whatsappService.start().catch((err) => {
-    console.error("[WhatsApp] Failed to auto-start WhatsApp service:", err);
-  });
-} else if (fs.existsSync(path.join(sessionDir, "creds.json"))) {
-  console.info(
-    "[WhatsApp] Credentials found but service is disabled; set ENABLE_WHATSAPP=true to start it.",
-  );
 }
 
 export { app };

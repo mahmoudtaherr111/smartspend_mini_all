@@ -1,3 +1,4 @@
+import { spendingRowSql, incomeRowSql, ledgerBucketSql } from "./services/ledger-semantics";
 import { z } from "zod";
 import { router, authedProcedure, adminProcedure } from "./middleware";
 import { getDb } from "./queries/connection";
@@ -128,8 +129,8 @@ export const analyticsRouter = router({
           userId: expenses.userId,
           userType: expenses.userType,
           expenseCount: sql`count(*)`,
-          totalSpent: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'expense' THEN ${expenses.amount} ELSE 0 END), 0)`,
-          totalIncome: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'income' THEN ${expenses.amount} ELSE 0 END), 0)`,
+          totalSpent: sql`COALESCE(SUM(CASE WHEN ${ledgerBucketSql} = 'expense' THEN ${expenses.amount} ELSE 0 END), 0)`,
+          totalIncome: sql`COALESCE(SUM(CASE WHEN ${ledgerBucketSql} = 'income' THEN ${expenses.amount} ELSE 0 END), 0)`,
         }).from(expenses)
         .where(
           or(
@@ -189,9 +190,9 @@ export const analyticsRouter = router({
       db.select({ count: sql`count(*)` }).from(localUsers),
       db.select({ count: sql`count(*)` }).from(users),
       db.select({ count: sql`count(*)` }).from(expenses),
-      db.select({ total: sql`COALESCE(SUM(${expenses.amount}), 0)` }).from(expenses).where(eq(expenses.type, "expense")),
-      db.select({ total: sql`COALESCE(SUM(${expenses.amount}), 0)` }).from(expenses).where(eq(expenses.type, "income")),
-      db.select({ count: sql`count(*)` }).from(expenses).where(and(gte(expenses.createdAt, today), eq(expenses.type, "expense"))),
+      db.select({ total: sql`COALESCE(SUM(${expenses.amount}), 0)` }).from(expenses).where(spendingRowSql),
+      db.select({ total: sql`COALESCE(SUM(${expenses.amount}), 0)` }).from(expenses).where(incomeRowSql),
+      db.select({ count: sql`count(*)` }).from(expenses).where(and(gte(expenses.createdAt, today), spendingRowSql)),
       db.select({ count: sql`count(*)` }).from(localUsers).where(eq(localUsers.role, "admin")),
       db.select({ count: sql`count(*)` }).from(localUsers).where(eq(localUsers.role, "moderator")),
       db.select({ count: sql`count(*)` }).from(localUsers).where(inArray(localUsers.plan, ["pro", "ultra"])),

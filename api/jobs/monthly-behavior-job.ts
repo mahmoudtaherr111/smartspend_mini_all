@@ -1,7 +1,7 @@
 import { db } from "../queries/connection";
-import { previousBusinessMonth } from "../lib/app-time";
 import { sql } from "drizzle-orm";
 import { refreshMonthlyInferences } from "../profile-router";
+import { previousBusinessMonth } from "../lib/app-time";
 
 export interface MonthlyBehaviorJobResult {
   month: string;
@@ -20,12 +20,7 @@ export async function runMonthlyBehaviorJob(options: {
 } = {}): Promise<MonthlyBehaviorJobResult> {
   const startTime = performance.now();
 
-  let targetMonth = options.month;
-  if (!targetMonth) {
-    // The Cairo month that ended: the job runs at 01:00 Cairo on the 1st, which on a UTC server is still the last day
-    // of that month, so the server's own month would point one month too far back.
-    targetMonth = previousBusinessMonth();
-  }
+  const targetMonth = options.month ?? previousBusinessMonth();
 
   console.log(
     `[MonthlyBehaviorJob] Generating monthly behavior snapshots for month: ${targetMonth}...`,

@@ -7,6 +7,11 @@ views {
     include *
   }
 
+  view router_adminConsole of smartspend.api.trpc.adminConsole {
+    title 'tRPC router · adminConsole'
+    include *
+  }
+
   view router_adminWhatsapp of smartspend.api.trpc.adminWhatsapp {
     title 'tRPC router · adminWhatsapp'
     include *
@@ -22,8 +27,18 @@ views {
     include *
   }
 
+  view router_aiSetup of smartspend.api.trpc.aiSetup {
+    title 'tRPC router · aiSetup'
+    include *
+  }
+
   view router_analytics of smartspend.api.trpc.analytics {
     title 'tRPC router · analytics'
+    include *
+  }
+
+  view router_appConfig of smartspend.api.trpc.appConfig {
+    title 'tRPC router · appConfig'
     include *
   }
 
@@ -42,6 +57,16 @@ views {
     include *
   }
 
+  view router_capture of smartspend.api.trpc.capture {
+    title 'tRPC router · capture'
+    include *
+  }
+
+  view router_captureAdmin of smartspend.api.trpc.captureAdmin {
+    title 'tRPC router · captureAdmin'
+    include *
+  }
+
   view router_chat of smartspend.api.trpc.chat {
     title 'tRPC router · chat'
     include *
@@ -49,6 +74,11 @@ views {
 
   view router_coach of smartspend.api.trpc.coach {
     title 'tRPC router · coach'
+    include *
+  }
+
+  view router_commitments of smartspend.api.trpc.commitments {
+    title 'tRPC router · commitments'
     include *
   }
 
@@ -87,11 +117,6 @@ views {
     include *
   }
 
-  view router_referral of smartspend.api.trpc.referral {
-    title 'tRPC router · referral'
-    include *
-  }
-
   view router_seo of smartspend.api.trpc.seo {
     title 'tRPC router · seo'
     include *
@@ -104,6 +129,11 @@ views {
 
   view router_support of smartspend.api.trpc.support {
     title 'tRPC router · support'
+    include *
+  }
+
+  view router_taxonomy of smartspend.api.trpc.taxonomy {
+    title 'tRPC router · taxonomy'
     include *
   }
 
@@ -182,6 +212,21 @@ views {
     include *
   }
 
+  view module_capture_ai_reader of smartspend.api.modules.capture-ai-reader {
+    title 'Module · Message model reading'
+    include *
+  }
+
+  view module_capture_catalog of smartspend.api.modules.capture-catalog {
+    title 'Module · Capture catalog'
+    include *
+  }
+
+  view module_capture_intake of smartspend.api.modules.capture-intake {
+    title 'Module · Capture intake'
+    include *
+  }
+
   view module_classification of smartspend.api.modules.classification {
     title 'Module · Expense classification pipeline'
     include *
@@ -212,18 +257,13 @@ views {
     include *
   }
 
-  view module_ingestion_parsers of smartspend.api.modules.ingestion-parsers {
-    title 'Module · Ingestion parsers'
-    include *
-  }
-
   view module_jobs of smartspend.api.modules.jobs {
     title 'Module · Scheduled job bodies'
     include *
   }
 
   view module_ledger of smartspend.api.modules.ledger {
-    title 'Module · Ledger aggregates'
+    title 'Module · Ledger writer and aggregates'
     include *
   }
 
@@ -257,6 +297,11 @@ views {
     include *
   }
 
+  view module_understanding of smartspend.api.modules.understanding {
+    title 'Module · Sentence understanding engine'
+    include *
+  }
+
   view module_voice of smartspend.api.modules.voice {
     title 'Module · Voice'
     include *
@@ -277,8 +322,8 @@ views {
     include *
   }
 
-  view module_web_bank_sync of smartspend.web.modules.web-bank-sync {
-    title 'Module · Bank sync UI'
+  view module_web_bank_capture of smartspend.web.modules.web-bank-capture {
+    title 'Module · Automatic bank capture activity'
     include *
   }
 

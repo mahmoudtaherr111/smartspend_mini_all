@@ -13,9 +13,14 @@ Solid arrows: calls and uses. Thick arrows: writes a table. Dotted arrows: reads
 ```mermaid
 flowchart LR
   subgraph g_api["API, routes and jobs"]
+    http__["GET /"]
     http__api_trpc["ALL /api/trpc/*"]
     http__health["GET /health"]
+    http__robots_txt["GET /robots.txt"]
+    http__sitemap_xml["GET /sitemap.xml"]
     job_data_retention_lifecycle["Job · data-retention-lifecycle"]
+    job_ops_watch["Job · ops-watch"]
+    router_appConfig["appConfig API · 1 procedure"]
   end
   subgraph g_modules["Code modules"]
     mod_api_core["API server core"]
@@ -28,7 +33,9 @@ flowchart LR
   end
   subgraph g_tables["MySQL tables"]
     tbl_ad_clicks[("ad_clicks")]
+    tbl_ad_impressions[("ad_impressions")]
     tbl_ad_stats_daily[("ad_stats_daily")]
+    tbl_admin_audit_logs[("admin_audit_logs")]
     tbl_ads[("ads")]
     tbl_ai_action_audit_logs[("ai_action_audit_logs")]
     tbl_ai_conversation_summaries[("ai_conversation_summaries")]
@@ -43,11 +50,21 @@ flowchart LR
     tbl_api_key_errors[("api_key_errors")]
     tbl_auth_challenges[("auth_challenges")]
     tbl_business_categories[("business_categories")]
+    tbl_capture_ai_accounts[("capture_ai_accounts")]
+    tbl_capture_ai_days[("capture_ai_days")]
+    tbl_capture_ai_jobs[("capture_ai_jobs")]
+    tbl_capture_ai_reservations[("capture_ai_reservations")]
+    tbl_capture_devices[("capture_devices")]
+    tbl_capture_events[("capture_events")]
+    tbl_capture_markers[("capture_markers")]
+    tbl_capture_questions[("capture_questions")]
+    tbl_capture_samples[("capture_samples")]
+    tbl_capture_signals[("capture_signals")]
+    tbl_capture_sources[("capture_sources")]
     tbl_cashflow_settlements[("cashflow_settlements")]
     tbl_chat_conversations[("chat_conversations")]
     tbl_chat_messages[("chat_messages")]
     tbl_classification_logs[("classification_logs")]
-    tbl_discount_codes[("discount_codes")]
     tbl_expense_categories[("expense_categories")]
     tbl_expense_daily_rollups[("expense_daily_rollups")]
     tbl_expenses[("expenses")]
@@ -64,11 +81,13 @@ flowchart LR
     tbl_pro_subscriptions[("pro_subscriptions")]
     tbl_profile_learning_events[("profile_learning_events")]
     tbl_push_subscriptions[("push_subscriptions")]
-    tbl_raw_sms_events[("raw_sms_events")]
-    tbl_referrals[("referrals")]
     tbl_scheduled_cashflows[("scheduled_cashflows")]
+    tbl_scheduled_job_runs[("scheduled_job_runs")]
     tbl_seo_pages[("seo_pages")]
     tbl_sessions[("sessions")]
+    tbl_store_purchases[("store_purchases")]
+    tbl_subscription_catalog[("subscription_catalog")]
+    tbl_support_assignments[("support_assignments")]
     tbl_support_tickets[("support_tickets")]
     tbl_system_settings[("system_settings")]
     tbl_user_analytics[("user_analytics")]
@@ -84,7 +103,8 @@ flowchart LR
     tbl_voice_call_incidents[("voice_call_incidents")]
     tbl_voice_calls[("voice_calls")]
     tbl_voice_usage[("voice_usage")]
-    tbl_webhook_tokens[("webhook_tokens")]
+    tbl_whatsapp_contacts[("whatsapp_contacts")]
+    tbl_whatsapp_messages[("whatsapp_messages")]
   end
   ext_fireworks{{"Fireworks AI"}}
   ext_gemini{{"Google Gemini API"}}
@@ -104,15 +124,22 @@ flowchart LR
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
   sys_notifications[["Notifications and WhatsApp (system)"]]
   sys_voice_calls[["Live voice assistant (system)"]]
+  http__ --> mod_platform
   http__api_trpc --> mod_api_core
+  http__robots_txt --> mod_platform
+  http__sitemap_xml --> mod_api_routers
+  http__sitemap_xml --> mod_platform
   job_data_retention_lifecycle --> mod_jobs
+  job_ops_watch --> mod_platform
   mod_api_core --> mod_api_routers
   mod_api_core --> mod_contracts
   mod_api_core --> mod_jobs
   mod_api_core --> mod_platform
+  mod_api_core --> mod_storage
   mod_api_core --> sys_accounts
   mod_api_core --> sys_ai_center
   mod_api_core --> sys_ai_platform
+  mod_api_core --> sys_bank_messages
   mod_api_core --> sys_billing
   mod_api_core --> sys_money
   mod_api_core --> sys_notifications
@@ -137,15 +164,19 @@ flowchart LR
   mod_api_routers --> sys_money
   mod_api_routers --> sys_notifications
   mod_api_routers --> sys_voice_calls
+  mod_api_routers -.-> tbl_admin_audit_logs
   mod_api_routers -.-> tbl_ai_pending_actions
   mod_api_routers -.-> tbl_ai_token_ledgers
+  mod_api_routers -.-> tbl_api_key_errors
+  mod_api_routers -.-> tbl_capture_devices
   mod_api_routers -.-> tbl_cashflow_settlements
   mod_api_routers -.-> tbl_expense_daily_rollups
-  mod_api_routers -.-> tbl_notification_logs
   mod_api_routers -.-> tbl_onboarding_questions
   mod_api_routers -.-> tbl_sessions
   mod_api_routers -.-> tbl_voice_calls
+  mod_api_routers -.-> tbl_whatsapp_contacts
   mod_api_routers ==> tbl_ad_clicks
+  mod_api_routers ==> tbl_ad_impressions
   mod_api_routers ==> tbl_ads
   mod_api_routers ==> tbl_ai_conversation_summaries
   mod_api_routers ==> tbl_ai_memory_embeddings
@@ -155,10 +186,11 @@ flowchart LR
   mod_api_routers ==> tbl_ai_summaries
   mod_api_routers ==> tbl_auth_challenges
   mod_api_routers ==> tbl_business_categories
+  mod_api_routers ==> tbl_capture_markers
+  mod_api_routers ==> tbl_capture_sources
   mod_api_routers ==> tbl_chat_conversations
   mod_api_routers ==> tbl_chat_messages
   mod_api_routers ==> tbl_classification_logs
-  mod_api_routers ==> tbl_discount_codes
   mod_api_routers ==> tbl_expense_categories
   mod_api_routers ==> tbl_expenses
   mod_api_routers ==> tbl_financial_goals
@@ -166,14 +198,16 @@ flowchart LR
   mod_api_routers ==> tbl_installment_plans
   mod_api_routers ==> tbl_local_users
   mod_api_routers ==> tbl_monthly_behavior_snapshots
+  mod_api_routers ==> tbl_notification_logs
   mod_api_routers ==> tbl_notification_templates
   mod_api_routers ==> tbl_pending_clarifications
   mod_api_routers ==> tbl_pro_subscriptions
   mod_api_routers ==> tbl_push_subscriptions
-  mod_api_routers ==> tbl_raw_sms_events
-  mod_api_routers ==> tbl_referrals
   mod_api_routers ==> tbl_scheduled_cashflows
   mod_api_routers ==> tbl_seo_pages
+  mod_api_routers ==> tbl_store_purchases
+  mod_api_routers ==> tbl_subscription_catalog
+  mod_api_routers ==> tbl_support_assignments
   mod_api_routers ==> tbl_support_tickets
   mod_api_routers ==> tbl_system_settings
   mod_api_routers ==> tbl_user_analytics
@@ -186,7 +220,7 @@ flowchart LR
   mod_api_routers ==> tbl_user_wallets
   mod_api_routers ==> tbl_users
   mod_api_routers ==> tbl_voice_usage
-  mod_api_routers ==> tbl_webhook_tokens
+  mod_api_routers ==> tbl_whatsapp_messages
   mod_database --> ext_mysql
   mod_database --> mod_platform
   mod_jobs --> ext_fireworks
@@ -196,6 +230,7 @@ flowchart LR
   mod_jobs --> sys_accounts
   mod_jobs --> sys_ai_center
   mod_jobs --> sys_ai_platform
+  mod_jobs --> sys_bank_messages
   mod_jobs --> sys_insights
   mod_jobs --> sys_money
   mod_jobs --> sys_notifications
@@ -203,6 +238,7 @@ flowchart LR
   mod_jobs -.-> tbl_local_users
   mod_jobs -.-> tbl_user_profiles
   mod_jobs -.-> tbl_users
+  mod_jobs -.-> tbl_whatsapp_contacts
   mod_jobs ==> tbl_ad_clicks
   mod_jobs ==> tbl_ad_stats_daily
   mod_jobs ==> tbl_ai_action_audit_logs
@@ -211,6 +247,14 @@ flowchart LR
   mod_jobs ==> tbl_ai_token_ledgers
   mod_jobs ==> tbl_api_key_errors
   mod_jobs ==> tbl_auth_challenges
+  mod_jobs ==> tbl_capture_ai_accounts
+  mod_jobs ==> tbl_capture_ai_days
+  mod_jobs ==> tbl_capture_ai_jobs
+  mod_jobs ==> tbl_capture_ai_reservations
+  mod_jobs ==> tbl_capture_events
+  mod_jobs ==> tbl_capture_questions
+  mod_jobs ==> tbl_capture_samples
+  mod_jobs ==> tbl_capture_signals
   mod_jobs ==> tbl_chat_messages
   mod_jobs ==> tbl_classification_logs
   mod_jobs ==> tbl_expenses
@@ -219,7 +263,8 @@ flowchart LR
   mod_jobs ==> tbl_pending_clarifications
   mod_jobs ==> tbl_pro_subscriptions
   mod_jobs ==> tbl_profile_learning_events
-  mod_jobs ==> tbl_raw_sms_events
+  mod_jobs ==> tbl_scheduled_job_runs
+  mod_jobs ==> tbl_store_purchases
   mod_jobs ==> tbl_user_analytics
   mod_jobs ==> tbl_user_budgets
   mod_jobs ==> tbl_user_correction_rules
@@ -227,12 +272,24 @@ flowchart LR
   mod_jobs ==> tbl_voice_call_incidents
   mod_jobs ==> tbl_voice_calls
   mod_jobs ==> tbl_voice_usage
+  mod_jobs ==> tbl_whatsapp_messages
   mod_platform --> ext_redis
   mod_platform --> ext_sentry
   mod_platform --> mod_contracts
+  mod_platform --> mod_storage
+  mod_platform --> sys_ai_platform
+  mod_platform --> sys_notifications
+  mod_platform -.-> tbl_ai_providers
+  mod_platform -.-> tbl_local_users
   mod_platform -.-> tbl_system_settings
+  mod_platform -.-> tbl_users
   mod_platform ==> tbl_api_key_errors
+  mod_platform ==> tbl_in_app_notifications
+  mod_platform ==> tbl_scheduled_job_runs
+  mod_platform ==> tbl_user_analytics
   mod_storage --> ext_object_storage
+  router_appConfig --> mod_platform
+  router_appConfig --> sys_ai_platform
 ```
 
 ## Code modules
@@ -240,24 +297,30 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `api-core` — API server core | Hono app and server entry points, request context, tRPC procedure builders and the root router. | 5 |
-| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 25 |
-| `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 13 |
+| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 30 |
+| `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 17 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
-| `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 6 |
-| `platform` — Platform services | Environment validation, Redis client (cache, shared state for one-time codes, generation counters with replay of bumps Redis missed) and cache keys, the generation watcher that tells a per-process copy of shared data to reload, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 11 |
+| `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 7 |
+| `platform` — Platform services | Environment validation, Redis client (cache, shared state for one-time codes, generation counters with replay of bumps Redis missed) and cache keys, the generation watcher that tells a per-process copy of shared data to reload, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 15 |
 | `storage` — File storage | File storage behind one driver interface (local disk or S3-compatible storage such as R2), plus the avatar service. | 5 |
 
 ## API procedures
 
-_None._
+| Procedure | Kind | Builder | Reads | Writes | Screens that call it |
+| --- | --- | --- | --- | --- | --- |
+| `appConfig.get` | query | `publicProcedure` | — | — | — |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
 | Entry point | Kind | Declared in |
 | --- | --- | --- |
+| `GET /` | http | `api/boot.ts` |
 | `ALL /api/trpc/*` | trpc | `api/boot.ts` |
 | `GET /health` | http | `api/boot.ts` |
+| `GET /robots.txt` | http | `api/boot.ts` |
+| `GET /sitemap.xml` | http | `api/boot.ts` |
 | `data-retention-lifecycle` | job, `0 5 * * *` | `api/boot.ts` |
+| `ops-watch` | job, `*/15 * * * *` | `api/boot.ts` |
 
 ## Data
 
@@ -266,7 +329,9 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
 | `ad_clicks` | E | `api-routers`, `jobs` | `jobs` |
+| `ad_impressions` | E | `api-routers` | `api-routers` |
 | `ad_stats_daily` | C | `jobs` | — |
+| `admin_audit_logs` | B | — | `api-routers` |
 | `ads` | A | `api-routers` | `api-routers` |
 | `ai_action_audit_logs` | E | `jobs` | — |
 | `ai_conversation_summaries` | F | `api-routers` | — |
@@ -275,41 +340,53 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ai_memory_items` | F | `api-routers` | `api-routers` |
 | `ai_models` | A | `api-routers` | `api-routers` |
 | `ai_pending_actions` | D | `jobs` | `api-routers` |
-| `ai_providers` | A | `api-routers` | `api-routers` |
+| `ai_providers` | A | `api-routers` | `api-routers`, `platform` |
 | `ai_summaries` | C | `api-routers` | `api-routers` |
 | `ai_token_ledgers` | E | `jobs` | `api-routers`, `jobs` |
-| `api_key_errors` | E | `jobs`, `platform` | `platform` |
+| `api_key_errors` | E | `jobs`, `platform` | `api-routers`, `platform` |
 | `auth_challenges` | D | `api-core`, `api-routers`, `jobs` | `api-routers` |
 | `business_categories` | A | `api-routers` | `api-routers` |
+| `capture_ai_accounts` | D | `jobs` | — |
+| `capture_ai_days` | D | `jobs` | — |
+| `capture_ai_jobs` | D | `jobs` | — |
+| `capture_ai_reservations` | D | `jobs` | — |
+| `capture_devices` | A | — | `api-routers` |
+| `capture_events` | E | `jobs` | — |
+| `capture_markers` | A | `api-routers` | — |
+| `capture_questions` | E | `jobs` | — |
+| `capture_samples` | E | `jobs` | — |
+| `capture_signals` | E | `jobs` | — |
+| `capture_sources` | A | `api-routers` | `api-routers` |
 | `cashflow_settlements` | C | — | `api-routers` |
 | `chat_conversations` | G | `api-routers` | `api-routers` |
 | `chat_messages` | G | `api-routers`, `jobs` | `api-routers` |
 | `classification_logs` | E | `api-core`, `api-routers`, `jobs` | `api-routers` |
-| `discount_codes` | A | `api-routers` | `api-routers` |
 | `expense_categories` | A | `api-routers` | `api-routers` |
 | `expense_daily_rollups` | C | — | `api-routers`, `jobs` |
 | `expenses` | B | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `financial_goals` | C | `api-routers` | `api-routers` |
-| `in_app_notifications` | D | `api-routers` | `api-routers` |
+| `in_app_notifications` | D | `api-routers`, `platform` | `api-routers`, `platform` |
 | `installment_plans` | C | `api-routers` | `api-routers` |
-| `local_users` | A | `api-routers` | `api-core`, `api-routers`, `jobs` |
+| `local_users` | A | `api-routers` | `api-core`, `api-routers`, `jobs`, `platform` |
 | `monthly_behavior_snapshots` | C | `api-routers` | — |
 | `monthly_reports` | C | `jobs` | `jobs` |
-| `notification_logs` | E | `jobs` | `api-routers` |
+| `notification_logs` | E | `api-routers`, `jobs` | `api-routers` |
 | `notification_templates` | A | `api-routers` | `api-routers` |
 | `onboarding_questions` | A | — | `api-routers` |
 | `pending_clarifications` | D | `api-routers`, `jobs` | `api-routers` |
 | `pro_subscriptions` | A | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `profile_learning_events` | E | `jobs` | — |
 | `push_subscriptions` | A | `api-routers` | `api-routers` |
-| `raw_sms_events` | E | `api-routers`, `jobs` | `api-routers` |
-| `referrals` | A | `api-routers` | `api-routers` |
 | `scheduled_cashflows` | C | `api-routers` | `api-routers` |
+| `scheduled_job_runs` | E | `jobs`, `platform` | `platform` |
 | `seo_pages` | A | `api-routers` | `api-routers` |
 | `sessions` | D | — | `api-routers` |
+| `store_purchases` | A | `api-routers`, `jobs` | `api-routers`, `jobs` |
+| `subscription_catalog` | A | `api-routers` | `api-routers` |
+| `support_assignments` | A | `api-routers` | `api-routers` |
 | `support_tickets` | A | `api-routers` | `api-routers` |
 | `system_settings` | A | `api-routers` | `api-routers`, `platform` |
-| `user_analytics` | E | `api-routers`, `jobs` | `api-routers` |
+| `user_analytics` | E | `api-routers`, `jobs`, `platform` | `api-routers` |
 | `user_budgets` | C | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `user_businesses` | A | `api-routers` | `api-routers` |
 | `user_contacts` | A | `api-routers` | `api-routers` |
@@ -318,11 +395,12 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `user_dictionaries` | F | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `user_profiles` | A | `api-routers` | `api-routers`, `jobs` |
 | `user_wallets` | A | `api-routers` | `api-routers` |
-| `users` | A | `api-routers` | `api-core`, `api-routers`, `jobs` |
+| `users` | A | `api-routers` | `api-core`, `api-routers`, `jobs`, `platform` |
 | `voice_call_incidents` | E | `jobs` | — |
 | `voice_calls` | E | `jobs` | `api-routers` |
 | `voice_usage` | E | `api-routers`, `jobs` | `api-routers` |
-| `webhook_tokens` | D | `api-routers` | `api-routers` |
+| `whatsapp_contacts` | A | — | `api-routers`, `jobs` |
+| `whatsapp_messages` | E | `api-routers`, `jobs` | `api-routers` |
 
 ## Outside systems
 
@@ -348,17 +426,17 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
 | `AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION` | yes | `api/lib/redis-client.ts` |
-| `APP_TIMEZONE` | yes | `api/boot.ts`, `api/lib/app-time.ts` |
-| `APP_URL` | yes | `api/webauthn-router.ts` |
+| `AI_GATEWAY_SECRET` | yes | `api/services/server-status.ts` |
+| `APP_TIMEZONE` | yes | `api/boot.ts`, `api/lib/app-time.ts`, `api/services/server-status.ts` |
+| `APP_URL` | yes | `api/boot.ts`, `api/seo-router.ts`, `api/webauthn-router.ts` |
 | `AWS_ACCESS_KEY_ID` | no | `api/services/storage/s3-driver.ts` |
 | `AWS_REGION` | no | `api/services/storage/s3-driver.ts` |
 | `AWS_SECRET_ACCESS_KEY` | no | `api/services/storage/s3-driver.ts` |
 | `BILLING_SIMULATE` | yes | `api/pro-router.ts` |
 | `DATABASE_URL` | yes | `api/queries/connection.ts` |
-| `ENABLE_CRONS` | yes | `api/boot.ts` |
-| `ENABLE_WHATSAPP` | yes | `api/boot.ts` |
+| `ENABLE_CRONS` | yes | `api/boot.ts`, `api/services/server-status.ts` |
 | `FIREWORKS_API_KEY` | yes | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
-| `GEMINI_API_KEY` | yes | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/system-settings-registry.ts` |
+| `GEMINI_API_KEY` | yes | `api/admin-router.ts`, `api/ai-router.ts`, `api/ai-setup-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/system-settings-registry.ts`, `api/services/server-status.ts` |
 | `GEMINI_MODEL_FREE` | yes | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_PRO` | yes | `api/ai-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_REPORTS` | yes | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
@@ -367,7 +445,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | `GOOGLE_REDIRECT_URI` | yes | `api/auth-router.ts` |
 | `GROQ_API_KEY` | yes | `api/ai-router.ts` |
 | `LOG_SLOW_QUERIES` | yes | `api/queries/connection.ts` |
-| `NODE_ENV` | yes | `api/boot.ts`, `api/chat-router.ts`, `api/lib/log.ts`, `api/lib/redis-client.ts`, `api/local-auth-router.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts` |
+| `NODE_ENV` | yes | `api/boot.ts`, `api/chat-router.ts`, `api/lib/client-platform.ts`, `api/lib/log.ts`, `api/lib/redis-client.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/server-status.ts` |
 | `NVIDIA_API_KEY` | yes | `api/ai-router.ts` |
 | `PAYMOB_HMAC_SECRET` | yes | `api/boot.ts` |
 | `PORT` | yes | `api/boot.ts`, `api/server.ts` |
@@ -377,30 +455,41 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | `R2_PUBLIC_URL` | no | `api/services/storage/s3-driver.ts` |
 | `R2_REGION` | no | `api/services/storage/s3-driver.ts` |
 | `R2_SECRET_ACCESS_KEY` | no | `api/services/storage/s3-driver.ts` |
+| `RATE_LIMIT_KEY_SECRET` | yes | `api/services/server-status.ts` |
 | `REDIS_URL` | yes | `api/lib/redis-client.ts` |
 | `S3_BUCKET` | no | `api/services/storage/s3-driver.ts` |
 | `S3_ENDPOINT` | no | `api/services/storage/s3-driver.ts` |
-| `SENTRY_DSN` | yes | `api/lib/error-reporting.ts` |
+| `SENTRY_DSN` | yes | `api/lib/error-reporting.ts`, `api/services/server-status.ts` |
 | `SENTRY_TRACES_SAMPLE_RATE` | yes | `api/lib/error-reporting.ts` |
+| `SERVE_WEB_APP` | yes | `api/boot.ts`, `api/services/server-status.ts` |
 | `SLOW_QUERY_THRESHOLD_MS` | yes | `api/queries/connection.ts` |
 | `STORAGE_DRIVER` | no | `api/services/storage/index.ts` |
 | `STORAGE_PUBLIC_URL` | no | `api/services/storage/s3-driver.ts` |
 | `TRUST_PROXY` | yes | `api/boot.ts` |
+| `TURNSTILE_SECRET_KEY` | yes | `api/services/server-status.ts` |
+| `WHATSAPP_CLOUD_APP_SECRET` | yes | `api/boot.ts` |
+| `WHATSAPP_CLOUD_VERIFY_TOKEN` | yes | `api/boot.ts` |
 
 ## Source its explanation describes
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>43 files and declarations</summary>
+<details><summary>56 files and declarations</summary>
 
+- `api/app-config-router.ts`
 - `api/boot.ts#ALL /api/trpc/*`
+- `api/boot.ts#GET /`
 - `api/boot.ts#GET /health`
+- `api/boot.ts#GET /robots.txt`
+- `api/boot.ts#GET /sitemap.xml`
 - `api/boot.ts#job:data-retention-lifecycle`
+- `api/boot.ts#job:ops-watch`
 - `api/boot.ts#rest-of-file`
 - `api/context.ts`
 - `api/jobs/data-retention-job.ts`
 - `api/lib/app-time.ts`
 - `api/lib/cache-keys.ts`
+- `api/lib/client-platform.ts`
 - `api/lib/env.ts`
 - `api/lib/error-logger.ts`
 - `api/lib/error-reporting.ts`
@@ -413,7 +502,10 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/queries/connection.ts`
 - `api/router.ts`
 - `api/server.ts#rest-of-file`
+- `api/services/admin-alerts.ts`
+- `api/services/job-runs.ts`
 - `api/services/scheduler-lock.ts`
+- `api/services/server-status.ts`
 - `api/services/storage/avatar-service.ts`
 - `api/services/storage/index.ts`
 - `api/services/storage/local-driver.ts`
@@ -421,14 +513,18 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/storage/types.ts`
 - `contracts/account-deletion.ts`
 - `contracts/ai-models.ts`
+- `contracts/capture-intake.ts`
+- `contracts/capture.ts`
 - `contracts/categories.ts`
 - `contracts/constants.ts`
 - `contracts/errors.ts`
 - `contracts/expense-save.ts`
+- `contracts/ledger-movement.ts`
 - `contracts/notification-types.ts`
 - `contracts/plan-features.ts`
 - `contracts/plans.ts`
 - `contracts/profile-fields.ts`
+- `contracts/taxonomy.ts`
 - `contracts/types.ts`
 - `contracts/voice-models.ts`
 - `contracts/voice-protocol.ts`

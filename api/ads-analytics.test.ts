@@ -9,7 +9,10 @@ vi.mock("./queries/connection", () => {
       from: () => ({
         where: (condition: unknown) => {
           recorded.where.push(condition);
-          return { limit: async () => [] };
+          return {
+            limit: async () => [],
+            groupBy: async () => [],
+          };
         },
       }),
     }),

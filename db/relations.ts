@@ -1,6 +1,21 @@
 import { relations } from "drizzle-orm";
 import {
   users,
+  captureDevices,
+  captureConsents,
+  captureSignals,
+  captureEvents,
+  captureQuestions,
+  captureUsage,
+  captureMemory,
+  captureUserPairs,
+  captureAiJobs,
+  captureSamples,
+  captureAiAccounts,
+  captureAiReservations,
+  whatsappMessages,
+  whatsappContacts,
+  captureMarkers,
   localUsers,
   expenses,
   expenseCategories,
@@ -29,14 +44,17 @@ import {
   voiceUsage,
   voiceCalls,
   voiceCallIncidents,
-  webhookTokens,
   userBudgets,
   installmentPlans,
   scheduledCashflows,
   cashflowSettlements,
+  commitmentScheduleItems,
+  commitmentOverrides,
+  commitmentHints,
+  commitmentReminders,
+  commitmentQuestions,
   coachingPlans,
   coachingSteps,
-  rawSmsEvents,
   apiKeyErrors,
   pushSubscriptions,
   userCredentials,
@@ -73,13 +91,16 @@ export const usersRelations = relations(users, ({ many }) => ({
   userBudgets: many(userBudgets),
   installmentPlans: many(installmentPlans),
   scheduledCashflows: many(scheduledCashflows),
+  commitmentScheduleItems: many(commitmentScheduleItems),
+  commitmentOverrides: many(commitmentOverrides),
+  commitmentHints: many(commitmentHints),
+  commitmentReminders: many(commitmentReminders),
+  commitmentQuestions: many(commitmentQuestions),
   coachingPlans: many(coachingPlans),
   userCredentials: many(userCredentials),
   pushSubscriptions: many(pushSubscriptions),
-  webhookTokens: many(webhookTokens),
   userDictionaries: many(userDictionaries),
   voiceUsage: many(voiceUsage),
-  rawSmsEvents: many(rawSmsEvents),
   userAnalytics: many(userAnalytics),
   supportTickets: many(supportTickets),
   monthlyReports: many(monthlyReports),
@@ -118,13 +139,16 @@ export const localUsersRelations = relations(localUsers, ({ many }) => ({
   userBudgets: many(userBudgets),
   installmentPlans: many(installmentPlans),
   scheduledCashflows: many(scheduledCashflows),
+  commitmentScheduleItems: many(commitmentScheduleItems),
+  commitmentOverrides: many(commitmentOverrides),
+  commitmentHints: many(commitmentHints),
+  commitmentReminders: many(commitmentReminders),
+  commitmentQuestions: many(commitmentQuestions),
   coachingPlans: many(coachingPlans),
   userCredentials: many(userCredentials),
   pushSubscriptions: many(pushSubscriptions),
-  webhookTokens: many(webhookTokens),
   userDictionaries: many(userDictionaries),
   voiceUsage: many(voiceUsage),
-  rawSmsEvents: many(rawSmsEvents),
   userAnalytics: many(userAnalytics),
   supportTickets: many(supportTickets),
   monthlyReports: many(monthlyReports),
@@ -348,11 +372,6 @@ export const voiceCallIncidentsRelations = relations(voiceCallIncidents, ({ one 
   call: one(voiceCalls, { fields: [voiceCallIncidents.callId], references: [voiceCalls.id] }),
 }));
 
-export const webhookTokensRelations = relations(webhookTokens, ({ one }) => ({
-  localUser: one(localUsers, { fields: [webhookTokens.userId], references: [localUsers.id] }),
-  oauthUser: one(users, { fields: [webhookTokens.userId], references: [users.id] }),
-}));
-
 export const userBudgetsRelations = relations(userBudgets, ({ one }) => ({
   localUser: one(localUsers, { fields: [userBudgets.userId], references: [localUsers.id] }),
   oauthUser: one(users, { fields: [userBudgets.userId], references: [users.id] }),
@@ -369,7 +388,32 @@ export const scheduledCashflowsRelations = relations(scheduledCashflows, ({ one,
   oauthUser: one(users, { fields: [scheduledCashflows.userId], references: [users.id] }),
   installmentPlan: one(installmentPlans, { fields: [scheduledCashflows.installmentPlanId], references: [installmentPlans.id] }),
   contact: one(userContacts, { fields: [scheduledCashflows.contactId], references: [userContacts.id] }),
+  beneficiary: one(userContacts, { fields: [scheduledCashflows.beneficiaryContactId], references: [userContacts.id] }),
+  originExpense: one(expenses, { fields: [scheduledCashflows.originExpenseId], references: [expenses.id] }),
   settlements: many(cashflowSettlements),
+  scheduleItems: many(commitmentScheduleItems),
+  overrides: many(commitmentOverrides),
+  hints: many(commitmentHints),
+  reminders: many(commitmentReminders),
+}));
+
+const commitmentChild = <T extends typeof commitmentScheduleItems | typeof commitmentOverrides | typeof commitmentHints | typeof commitmentReminders>(table: T) =>
+  relations(table, ({ one }) => ({
+    localUser: one(localUsers, { fields: [table.userId], references: [localUsers.id] }),
+    oauthUser: one(users, { fields: [table.userId], references: [users.id] }),
+    cashflow: one(scheduledCashflows, { fields: [table.cashflowId], references: [scheduledCashflows.id] }),
+  }));
+
+export const commitmentScheduleItemsRelations = commitmentChild(commitmentScheduleItems);
+export const commitmentOverridesRelations = commitmentChild(commitmentOverrides);
+export const commitmentHintsRelations = commitmentChild(commitmentHints);
+export const commitmentRemindersRelations = commitmentChild(commitmentReminders);
+
+export const commitmentQuestionsRelations = relations(commitmentQuestions, ({ one }) => ({
+  localUser: one(localUsers, { fields: [commitmentQuestions.userId], references: [localUsers.id] }),
+  oauthUser: one(users, { fields: [commitmentQuestions.userId], references: [users.id] }),
+  cashflow: one(scheduledCashflows, { fields: [commitmentQuestions.cashflowId], references: [scheduledCashflows.id] }),
+  expense: one(expenses, { fields: [commitmentQuestions.expenseId], references: [expenses.id] }),
 }));
 
 export const cashflowSettlementsRelations = relations(cashflowSettlements, ({ one }) => ({
@@ -389,11 +433,6 @@ export const coachingStepsRelations = relations(coachingSteps, ({ one }) => ({
   localUser: one(localUsers, { fields: [coachingSteps.userId], references: [localUsers.id] }),
   oauthUser: one(users, { fields: [coachingSteps.userId], references: [users.id] }),
   plan: one(coachingPlans, { fields: [coachingSteps.planId], references: [coachingPlans.id] }),
-}));
-
-export const rawSmsEventsRelations = relations(rawSmsEvents, ({ one }) => ({
-  localUser: one(localUsers, { fields: [rawSmsEvents.userId], references: [localUsers.id] }),
-  oauthUser: one(users, { fields: [rawSmsEvents.userId], references: [users.id] }),
 }));
 
 export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
@@ -577,4 +616,169 @@ export const userCorrectionRulesRelations = relations(userCorrectionRules, ({ on
     fields: [userCorrectionRules.sourceLogId],
     references: [classificationLogs.id],
   }),
+}));
+
+export const captureDevicesRelations = relations(captureDevices, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureDevices.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureDevices.userId],
+    references: [users.id],
+  }),
+}));
+
+export const captureConsentsRelations = relations(captureConsents, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureConsents.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureConsents.userId],
+    references: [users.id],
+  }),
+}));
+
+export const captureSignalsRelations = relations(captureSignals, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureSignals.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureSignals.userId],
+    references: [users.id],
+  }),
+  device: one(captureDevices, {
+    fields: [captureSignals.deviceId],
+    references: [captureDevices.id],
+  }),
+  event: one(captureEvents, {
+    fields: [captureSignals.eventId],
+    references: [captureEvents.id],
+  }),
+}));
+
+export const captureEventsRelations = relations(captureEvents, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureEvents.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureEvents.userId],
+    references: [users.id],
+  }),
+  expense: one(expenses, {
+    fields: [captureEvents.expenseId],
+    references: [expenses.id],
+  }),
+}));
+
+export const captureUsageRelations = relations(captureUsage, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureUsage.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureUsage.userId],
+    references: [users.id],
+  }),
+}));
+
+export const captureMemoryRelations = relations(captureMemory, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureMemory.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureMemory.userId],
+    references: [users.id],
+  }),
+}));
+
+export const captureUserPairsRelations = relations(captureUserPairs, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureUserPairs.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureUserPairs.userId],
+    references: [users.id],
+  }),
+}));
+
+export const whatsappMessagesRelations = relations(whatsappMessages, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [whatsappMessages.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [whatsappMessages.userId],
+    references: [users.id],
+  }),
+}));
+
+export const whatsappContactsRelations = relations(whatsappContacts, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [whatsappContacts.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [whatsappContacts.userId],
+    references: [users.id],
+  }),
+}));
+
+export const captureAiJobsRelations = relations(captureAiJobs, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureAiJobs.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureAiJobs.userId],
+    references: [users.id],
+  }),
+}));
+
+export const captureSamplesRelations = relations(captureSamples, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureSamples.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureSamples.userId],
+    references: [users.id],
+  }),
+  event: one(captureEvents, {
+    fields: [captureSamples.eventId],
+    references: [captureEvents.id],
+  }),
+}));
+
+export const captureMarkersRelations = relations(captureMarkers, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureMarkers.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureMarkers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const captureAiAccountsRelations = relations(captureAiAccounts, ({ one }) => ({
+  localUser: one(localUsers, { fields: [captureAiAccounts.userId], references: [localUsers.id] }),
+  oauthUser: one(users, { fields: [captureAiAccounts.userId], references: [users.id] }),
+}));
+
+export const captureQuestionsRelations = relations(captureQuestions, ({ one }) => ({
+  localUser: one(localUsers, { fields: [captureQuestions.userId], references: [localUsers.id] }),
+  oauthUser: one(users, { fields: [captureQuestions.userId], references: [users.id] }),
+  event: one(captureEvents, { fields: [captureQuestions.eventId], references: [captureEvents.id] }),
+  expense: one(expenses, { fields: [captureQuestions.expenseId], references: [expenses.id] }),
+}));
+
+export const captureAiReservationsRelations = relations(captureAiReservations, ({ one }) => ({
+  localUser: one(localUsers, { fields: [captureAiReservations.userId], references: [localUsers.id] }),
+  oauthUser: one(users, { fields: [captureAiReservations.userId], references: [users.id] }),
 }));

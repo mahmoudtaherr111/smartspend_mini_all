@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { env } from "./lib/env";
 import { router, publicProcedure, adminProcedure } from "./middleware";
 import { db } from "./queries/connection";
 import { seoPages } from "../db/schema";
@@ -68,28 +69,24 @@ export const seoRouter = router({
       await db.delete(seoPages).where(eq(seoPages.id, input.id));
       return { success: true };
     }),
+});
 
-  // ─── Generate Sitemap ───
-  sitemap: publicProcedure.query(async () => {
-    const pages = await db
-      .select({ path: seoPages.path, updatedAt: seoPages.updatedAt })
-      .from(seoPages);
-    const staticRoutes = ["/", "/login", "/support", "/admin", "/pro"];
-    const allPaths = [...staticRoutes, ...pages.map((p) => p.path)];
-
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${allPaths
-  .map(
+/** The public pages for search engines, served at /sitemap.xml from the app's own address. */
+export async function buildSitemapXml(): Promise<string> {
+  const pages = await db.select({ path: seoPages.path }).from(seoPages);
+  const allPaths = [...new Set(["/", "/support", "/pro", ...pages.map((page) => page.path)])];
+  const today = new Date().toISOString().split("T")[0];
+  const origin = env.APP_URL.replace(/\/$/, "");
+  const urls = allPaths.map(
     (path) => `  <url>
-    <loc>https://smartspend.app${path}</loc>
-    <lastmod>${new Date().toISOString().split("T")[0]}</lastmod>
+    <loc>${origin}${path}</loc>
+    <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>${path === "/" ? "1.0" : "0.8"}</priority>
   </url>`,
-  )
-  .join("\n")}
+  );
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.join("\n")}
 </urlset>`;
-    return xml;
-  }),
-});
+}

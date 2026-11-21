@@ -12,20 +12,23 @@ storage, the contracts shared with the web app, and the retention job that prune
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Server | `api/boot.ts` | The Hono app: middleware, Google OAuth start and callback, the OTP stream, the Paymob webhook, the `/api/sms` sub-app, `/api/trpc/*`, `/health`, the static files and the voice WebSockets (old and rebuilt call) in production, and the cron registrations |
+| Server | `api/boot.ts` | The Hono app: middleware, Google OAuth start and callback, the OTP stream, the Paymob webhook, `/api/trpc/*`, `/health`, the known services' logos (`/api/brand-logos/:file`, [bank messages](bank-messages.md)), the admin console at `/admin` (`dist/admin`), the live-call WebSocket (`/api/voice/v2`) in production, and the cron registrations. The website is parked (decision 0050): only with `SERVE_WEB_APP=true` does it serve `dist/public`, the sitemap and an indexable `robots.txt`; otherwise `/` answers `{ service, console }` and crawlers are refused |
 | Standalone entry | `api/server.ts` | The same app served on its own, for deploying the API apart from the web app |
 | Request context | `api/context.ts` | Resolves `ctx.user` from the Bearer header, the `smartspend_token`/`local_session` cookie or the `google_session` cookie, and the client IP |
-| Builders | `api/middleware.ts` | The nine procedure builders, their rate limits and their role and plan checks |
+| Builders | `api/middleware.ts` | The procedure builders, their rate limits and their role and plan checks; every mutation through `adminProcedure` or `moderatorProcedure` reaches the audit log (`auditStaffMutations`): a procedure that wrote its own entry marks `ctx.audit`, any other is recorded by its path and whether it succeeded, never by its input |
+| Server status | `api/services/server-status.ts`, `adminConsole.status` | The database and its pending migrations (the build's journal against `__drizzle_migrations`), Redis, whether jobs ran in the last 10 minutes, Firebase, WhatsApp, object storage, Sentry, Turnstile, the secrets production should have, the AI connectors and the number of admins, each `ok`, `warn` or `fail`; the console's «حالة السيرفر» words them |
+| Admin alerts | `api/services/admin-alerts.ts` | `notifyAdmins` (an in-app notification to every admin, once per quiet period), the 15-minute `ops-watch` job and the admin's alert list |
 | Root router | `api/router.ts` | Mounts every `*-router.ts` under its name |
 | Environment | `api/lib/env.ts` | One Zod schema parsed at import (`parseServerEnv`): the server refuses to start without the required values, or in production with `JWT_SECRET`, `AI_GATEWAY_SECRET` or `RATE_LIMIT_KEY_SECRET` under 32 characters |
 | Database | `api/queries/connection.ts`, `db/schema.ts`, `db/relations.ts`, `db/table-classes.ts` | The MySQL pool with slow-query logging, the Drizzle schema, the relations that stand in for foreign keys, and every table's storage class |
 | Cache | `api/lib/redis-client.ts`, `api/lib/cache-keys.ts` | Redis with an in-process fallback, the key shapes, counters and the sliding-window rate limiter |
-| Settings | `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` (with the embedding keys and `usd_to_egp_rate`) | `system_settings` behind one cached read, and the registry of keys, defaults and secrets |
+| Settings | `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` (with the recording engine switch `recording_engine` and the `understanding_*` limits of decision 0052, the model trip times `llm_timeout_ms` and `llm_trip_deadline_ms`, the embedding keys, `usd_to_egp_rate`, and the bank-message model's `sms_ai_enabled` and `sms_ai_daily_cost_cap_usd`) | `system_settings` behind one cached read, and the registry of keys, defaults and secrets |
 | Business time | `api/lib/app-time.ts` | The day and month boundaries of the ledger (and `previousBusinessMonth` for the month that just ended), in `APP_TIMEZONE` (Cairo) rather than the server's clock, and `parseBusinessInstant`, which reads a date the client wrote without a time zone as Cairo wall-clock time |
 | Job lock | `api/services/scheduler-lock.ts` | A MySQL advisory lock so a job registered on every replica runs on one |
+| Job runs | `api/services/job-runs.ts`, table `scheduled_job_runs` | Every run that took the lock, with its duration and, on failure, the error's class; the console's «التشغيل» shows each job's last run, last success, failures and whether it is late |
 | Retention | `api/jobs/data-retention-job.ts` | Rolls up and prunes telemetry, conversation and ephemeral tables |
 | File storage | `api/services/storage/` | One driver interface over local disk or S3-compatible storage, plus the avatar service |
-| Shared contracts | `contracts/` | Input limits, plan prices and plan features, the category taxonomy (`contracts/categories.ts`, with the map from old category names), the live call's wire protocol (`contracts/voice-protocol.ts`), what a parsed item carries into a save from any channel (`contracts/expense-save.ts`), the Gemini models it may use (`contracts/voice-models.ts`; same per-token prices, labelled without a cost factor), the purposes a model can serve and the published model prices (`contracts/ai-models.ts`), the profile questions the app asks and why (`contracts/profile-fields.ts`), each notification type and the page it opens (`contracts/notification-types.ts`), and shared types the web app imports |
+| Shared contracts | `contracts/` | Input limits, plan prices and plan features, the category taxonomy (`contracts/categories.ts`, with the map from old category names), taxonomy v2 of purposes with ids and guide lines, which the understanding engine reads into and no screen or stored row uses yet (`contracts/taxonomy.ts`, decision 0052), the live call's wire protocol (`contracts/voice-protocol.ts`), what a parsed item carries into a save from any channel (`contracts/expense-save.ts`), the Gemini models it may use (`contracts/voice-models.ts`; same per-token prices, labelled without a cost factor), the purposes a model can serve (classification, chat, reports, embeddings, bank messages) and the published model prices (`contracts/ai-models.ts`), the profile questions the app asks and why (`contracts/profile-fields.ts`), each notification type and the page it opens (`contracts/notification-types.ts`), the kinds of capture sources and subscription cycles (`contracts/capture.ts`), and shared types the web app imports |
 | Error log | `api/lib/error-logger.ts` | Classifies provider errors and records them in `api_key_errors` for the admin console |
 | Logging | `api/lib/log.ts` | The server logger. It redacts the fields that carry message text, codes, tokens and phone numbers (`text`, `body`, `code`, `token`, `phone` and others, three levels deep; a phone keeps its last four digits, and a `code` without a run of four digits, such as an error's code or a tool's refusal, is kept), and writes an error with its codes and statement but without the values of a failed query |
 | Error reporting | `api/lib/error-reporting.ts` | Sentry, when `SENTRY_DSN` is set, under the same rule: console breadcrumbs are dropped, query strings, request bodies, cookies and credentials are removed, and a failed query's values are cut before an event leaves. Traces and profiles cover `SENTRY_TRACES_SAMPLE_RATE` of requests (10% by default); errors are always sent |
@@ -37,10 +40,12 @@ storage, the contracts shared with the web app, and the retention job that prune
 2. `/api/trpc/*` builds the context. A Bearer header wins over cookies; the token's SHA-256 hash is looked up
    in the Redis principal cache first and only then in `sessions` plus the user table
    ([accounts](accounts.md)).
-3. The procedure's builder applies its limit and checks: anonymous traffic 400 requests a minute per IP,
-   sign-in and registration 25 per quarter hour, a signed-in user 100 a minute, and an AI call another 100 a
+3. `authedProcedure` also notes, once per person per Cairo day, the platform and app version the request came from
+   (`noteAppSeen` in `api/lib/client-platform.ts`, never blocking the request). The procedure's builder applies its
+   limit and checks: anonymous traffic 3,000 requests a minute per IP (mobile carriers put many customers behind one address),
+   sign-in and registration 300 per quarter hour, a signed-in user 300 a minute, and an AI call another 100 a
    minute on top. `proProcedure`, `proAiProcedure` and `ultraProcedure` check the plan, and the per-feature builders
-   (`businessProcedure`, `receiptsProcedure`, `proReportProcedure`, `goalAnalysisProcedure`) read the admin's
+   (`businessProcedure`, `receiptsProcedure`, `proReportProcedure`, `goalAnalysisProcedure`, `commitmentsProcedure`) read the admin's
    `feature_<feature>_<plan>` switch (`contracts/plan-features.ts`); an admin passes all of them.
    `moderatorProcedure` and `adminProcedure` check the role.
 4. Errors leave as `TRPCError`; in production an internal error is replaced by one Arabic sentence and the
@@ -66,12 +71,19 @@ storage, the contracts shared with the web app, and the retention job that prune
   API, and integrity lives in application code. Every table has a storage class in `db/table-classes.ts`,
   from A (identity and configuration) to G (conversations), and `tests/table-classes.test.ts` fails when a new
   table has none.
-- The retention job runs daily at 05:00 and walks the declared policies: user analytics after thirty days (the
-  `ai_cost_*` events after ninety, like the token ledger beside them),
-  classification logs, token ledgers, notification logs, ad clicks, raw bank messages (`raw_sms_events`, suggestions
-  included), voice usage and live-call incidents after ninety, the action audit trail and live voice calls after a year, chat messages after ninety days once the conversation has a summary, and expired
-  challenges and pending actions in between. Token ledgers and ad clicks are rolled up into `ai_cost_monthly`
-  and `ad_stats_daily` before the rows go, and deletes run in chunks with a pause between them.
+- The retention job runs daily at 05:00 and walks `RETENTION_POLICIES` in `api/jobs/data-retention-job.ts`, one
+  policy per table (some per kind of row), each with a cut-off in days: thirty to ninety for telemetry, ad clicks,
+  notification logs, token ledgers, voice
+  usage and live-call incidents, and captured bank notifications (`capture_signals`, and a captured payment nobody answered); seven days for
+  the model's queue of captured messages (`capture_ai_jobs`), thirty for a reading still waiting for missing evidence
+  (an `outcome` of `waiting_*`); a year for redacted message samples kept with consent (`capture_samples`, decision 0048); 90 days for WhatsApp messages we sent (`whatsapp_messages`,
+  whose recipient number is cleared after 30); 60 days for a
+  captured payment held over the free monthly limit; 400 days for an
+  answered captured payment's keys (`capture_events`); a year for the action audit
+  trail and live voice calls; chat messages after ninety
+  days once the conversation has a summary; expired challenges and pending actions, and answered clarifications,
+  in between. Token ledgers and ad clicks are rolled up into `ai_cost_monthly` and `ad_stats_daily` before the rows
+  go, and deletes run in chunks with a pause between them. Read the list in the file for each table's days.
 
 ## Cache
 - `getRedisClient` connects once with a two-second timeout and backs off after failures. Without Redis the
@@ -82,12 +94,17 @@ storage, the contracts shared with the web app, and the retention job that prune
 - A generation bump (`cacheIncr`) that a configured Redis misses, because it was down or refused the command, is
   kept and replayed as soon as Redis answers again, so the entries cached before a write made during an outage are
   not served once Redis is back.
-- Shared state is not cache: `stateSet`, `stateGet`, `stateTake` (read and delete in one step) and `stateDel` keep
-  what every replica must see and nobody can recompute — the phone-change codes of [accounts](accounts.md), the
-  Shortcut pairing codes of [bank messages](bank-messages.md). Redis holds it; without Redis it stays in the process's
+- `deleteCacheByPattern` deletes every key matching a pattern, one SCAN page at a time; a page with no match is
+  skipped (before, an empty page made the whole delete fail on a busy server, and the cached entries stayed).
+- Shared state is not cache: `stateSet`, `stateGet`, `stateTake` (read and delete in one step), `stateClaim` (mark a
+  value used, true only for the first caller: `SET NX`) and `stateDel` keep what every replica must see and nobody can
+  recompute — the phone-change codes and the spent Google sign-in nonces of [accounts](accounts.md). Redis holds it; without Redis it stays in the process's
   memory even in production, because one process without Redis is a supported deployment.
 - A per-process copy of shared data reloads on a Redis generation through `api/lib/shared-generation.ts#watchGeneration`: the settings
-  (`settingsgen`) and the admin's AI providers, models and prices (`aiconfiggen`), checked at most every ten seconds.
+  (`settingsgen`), the admin's AI providers, models and prices (`aiconfiggen`), and the capture catalog of banks, wallets
+  and subscriptions (`capturecataloggen`, [bank messages](bank-messages.md)), checked at most every ten seconds.
+- `appConfig.get` (`api/app-config-router.ts`, public) tells a client the oldest mobile build the server works with,
+  where to update, which AI features an admin stopped, and the Cairo date, so the app never works out a ledger month from the phone's clock.
 - `system_settings` is read through `getSystemSettings()`, cached in the process for five minutes and cleared
   by `invalidateSettingsCache()` (golden rule 5), which also bumps the Redis generation `settingsgen`; every other
   process compares it at most every ten seconds and reloads. Every cache in the system, with its key, lifetime and
@@ -95,12 +112,25 @@ storage, the contracts shared with the web app, and the retention job that prune
 
 ## Jobs
 Registered in `api/boot.ts` and only where `ENABLE_CRONS=true`; each takes a MySQL advisory lock named after
-the job, so every replica may register it and one runs it (golden rule 7). The hours are Cairo time: node-cron
-schedules each job in `APP_TIMEZONE`, not the server's clock. Expired sessions and challenges
-(daily), classification logs older than 180 days (Sundays), scheduled notifications (every minute), the smart
-activity check (20:00), the monthly report (1st at 02:00), the monthly behaviour snapshot (1st at 01:00), the
-rollup reconciliation (04:00), data retention (05:00), subscription expiry (06:00), and the live calls' memory
-(every ten minutes; see [voice calls](voice-calls.md)).
+the job, so every replica may register it and one runs it (golden rule 7). The process that took the lock writes the
+run to `scheduled_job_runs` (start, duration, `ok` or `failed` with the error's code or class, never its message, and
+the host), kept 14 days; a write that fails, as before migration 0048 is applied, never fails the job and is logged once
+(`job_runs.write_failed`). Every process registers the schedules (`registerJobSchedule`), crons on or off, so
+`adminConsole.jobs` can name what should run whichever process answers. A job counts as late when its last success is
+older than twice its interval, at least an hour, counted from the first recorded run. `ops-watch` (every 15 minutes)
+tells the admins in the app about a late job (once per 6 hours), a failed one (once an hour) and a server check that
+fails on two passes in a row (once per 6 hours), so a Redis or database a moment from connected after a restart wakes
+nobody; the console's «النهارده» lists the alerts. The hours are Cairo time: node-cron
+schedules each job in `APP_TIMEZONE`, not the server's clock. The list, with each schedule, is in
+[docs/atlas/entrypoints.md](../atlas/entrypoints.md). In short: session, challenge and phone-code cleanup
+(daily), classification logs (Sundays), scheduled notifications (every minute) and the smart activity check
+(20:00), coaching reminders (every five minutes), commitment reminders (every five) and the matching of payments
+from bank messages to commitments (every ten; see [money](money.md#commitments-hub-التزاماتي)), the known services' logos (04:23), the captured messages left for the model (every minute), the
+capture breaker (every fifteen) and the silent capture phones (11:00; see [bank messages](bank-messages.md)), the ledger's cashflow cutover (every ten, until it is active; [money](money.md)), the taxonomy migration (every thirty), the memory embedding
+backfill (every twenty), the live calls' memory (every ten; see [voice calls](voice-calls.md)), the monthly
+behaviour snapshot (1st at 01:00) and report (1st at 02:00), the rollup reconciliation (04:00), data retention
+(05:00), and subscription expiry with renewal reminders (06:00). With crons on, boot also seeds the default
+notification templates and the capture catalog, and runs the cashflow cutover once.
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -135,10 +165,11 @@ the rule checks in `tests/knowledge/`.
 Checked against the code; each one names where it lives.
 1. **Debt.** Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8):
    `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and
-   public URL; the embedding warm-up in `api/boot.ts` reads the Fireworks key.
+   public URL; `GROQ_API_KEY` in `api/ai-router.ts`, `GEMINI_API_KEY` in `api/lib/ai-gateway.ts`, and `NODE_ENV` in `api/chat-router.ts`, `api/local-auth-router.ts` and
+   `api/middleware.ts` are read directly too.
 2. **Debt.** `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the
    history the admin screens show ends where the ninety-day pruning starts.
-3. **Debt.** `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
+3. **Debt.** `db/seed.ts` is an empty stub that nothing runs: no npm script calls it.
 4. **Debt.** `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library
    update can silently turn into zeroes.
 5. **Debt.** The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
@@ -146,11 +177,18 @@ Checked against the code; each one names where it lives.
    route the voice socket (`/api/voice/v2`) through the one
    `createVoiceUpgradeHandler` in `api/services/voice/gateway/index.ts`, so only its options and the paths their
    `upgrade` listeners pass on have to be kept in step by hand.
-6. **Debt.** The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten:
+6. **Debt.** The weekly `classification-log-cleanup` job in `api/boot.ts` deletes classification logs after 180 days,
+   but the retention policy for the same table deletes them after ninety, so the job removes nothing.
+7. **Debt.** The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten:
    they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that
    print `error.message` as text print provider, socket and storage errors today, or failed reads whose values
    are ids and dates (`api/ai-router.ts`,
    `api/services/storage/s3-driver.ts`); moving a file to `createLogger()` removes the difference.
+8. **Gap.** The only alert channel is the in-app notification: an admin who opens neither the app nor the console
+   learns nothing, and there is no e-mail or chat channel yet.
+
+## Voice capacity settings
+The settings registry defines `voice_standard_input_tpm`, `voice_standard_reserved_tpm`, `voice_ultra_input_tpm` and `voice_ultra_reserved_tpm`. Admission reads them through the shared settings accessor, combines them with per-model seat caps, and reserves 20% headroom. Values are editable in the admin voice section and require review against the active project’s AI Studio limits; an estimate is not a guarantee for unlimited conversation context.
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): sessions, the principal cache and the auth version.
@@ -161,5 +199,25 @@ Checked against the code; each one names where it lives.
 - [Money: expenses, wallets, budgets, goals and businesses](money.md): the rollups the reconciliation job
   repairs, and the taxonomy migration job.
 
-### Voice capacity settings
-The settings registry defines `voice_standard_input_tpm`, `voice_standard_reserved_tpm`, `voice_ultra_input_tpm` and `voice_ultra_reserved_tpm`. Admission reads them through the shared settings accessor, combines them with per-model seat caps, and reserves 20% headroom. Values are editable in the admin voice section and require review against the active project’s AI Studio limits; an estimate is not a guarantee for unlimited conversation context.
+## Capture resource accounting
+Capture's v4 path has dedicated daily cost, per-owner monthly token and leased reservation tables, introduced by
+additive migrations 0044/0045. Daily-row locks coordinate admission and settlement across replicas; unknown billed
+usage remains reserved while capacity expires after a minute. They have 60-day retention and owner-pair indexes;
+account deletion removes user-owned budget rows but preserves the anonymous aggregate daily cost. Optional-table
+retention policies first check schema availability, so deploying disabled feature code before its migration does
+not generate missing-table retention failures. Pending capture model jobs no longer expire at seven days.
+
+
+The settings accessor accepts an existing transaction for an uncached read on that same connection. The financial writer requests a shared lock on the cutover flag, held to commit; activation takes its exclusive lock before counting legacy rows. Uncommitted settings never enter the process cache.
+
+
+Capture duplicate-evidence waiting events share the 30-day review retention policy. The settings accessor share-lock mode also gates post-provider writes against an operator stop or qualification change.
+
+
+Migration 0046 adds only `capture_questions`, with owner/event uniqueness and owner/status/day plus retention indexes,
+relations in application code and storage class E. Optional-table checks in the existing purge transaction cover
+new questions/resource counters before additive migrations are installed. The question flag remains false by
+default; only a disposable local MySQL was migrated. Question display/answers and contact alias changes share the
+identity lock with ledger writes. No network/model call is made while that transaction is held.
+
+Authenticated clients can read the purpose catalog through taxonomy.get, including stable ids, Arabic and English labels, icons and group. Shared save inputs retain the stated direction of investment movements.

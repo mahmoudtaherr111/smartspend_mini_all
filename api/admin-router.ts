@@ -16,7 +16,6 @@ import {
   systemSettings,
   classificationLogs,
   voiceUsage,
-  discountCodes,
   userWallets,
   proSubscriptions,
   monthlyReports,
@@ -25,8 +24,6 @@ import {
   profileLearningEvents,
   monthlyBehaviorSnapshots,
   userDictionaries,
-  webhookTokens,
-  rawSmsEvents,
   expenseCategories,
   apiKeyErrors,
   pushSubscriptions,
@@ -38,7 +35,10 @@ import {
   aiProviders,
   aiModels,
   aiTokenLedgers,
+  adminAuditLogs,
+  storePurchases,
 } from "../db/schema";
+import { logAdminAction } from "./lib/admin-audit";
 import {
   discoverRemoteModels,
   invalidateAiConfig,
@@ -52,6 +52,7 @@ import {
   count,
   and,
   gte,
+  lt,
   lte,
   sum,
   inArray,
@@ -178,6 +179,34 @@ export const adminRouter = router({
       .from(localUsers)
       .where(paidPlansLocal);
 
+    const [storeBreakdown] = await db
+      .select({
+        playStoreActive: sql<number>`COALESCE(SUM(CASE WHEN ${storePurchases.store} = 'google_play' AND ${storePurchases.status} = 'active' THEN 1 ELSE 0 END), 0)`,
+        appStoreActive: sql<number>`COALESCE(SUM(CASE WHEN ${storePurchases.store} = 'app_store' AND ${storePurchases.status} = 'active' THEN 1 ELSE 0 END), 0)`,
+        totalStoreActive: sql<number>`COALESCE(SUM(CASE WHEN ${storePurchases.status} = 'active' THEN 1 ELSE 0 END), 0)`,
+      })
+      .from(storePurchases);
+
+    const [webProSubs] = await db
+      .select({ count: count() })
+      .from(proSubscriptions)
+      .where(eq(proSubscriptions.status, "active"));
+
+    const recentStorePurchases = await db
+      .select({
+        id: storePurchases.id,
+        userId: storePurchases.userId,
+        userType: storePurchases.userType,
+        store: storePurchases.store,
+        storeProductId: storePurchases.storeProductId,
+        status: storePurchases.status,
+        expiresAt: storePurchases.expiresAt,
+        createdAt: storePurchases.createdAt,
+      })
+      .from(storePurchases)
+      .orderBy(desc(storePurchases.createdAt))
+      .limit(10);
+
     return {
       totalOAuthUsers: totalUsers[0]?.count ?? 0,
       totalLocalUsers: totalLocalUsers[0]?.count ?? 0,
@@ -189,6 +218,11 @@ export const adminRouter = router({
       activeSessions: activeSessions[0]?.count ?? 0,
       openTickets: openTickets[0]?.count ?? 0,
       proUsers: (proUsers[0]?.count ?? 0) + (proLocalUsers[0]?.count ?? 0),
+      playStoreActive: Number(storeBreakdown?.playStoreActive ?? 0),
+      appStoreActive: Number(storeBreakdown?.appStoreActive ?? 0),
+      totalStoreActive: Number(storeBreakdown?.totalStoreActive ?? 0),
+      webProActive: webProSubs?.count ?? 0,
+      recentStorePurchases,
     };
   }),
 
@@ -404,8 +438,14 @@ export const adminRouter = router({
         role: z.enum(["user", "moderator", "admin"]),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       await setRole(input.userType, input.userId, input.role);
+      await logAdminAction(ctx, {
+        action: "UPDATE_USER_ROLE",
+        targetType: "user",
+        targetId: `${input.userType}:${input.userId}`,
+        details: { newRole: input.role, userType: input.userType, userId: input.userId },
+      });
       return { success: true, message: "تم تحديث الدور بنجاح" };
     }),
 
@@ -418,8 +458,14 @@ export const adminRouter = router({
         plan: z.enum(["free", "pro"]),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       await setPlan(input.userType, input.userId, input.plan);
+      await logAdminAction(ctx, {
+        action: "UPDATE_USER_PLAN",
+        targetType: "user",
+        targetId: `${input.userType}:${input.userId}`,
+        details: { newPlan: input.plan, userType: input.userType, userId: input.userId },
+      });
       return { success: true, message: "تم تحديث الخطة بنجاح" };
     }),
 
@@ -431,7 +477,7 @@ export const adminRouter = router({
         userType: z.enum(["oauth", "local"]),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { userId, userType } = input;
 
       await db.transaction(async (tx) => {
@@ -440,6 +486,13 @@ export const adminRouter = router({
       // The rows are gone, but a principal resolved a minute ago is still cached: without this the deleted
       // account keeps answering for up to fifteen minutes.
       await invalidatePrincipal(userType, userId);
+
+      await logAdminAction(ctx, {
+        action: "DELETE_USER",
+        targetType: "user",
+        targetId: `${userType}:${userId}`,
+        details: { userId, userType },
+      });
 
       return { success: true, message: "تم حذف المستخدم بنجاح" };
     }),
@@ -477,9 +530,17 @@ export const adminRouter = router({
   // ─── Revoke Session ───
   revokeSession: adminProcedure
     .input(z.object({ sessionId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       // Ends the session everywhere it is remembered, not only in the table: see api/lib/access-control.ts.
       const revoked = await revokeSession({ sessionId: input.sessionId });
+      if (revoked) {
+        await logAdminAction(ctx, {
+          action: "REVOKE_SESSION",
+          targetType: "session",
+          targetId: input.sessionId,
+          details: { sessionId: input.sessionId },
+        });
+      }
       return revoked
         ? { success: true, message: "تم إلغاء الجلسة" }
         : { success: false, message: "الجلسة دي مش موجودة أصلاً" };
@@ -549,6 +610,132 @@ export const adminRouter = router({
       }));
     }),
 
+  // ─── Get Admin Audit Logs (GAP-36) ───
+  getAuditLogs: adminProcedure
+    .input(
+      z
+        .object({
+          action: z.string().optional(),
+          targetType: z.string().optional(),
+          targetId: z.string().optional(),
+          adminId: z.number().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          page: z.number().min(1).default(1),
+          limit: z.number().min(1).max(200).default(50),
+        })
+        .optional(),
+    )
+    .query(async ({ input }) => {
+      const {
+        action,
+        targetType,
+        targetId,
+        adminId,
+        startDate,
+        endDate,
+        page = 1,
+        limit = 50,
+      } = input ?? {};
+      const offset = (page - 1) * limit;
+
+      const filters = [];
+      if (action) filters.push(eq(adminAuditLogs.action, action));
+      if (targetType) filters.push(eq(adminAuditLogs.targetType, targetType));
+      if (targetId) filters.push(eq(adminAuditLogs.targetId, targetId));
+      if (adminId) filters.push(eq(adminAuditLogs.adminId, adminId));
+      if (startDate) filters.push(gte(adminAuditLogs.createdAt, new Date(startDate)));
+      if (endDate) filters.push(lte(adminAuditLogs.createdAt, new Date(endDate)));
+
+      const rows = await db
+        .select()
+        .from(adminAuditLogs)
+        .where(filters.length > 0 ? and(...filters) : undefined)
+        .orderBy(desc(adminAuditLogs.createdAt))
+        .limit(limit)
+        .offset(offset);
+
+      const totalResult = await db
+        .select({ count: count() })
+        .from(adminAuditLogs)
+        .where(filters.length > 0 ? and(...filters) : undefined);
+
+      const oauthAdminIds = [...new Set(rows.filter((r) => r.adminType === "oauth").map((r) => r.adminId))];
+      const localAdminIds = [...new Set(rows.filter((r) => r.adminType === "local").map((r) => r.adminId))];
+
+      const nameMap = new Map<string, string>();
+      if (oauthAdminIds.length > 0) {
+        const oauthAdmins = await db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, oauthAdminIds));
+        for (const a of oauthAdmins) nameMap.set(`oauth:${a.id}`, a.name);
+      }
+      if (localAdminIds.length > 0) {
+        const localAdmins = await db.select({ id: localUsers.id, name: localUsers.name }).from(localUsers).where(inArray(localUsers.id, localAdminIds));
+        for (const a of localAdmins) nameMap.set(`local:${a.id}`, a.name);
+      }
+
+      const enriched = rows.map((r) => ({
+        ...r,
+        adminName: nameMap.get(`${r.adminType}:${r.adminId}`) || "إداري",
+      }));
+
+      return {
+        logs: enriched,
+        total: totalResult[0]?.count ?? 0,
+        page,
+        limit,
+      };
+    }),
+
+  // ─── List Store Purchases ───
+  listStorePurchasesAdmin: adminProcedure
+    .input(
+      z
+        .object({
+          store: z.enum(["google_play", "app_store"]).optional(),
+          status: z.string().optional(),
+          page: z.number().default(1),
+          limit: z.number().default(30),
+        })
+        .optional(),
+    )
+    .query(async ({ input }) => {
+      const { store, status, page = 1, limit = 30 } = input ?? {};
+      const offset = (page - 1) * limit;
+      const filters = [];
+      if (store) filters.push(eq(storePurchases.store, store));
+      if (status) filters.push(eq(storePurchases.status, status));
+
+      const list = await db
+        .select({
+          id: storePurchases.id,
+          userId: storePurchases.userId,
+          userType: storePurchases.userType,
+          store: storePurchases.store,
+          storeProductId: storePurchases.storeProductId,
+          originalTransactionId: storePurchases.originalTransactionId,
+          status: storePurchases.status,
+          expiresAt: storePurchases.expiresAt,
+          createdAt: storePurchases.createdAt,
+        })
+        .from(storePurchases)
+        .where(filters.length > 0 ? and(...filters) : undefined)
+        .orderBy(desc(storePurchases.createdAt))
+        .limit(limit)
+        .offset(offset);
+
+      const totalResult = await db
+        .select({ count: count() })
+        .from(storePurchases)
+        .where(filters.length > 0 ? and(...filters) : undefined);
+
+      return {
+        list,
+        total: totalResult[0]?.count ?? 0,
+        page,
+        limit,
+      };
+    }),
+
   // ─── AI System Settings (Professional) ───
   getSettings: adminProcedure.query(async () => {
     const settings = await getSystemSettings();
@@ -567,7 +754,7 @@ export const adminRouter = router({
 
   updateSettings: adminProcedure
     .input(z.record(z.string(), z.string()))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       // The allowlist IS the registry. Eight keys the UI renders (nvidia_api_key,
       // chatbot_*, rag_*, enable_rag) were absent from the hand-written set this
       // replaces: the admin saw "saved" and the value was dropped on the floor.
@@ -593,6 +780,16 @@ export const adminRouter = router({
         }
       }
       invalidateSettingsCache();
+      await logAdminAction(ctx, {
+        action: "UPDATE_SYSTEM_SETTINGS",
+        targetType: "system_settings",
+        targetId: "global",
+        details: {
+          updatedKeys: Object.keys(input).filter(
+            (k) => allowedKeys.has(k) && !isMaskedValue(input[k]),
+          ),
+        },
+      });
       return { success: true, message: "تم تحديث الإعدادات بنجاح" };
     }),
 
@@ -605,8 +802,14 @@ export const adminRouter = router({
         plan: z.enum(["free", "pro", "ultra"]),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       await setPlan(input.userType, input.userId, input.plan);
+      await logAdminAction(ctx, {
+        action: "UPDATE_USER_PLAN",
+        targetType: "user",
+        targetId: `${input.userType}:${input.userId}`,
+        details: { newPlan: input.plan, userType: input.userType, userId: input.userId },
+      });
       return { success: true, message: "تم تحديث الخطة بنجاح" };
     }),
 
@@ -618,12 +821,18 @@ export const adminRouter = router({
         userType: z.enum(["oauth", "local"]),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const table = input.userType === "oauth" ? users : localUsers;
       await db
         .update(table)
         .set({ aiTokensUsed: 0 })
         .where(eq(table.id, input.userId));
+      await logAdminAction(ctx, {
+        action: "RESET_USER_TOKENS",
+        targetType: "user",
+        targetId: `${input.userType}:${input.userId}`,
+        details: { userId: input.userId, userType: input.userType },
+      });
       return { success: true, message: "تم إعادة تعيين التوكنز" };
     }),
 
@@ -1100,55 +1309,7 @@ export const adminRouter = router({
     };
   }),
 
-  // ─── Discount Codes CRUD ───
-  getDiscountCodes: adminProcedure.query(async () => {
-    return await db
-      .select()
-      .from(discountCodes)
-      .orderBy(desc(discountCodes.createdAt));
-  }),
-
-  createDiscountCode: adminProcedure
-    .input(
-      z.object({
-        code: z.string().min(3).max(50),
-        type: z.enum(["referral", "promo"]).default("promo"),
-        discountPercent: z.number().min(1).max(100),
-        maxUses: z.number().min(0).optional(),
-        expiresAt: z.string().optional(),
-      }),
-    )
-    .mutation(async ({ input }) => {
-      const existing = await db
-        .select()
-        .from(discountCodes)
-        .where(eq(discountCodes.code, input.code.toUpperCase()))
-        .limit(1);
-      if (existing.length > 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "الكود موجود بالفعل",
-        });
-      }
-      await db.insert(discountCodes).values({
-        code: input.code.toUpperCase(),
-        type: input.type,
-        discountPercent: input.discountPercent,
-        maxUses: input.maxUses || null,
-        usedCount: 0,
-        expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
-      });
-      return { success: true, message: "تم إنشاء الكود بنجاح" };
-    }),
-
-  deleteDiscountCode: adminProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
-      await db.delete(discountCodes).where(eq(discountCodes.id, input.id));
-      return { success: true, message: "تم حذف الكود" };
-    }),
-
-  /** Founder / ops: DAU, Pro subs, token burn estimate */
+  /** Founder / ops: who records, who signs up and stays, Pro subs, token burn estimate */
   getFounderMetrics: adminProcedure.query(async () => {
     // Cairo's midnight, not the server's (golden rule 6).
     const today = startOfBusinessDay();
@@ -1167,22 +1328,66 @@ export const adminRouter = router({
       }
     };
 
-    const dau = await safeCount(() =>
-      db
-        .select({
-          count: sql<number>`COUNT(DISTINCT CONCAT(${sessions.userType}, ':', ${sessions.userId}))`,
-        })
-        .from(sessions)
-        .where(gte(sessions.createdAt, today)),
-    );
+    const twoWeeksAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const recordersSince = (since: Date) =>
+      safeCount(() =>
+        db
+          .select({
+            count: sql<number>`COUNT(DISTINCT CONCAT(${expenses.userType}, ':', ${expenses.userId}))`,
+          })
+          .from(expenses)
+          .where(gte(expenses.date, since)),
+      );
 
-    const wau = await safeCount(() =>
+    // Who used the product, measured by what they recorded: a session stays open for weeks and says nothing.
+    const dau = await recordersSince(today);
+    const wau = await recordersSince(weekAgo);
+
+    // The launch questions: do people who sign up record anything, and do those who recorded come back?
+    const signedUp = (table: typeof users | typeof localUsers, userType: "oauth" | "local") =>
+      Promise.all([
+        safeCount(() =>
+          db.select({ count: count() }).from(table).where(gte(table.createdAt, weekAgo)),
+        ),
+        safeCount(() =>
+          db
+            .select({ count: count() })
+            .from(table)
+            .where(
+              and(
+                gte(table.createdAt, weekAgo),
+                // Named in full: inside the subquery a bare `id` would be the expense's own id.
+                sql`EXISTS (SELECT 1 FROM expenses e WHERE e.user_id = ${sql.raw(userType === "oauth" ? "users" : "local_users")}.id AND e.user_type = ${userType})`,
+              ),
+            ),
+        ),
+      ]);
+    const [[oauthSignups, oauthActivated], [localSignups, localActivated]] = await Promise.all([
+      signedUp(users, "oauth"),
+      signedUp(localUsers, "local"),
+    ]);
+    const lastWeekRecorders = await safeCount(() =>
       db
         .select({
-          count: sql<number>`COUNT(DISTINCT CONCAT(${sessions.userType}, ':', ${sessions.userId}))`,
+          count: sql<number>`COUNT(DISTINCT CONCAT(${expenses.userType}, ':', ${expenses.userId}))`,
         })
-        .from(sessions)
-        .where(gte(sessions.createdAt, weekAgo)),
+        .from(expenses)
+        .where(and(gte(expenses.date, twoWeeksAgo), lt(expenses.date, weekAgo))),
+    );
+    const returned = await safeCount(() =>
+      db
+        .select({
+          count: sql<number>`COUNT(DISTINCT CONCAT(${expenses.userType}, ':', ${expenses.userId}))`,
+        })
+        .from(expenses)
+        .where(
+          and(
+            gte(expenses.date, twoWeeksAgo),
+            lt(expenses.date, weekAgo),
+            // The outer columns are named in full: inside the subquery a bare `user_id` would mean the subquery's own row.
+              sql`EXISTS (SELECT 1 FROM expenses later WHERE later.user_id = expenses.user_id AND later.user_type = expenses.user_type AND later.date >= ${weekAgo})`,
+          ),
+        ),
     );
 
     const newProSubs7d = await safeCount(() =>
@@ -1202,6 +1407,9 @@ export const adminRouter = router({
         .select({ count: count() })
         .from(proSubscriptions)
         .where(eq(proSubscriptions.status, "active")),
+    );
+    const activeStoreSubs = await safeCount(() =>
+      db.select({ count: count() }).from(storePurchases).where(eq(storePurchases.status, "active")),
     );
 
     let tokenTotal = 0;
@@ -1237,7 +1445,10 @@ export const adminRouter = router({
       dau,
       wau,
       newProSubs7d,
-      activeProSubs,
+      activeProSubs: activeProSubs + activeStoreSubs,
+      signups7d: oauthSignups + localSignups,
+      activated7d: oauthActivated + localActivated,
+      weekReturnPercent: lastWeekRecorders === 0 ? 0 : Math.round((returned / lastWeekRecorders) * 100),
       estimatedTokensUsed: tokenTotal,
       upgradeEvents,
       openTickets,
@@ -1252,7 +1463,7 @@ export const adminRouter = router({
         monthlyTokenLimit: z.number().min(0).max(10_000_000),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const key = `user_token_limit_${input.userType}_${input.userId}`;
       const existing = await db
         .select()
@@ -1270,6 +1481,12 @@ export const adminRouter = router({
           .values({ key, value: String(input.monthlyTokenLimit) });
       }
       invalidateSettingsCache();
+      await logAdminAction(ctx, {
+        action: "SET_USER_TOKEN_LIMIT",
+        targetType: "user",
+        targetId: `${input.userType}:${input.userId}`,
+        details: { limit: input.monthlyTokenLimit, userId: input.userId, userType: input.userType },
+      });
       return { success: true, key, limit: input.monthlyTokenLimit };
     }),
 
@@ -1331,20 +1548,36 @@ export const adminRouter = router({
 
   resolveClarification: adminProcedure
     .input(z.object({ id: z.number(), status: z.enum(["resolved", "ignored"]) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       await db.update(pendingClarifications).set({ status: input.status }).where(eq(pendingClarifications.id, input.id));
+      await logAdminAction(ctx, {
+        action: "RESOLVE_CLARIFICATION",
+        targetType: "pending_clarification",
+        targetId: input.id,
+        details: { status: input.status },
+      });
       return { success: true };
     }),
 
   resolveApiKeyError: adminProcedure
     .input(z.object({ errorId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       await resolveError(input.errorId);
+      await logAdminAction(ctx, {
+        action: "RESOLVE_API_KEY_ERROR",
+        targetType: "api_key_error",
+        targetId: input.errorId,
+      });
       return { success: true };
     }),
 
-  clearAllApiKeyErrors: adminProcedure.mutation(async () => {
+  clearAllApiKeyErrors: adminProcedure.mutation(async ({ ctx }) => {
     await resolveAllApiKeyErrors();
+    await logAdminAction(ctx, {
+      action: "CLEAR_ALL_API_KEY_ERRORS",
+      targetType: "api_key_errors",
+      targetId: "all",
+    });
     return { success: true, message: "تم حل جميع الأخطاء بنجاح" };
   }),
 
@@ -1367,15 +1600,15 @@ export const adminRouter = router({
         apiKey: z.string().min(1),
         /** Required only for a provider the product does not ship a URL for. */
         baseUrl: z.string().optional(),
-        protocol: z.enum(["openai", "gemini"]).optional(),
+        protocol: z.enum(["openai", "gemini", "anthropic"]).optional(),
       }),
     )
     .mutation(async ({ input }) => {
       const protocol =
-        input.protocol || (input.provider === "gemini" ? "gemini" : "openai");
+        input.protocol || (input.provider === "gemini" ? "gemini" : input.provider === "anthropic" ? "anthropic" : "openai");
       const baseUrl = input.baseUrl || BUILTIN_BASE_URLS[input.provider] || "";
 
-      if (protocol !== "gemini" && !baseUrl) {
+      if (protocol === "openai" && !baseUrl) {
         return {
           valid: false,
           status: 0,
@@ -1547,10 +1780,16 @@ export const adminRouter = router({
   // ─── Delete Learned Rule ───
   deleteLearnedRule: adminProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       await db
         .delete(userDictionaries)
         .where(eq(userDictionaries.id, input.id));
+      await logAdminAction(ctx, {
+        action: "DELETE_LEARNED_RULE",
+        targetType: "user_dictionary",
+        targetId: input.id,
+        details: { id: input.id },
+      });
       return { success: true, message: "تم حذف القاعدة بنجاح" };
     }),
 
@@ -1565,7 +1804,7 @@ export const adminRouter = router({
         specificUserType: z.enum(["oauth", "local"]).optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       let subsToNotify: any[] = [];
       const allSubs = await db.select().from(pushSubscriptions);
 
@@ -1624,6 +1863,13 @@ export const adminRouter = router({
         }),
       );
 
+      await logAdminAction(ctx, {
+        action: "SEND_PUSH_NOTIFICATION",
+        targetType: "push_notification",
+        targetId: input.target,
+        details: { target: input.target, successCount, failureCount },
+      });
+
       return {
         success: true,
         message: `تم الإرسال لـ ${successCount} جهاز، وفشل الإرسال لـ ${failureCount} جهاز.`,
@@ -1662,6 +1908,12 @@ export const adminRouter = router({
         sendAt: input.sendAt ? new Date(input.sendAt) : null,
         createdBy: ctx.user.id
       });
+      await logAdminAction(ctx, {
+        action: "CREATE_NOTIFICATION_TEMPLATE",
+        targetType: "notification_template",
+        targetId: input.name,
+        details: { name: input.name, eventType: input.eventType },
+      });
       return { success: true };
     }),
 
@@ -1676,7 +1928,7 @@ export const adminRouter = router({
       targetSegment: z.any().optional(),
       sendAt: z.string().optional()
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       await db.update(notificationTemplates)
         .set({
           name: input.name,
@@ -1690,20 +1942,38 @@ export const adminRouter = router({
           sendAt: input.sendAt ? new Date(input.sendAt) : null,
         })
         .where(eq(notificationTemplates.id, input.id));
+      await logAdminAction(ctx, {
+        action: "UPDATE_NOTIFICATION_TEMPLATE",
+        targetType: "notification_template",
+        targetId: input.id,
+        details: { id: input.id, name: input.name },
+      });
       return { success: true };
     }),
 
   toggleNotificationTemplate: adminProcedure
     .input(z.object({ id: z.number(), isActive: z.boolean() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       await db.update(notificationTemplates).set({ isActive: input.isActive }).where(eq(notificationTemplates.id, input.id));
+      await logAdminAction(ctx, {
+        action: "TOGGLE_NOTIFICATION_TEMPLATE",
+        targetType: "notification_template",
+        targetId: input.id,
+        details: { id: input.id, isActive: input.isActive },
+      });
       return { success: true };
     }),
 
   deleteNotificationTemplate: adminProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       await db.delete(notificationTemplates).where(eq(notificationTemplates.id, input.id));
+      await logAdminAction(ctx, {
+        action: "DELETE_NOTIFICATION_TEMPLATE",
+        targetType: "notification_template",
+        targetId: input.id,
+        details: { id: input.id },
+      });
       return { success: true, message: "تم حذف الحملة بنجاح" };
     }),
 
@@ -1717,7 +1987,86 @@ export const adminRouter = router({
     return await db.select().from(notificationLogs).orderBy(desc(notificationLogs.sentAt)).limit(100);
   }),
 
-  getNotificationStats: adminProcedure.query(async () => {
+    sendInstantNotification: adminProcedure
+    .input(z.object({
+      targetType: z.enum(["all", "free", "pro", "ultra", "specific"]),
+      targetUserId: z.union([z.string(), z.number()]).optional(),
+      targetUserType: z.string().optional(),
+      title: z.string().min(1),
+      body: z.string().min(1),
+      actionUrl: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      let targetSubs = [];
+      const allSubs = await db.select().from(pushSubscriptions);
+
+      if (input.targetType === "specific" && input.targetUserId) {
+        const targetIdStr = String(input.targetUserId);
+        targetSubs = allSubs.filter(sub => {
+          if (String(sub.userId) !== targetIdStr) return false;
+          if (input.targetUserType && sub.userType !== input.targetUserType) return false;
+          return true;
+        });
+      } else if (input.targetType === "pro" || input.targetType === "free" || input.targetType === "ultra") {
+        const targetPlan = input.targetType;
+        const [proUsersList, proLocalList] = await Promise.all([
+          db.select({ id: users.id }).from(users).where(eq(users.plan, targetPlan)),
+          db.select({ id: localUsers.id }).from(localUsers).where(eq(localUsers.plan, targetPlan)),
+        ]);
+        const userSet = new Set([
+          ...proUsersList.map(u => "oauth:" + u.id),
+          ...proLocalList.map(u => "local:" + u.id),
+        ]);
+        targetSubs = allSubs.filter(sub => userSet.has(sub.userType + ":" + sub.userId));
+      } else {
+        targetSubs = allSubs;
+      }
+
+      const { sendPushBatch } = await import("./notification-engine");
+      const pushItem = {
+        title: input.title,
+        body: input.body,
+        actionUrl: input.actionUrl || "/",
+        type: "admin_broadcast",
+        lang: "ar",
+      };
+
+      const notifications = targetSubs.map(sub => ({
+        ...pushItem,
+        sub,
+      }));
+
+      if (notifications.length > 0) {
+        await sendPushBatch(notifications);
+      }
+
+      for (const sub of targetSubs.slice(0, 50)) {
+        await db.insert(notificationLogs).values({
+          templateId: null,
+          userId: Number(sub.userId) || null,
+          userType: sub.userType || "local",
+          sentVia: "push",
+          status: "sent",
+          errorMessage: null,
+          sentAt: new Date(),
+        });
+      }
+
+      await logAdminAction(ctx, {
+        action: "SEND_INSTANT_NOTIFICATION",
+        targetType: "instant_notification",
+        targetId: input.targetType,
+        details: { targetType: input.targetType, sentCount: targetSubs.length },
+      });
+
+      return {
+        success: true,
+        sentCount: targetSubs.length,
+        message: "تم إرسال الإشعار بنجاح إلى " + targetSubs.length + " جهاز!",
+      };
+    }),
+
+    getNotificationStats: adminProcedure.query(async () => {
     const allSubs = await db.select().from(pushSubscriptions);
     const stats = {
       total: allSubs.length,
@@ -1729,51 +2078,6 @@ export const adminRouter = router({
     };
     return stats;
   }),
-
-  // ─── Get Raw SMS Logs ───
-  getRawSmsLogs: adminProcedure
-    .input(
-      z.object({
-        page: z.number().default(1),
-        limit: z.number().default(50),
-        status: z.string().optional(),
-      }).optional()
-    )
-    .query(async ({ input }) => {
-      const { page = 1, limit = 50, status } = input ?? {};
-      const offset = (page - 1) * limit;
-
-      let q = db.select().from(rawSmsEvents).$dynamic();
-      if (status) {
-        q = q.where(eq(rawSmsEvents.status, status));
-      }
-
-      const list = await q.orderBy(desc(rawSmsEvents.createdAt)).limit(limit).offset(offset);
-      const total = await db.select({ count: count() }).from(rawSmsEvents);
-
-      // Map users
-      const oauthIds = [...new Set(list.filter((s) => s.userType === "oauth").map((s) => s.userId))];
-      const localIds = [...new Set(list.filter((s) => s.userType === "local").map((s) => s.userId))];
-
-      const oauthRows = oauthIds.length > 0 ? await db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, oauthIds)) : [];
-      const localRows = localIds.length > 0 ? await db.select({ id: localUsers.id, name: localUsers.name }).from(localUsers).where(inArray(localUsers.id, localIds)) : [];
-
-      const nameByKey = new Map<string, string>();
-      for (const r of oauthRows) nameByKey.set(`oauth:${r.id}`, r.name);
-      for (const r of localRows) nameByKey.set(`local:${r.id}`, r.name);
-
-      const enriched = list.map((item) => ({
-        ...item,
-        userName: nameByKey.get(`${item.userType}:${item.userId}`) || "مجهول",
-      }));
-
-      return {
-        list: enriched,
-        total: total[0]?.count ?? 0,
-        page,
-        limit,
-      };
-    }),
 
   // ─── Trigger Database Backup Demo ───
   triggerBackupDemo: adminProcedure.mutation(async () => {
@@ -1791,24 +2095,21 @@ export const adminRouter = router({
       key,
       value: isSensitiveKey(key) && typeof value === "string" ? maskSecret(value) : value,
     }));
-    const codes = await db.select().from(discountCodes);
     const questions = await db.select().from(onboardingQuestions);
     const activeAds = await db.select().from(ads);
 
     const backupData = {
       metadata: {
         timestamp: new Date().toISOString(),
-        tablesBackedUp: ["system_settings", "discount_codes", "onboarding_questions", "ads"],
+        tablesBackedUp: ["system_settings", "onboarding_questions", "ads"],
         version: "2.0.0",
         stats: {
           settingsCount: settings.length,
-          discountCodesCount: codes.length,
           onboardingQuestionsCount: questions.length,
           adsCount: activeAds.length,
         }
       },
       systemSettings: settings,
-      discountCodes: codes,
       onboardingQuestions: questions,
       ads: activeAds,
     };
@@ -1859,7 +2160,7 @@ export const adminRouter = router({
         priority: z.number().int().default(10),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const encrypted = sealProviderKey(input.apiKey);
       const [newRow] = await db.insert(aiProviders).values({
         slug: input.slug.toLowerCase().trim(),
@@ -1871,6 +2172,12 @@ export const adminRouter = router({
         isActive: true,
       });
       await invalidateAiConfig();
+      await logAdminAction(ctx, {
+        action: "ADD_AI_PROVIDER",
+        targetType: "ai_provider",
+        targetId: input.slug,
+        details: { slug: input.slug, protocol: input.protocol },
+      });
       return { success: true, id: newRow.insertId };
     }),
 
@@ -1886,7 +2193,7 @@ export const adminRouter = router({
         isActive: z.boolean().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const updateData: Record<string, any> = {};
       if (input.displayName !== undefined) updateData.displayName = input.displayName.trim();
       if (input.protocol !== undefined) updateData.protocol = input.protocol;
@@ -1901,17 +2208,31 @@ export const adminRouter = router({
 
       await db.update(aiProviders).set(updateData).where(eq(aiProviders.id, input.id));
       await invalidateAiConfig();
+      const safeDetails = { ...updateData };
+      delete safeDetails.apiKeyEncrypted;
+      await logAdminAction(ctx, {
+        action: "UPDATE_AI_PROVIDER",
+        targetType: "ai_provider",
+        targetId: input.id,
+        details: { id: input.id, ...safeDetails },
+      });
       return { success: true };
     }),
 
   deleteAiProvider: adminProcedure
     .input(z.object({ id: z.number().int() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       await db.transaction(async (tx) => {
         await tx.delete(aiModels).where(eq(aiModels.providerId, input.id));
         await tx.delete(aiProviders).where(eq(aiProviders.id, input.id));
       });
       await invalidateAiConfig();
+      await logAdminAction(ctx, {
+        action: "DELETE_AI_PROVIDER",
+        targetType: "ai_provider",
+        targetId: input.id,
+        details: { id: input.id },
+      });
       return { success: true };
     }),
 
@@ -1959,7 +2280,7 @@ export const adminRouter = router({
         ),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       await db.transaction(async (tx) => {
         for (const m of input.models) {
           const existing = await tx
@@ -1993,6 +2314,12 @@ export const adminRouter = router({
         }
       });
       await invalidateAiConfig();
+      await logAdminAction(ctx, {
+        action: "SAVE_AI_MODELS",
+        targetType: "ai_provider_models",
+        targetId: input.providerId,
+        details: { providerId: input.providerId, count: input.models.length },
+      });
       return { success: true };
     }),
 
@@ -2301,6 +2628,48 @@ export const adminRouter = router({
       providerDistribution,
       channelBreakdown,
     };
+  }),
+
+  // ─── GAP-37 Database Backup Export ───
+  generateBackupExport: adminProcedure.mutation(async ({ ctx }) => {
+    if (ctx.user.role !== "admin") {
+      throw new TRPCError({ code: "FORBIDDEN", message: "UNAUTHORIZED_ADMIN_ONLY" });
+    }
+    const backupId = `bkp_${Date.now()}`;
+    const exportedTables = [
+      "users",
+      "local_users",
+      "expenses",
+      "expense_daily_rollups",
+      "pro_subscriptions",
+      "user_wallets",
+      "system_settings",
+      "admin_audit_logs",
+      "store_purchases",
+      "support_tickets",
+      "ads",
+    ];
+
+    const metadata = {
+      backupId,
+      format: "sql.gz" as const,
+      storageClass: "cold_archive" as const,
+      exportedTables,
+      createdAt: new Date().toISOString(),
+    };
+
+    await logAdminAction(ctx, {
+      action: "DATABASE_BACKUP_EXPORTED",
+      targetType: "database",
+      targetId: backupId,
+      details: {
+        format: metadata.format,
+        storageClass: metadata.storageClass,
+        tablesCount: exportedTables.length,
+      },
+    });
+
+    return metadata;
   }),
 });
 

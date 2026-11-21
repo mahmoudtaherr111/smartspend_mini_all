@@ -13,7 +13,6 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `/admin` | admin | `Admin` | `src/pages/Admin.tsx` | — |
 | `/ai` | signed-in | `AICenter` | `src/pages/AICenter.tsx` | — |
 | `/auth/callback` | public | `AuthCallback` | `src/pages/AuthCallback.tsx` | — |
-| `/bank-sync` | signed-in | `BankSyncPage` | `src/pages/BankSyncPage.tsx` | — |
 | `/dashboard` | signed-in | `Home` | `src/pages/Home.tsx` | — |
 | `/login` | signed-out only | `Login` | `src/pages/Login.tsx` | — |
 | `/more` | signed-in | `More` | `src/pages/More.tsx` | — |
@@ -26,6 +25,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `/support` | signed-in | `Support` | `src/pages/Support.tsx` | — |
 | `/terms` | public | `Terms` | `src/pages/Terms.tsx` | — |
 | `/ultra` | signed-in | `UltraLounge` | `src/pages/UltraLounge.tsx` | — |
+| `/wallets` | signed-in | `WalletsPage` | `src/pages/WalletsPage.tsx` | — |
 
 ## App shell (rendered around every page)
 
@@ -37,6 +37,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | --- | --- | --- |
 | `ads.click` | useMutation | `src/hooks/useAds.ts` |
 | `ads.list` | useQuery, utils.invalidate | `src/hooks/useAds.ts` |
+| `ads.recordImpression` | useMutation | `src/components/ads/AdBanner.tsx` |
 | `analytics.trackEvent` | useMutation | `src/hooks/useSessionTracker.ts` |
 | `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
@@ -86,16 +87,14 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `Admin` — `src/pages/Admin.tsx`
 
-31 files in its import closure (not counting `src/components/ui/`).
+33 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
 | `admin.addAiProvider` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.clearAllApiKeyErrors` | useMutation | `src/pages/Admin.tsx` |
-| `admin.createDiscountCode` | useMutation | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.createNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.deleteAiProvider` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.deleteDiscountCode` | useMutation | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.deleteLearnedRule` | useMutation | `src/components/admin/AdminRulesTab.tsx` |
 | `admin.deleteNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.deleteUser` | useMutation | `src/hooks/useAdmin.ts` |
@@ -107,29 +106,30 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `admin.getAiProviders` | useQuery, utils.invalidate | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.getAiTelemetryOverview` | useQuery | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` |
 | `admin.getApiKeyErrors` | useQuery, utils.invalidate | `src/pages/Admin.tsx` |
+| `admin.getAuditLogs` | useQuery | `src/components/admin/AdminAuditTab.tsx` |
 | `admin.getAvailableModels` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getClassificationLogs` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.getClassificationQuality` | useQuery | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` |
 | `admin.getDashboardStats` | useQuery | `src/hooks/useAdmin.ts` |
-| `admin.getDiscountCodes` | useQuery, utils.invalidate | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.getFounderMetrics` | useQuery | `src/pages/Admin.tsx` |
 | `admin.getLearnedRules` | useQuery | `src/components/admin/AdminRulesTab.tsx` |
 | `admin.getNotificationLogs` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
-| `admin.getNotificationStats` | useQuery | `src/components/admin/NotificationsTab.tsx` |
+| `admin.getNotificationStats` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getNotificationTemplates` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getPendingClarifications` | useQuery | `src/components/admin/ClarificationsTab.tsx` |
-| `admin.getRawSmsLogs` | useQuery | `src/components/admin/AdminRawSmsTab.tsx` |
 | `admin.getSettings` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getUserAiQuota` | useQuery | `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx` |
 | `admin.getUserSessions` | useQuery, utils.invalidate | `src/hooks/useAdmin.ts`, `src/pages/Admin.tsx` |
 | `admin.getUserSmartProfile` | useQuery | `src/pages/Admin.tsx` |
 | `admin.getVoiceUsageStats` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.listAllUsers` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx`, `src/hooks/useAdmin.ts` |
+| `admin.listStorePurchasesAdmin` | useQuery | `src/pages/Admin.tsx` |
 | `admin.listSubscriptionsAdmin` | useQuery | `src/pages/Admin.tsx` |
 | `admin.resolveApiKeyError` | useMutation | `src/pages/Admin.tsx` |
 | `admin.resolveClarification` | useMutation | `src/components/admin/ClarificationsTab.tsx` |
 | `admin.revokeSession` | useMutation | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
 | `admin.saveAiModels` | useMutation | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.sendInstantNotification` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.toggleNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerActivityCheck` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerBackupDemo` | useMutation | `src/components/admin/AdminSettingsTab.tsx` |
@@ -139,15 +139,13 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `admin.updateUserPlanV2` | useMutation | `src/hooks/useAdmin.ts` |
 | `admin.updateUserRole` | useMutation | `src/hooks/useAdmin.ts` |
 | `admin.validateApiKey` | useMutation | `src/components/admin/settings/AdminKeysTab.tsx` |
-| `adminWhatsapp.broadcastMessage` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.clearQueue` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.getOutboxLog` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.getSettings` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.getStatus` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.getUsers` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.getTemplates` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.sendDirectMessage` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx`, `src/pages/Admin.tsx` |
-| `adminWhatsapp.startService` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.stopService` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.toggleOtpVerification` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.syncTemplates` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.updateSettings` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `ads.create` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
 | `ads.delete` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
 | `ads.stats` | useQuery | `src/components/admin/AdminAdsTab.tsx` |
@@ -155,6 +153,16 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `ai.parseExpense` | useMutation | `src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx` |
 | `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
+| `captureAdmin.bulkUndo` | useMutation | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
+| `captureAdmin.catalog` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.funnel` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
+| `captureAdmin.restoreSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.saveSource` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.saveSubscription` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.setSourceStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.setSubscriptionStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.syncSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.timeline` | useQuery | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 | `export.allUsers` | useMutation | `src/pages/Admin.tsx` |
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
@@ -169,23 +177,6 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 1 files in its import closure (not counting `src/components/ui/`).
 
 _None._
-
-### `BankSyncPage` — `src/pages/BankSyncPage.tsx`
-
-7 files in its import closure (not counting `src/components/ui/`).
-
-| Procedure | Calls | Files |
-| --- | --- | --- |
-| `profile.generateWebhookToken` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `profile.getSmartProfile` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `profile.getSmsLogs` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/DigitalBankingSuite.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
-| `profile.updateSmartProfile` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
-| `wallet.createWallet` | useMutation | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `wallet.deleteWallet` | useMutation | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `wallet.getWalletTransactions` | useQuery | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `wallet.getWallets` | useQuery, utils.invalidate | `src/components/bank-sync/DigitalBankingSuite.tsx` |
 
 ### `Home` — `src/pages/Home.tsx`
 
@@ -202,6 +193,12 @@ _None._
 | `budget.delete` | useMutation | `src/components/budgets/BudgetsPanel.tsx` |
 | `budget.list` | useQuery, utils.invalidate | `src/components/budgets/BudgetsPanel.tsx`, `src/components/dashboard/ExpenseChart.tsx` |
 | `business.get` | useQuery | `src/pages/Home.tsx` |
+| `capture.*` | utils.invalidate | `src/components/bank-capture/CaptureOverview.tsx` |
+| `capture.activity` | useQuery, utils.invalidate | `src/components/bank-capture/CaptureOverview.tsx` |
+| `capture.answer` | useMutation | `src/components/bank-capture/CaptureOverview.tsx` |
+| `capture.answerQuestion` | useMutation | `src/components/bank-capture/CaptureOverview.tsx` |
+| `capture.nextQuestion` | useMutation | `src/components/bank-capture/CaptureOverview.tsx` |
+| `capture.status` | useQuery | `src/components/bank-capture/CaptureOverview.tsx` |
 | `expense.answerClarification` | useMutation | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
 | `expense.batchCreate` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.create` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
@@ -225,20 +222,18 @@ _None._
 | `image.parseReceipt` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
-| `pro.myPlan` | useQuery | `src/components/expenses/ExpenseForm.tsx` |
-| `profile.confirmSmsSuggestion` | useMutation | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
+| `pro.myPlan` | useQuery | `src/components/expenses/ExpenseForm.tsx`, `src/pages/Home.tsx` |
 | `profile.dismissOnboarding` | useMutation | `src/components/OnboardingCard.tsx` |
-| `profile.dismissSmsSuggestion` | useMutation | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.getNextOnboardingQuestion` | useQuery, utils.invalidate | `src/components/OnboardingCard.tsx` |
 | `profile.getSmartProfile` | useQuery, utils.invalidate | `src/components/OnboardingCard.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/pages/Home.tsx` |
-| `profile.getSmsSuggestions` | useQuery, utils.invalidate | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
+| `profile.listContacts` | useQuery | `src/components/bank-capture/CaptureOverview.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
 | `profile.submitOnboardingAnswer` | useMutation | `src/components/OnboardingCard.tsx` |
 | `voice.eligibility` | useQuery | `src/hooks/useVoiceCallEntry.ts` |
 
 ### `Landing` — `src/pages/Landing.tsx`
 
-4 files in its import closure (not counting `src/components/ui/`).
+3 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -246,31 +241,33 @@ _None._
 
 ### `Login` — `src/pages/Login.tsx`
 
-7 files in its import closure (not counting `src/components/ui/`).
+10 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
 | `auth.googleUrl` | useQuery | `src/pages/Login.tsx` |
+| `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
+| `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
+| `localAuth.confirmVerificationCode` | useMutation | `src/pages/Login.tsx` |
 | `localAuth.generateVerificationCode` | useMutation | `src/pages/Login.tsx` |
-| `localAuth.getBotPhoneNumber` | useQuery | `src/pages/Login.tsx` |
 | `localAuth.getVerificationSettings` | useQuery | `src/pages/Login.tsx` |
 | `localAuth.login` | useMutation | `src/pages/Login.tsx` |
+| `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
+| `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
 | `localAuth.register` | useMutation | `src/pages/Login.tsx` |
 | `webauthn.generateAuthenticationOptions` | useMutation | `src/pages/Login.tsx` |
 | `webauthn.verifyAuthentication` | useMutation | `src/pages/Login.tsx` |
 
 ### `More` — `src/pages/More.tsx`
 
-63 files in its import closure (not counting `src/components/ui/`).
+64 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
 | `admin.addAiProvider` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.clearAllApiKeyErrors` | useMutation | `src/pages/Admin.tsx` |
-| `admin.createDiscountCode` | useMutation | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.createNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.deleteAiProvider` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.deleteDiscountCode` | useMutation | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.deleteLearnedRule` | useMutation | `src/components/admin/AdminRulesTab.tsx` |
 | `admin.deleteNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.deleteUser` | useMutation | `src/hooks/useAdmin.ts` |
@@ -282,29 +279,30 @@ _None._
 | `admin.getAiProviders` | useQuery, utils.invalidate | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.getAiTelemetryOverview` | useQuery | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` |
 | `admin.getApiKeyErrors` | useQuery, utils.invalidate | `src/pages/Admin.tsx` |
+| `admin.getAuditLogs` | useQuery | `src/components/admin/AdminAuditTab.tsx` |
 | `admin.getAvailableModels` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getClassificationLogs` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.getClassificationQuality` | useQuery | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` |
 | `admin.getDashboardStats` | useQuery | `src/hooks/useAdmin.ts` |
-| `admin.getDiscountCodes` | useQuery, utils.invalidate | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.getFounderMetrics` | useQuery | `src/pages/Admin.tsx` |
 | `admin.getLearnedRules` | useQuery | `src/components/admin/AdminRulesTab.tsx` |
 | `admin.getNotificationLogs` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
-| `admin.getNotificationStats` | useQuery | `src/components/admin/NotificationsTab.tsx` |
+| `admin.getNotificationStats` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getNotificationTemplates` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getPendingClarifications` | useQuery | `src/components/admin/ClarificationsTab.tsx` |
-| `admin.getRawSmsLogs` | useQuery | `src/components/admin/AdminRawSmsTab.tsx` |
 | `admin.getSettings` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getUserAiQuota` | useQuery | `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx` |
 | `admin.getUserSessions` | useQuery, utils.invalidate | `src/hooks/useAdmin.ts`, `src/pages/Admin.tsx` |
 | `admin.getUserSmartProfile` | useQuery | `src/pages/Admin.tsx` |
 | `admin.getVoiceUsageStats` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.listAllUsers` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx`, `src/hooks/useAdmin.ts` |
+| `admin.listStorePurchasesAdmin` | useQuery | `src/pages/Admin.tsx` |
 | `admin.listSubscriptionsAdmin` | useQuery | `src/pages/Admin.tsx` |
 | `admin.resolveApiKeyError` | useMutation | `src/pages/Admin.tsx` |
 | `admin.resolveClarification` | useMutation | `src/components/admin/ClarificationsTab.tsx` |
 | `admin.revokeSession` | useMutation | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
 | `admin.saveAiModels` | useMutation | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.sendInstantNotification` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.toggleNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerActivityCheck` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerBackupDemo` | useMutation | `src/components/admin/AdminSettingsTab.tsx` |
@@ -314,15 +312,13 @@ _None._
 | `admin.updateUserPlanV2` | useMutation | `src/hooks/useAdmin.ts` |
 | `admin.updateUserRole` | useMutation | `src/hooks/useAdmin.ts` |
 | `admin.validateApiKey` | useMutation | `src/components/admin/settings/AdminKeysTab.tsx` |
-| `adminWhatsapp.broadcastMessage` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.clearQueue` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.getOutboxLog` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.getSettings` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.getStatus` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.getUsers` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.getTemplates` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.sendDirectMessage` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx`, `src/pages/Admin.tsx` |
-| `adminWhatsapp.startService` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.stopService` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.toggleOtpVerification` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.syncTemplates` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.updateSettings` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `ads.create` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
 | `ads.delete` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
 | `ads.stats` | useQuery | `src/components/admin/AdminAdsTab.tsx` |
@@ -338,10 +334,23 @@ _None._
 | `business.removeCategory` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.suggestCategories` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.update` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
+| `capture.setWalletKind` | useMutation | `src/components/wallets/WalletBalanceKind.tsx` |
+| `capture.status` | useQuery | `src/components/wallets/WalletBalanceKind.tsx` |
+| `capture.walletKind` | useQuery, utils.invalidate | `src/components/wallets/WalletBalanceKind.tsx` |
+| `captureAdmin.bulkUndo` | useMutation | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
+| `captureAdmin.catalog` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.funnel` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
+| `captureAdmin.restoreSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.saveSource` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.saveSubscription` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.setSourceStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.setSubscriptionStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.syncSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.timeline` | useQuery | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 | `coach.addCashflow` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.cancelReminder` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.endPlan` | useMutation | `src/pages/PlanPage.tsx` |
-| `coach.overview` | useQuery, utils.invalidate | `src/pages/PlanPage.tsx` |
+| `coach.overview` | useQuery, utils.invalidate | `src/components/wallets/WalletBalanceKind.tsx`, `src/pages/PlanPage.tsx` |
 | `coach.paymentSuggestions` | useQuery | `src/pages/PlanPage.tsx` |
 | `coach.setReminder` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.setStepStatus` | useMutation | `src/pages/PlanPage.tsx` |
@@ -354,26 +363,21 @@ _None._
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
 | `pro.cancel` | useMutation | `src/hooks/usePro.ts` |
 | `pro.createCheckoutSession` | useMutation | `src/hooks/usePro.ts` |
-| `pro.myPlan` | useQuery, utils.invalidate | `src/hooks/usePro.ts` |
+| `pro.myPlan` | useQuery, utils.invalidate | `src/components/settings/BusinessSettingsView.tsx`, `src/hooks/usePro.ts` |
 | `pro.planCatalog` | useQuery | `src/pages/Pro.tsx` |
 | `pro.upgrade` | useMutation | `src/hooks/usePro.ts` |
 | `profile.addContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteMyAccount` | useMutation | `src/components/profile/ProfileScreen.tsx` |
-| `profile.generateWebhookToken` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getNextOnboardingQuestion` | utils.invalidate | `src/components/profile/ProfileScreen.tsx` |
-| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/notifications/NotificationSettings.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
-| `profile.getSmsLogs` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/DigitalBankingSuite.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
+| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/notifications/NotificationSettings.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.listContacts` | useQuery, utils.invalidate | `src/components/settings/PeopleSettingsView.tsx`, `src/pages/PlanPage.tsx` |
 | `profile.mergeContacts` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
 | `profile.submitOnboardingAnswer` | useMutation | `src/components/profile/ProfileScreen.tsx` |
 | `profile.updateContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
-| `profile.updateSmartProfile` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/notifications/NotificationSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
+| `profile.updateSmartProfile` | useMutation | `src/components/notifications/NotificationSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.updateUserInfo` | useMutation | `src/components/profile/ProfileScreen.tsx` |
-| `referral.applyCode` | useMutation | `src/pages/Pro.tsx` |
-| `referral.myCode` | useQuery | `src/pages/Pro.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
 | `support.close` | useMutation | `src/pages/Admin.tsx` |
 | `support.create` | useMutation | `src/pages/Support.tsx` |
@@ -381,10 +385,12 @@ _None._
 | `support.listMine` | useQuery | `src/pages/Support.tsx` |
 | `support.respond` | useMutation | `src/pages/Admin.tsx` |
 | `voice.adminStats` | useQuery | `src/components/admin/settings/AdminVoiceCallSection.tsx` |
-| `wallet.createWallet` | useMutation | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `wallet.deleteWallet` | useMutation | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `wallet.getWalletTransactions` | useQuery | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `wallet.getWallets` | useQuery, utils.invalidate | `src/components/bank-sync/DigitalBankingSuite.tsx` |
+| `wallet.*` | utils.invalidate | `src/components/wallets/WalletBalanceKind.tsx` |
+| `wallet.createWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.deleteWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWalletMonth` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWalletTransactions` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWallets` | useQuery, utils.invalidate | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `webauthn.checkHasPasskey` | useQuery, utils.invalidate | `src/components/auth/PasskeySettings.tsx`, `src/hooks/usePasskeyEnrolment.ts` |
 | `webauthn.deletePasskey` | useMutation | `src/components/auth/PasskeySettings.tsx` |
 | `webauthn.generateRegistrationOptions` | useMutation | `src/hooks/usePasskeyEnrolment.ts` |
@@ -398,7 +404,7 @@ _None._
 
 ### `NotificationsPage` — `src/pages/Notifications.tsx`
 
-8 files in its import closure (not counting `src/components/ui/`).
+7 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -408,7 +414,7 @@ _None._
 
 ### `PlanPage` — `src/pages/PlanPage.tsx`
 
-4 files in its import closure (not counting `src/components/ui/`).
+3 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -426,7 +432,7 @@ _None._
 
 ### `Privacy` — `src/pages/Privacy.tsx`
 
-4 files in its import closure (not counting `src/components/ui/`).
+3 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -434,7 +440,7 @@ _None._
 
 ### `Pro` — `src/pages/Pro.tsx`
 
-5 files in its import closure (not counting `src/components/ui/`).
+4 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -443,13 +449,11 @@ _None._
 | `pro.myPlan` | useQuery, utils.invalidate | `src/hooks/usePro.ts` |
 | `pro.planCatalog` | useQuery | `src/pages/Pro.tsx` |
 | `pro.upgrade` | useMutation | `src/hooks/usePro.ts` |
-| `referral.applyCode` | useMutation | `src/pages/Pro.tsx` |
-| `referral.myCode` | useQuery | `src/pages/Pro.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
 
 ### `Settings` — `src/pages/Settings.tsx`
 
-29 files in its import closure (not counting `src/components/ui/`).
+28 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -466,6 +470,7 @@ _None._
 | `expense.getMonthlyStats` | useQuery | `src/components/settings/BusinessSettingsView.tsx` |
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
+| `pro.myPlan` | useQuery | `src/components/settings/BusinessSettingsView.tsx` |
 | `profile.addContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteMyAccount` | useMutation | `src/components/profile/ProfileScreen.tsx` |
@@ -486,7 +491,7 @@ _None._
 
 ### `Support` — `src/pages/Support.tsx`
 
-7 files in its import closure (not counting `src/components/ui/`).
+6 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -500,7 +505,7 @@ _None._
 
 ### `Terms` — `src/pages/Terms.tsx`
 
-4 files in its import closure (not counting `src/components/ui/`).
+3 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -508,16 +513,36 @@ _None._
 
 ### `UltraLounge` — `src/pages/UltraLounge.tsx`
 
-4 files in its import closure (not counting `src/components/ui/`).
+6 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
+| `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
+| `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
+| `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
+| `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
+
+### `WalletsPage` — `src/pages/WalletsPage.tsx`
+
+5 files in its import closure (not counting `src/components/ui/`).
+
+| Procedure | Calls | Files |
+| --- | --- | --- |
+| `capture.setWalletKind` | useMutation | `src/components/wallets/WalletBalanceKind.tsx` |
+| `capture.status` | useQuery | `src/components/wallets/WalletBalanceKind.tsx` |
+| `capture.walletKind` | useQuery, utils.invalidate | `src/components/wallets/WalletBalanceKind.tsx` |
+| `coach.overview` | utils.invalidate | `src/components/wallets/WalletBalanceKind.tsx` |
+| `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
+| `wallet.*` | utils.invalidate | `src/components/wallets/WalletBalanceKind.tsx` |
+| `wallet.createWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.deleteWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWalletMonth` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWalletTransactions` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWallets` | useQuery, utils.invalidate | `src/components/wallets/DigitalBankingSuite.tsx` |
 
 ## Mutation hooks that are never invoked
 
 These files create a tRPC mutation hook but never use the variable it is assigned to, so no request is sent. They are not counted as callers anywhere in the atlas.
 
-| Procedure | File |
-| --- | --- |
-| `ai.learnWord` | `src/components/expenses/ExpenseForm.tsx` |
+_None._

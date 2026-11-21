@@ -2,15 +2,15 @@ import { z } from "zod";
 import { router, receiptsProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
-import { expenses, userDictionaries, users, localUsers } from "../db/schema";
-import { eq, and, gte, lt, sql } from "drizzle-orm";
+import { expenses, userDictionaries } from "../db/schema";
+import { eq, and, gte, lt } from "drizzle-orm";
 import { env } from "./lib/env";
 import {
   loadSystemConfig,
   assertAiBudget,
   clampOutputTokens,
   estimateTokensFromText,
-  recordAiUsageEvent,
+  trackAiTokens,
   asPlan,
 } from "./lib/ai-usage-policy";
 import { MAX_IMAGE_BASE64_CHARS, parseReceiptImage, stripDataUri } from "./lib/receipt-image-parser";
@@ -22,9 +22,7 @@ import {
   getSmartProfile,
   summarizeProfileForAI,
 } from "./services/user-profile-service";
-import { invalidateUserMemory } from "./lib/muscle-memory";
 import { businessMonthRange } from "./lib/app-time";
-import { bumpFinanceCacheGen } from "./services/finance-semantic-layer";
 
 async function trackImageTokens(
   userId: number,
@@ -32,25 +30,7 @@ async function trackImageTokens(
   tokens: number,
   model?: string,
 ) {
-  if (!tokens) return;
-  if (userType === "oauth") {
-    await db
-      .update(users)
-      .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
-      .where(eq(users.id, userId));
-  } else {
-    await db
-      .update(localUsers)
-      .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
-      .where(eq(localUsers.id, userId));
-  }
-  await recordAiUsageEvent({
-    userId,
-    userType,
-    channel: "image",
-    model,
-    tokens,
-  });
+  await trackAiTokens({ id: userId, type: userType }, tokens, "image", model);
 }
 
 export const imageRouter = router({
@@ -188,17 +168,12 @@ export const imageRouter = router({
 
       let expenseId: number | null = null;
       if (input.saveExpense) {
-        const {
-          applyExpenseRollupDelta,
-          expenseToRollupDelta,
-        } = await import("./services/expense-rollups");
-
-        await db.transaction(async (tx) => {
-          const [createdExpense] = await tx.insert(expenses).values({
-            userId: ctx.user.id,
-            userType: ctx.user.type,
+        const { createLedgerEntry } = await import("./services/ledger-writer");
+        const created = await createLedgerEntry(
+          { userId: ctx.user.id, userType: ctx.user.type },
+          {
             type: normalized.type,
-            amount: parsed.amount.toString(),
+            amount: parsed.amount,
             category: normalized.category,
             subCategory: normalized.subCategory,
             description: parsed.description,
@@ -210,25 +185,9 @@ export const imageRouter = router({
               merchant: parsed.merchant,
               confidence: parsed.confidence,
             },
-          }).$returningId();
-          expenseId = createdExpense.id;
-
-          const delta = expenseToRollupDelta(
-            {
-              userId: ctx.user.id,
-              userType: ctx.user.type,
-              date: new Date(),
-              type: normalized.type,
-              amount: parsed.amount,
-              source: "image",
-            },
-            1,
-          );
-          await applyExpenseRollupDelta(tx, delta);
-        });
-
-        invalidateUserMemory(ctx.user.id, ctx.user.type);
-        await bumpFinanceCacheGen(ctx.user.id, ctx.user.type);
+          },
+        );
+        expenseId = created.id ?? null;
       }
 
       return {

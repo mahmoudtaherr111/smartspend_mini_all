@@ -10,6 +10,7 @@ export default defineConfig({
   root: templateRoot,
   resolve: {
     alias: {
+      "@admin": path.resolve(templateRoot, "admin/src"),
       "@": path.resolve(templateRoot, "src"),
       "@contracts": path.resolve(templateRoot, "contracts"),
       "@assets": path.resolve(templateRoot, "attached_assets"),
@@ -19,6 +20,7 @@ export default defineConfig({
     environment: "node",
     environmentMatchGlobs: [
       ["src/**", "jsdom"],
+      ["admin/**", "jsdom"],
       ["api/**", "node"],
       ["tests/**", "node"],
     ],
@@ -27,6 +29,8 @@ export default defineConfig({
       "api/**/*.spec.ts",
       "src/**/*.test.ts",
       "src/**/*.test.tsx",
+      "admin/**/*.test.ts",
+      "admin/**/*.test.tsx",
       "tests/**/*.test.ts",
       "tests/**/*.test.tsx",
       "tests/**/*.spec.ts",
@@ -47,7 +51,9 @@ export default defineConfig({
       GEMINI_API_KEY: process.env.GEMINI_API_KEY || "test",
       NODE_ENV: "test",
       TRUST_PROXY: "true",
-      REDIS_URL: process.env.REDIS_URL || "redis://localhost:6379",
+      // Unit tests never reach a real Redis: a developer's machine may run one that holds real data on 6379.
+      // The Redis tests (`npm run test:redis`) pass their own REDIS_URL.
+      REDIS_URL: process.env.REDIS_URL || "",
     },
   },
 });

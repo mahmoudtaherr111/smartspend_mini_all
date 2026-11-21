@@ -22,8 +22,14 @@
  * a transaction is. This file moves strings to a provider and back.
  */
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Anthropic, callClaude, type ClaudeResult } from "./anthropic-client";
 
-export type LlmProtocol = "openai" | "gemini";
+export type LlmProtocol = "openai" | "gemini" | "anthropic";
+
+/** A connector's stored protocol as one the router speaks; anything unknown is OpenAI-compatible. */
+export function asLlmProtocol(protocol: string | null | undefined): LlmProtocol {
+  return protocol === "gemini" || protocol === "anthropic" ? protocol : "openai";
+}
 
 /** One provider+model the router may try. */
 export interface LlmRoute {
@@ -72,7 +78,7 @@ export interface LlmRequest {
    * `maxOutputTokens`, so a small cap ends in MAX_TOKENS. A model that refuses the setting is
    * asked once more without it.
    */
-  lowThinking?: boolean;
+  lowThinking?: boolean | "minimal";
   temperature?: number;
   /** Asked for, never assumed: `degradedSchema` reports whether it survived. */
   schema?: StructuredSchema;
@@ -421,6 +427,11 @@ class ProviderError extends Error {
   }
 }
 
+/** Models that reason before every reply whatever they are asked. */
+const ALWAYS_REASONS = /gpt-oss/i;
+/** Output tokens added for such a model, so a short reply is not cut off by its reasoning. */
+const REASONING_HEADROOM_TOKENS = 700;
+
 /**
  * How to ask a provider not to think out loud.
  *
@@ -437,6 +448,19 @@ function applyThinkingSuppression(body: Record<string, unknown>, route: LlmRoute
   if (!route.suppressReasoning) return;
   if (/(^|\.)deepseek\.com/i.test(hostOf(route.baseUrl))) {
     body.thinking = { type: "disabled" };
+    return;
+  }
+  // Groq answers 400 to `chat_template_kwargs`. Qwen there turns thinking off with `reasoning_effort: "none"`;
+  // its other reasoning models only accept low to high, so their reasoning is kept out of `content` instead.
+  if (/(^|\.)groq\.com$/i.test(hostOf(route.baseUrl))) {
+    if (/qwen/i.test(route.model)) body.reasoning_effort = "none";
+    else if (ALWAYS_REASONS.test(route.model)) {
+      // gpt-oss cannot turn reasoning off and refuses `reasoning_format`: it is asked for the least, kept out of the
+      // reply, and given room for it, since its reasoning is spent from the same output allowance.
+      body.reasoning_effort = "low";
+      body.include_reasoning = false;
+      if (typeof body.max_tokens === "number") body.max_tokens += REASONING_HEADROOM_TOKENS;
+    } else body.reasoning_format = "hidden";
     return;
   }
   body.chat_template_kwargs = { thinking: false };
@@ -592,6 +616,7 @@ async function callGemini(
   withSchema: boolean,
 ): Promise<AdapterResult> {
   const genAI = new GoogleGenerativeAI(route.apiKey);
+  const thinkingLevel = req.lowThinking === "minimal" && /^gemini-3\.1-flash-lite(?:-|$)/.test(route.model) ? "MINIMAL" : "LOW";
   const modelFor = (lowThinking: boolean) =>
     genAI.getGenerativeModel({
       model: route.model,
@@ -603,8 +628,8 @@ async function callGemini(
         // the default provider.
         maxOutputTokens: req.maxOutputTokens,
         responseMimeType: "application/json",
-        ...(withSchema && req.schema ? { responseSchema: req.schema as never } : {}),
-        ...(lowThinking ? ({ thinkingConfig: { thinkingLevel: "LOW" } } as Record<string, unknown>) : {}),
+        ...(withSchema && req.schema ? { responseSchema: toGeminiSchema(req.schema) as never } : {}),
+        ...(lowThinking ? ({ thinkingConfig: { thinkingLevel } } as Record<string, unknown>) : {}),
       },
     });
   const wantsLowThinking = Boolean(req.lowThinking) && /^gemini-3/.test(route.model);
@@ -632,7 +657,7 @@ async function callGemini(
   const meta = result.response.usageMetadata;
   const usage: Usage = {
     promptTokens: meta?.promptTokenCount || 0,
-    completionTokens: meta?.candidatesTokenCount || 0,
+    completionTokens: (meta?.candidatesTokenCount ?? 0) + ((meta as { thoughtsTokenCount?: number } | undefined)?.thoughtsTokenCount ?? 0),
     cachedTokens: (meta as { cachedContentTokenCount?: number })?.cachedContentTokenCount || 0,
     totalTokens: meta?.totalTokenCount || 0,
   };
@@ -681,6 +706,76 @@ async function callGemini(
   return { text, finishReason, ...usage };
 }
 
+/**
+ * Claude, through Anthropic's SDK (`anthropic-client.ts`). The SDK's typed errors carry the HTTP status, so they map
+ * onto the same failure kinds as every other provider; a refusal is an answer this route cannot give, and the chain
+ * moves on.
+ */
+async function callAnthropic(
+  route: LlmRoute,
+  req: LlmRequest,
+  withSchema: boolean,
+): Promise<AdapterResult> {
+  const timeout = Math.min(route.timeoutMs ?? Infinity, req.timeoutMs ?? 30_000);
+  let result: ClaudeResult;
+  try {
+    result = await withTimeout(
+      callClaude({
+        apiKey: route.apiKey,
+        baseUrl: route.baseUrl,
+        model: route.model,
+        system: req.systemPrompt,
+        messages: [{ role: "user", content: req.userPrompt }],
+        maxTokens: req.maxOutputTokens,
+        ...(withSchema && req.schema ? { schema: req.schema } : {}),
+        timeoutMs: timeout,
+      }),
+      timeout,
+      route.slug,
+    );
+  } catch (err) {
+    throw anthropicFailure(err, route.slug);
+  }
+
+  const usage: Usage = {
+    promptTokens: result.promptTokens,
+    // Thinking is billed as output, as every other adapter counts it.
+    completionTokens: result.completionTokens + result.reasoningTokens,
+    cachedTokens: result.cachedTokens,
+    totalTokens: result.promptTokens + result.completionTokens + result.reasoningTokens,
+  };
+  const finishReason = result.stopReason ?? undefined;
+  if (finishReason === "max_tokens" || finishReason === "model_context_window_exceeded") {
+    throw new ProviderError("truncated", `${route.slug} stopped at the output limit after ${usage.completionTokens} tokens`, undefined, usage, undefined, finishReason);
+  }
+  if (finishReason === "refusal") {
+    throw new ProviderError("empty_response", `${route.slug} declined to answer`, undefined, usage, undefined, finishReason);
+  }
+  if (!result.text.trim()) {
+    throw new ProviderError("empty_response", `${route.slug} returned no content`, undefined, usage, undefined, finishReason);
+  }
+  return { text: result.text, finishReason, ...usage };
+}
+
+/** The SDK's error classes, read as the router's failure kinds. */
+function anthropicFailure(err: unknown, slug: string): ProviderError {
+  if (err instanceof ProviderError) return err;
+  if (err instanceof Anthropic.APIConnectionTimeoutError) return new ProviderError("timeout", `${slug} timed out`);
+  if (err instanceof Anthropic.APIConnectionError) return new ProviderError("network", `${slug}: ${err.message}`);
+  if (err instanceof Anthropic.APIError && err.status) {
+    const headers = err.headers as Headers | undefined;
+    return new ProviderError(
+      classifyHttpStatus(err.status),
+      `${slug} ${err.status}: ${err.message.slice(0, 300)}`,
+      err.status,
+      undefined,
+      parseRetryAfter(headers?.get?.("retry-after") ?? null),
+    );
+  }
+  const { kind, message } = classifyThrownError(err);
+  return new ProviderError(kind, message);
+}
+
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(
@@ -704,6 +799,47 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
  * Gemini schemas carry `format: "enum"` and omit `additionalProperties`; strict JSON
  * Schema validators reject the first and object to the second.
  */
+/**
+ * Gemini's `responseSchema` is an OpenAPI subset: it answers 400 to `$schema`, `additionalProperties`
+ * and `anyOf: [X, null]`, and the chain then retries with no schema at all. Zod's JSON Schema output
+ * (`z.toJSONSchema`, marked by `$schema`) has all three, so convert it; any other schema passes unchanged.
+ */
+export function toGeminiSchema(schema: StructuredSchema): Record<string, unknown> {
+  // Only JSON Schema documents are converted; every hand-written Gemini schema keeps today's exact shape.
+  if (!("$schema" in schema)) return schema as unknown as Record<string, unknown>;
+  const DROP = new Set(["$schema", "additionalProperties", "minLength", "maxLength", "pattern", "default", "$id", "title"]);
+  const walk = (node: unknown): unknown => {
+    if (Array.isArray(node)) return node.map(walk);
+    if (!node || typeof node !== "object") return node;
+    const src = node as Record<string, unknown>;
+    if (Array.isArray(src.anyOf)) {
+      const others = src.anyOf.filter((item) => !(item && typeof item === "object" && (item as { type?: unknown }).type === "null"));
+      if (others.length === 1 && others.length < src.anyOf.length) {
+        return { ...(walk(others[0]) as Record<string, unknown>), nullable: true };
+      }
+    }
+    const out: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(src)) {
+      if (DROP.has(key)) continue;
+      if (key === "const") { out.enum = [value]; continue; }
+      if (key === "type" && Array.isArray(value)) {
+        const types = value.filter((item) => item !== "null");
+        out.type = types[0];
+        if (types.length < value.length) out.nullable = true;
+        continue;
+      }
+      out[key] = key === "properties" && value && typeof value === "object"
+        ? Object.fromEntries(Object.entries(value).map(([name, child]) => [name, walk(child)]))
+        : walk(value);
+    }
+    if (out.properties && typeof out.properties === "object" && !out.propertyOrdering) {
+      out.propertyOrdering = Object.keys(out.properties);
+    }
+    return out;
+  };
+  return walk(schema) as Record<string, unknown>;
+}
+
 export function toJsonSchema(schema: StructuredSchema): Record<string, unknown> {
   const walk = (node: unknown): unknown => {
     if (Array.isArray(node)) return node.map(walk);
@@ -824,7 +960,7 @@ export async function executeLlmChain(
       if (!withSchema) degradedSchema = true;
 
       try {
-        const call = route.protocol === "gemini" ? callGemini : callOpenAICompatible;
+        const call = route.protocol === "gemini" ? callGemini : route.protocol === "anthropic" ? callAnthropic : callOpenAICompatible;
         const prompted = req.promptFor ? { ...shaped, ...req.promptFor(route) } : shaped;
         const result = await call(route, prompted, withSchema);
 

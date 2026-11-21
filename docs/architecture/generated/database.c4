@@ -11,6 +11,14 @@ model {
         storageClass 'E'
       }
     }
+    ad_impressions = table 'ad_impressions' {
+      #classE #dualOwner
+      description '8 columns, 3 indexes, storage class E.'
+      metadata {
+        export 'adImpressions'
+        storageClass 'E'
+      }
+    }
     ad_stats_daily = table 'ad_stats_daily' {
       #classC
       description '5 columns, 1 indexes, storage class C.'
@@ -19,9 +27,17 @@ model {
         storageClass 'C'
       }
     }
+    admin_audit_logs = table 'admin_audit_logs' {
+      #classB
+      description '9 columns, 4 indexes, storage class B.'
+      metadata {
+        export 'adminAuditLogs'
+        storageClass 'B'
+      }
+    }
     ads = table 'ads' {
       #classA
-      description '14 columns, 2 indexes, storage class A.'
+      description '16 columns, 2 indexes, storage class A.'
       metadata {
         export 'ads'
         storageClass 'A'
@@ -139,9 +155,129 @@ model {
         storageClass 'A'
       }
     }
+    capture_ai_accounts = table 'capture_ai_accounts' {
+      #classD #dualOwner
+      description '6 columns, 2 indexes, storage class D.'
+      metadata {
+        export 'captureAiAccounts'
+        storageClass 'D'
+      }
+    }
+    capture_ai_days = table 'capture_ai_days' {
+      #classD
+      description '3 columns, 0 indexes, storage class D.'
+      metadata {
+        export 'captureAiDays'
+        storageClass 'D'
+      }
+    }
+    capture_ai_jobs = table 'capture_ai_jobs' {
+      #classD #dualOwner
+      description '15 columns, 4 indexes, storage class D.'
+      metadata {
+        export 'captureAiJobs'
+        storageClass 'D'
+      }
+    }
+    capture_ai_reservations = table 'capture_ai_reservations' {
+      #classD #dualOwner
+      description '10 columns, 3 indexes, storage class D.'
+      metadata {
+        export 'captureAiReservations'
+        storageClass 'D'
+      }
+    }
+    capture_consents = table 'capture_consents' {
+      #classA #dualOwner
+      description '7 columns, 1 indexes, storage class A.'
+      metadata {
+        export 'captureConsents'
+        storageClass 'A'
+      }
+    }
+    capture_devices = table 'capture_devices' {
+      #classA #dualOwner
+      description '16 columns, 3 indexes, storage class A.'
+      metadata {
+        export 'captureDevices'
+        storageClass 'A'
+      }
+    }
+    capture_events = table 'capture_events' {
+      #classE #dualOwner
+      description '31 columns, 5 indexes, storage class E.'
+      metadata {
+        export 'captureEvents'
+        storageClass 'E'
+      }
+    }
+    capture_markers = table 'capture_markers' {
+      #classA #dualOwner
+      description '6 columns, 1 indexes, storage class A.'
+      metadata {
+        export 'captureMarkers'
+        storageClass 'A'
+      }
+    }
+    capture_memory = table 'capture_memory' {
+      #classA #dualOwner
+      description '8 columns, 1 indexes, storage class A.'
+      metadata {
+        export 'captureMemory'
+        storageClass 'A'
+      }
+    }
+    capture_questions = table 'capture_questions' {
+      #classE #dualOwner
+      description '12 columns, 4 indexes, storage class E.'
+      metadata {
+        export 'captureQuestions'
+        storageClass 'E'
+      }
+    }
+    capture_samples = table 'capture_samples' {
+      #classE #dualOwner
+      description '16 columns, 3 indexes, storage class E.'
+      metadata {
+        export 'captureSamples'
+        storageClass 'E'
+      }
+    }
+    capture_signals = table 'capture_signals' {
+      #classE #dualOwner
+      description '13 columns, 4 indexes, storage class E.'
+      metadata {
+        export 'captureSignals'
+        storageClass 'E'
+      }
+    }
+    capture_sources = table 'capture_sources' {
+      #classA
+      description '16 columns, 1 indexes, storage class A.'
+      metadata {
+        export 'captureSources'
+        storageClass 'A'
+      }
+    }
+    capture_usage = table 'capture_usage' {
+      #classC #dualOwner
+      description '12 columns, 1 indexes, storage class C.'
+      metadata {
+        export 'captureUsage'
+        storageClass 'C'
+      }
+    }
+    capture_user_pairs = table 'capture_user_pairs' {
+      #classA #dualOwner
+      description '9 columns, 1 indexes, storage class A.'
+      metadata {
+        export 'captureUserPairs'
+        storageClass 'A'
+      }
+    }
     cashflow_settlements = table 'cashflow_settlements' {
       #classC #dualOwner
-      description '9 columns, 3 indexes, storage class C.'
+      description '10 columns, 3 indexes, storage class C.'
       metadata {
         export 'cashflowSettlements'
         storageClass 'C'
@@ -184,6 +320,46 @@ model {
       description '17 columns, 3 indexes, storage class C.'
       metadata {
         export 'coachingSteps'
+        storageClass 'C'
+      }
+    }
+    commitment_hints = table 'commitment_hints' {
+      #classC #dualOwner
+      description '8 columns, 2 indexes, storage class C.'
+      metadata {
+        export 'commitmentHints'
+        storageClass 'C'
+      }
+    }
+    commitment_overrides = table 'commitment_overrides' {
+      #classC #dualOwner
+      description '9 columns, 2 indexes, storage class C.'
+      metadata {
+        export 'commitmentOverrides'
+        storageClass 'C'
+      }
+    }
+    commitment_questions = table 'commitment_questions' {
+      #classD #dualOwner
+      description '13 columns, 2 indexes, storage class D.'
+      metadata {
+        export 'commitmentQuestions'
+        storageClass 'D'
+      }
+    }
+    commitment_reminders = table 'commitment_reminders' {
+      #classE #dualOwner
+      description '8 columns, 2 indexes, storage class E.'
+      metadata {
+        export 'commitmentReminders'
+        storageClass 'E'
+      }
+    }
+    commitment_schedule_items = table 'commitment_schedule_items' {
+      #classC #dualOwner
+      description '7 columns, 2 indexes, storage class C.'
+      metadata {
+        export 'commitmentScheduleItems'
         storageClass 'C'
       }
     }
@@ -237,7 +413,7 @@ model {
     }
     installment_plans = table 'installment_plans' {
       #classC #dualOwner
-      description '11 columns, 1 indexes, storage class C.'
+      description '12 columns, 1 indexes, storage class C.'
       metadata {
         export 'installmentPlans'
         storageClass 'C'
@@ -323,14 +499,6 @@ model {
         storageClass 'A'
       }
     }
-    raw_sms_events = table 'raw_sms_events' {
-      #classE #dualOwner
-      description '9 columns, 2 indexes, storage class E.'
-      metadata {
-        export 'rawSmsEvents'
-        storageClass 'E'
-      }
-    }
     referrals = table 'referrals' {
       #classA
       description '9 columns, 2 indexes, storage class A.'
@@ -341,10 +509,18 @@ model {
     }
     scheduled_cashflows = table 'scheduled_cashflows' {
       #classC #dualOwner
-      description '18 columns, 2 indexes, storage class C.'
+      description '36 columns, 2 indexes, storage class C.'
       metadata {
         export 'scheduledCashflows'
         storageClass 'C'
+      }
+    }
+    scheduled_job_runs = table 'scheduled_job_runs' {
+      #classE
+      description '7 columns, 1 indexes, storage class E.'
+      metadata {
+        export 'scheduledJobRuns'
+        storageClass 'E'
       }
     }
     seo_pages = table 'seo_pages' {
@@ -361,6 +537,38 @@ model {
       metadata {
         export 'sessions'
         storageClass 'D'
+      }
+    }
+    store_events = table 'store_events' {
+      #classE
+      description '7 columns, 2 indexes, storage class E.'
+      metadata {
+        export 'storeEvents'
+        storageClass 'E'
+      }
+    }
+    store_purchases = table 'store_purchases' {
+      #classA #dualOwner
+      description '12 columns, 3 indexes, storage class A.'
+      metadata {
+        export 'storePurchases'
+        storageClass 'A'
+      }
+    }
+    subscription_catalog = table 'subscription_catalog' {
+      #classA
+      description '21 columns, 1 indexes, storage class A.'
+      metadata {
+        export 'subscriptionCatalog'
+        storageClass 'A'
+      }
+    }
+    support_assignments = table 'support_assignments' {
+      #classA
+      description '4 columns, 1 indexes, storage class A.'
+      metadata {
+        export 'supportAssignments'
+        storageClass 'A'
       }
     }
     support_tickets = table 'support_tickets' {
@@ -483,17 +691,25 @@ model {
         storageClass 'E'
       }
     }
-    webhook_tokens = table 'webhook_tokens' {
-      #classD #dualOwner
-      description '6 columns, 1 indexes, storage class D.'
+    whatsapp_contacts = table 'whatsapp_contacts' {
+      #classA #dualOwner
+      description '13 columns, 2 indexes, storage class A.'
       metadata {
-        export 'webhookTokens'
-        storageClass 'D'
+        export 'whatsappContacts'
+        storageClass 'A'
+      }
+    }
+    whatsapp_messages = table 'whatsapp_messages' {
+      #classE #dualOwner
+      description '20 columns, 5 indexes, storage class E.'
+      metadata {
+        export 'whatsappMessages'
+        storageClass 'E'
       }
     }
     whatsapp_otp_codes = table 'whatsapp_otp_codes' {
       #classD
-      description '6 columns, 1 indexes, storage class D.'
+      description '7 columns, 1 indexes, storage class D.'
       metadata {
         export 'whatsappOtpCodes'
         storageClass 'D'

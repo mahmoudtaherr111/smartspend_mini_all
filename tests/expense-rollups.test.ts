@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import {
   toDayString,
   expenseToRollupDelta,
@@ -8,7 +8,7 @@ import {
 } from "../api/services/expense-rollups";
 import Decimal from "decimal.js";
 import { db } from "../api/queries/connection";
-import { expenses, expenseDailyRollups } from "../db/schema";
+import { expenses, expenseDailyRollups, localUsers } from "../db/schema";
 import { eq, and, sql, gte, lt } from "drizzle-orm";
 import { businessDateKey } from "../api/lib/app-time";
 import { expenseRouter } from "../api/expense-router";
@@ -33,6 +33,7 @@ describe("Expense Daily Rollups Architecture & Reconciliation (P3 Overhaul)", ()
   const caller = expenseRouter.createCaller(callerCtx as any);
 
   beforeEach(async () => {
+    if (process.env.RUN_DB_INTEGRATION !== "1") return;
     // Clean up test state before each run
     try {
       await db
@@ -54,6 +55,13 @@ describe("Expense Daily Rollups Architecture & Reconciliation (P3 Overhaul)", ()
     } catch {
       // ignore
     }
+    await db.insert(localUsers).values({ id: testUserId, phone: 'synthetic-rollups', name: 'Synthetic', password: 'synthetic' }).onDuplicateKeyUpdate({ set: { name: 'Synthetic' } });
+  });
+  afterAll(async () => {
+    if (process.env.RUN_DB_INTEGRATION !== "1") return;
+    await db.delete(expenses).where(and(eq(expenses.userId, testUserId), eq(expenses.userType, testUserType)));
+    await db.delete(expenseDailyRollups).where(and(eq(expenseDailyRollups.userId, testUserId), eq(expenseDailyRollups.userType, testUserType)));
+    await db.delete(localUsers).where(eq(localUsers.id, testUserId));
   });
 
   it("1. aligns day string calculation to Cairo timezone across app time and rollups", () => {

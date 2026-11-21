@@ -342,6 +342,8 @@ function inferSubCategory(
       if (hasAny(evidence, ["مصروف"])) return "مصروف العيال";
       return undefined;
     case "أقساط وفوايد":
+      if (hasAny(evidence, ["رسوم بنكية", "مصاريف بنكية", "رسوم البنك", "مصاريف البنك", "عمولة البنك", "رسوم الكارت", "رسوم انستاباي"]))
+        return "رسوم بنكية";
       if (hasAny(evidence, ["فوايد", "فوائد", "فايدة"])) return "فوايد قروض";
       return "أقساط";
     case "هدايا وعيديات":
@@ -1095,5 +1097,5 @@ export function normalizeStoredCategory(stored: string | null | undefined): stri
 }
 
 export function taxonomyVersion(): string {
-  return "tax_v3_2026_09";
+  return "tax_v3_2026_10";
 }

@@ -1,0 +1,25 @@
+name: device_lock
+description: "The phone's side of the app lock: biometrics bound to a key in the Keystore or Keychain, the PIN key, and the cover in the app switcher."
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  pigeon: ^29.0.10
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.smartspend.device_lock
+        pluginClass: DeviceLockPlugin
+      ios:
+        pluginClass: DeviceLockPlugin

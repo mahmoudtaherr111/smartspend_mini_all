@@ -1,6 +1,6 @@
 import { db } from "./queries/connection";
 import { notificationTemplates, inAppNotifications, notificationLogs, pushSubscriptions, users, localUsers, userProfiles, expenses, expenseDailyRollups } from "../db/schema";
-import { eq, and, or, lte, gte, lt, sql, isNull, inArray } from "drizzle-orm";
+import { eq, and, or, lte, gte, lt, gt, asc, sql, isNull, inArray } from "drizzle-orm";
 import webpush from "web-push";
 import { messaging, isFirebaseInitialized } from "./services/firebase";
 import { env } from "./lib/env";
@@ -30,13 +30,105 @@ function webPushOptions(item: PushContent) {
   return { icon: iconUrl, badge: badgeUrl, tag: item.type, dir, lang: item.lang };
 }
 
+export interface NotificationChannelConfig {
+  channelId: string;
+  channelName: string;
+  priority: "high" | "normal";
+  apnsPriority: "10" | "5";
+  ttlSeconds: number;
+  collapseId: string;
+}
+
+export function getNotificationChannelConfig(type: string): NotificationChannelConfig {
+  const isSecurity = type.includes("security") || type.includes("auth") || type.includes("biometric");
+  const isBudgetOrExpense = type.includes("budget") || type.includes("expense") || type.includes("subscription");
+
+  if (isSecurity) {
+    return {
+      channelId: "channel_security_auth",
+      channelName: "Security & Authentication",
+      priority: "high",
+      apnsPriority: "10",
+      ttlSeconds: 300, // 5 minutes TTL for security
+      collapseId: "sec_" + type,
+    };
+  }
+
+  if (isBudgetOrExpense) {
+    return {
+      channelId: "channel_budget_spending",
+      channelName: "Budgets & Spending Alerts",
+      priority: "high",
+      apnsPriority: "10",
+      ttlSeconds: 86400, // 24 hours TTL for financial transactions & budget alerts
+      collapseId: "budget_" + type,
+    };
+  }
+
+  return {
+    channelId: "channel_reminders_marketing",
+    channelName: "Reminders & Updates",
+    priority: "normal",
+    apnsPriority: "5",
+    ttlSeconds: 172800, // 48 hours TTL for periodic recaps and updates
+    collapseId: "rem_" + type,
+  };
+}
+
 export function fcmMessage(token: string, item: PushContent) {
+  const config = getNotificationChannelConfig(item.type);
+  const nowUnix = Math.floor(Date.now() / 1000);
+  const expirationUnix = nowUnix + config.ttlSeconds;
+
   return {
     token,
-    notification: { title: item.title, body: item.body },
-    data: { url: item.actionUrl, type: item.type },
-    webpush: { notification: webPushOptions(item), fcmOptions: { link: item.actionUrl } },
-    apns: { payload: { aps: { sound: "default" } } },
+    notification: {
+      title: item.title,
+      body: item.body,
+    },
+    data: {
+      url: item.actionUrl,
+      route: item.actionUrl,
+      type: item.type,
+      channelId: config.channelId,
+      click_action: "FLUTTER_NOTIFICATION_CLICK",
+    },
+    android: {
+      priority: config.priority,
+      ttl: config.ttlSeconds * 1000,
+      collapseKey: config.collapseId,
+      notification: {
+        channelId: config.channelId,
+        icon: "ic_stat_notification",
+        color: "#00D09E",
+        sound: "default",
+        clickAction: "FLUTTER_NOTIFICATION_CLICK",
+        defaultSound: true,
+        defaultVibrateTimings: true,
+      },
+    },
+    apns: {
+      headers: {
+        "apns-priority": config.apnsPriority,
+        "apns-expiration": "" + expirationUnix,
+        "apns-collapse-id": config.collapseId,
+      },
+      payload: {
+        aps: {
+          sound: "default",
+          badge: 1,
+          contentAvailable: true,
+          alert: {
+            title: item.title,
+            body: item.body,
+          },
+        },
+      },
+    },
+    webpush: {
+      notification: webPushOptions(item),
+      fcmOptions: { link: item.actionUrl },
+    },
   };
 }
 
@@ -117,6 +209,30 @@ export async function sendPushBatch(
       );
     }
   }
+}
+
+export async function sendPushToUser(
+  userId: number,
+  userType: string,
+  item: Omit<PushContent, "lang"> & { lang?: string },
+) {
+  const subs = await db
+    .select()
+    .from(pushSubscriptions)
+    .where(
+      and(
+        eq(pushSubscriptions.userId, userId),
+        eq(pushSubscriptions.userType, userType),
+      ),
+    );
+  if (subs.length === 0) return;
+  await sendPushBatch(
+    subs.map((sub) => ({
+      ...item,
+      lang: item.lang || "ar",
+      sub,
+    })),
+  );
 }
 
 async function triggerTemplateNotificationsBatch(
@@ -379,8 +495,8 @@ export async function processScheduledNotifications() {
           return query;
         };
 
-        const oauthRes = await applyFilters(oauthQuery, users, true).limit(limit).offset(offset);
-        const localRes = await applyFilters(localQuery, localUsers, false).limit(limit).offset(offset);
+        const oauthRes = await applyFilters(oauthQuery, users, true).orderBy(asc(users.id)).limit(limit).offset(offset);
+        const localRes = await applyFilters(localQuery, localUsers, false).orderBy(asc(localUsers.id)).limit(limit).offset(offset);
 
         if (oauthRes.length === 0 && localRes.length === 0) break;
 
@@ -646,12 +762,29 @@ export async function seedDefaultTemplates() {
   }
 }
 
+async function fetchAllTargets<T extends { id: number }>(
+  fetchChunk: (lastId: number, chunkSize: number) => Promise<T[]>,
+  chunkSize = 500,
+): Promise<T[]> {
+  const all: T[] = [];
+  let lastId = 0;
+  while (true) {
+    const chunk = await fetchChunk(lastId, chunkSize);
+    if (chunk.length === 0) break;
+    all.push(...chunk);
+    lastId = chunk[chunk.length - 1].id;
+    if (chunk.length < chunkSize) break;
+  }
+  return all;
+}
+
 export async function checkAndTriggerSmartActivityNotifications() {
   try {
     await seedDefaultTemplates();
     const now = new Date();
 
-    // 1. inactivity_reminder: streak >= minStreak, last activity was yesterday
+    // 1. inactivity_reminder: whoever recorded yesterday and not today, from the first day on, which is when the habit
+    // is still forming.
     const inactivityTemplate = await db.select().from(notificationTemplates)
       .where(and(eq(notificationTemplates.eventType, "inactivity_reminder"), eq(notificationTemplates.isActive, true)))
       .limit(1);
@@ -659,15 +792,15 @@ export async function checkAndTriggerSmartActivityNotifications() {
     if (inactivityTemplate.length > 0) {
       const template = inactivityTemplate[0];
       const segment = parseSegment(template.targetSegment);
-      const minStreak = segment.minStreak !== undefined ? Number(segment.minStreak) : 2;
+      const minStreak = segment.minStreak !== undefined ? Number(segment.minStreak) : 1;
 
       const startOfToday = businessDayRange().start;
 
       const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
       const thirtySixHoursAgo = new Date(now.getTime() - 36 * 60 * 60 * 1000);
 
-      while (true) {
-        const matchingOauth = await db.select({
+      const matchingOauth = await fetchAllTargets((lastId, chunkSize) =>
+        db.select({
           id: users.id,
           name: users.name,
           plan: users.plan,
@@ -681,13 +814,18 @@ export async function checkAndTriggerSmartActivityNotifications() {
           gte(notificationLogs.sentAt, startOfToday)
         ))
         .where(and(
+          gt(users.id, lastId),
           gte(users.currentStreak, minStreak),
           gte(users.lastStreakAt, thirtySixHoursAgo),
           lte(users.lastStreakAt, twelveHoursAgo),
           isNull(notificationLogs.id)
-        )).limit(1000);
+        ))
+        .orderBy(asc(users.id))
+        .limit(chunkSize)
+      );
 
-        const matchingLocal = await db.select({
+      const matchingLocal = await fetchAllTargets((lastId, chunkSize) =>
+        db.select({
           id: localUsers.id,
           name: localUsers.name,
           plan: localUsers.plan,
@@ -701,25 +839,26 @@ export async function checkAndTriggerSmartActivityNotifications() {
           gte(notificationLogs.sentAt, startOfToday)
         ))
         .where(and(
+          gt(localUsers.id, lastId),
           gte(localUsers.currentStreak, minStreak),
           gte(localUsers.lastStreakAt, thirtySixHoursAgo),
           lte(localUsers.lastStreakAt, twelveHoursAgo),
           isNull(notificationLogs.id)
-        )).limit(1000);
+        ))
+        .orderBy(asc(localUsers.id))
+        .limit(chunkSize)
+      );
 
-        if (matchingOauth.length === 0 && matchingLocal.length === 0) break;
+      const targets = [
+        ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
+        ...matchingLocal.map(u => ({ ...u, type: "local" }))
+      ];
 
-        const targets = [
-          ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
-          ...matchingLocal.map(u => ({ ...u, type: "local" }))
-        ];
-
-        await triggerTemplateNotificationsBatch(
-          template,
-          targets,
-          (user) => ({ name: user.name || "المستخدم" }),
-        );
-      }
+      await triggerTemplateNotificationsBatch(
+        template,
+        targets,
+        (user) => ({ name: user.name || "المستخدم" }),
+      );
     }
 
     // 2. pro_conversion_streak: user is free, currentStreak >= minStreak, last log was today/yesterday (diffHours < 36)
@@ -737,8 +876,8 @@ export async function checkAndTriggerSmartActivityNotifications() {
 
       const thirtySixHoursAgo = new Date(now.getTime() - 36 * 60 * 60 * 1000);
 
-      while (true) {
-        const matchingOauth = await db.select({
+      const matchingOauth = await fetchAllTargets((lastId, chunkSize) =>
+        db.select({
           id: users.id,
           name: users.name,
           plan: users.plan,
@@ -752,13 +891,18 @@ export async function checkAndTriggerSmartActivityNotifications() {
           gte(notificationLogs.sentAt, sevenDaysAgo)
         ))
         .where(and(
+          gt(users.id, lastId),
           eq(users.plan, "free"),
           gte(users.currentStreak, minStreak),
           gte(users.lastStreakAt, thirtySixHoursAgo),
           isNull(notificationLogs.id)
-        )).limit(1000);
+        ))
+        .orderBy(asc(users.id))
+        .limit(chunkSize)
+      );
 
-        const matchingLocal = await db.select({
+      const matchingLocal = await fetchAllTargets((lastId, chunkSize) =>
+        db.select({
           id: localUsers.id,
           name: localUsers.name,
           plan: localUsers.plan,
@@ -772,25 +916,26 @@ export async function checkAndTriggerSmartActivityNotifications() {
           gte(notificationLogs.sentAt, sevenDaysAgo)
         ))
         .where(and(
+          gt(localUsers.id, lastId),
           eq(localUsers.plan, "free"),
           gte(localUsers.currentStreak, minStreak),
           gte(localUsers.lastStreakAt, thirtySixHoursAgo),
           isNull(notificationLogs.id)
-        )).limit(1000);
+        ))
+        .orderBy(asc(localUsers.id))
+        .limit(chunkSize)
+      );
 
-        if (matchingOauth.length === 0 && matchingLocal.length === 0) break;
+      const targets = [
+        ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
+        ...matchingLocal.map(u => ({ ...u, type: "local" }))
+      ];
 
-        const targets = [
-          ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
-          ...matchingLocal.map(u => ({ ...u, type: "local" }))
-        ];
-
-        await triggerTemplateNotificationsBatch(
-          template,
-          targets,
-          (user) => ({ currentStreak: String(user.currentStreak || 0) }),
-        );
-      }
+      await triggerTemplateNotificationsBatch(
+        template,
+        targets,
+        (user) => ({ currentStreak: String(user.currentStreak || 0) }),
+      );
     }
 
     // 3. dormant_reactivation: completely inactive for inactivityDays (diffDays between inactivityDays and inactivityDays+1)
@@ -811,8 +956,8 @@ export async function checkAndTriggerSmartActivityNotifications() {
       const startRange = new Date(now.getTime() - inactivityMsEnd);
       const endRange = new Date(now.getTime() - inactivityMsStart);
 
-      while (true) {
-        const matchingOauth = await db.select({
+      const matchingOauth = await fetchAllTargets((lastId, chunkSize) =>
+        db.select({
           id: users.id,
           name: users.name,
           plan: users.plan,
@@ -826,12 +971,17 @@ export async function checkAndTriggerSmartActivityNotifications() {
           gte(notificationLogs.sentAt, sevenDaysAgo)
         ))
         .where(and(
+          gt(users.id, lastId),
           gte(users.lastStreakAt, startRange),
           lte(users.lastStreakAt, endRange),
           isNull(notificationLogs.id)
-        )).limit(1000);
+        ))
+        .orderBy(asc(users.id))
+        .limit(chunkSize)
+      );
 
-        const matchingLocal = await db.select({
+      const matchingLocal = await fetchAllTargets((lastId, chunkSize) =>
+        db.select({
           id: localUsers.id,
           name: localUsers.name,
           plan: localUsers.plan,
@@ -845,24 +995,25 @@ export async function checkAndTriggerSmartActivityNotifications() {
           gte(notificationLogs.sentAt, sevenDaysAgo)
         ))
         .where(and(
+          gt(localUsers.id, lastId),
           gte(localUsers.lastStreakAt, startRange),
           lte(localUsers.lastStreakAt, endRange),
           isNull(notificationLogs.id)
-        )).limit(1000);
+        ))
+        .orderBy(asc(localUsers.id))
+        .limit(chunkSize)
+      );
 
-        if (matchingOauth.length === 0 && matchingLocal.length === 0) break;
+      const targets = [
+        ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
+        ...matchingLocal.map(u => ({ ...u, type: "local" }))
+      ];
 
-        const targets = [
-          ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
-          ...matchingLocal.map(u => ({ ...u, type: "local" }))
-        ];
-
-        await triggerTemplateNotificationsBatch(
-          template,
-          targets,
-          (user) => ({ name: user.name || "المستخدم" }),
-        );
-      }
+      await triggerTemplateNotificationsBatch(
+        template,
+        targets,
+        (user) => ({ name: user.name || "المستخدم" }),
+      );
     }
   } catch (error) {
     console.error("Error running smart activity notifications:", error);

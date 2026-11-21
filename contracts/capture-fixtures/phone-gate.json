@@ -1,0 +1,99 @@
+{
+  "about": "The phone's only filter (decision 0049): a message whose title or text holds one of these keywords (folded: lower case, Arabic letter variants, no diacritics) is sent; anything else stays on the phone. The list must equal CAPTURE_KEYWORDS in api/lib/capture/intake.ts and CaptureGate.DEFAULT_KEYWORDS (checked by api/lib/capture/phone-gate-fixtures.test.ts and the Kotlin test). Invented messages: the repository is public.",
+  "keywords": [
+    "transaction",
+    "purchase",
+    "payment",
+    "debit",
+    "credit",
+    "spent",
+    "balance",
+    "withdraw",
+    "deposit",
+    "transfer",
+    "paid",
+    "charge",
+    "received",
+    "pos",
+    "atm",
+    "wallet",
+    "egp",
+    "جم",
+    "عملية",
+    "شراء",
+    "دفع",
+    "خصم",
+    "إضافة",
+    "رصيد",
+    "سحب",
+    "إيداع",
+    "تحويل",
+    "مبلغ",
+    "بطاقة",
+    "حساب",
+    "حوال"
+  ],
+  "cases": [
+    {
+      "name": "an English card purchase is sent",
+      "text": "Your card was charged EGP 85.00 at ZED MARKET",
+      "keep": true
+    },
+    {
+      "name": "an Arabic debit is sent",
+      "text": "تم خصم 340 جنيه من بطاقتك لدى صيدلية",
+      "keep": true
+    },
+    {
+      "name": "a written hamza variant still matches (ايداع)",
+      "text": "تم ايداع 15000 في حسابك",
+      "keep": true
+    },
+    {
+      "name": "a taa marbuta variant still matches (بطاقه)",
+      "text": "بطاقه 1234 اتستخدمت",
+      "keep": true
+    },
+    {
+      "name": "Arabic diacritics do not hide a word",
+      "text": "تمَّ تحويلُ ٥٠٠ جنيه",
+      "keep": true
+    },
+    {
+      "name": "upper case does not hide a word",
+      "text": "PAYMENT RECEIVED FOR YOUR CARD",
+      "keep": true
+    },
+    {
+      "name": "a wallet send is sent",
+      "text": "تم تحويل 500 جنيه الى 01012345678",
+      "keep": true
+    },
+    {
+      "name": "a title alone can carry the word",
+      "title": "Transaction alert",
+      "text": "EGP 49.99 at GOOGLE",
+      "keep": true
+    },
+    {
+      "name": "a one-time code that names a purchase is sent (the server drops it)",
+      "text": "Your OTP for the purchase of EGP 799 is 482913",
+      "keep": true
+    },
+    {
+      "name": "a personal chat without a keyword is not sent",
+      "text": "هتيجي امتى النهارده؟",
+      "keep": false
+    },
+    {
+      "name": "a delivery update without a keyword is not sent",
+      "text": "Your order is out for delivery",
+      "keep": false
+    },
+    {
+      "name": "a code without a keyword is not sent",
+      "text": "Your verification code is 5521",
+      "keep": false
+    }
+  ]
+}

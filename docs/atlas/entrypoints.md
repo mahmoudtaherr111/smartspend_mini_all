@@ -16,28 +16,28 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 | 6 | `*` | `applyOriginSecurity(app)` |
 | 7 | `onError` | `inline handler` |
 | 8 | `notFound` | `inline handler` |
-| 9 | `/*` | `serveStatic()` |
+| 9 | `*` | `registerCaptureRoutes(app)` |
+| 10 | `/admin/*` | `serveStatic()` |
+| 11 | `/*` | `serveStatic()` |
 
 ## HTTP routes
 
 | Method | Path | Kind | Declared in | Depends on | Reads | Writes |
 | --- | --- | --- | --- | --- | --- | --- |
+| GET | `/` | http | `api/boot.ts` | `api/lib/env.ts` | — | — |
+| GET | `/admin` | http | `api/boot.ts` | — | — | — |
 | GET | `/api/auth/google/callback` | http | `api/boot.ts` | `api/context.ts`, `api/lib/env.ts`, `api/router.ts` | — | — |
 | GET | `/api/auth/google/start` | http | `api/boot.ts` | `api/auth-router.ts`, `api/lib/env.ts` | — | — |
-| GET | `/api/sms/android-connect` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `webhook_tokens` | `webhook_tokens` |
-| POST | `/api/sms/android-status` | http | `api/sms-router.ts` | — | `webhook_tokens` | — |
-| POST | `/api/sms/exchange` | http | `api/sms-router.ts` | `api/lib/redis-client.ts` | `webhook_tokens` | — |
-| POST | `/api/sms/ingest` | http | `api/sms-router.ts` | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/redis-client.ts`, `api/lib/settings-cache.ts`, `api/lib/sms-ai-parser.ts`, `api/lib/sms-rule-parser.ts`, `api/notification-engine.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/sms-ledger.ts` | `local_users`, `raw_sms_events`, `users`, `webhook_tokens` | `raw_sms_events` |
-| GET | `/api/sms/logs` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `raw_sms_events` | — |
-| GET | `/api/sms/metrics` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `raw_sms_events` | — |
-| GET | `/api/sms/shortcut-download` | http | `api/sms-router.ts` | `api/lib/redis-client.ts`, `api/lib/shortcut-generator.ts` | `webhook_tokens` | — |
-| GET | `/api/sms/token` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `webhook_tokens` | — |
-| POST | `/api/sms/token/generate` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | — | `webhook_tokens` |
-| GET | `/api/sms/unparsed` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `raw_sms_events` | — |
-| GET | `/api/sse/otp` | sse | `api/boot.ts` | `api/lib/get-client-ip.ts`, `api/services/phone-challenge.ts`, `api/services/whatsapp-service.ts` | — | — |
+| GET | `/api/brand-logos/:file` | http | `api/boot.ts` | `api/lib/capture/brand-logos.ts`, `api/services/storage/index.ts` | — | — |
 | ALL | `/api/trpc/*` | trpc | `api/boot.ts` | `api/router.ts` | — | — |
-| POST | `/api/webhooks/paymob` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/paymob.ts`, `api/lib/subscription-service.ts`, `contracts/plans.ts` | — | — |
+| POST | `/api/webhooks/apple-asn` | webhook | `api/boot.ts` | `api/lib/store-billing/index.ts` | — | — |
+| POST | `/api/webhooks/google-play` | webhook | `api/boot.ts` | `api/lib/store-billing/index.ts` | — | — |
+| POST | `/api/webhooks/paymob` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/subscription-service.ts`, `contracts/plans.ts` | — | — |
+| GET | `/api/webhooks/whatsapp` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/whatsapp/webhook.ts` | — | — |
+| POST | `/api/webhooks/whatsapp` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/whatsapp/outbox.ts`, `api/lib/whatsapp/webhook.ts` | — | — |
 | GET | `/health` | http | `api/boot.ts` | — | — | — |
+| GET | `/robots.txt` | http | `api/boot.ts` | `api/lib/env.ts` | — | — |
+| GET | `/sitemap.xml` | http | `api/boot.ts` | `api/lib/env.ts`, `api/seo-router.ts` | — | — |
 
 ## WebSocket upgrades
 
@@ -48,23 +48,34 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 
 ## Scheduled jobs
 
-`api/boot.ts` checks these environment switches before starting background work: `ENABLE_CRONS`, `ENABLE_WHATSAPP`. See [env.md](env.md).
+`api/boot.ts` checks these environment switches before starting background work: `ENABLE_CRONS`. See [env.md](env.md).
 
 Reads and writes cover the job body in `api/boot.ts` plus the `api/jobs/` module it calls.
 
 | Job | Schedule | Depends on | Reads | Writes |
 | --- | --- | --- | --- | --- |
+| `brand-logos` | `23 4 * * *` | `api/lib/capture/brand-logos.ts` | — | — |
+| `capture-ai-sweep` | `* * * * *` | `api/lib/capture/ai-queue.ts`, `api/lib/capture/operations.ts` | — | — |
+| `capture-breaker` | `*/15 * * * *` | `api/lib/capture/operations.ts` | — | — |
+| `capture-silent-devices` | `0 11 * * *` | `api/lib/capture/care.ts` | — | — |
+| `cashflow-cutover` | `*/10 * * * *` | `api/jobs/cashflow-cutover-job.ts` | — | — |
+| `cashflow-cutover-at-boot` | once at boot | `api/jobs/cashflow-cutover-job.ts` | — | — |
 | `classification-log-cleanup` | `0 3 * * 0` | — | — | `classification_logs` |
 | `coaching-reminders` | `*/5 * * * *` | `api/services/coach/plans.ts` | — | — |
+| `commitment-match-sweep` | `*/10 * * * *` | `api/services/coach/reminders.ts` | — | — |
+| `commitment-reminders` | `*/5 * * * *` | `api/services/coach/reminders.ts` | — | — |
 | `daily-auth-cleanup` | `0 0 * * *` | `api/lib/access-control.ts`, `api/services/phone-challenge.ts` | — | `auth_challenges` |
-| `daily-subscription-expiry` | `0 6 * * *` | `api/jobs/subscription-expiry-job.ts` | `pro_subscriptions` | `pro_subscriptions` |
-| `data-retention-lifecycle` | `0 5 * * *` | `api/jobs/data-retention-job.ts` | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `raw_sms_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage` |
+| `daily-subscription-expiry` | `0 6 * * *` | `api/jobs/subscription-expiry-job.ts` | `pro_subscriptions`, `store_purchases` | `pro_subscriptions`, `store_purchases` |
+| `data-retention-lifecycle` | `0 5 * * *` | `api/jobs/data-retention-job.ts` | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `capture_ai_accounts`, `capture_ai_days`, `capture_ai_jobs`, `capture_ai_reservations`, `capture_events`, `capture_questions`, `capture_samples`, `capture_signals`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `scheduled_job_runs`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage`, `whatsapp_messages` |
 | `memory-embedding-backfill` | `*/20 * * * *` | `api/services/ai-memory/index.ts` | — | — |
 | `monthly-behavior-snapshots` | `0 1 1 * *` | `api/jobs/monthly-behavior-job.ts` | `expenses`, `user_profiles` | — |
-| `monthly-report-generation` | `0 2 1 * *` | `api/jobs/monthly-report-job.ts` | `local_users`, `monthly_reports`, `users` | `monthly_reports` |
+| `monthly-report-generation` | `0 2 1 * *` | `api/jobs/monthly-report-job.ts` | `local_users`, `monthly_reports`, `users`, `whatsapp_contacts` | `monthly_reports` |
 | `nightly-rollup-reconciliation` | `0 4 * * *` | `api/jobs/rollup-reconciliation-job.ts` | `expense_daily_rollups`, `expenses` | — |
+| `ops-watch` | `*/15 * * * *` | `api/services/admin-alerts.ts` | — | — |
 | `scheduled-notifications` | `* * * * *` | `api/notification-engine.ts` | — | — |
+| `seed-capture-catalog` | once at boot | `api/lib/capture/brand-logos.ts`, `api/lib/capture/catalog.ts` | — | — |
 | `seed-default-templates` | once at boot | `api/notification-engine.ts` | — | — |
 | `smart-activity-notifications` | `0 20 * * *` | `api/notification-engine.ts` | — | — |
 | `taxonomy-migration` | `*/30 * * * *` | `api/jobs/taxonomy-migration-job.ts` | `expenses`, `user_budgets`, `user_correction_rules`, `user_dictionaries` | `expenses`, `user_budgets`, `user_correction_rules`, `user_dictionaries` |
 | `voice-call-memory` | `*/10 * * * *` | `api/services/voice/post-call.ts` | — | — |
+| `whatsapp-outbox` | `* * * * *` | `api/lib/whatsapp/outbox.ts` | — | — |

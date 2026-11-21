@@ -1,3 +1,4 @@
+import { logAdminAction } from "./lib/admin-audit";
 import { z } from "zod";
 import {
   router,
@@ -11,6 +12,8 @@ import { expenses, users, localUsers } from "../db/schema";
 import { eq, and, desc, gte, lte } from "drizzle-orm";
 import { businessDateKey, parseBusinessInstant } from "./lib/app-time";
 import ExcelJS from "exceljs";
+import { financialBucket } from "../contracts/ledger-movement";
+import { ledgerBucketSql } from "./services/ledger-semantics";
 
 export const FORMULA_TRIGGERS = ["=", "+", "-", "@", "\t", "\r"];
 
@@ -119,6 +122,7 @@ const SOURCE_LABELS: Record<string, string> = {
  * is still the net, and every source keeps its own name.
  */
 export function exportRow(e: {
+  parsedMetadata?: unknown;
   date: Date;
   type: string;
   amount: string | number;
@@ -130,7 +134,7 @@ export function exportRow(e: {
   const amount = Number(e.amount);
   return {
     التاريخ: businessDateKey(e.date),
-    النوع: e.type === "expense" && amount < 0 ? "مرتجع" : (TYPE_LABELS[e.type] ?? e.type),
+    النوع: e.type === "expense" && amount < 0 ? "مرتجع" : (TYPE_LABELS[financialBucket(e)] ?? e.type),
     المبلغ: amount,
     الفئة: e.category,
     "الفئة الفرعية": e.subCategory || "",
@@ -160,7 +164,7 @@ export const exportRouter = router({
         conditions.push(gte(expenses.date, parseBusinessInstant(input.startDate)));
       if (input.endDate)
         conditions.push(lte(expenses.date, parseBusinessInstant(input.endDate)));
-      if (input.type !== "all") conditions.push(eq(expenses.type, input.type));
+      if (input.type !== "all") conditions.push(eq(ledgerBucketSql, input.type));
 
       const data = await db
         .select()
@@ -223,7 +227,9 @@ export const exportRouter = router({
   // ─── Export All Users (Admin only) ───
   allUsers: adminProcedure
     .input(z.object({ format: z.enum(["json", "csv", "xlsx"]) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      // Names, phone numbers and emails leave the server here, so every export is in the audit log.
+      await logAdminAction(ctx, { action: "EXPORT_ALL_USERS", targetType: "users", targetId: "all", details: { format: input.format } });
       const oauthUsers = await db
         .select({
           name: users.name,

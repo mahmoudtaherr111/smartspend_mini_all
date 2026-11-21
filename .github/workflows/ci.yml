@@ -197,6 +197,16 @@ jobs:
           JWT_SECRET: test-secret-for-ci
           GEMINI_API_KEY: test
           NODE_ENV: test
+      # The parked website (decision 0050) is still built here so it does not rot; it is never deployed.
+      - run: npm run build:web
+      - run: npm run test:build:web
+        env:
+          DATABASE_URL: "mysql://test:test@localhost:3306/test"
+          GOOGLE_CLIENT_ID: test
+          GOOGLE_CLIENT_SECRET: test
+          JWT_SECRET: test-secret-for-ci
+          GEMINI_API_KEY: test
+          NODE_ENV: test
 
   security-audit:
     name: Security & Dependency Audit

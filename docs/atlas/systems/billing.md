@@ -2,7 +2,7 @@
 
 # Plans and payments
 
-The Free, Pro and Ultra plans and the Ultra members page, checkout through Paymob and its webhook, referral codes, and the daily job that ends expired subscriptions.
+The Free, Pro and Ultra plans and the Ultra members page, checkout through Paymob and its webhook, and the daily job that ends expired subscriptions.
 
 How it works: [docs/systems/billing.md](../../systems/billing.md) · بالعربي: [docs/ar/systems/billing.md](../../ar/systems/billing.md) · [All systems](README.md)
 
@@ -15,53 +15,52 @@ flowchart LR
   subgraph g_screens["Screens"]
     page_Pro["Pro screen"]
     page_UltraLounge["UltraLounge screen"]
+    screens_accounts["Screens of Accounts, sign-in and security"]
     screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
     screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
-    http__api_webhooks["POST /api/webhooks/paymob"]
+    http__api_webhooks["HTTP /api/webhooks/… · 3 routes"]
     job_daily_subscription_expiry["Job · daily-subscription-expiry"]
-    router_pro["pro API · 6 procedures"]
-    router_referral["referral API · 4 procedures"]
+    router_pro["pro API · 9 procedures"]
   end
   subgraph g_modules["Code modules"]
     mod_billing["Billing"]
   end
   subgraph g_tables["MySQL tables"]
-    tbl_discount_codes[("discount_codes")]
     tbl_local_users[("local_users")]
     tbl_pro_subscriptions[("pro_subscriptions")]
-    tbl_referrals[("referrals")]
+    tbl_store_events[("store_events")]
+    tbl_store_purchases[("store_purchases")]
     tbl_user_analytics[("user_analytics")]
     tbl_users[("users")]
   end
+  ext_google_oauth{{"Google OAuth 2.0"}}
   ext_paymob{{"Paymob (Accept)"}}
   sys_accounts[["Accounts, sign-in and security (system)"]]
   sys_platform[["Server platform and data (system)"]]
   http__api_webhooks --> mod_billing
   http__api_webhooks --> sys_platform
   job_daily_subscription_expiry --> sys_platform
+  mod_billing --> ext_google_oauth
   mod_billing --> ext_paymob
   mod_billing --> sys_accounts
   mod_billing --> sys_platform
   mod_billing ==> tbl_pro_subscriptions
+  mod_billing ==> tbl_store_events
+  mod_billing ==> tbl_store_purchases
   mod_billing ==> tbl_user_analytics
   page_Pro --> router_pro
-  page_Pro --> router_referral
   router_pro --> mod_billing
   router_pro --> sys_accounts
   router_pro --> sys_platform
   router_pro -.-> tbl_local_users
   router_pro -.-> tbl_users
   router_pro ==> tbl_pro_subscriptions
-  router_referral --> sys_platform
-  router_referral -.-> tbl_discount_codes
-  router_referral ==> tbl_local_users
-  router_referral ==> tbl_referrals
-  router_referral ==> tbl_users
+  router_pro ==> tbl_store_purchases
+  screens_accounts --> router_pro
   screens_money --> router_pro
   screens_web_app --> router_pro
-  screens_web_app --> router_referral
 ```
 
 ## Journeys
@@ -99,7 +98,7 @@ Drawn in `docs/architecture/flows/paymob-upgrade.c4`; in the interactive map it 
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `billing` — Billing | Paymob checkout requests, webhook verification settings, the subscription grant that sets a user's plan, and the per-plan catalog of limits and features read from the admin's settings for the plans screen. | 3 |
+| `billing` — Billing | Paymob checkout requests, webhook verification settings, the subscription grant that sets a user's plan, and the per-plan catalog of limits and features read from the admin's settings for the plans screen. | 8 |
 
 ## API procedures
 
@@ -108,18 +107,19 @@ Drawn in `docs/architecture/flows/paymob-upgrade.c4`; in the interactive map it 
 | `pro.cancel` | mutation | `authedProcedure` | — | `pro_subscriptions` | `More`, `Pro` |
 | `pro.createCheckoutSession` | mutation | `authedProcedure` | — | — | `More`, `Pro` |
 | `pro.listSubscriptions` | query | `adminProcedure` | `pro_subscriptions` | — | — |
-| `pro.myPlan` | query | `authedProcedure` | `local_users`, `pro_subscriptions`, `users` | `pro_subscriptions` | `Home`, `More`, `Pro` |
+| `pro.myPlan` | query | `authedProcedure` | `local_users`, `pro_subscriptions`, `store_purchases`, `users` | `pro_subscriptions`, `store_purchases` | `Home`, `More`, `Pro`, `Settings` |
 | `pro.planCatalog` | query | `authedProcedure` | — | — | `More`, `Pro` |
+| `pro.restorePurchases` | mutation | `authedProcedure` | — | — | — |
+| `pro.storeBilling` | query | `authedProcedure` | — | — | — |
 | `pro.upgrade` | mutation | `authedProcedure` | — | — | `More`, `Pro` |
-| `referral.applyCode` | mutation | `authedProcedure` | `local_users`, `referrals`, `users` | `local_users`, `referrals`, `users` | `More`, `Pro` |
-| `referral.listAll` | query | `adminProcedure` | `referrals` | — | — |
-| `referral.myCode` | query | `authedProcedure` | `discount_codes`, `local_users`, `referrals`, `users` | `local_users`, `users` | `More`, `Pro` |
-| `referral.myReferrals` | query | `authedProcedure` | `referrals` | — | — |
+| `pro.verifyStorePurchase` | mutation | `authedProcedure` | — | — | — |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
 | Entry point | Kind | Declared in |
 | --- | --- | --- |
+| `POST /api/webhooks/apple-asn` | webhook | `api/boot.ts` |
+| `POST /api/webhooks/google-play` | webhook | `api/boot.ts` |
 | `POST /api/webhooks/paymob` | webhook | `api/boot.ts` |
 | `daily-subscription-expiry` | job, `0 6 * * *` | `api/boot.ts` |
 
@@ -129,31 +129,38 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
-| `discount_codes` | A | — | `referral.myCode` |
-| `local_users` | A | `referral.applyCode`, `referral.myCode` | `pro.myPlan`, `referral.applyCode`, `referral.myCode` |
+| `local_users` | A | — | `pro.myPlan` |
 | `pro_subscriptions` | A | `billing`, `pro.cancel`, `pro.myPlan` | `billing`, `pro.listSubscriptions`, `pro.myPlan` |
-| `referrals` | A | `referral.applyCode` | `referral.applyCode`, `referral.listAll`, `referral.myCode`, `referral.myReferrals` |
+| `store_events` | E | `billing` | — |
+| `store_purchases` | A | `billing`, `pro.myPlan` | `billing`, `pro.myPlan` |
 | `user_analytics` | E | `billing` | — |
-| `users` | A | `referral.applyCode`, `referral.myCode` | `pro.myPlan`, `referral.applyCode`, `referral.myCode` |
+| `users` | A | — | `pro.myPlan` |
 
 ## Outside systems
 
 | System | Kind | Modules |
 | --- | --- | --- |
+| Google OAuth 2.0 | identity | `billing` |
 | Paymob (Accept) | payments | `billing` |
 
 ## Other systems
 
 Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [Server platform and data](platform.md).
 
-Used by: [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Used by: [Accounts, sign-in and security](accounts.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
+| `APPLE_BUNDLE_ID` | yes | `api/lib/store-billing/apple-app-store-verifier.ts` |
+| `APPLE_STORE_BILLING_ENABLED` | yes | `api/lib/store-billing/apple-app-store-verifier.ts` |
+| `GOOGLE_PLAY_PACKAGE_NAME` | yes | `api/lib/store-billing/google-play-verifier.ts` |
+| `GOOGLE_PLAY_PUBSUB_AUDIENCE` | yes | `api/lib/store-billing/google-play-verifier.ts` |
+| `GOOGLE_PLAY_PUBSUB_SERVICE_ACCOUNT` | yes | `api/lib/store-billing/google-play-verifier.ts` |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | yes | `api/lib/store-billing/google-play-verifier.ts` |
+| `JWT_SECRET` | yes | `api/lib/store-billing/ledger.ts` |
 | `PAYMOB_API_KEY` | yes | `api/lib/paymob.ts` |
-| `PAYMOB_HMAC_SECRET` | yes | `api/lib/paymob.ts` |
 | `PAYMOB_IFRAME_ID` | yes | `api/lib/paymob.ts` |
 | `PAYMOB_INTEGRATION_ID` | yes | `api/lib/paymob.ts` |
 
@@ -161,16 +168,22 @@ Used by: [Money: expenses, wallets, budgets, goals and businesses](money.md), [S
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/billing.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>10 files and declarations</summary>
+<details><summary>16 files and declarations</summary>
 
+- `api/boot.ts#POST /api/webhooks/apple-asn`
+- `api/boot.ts#POST /api/webhooks/google-play`
 - `api/boot.ts#POST /api/webhooks/paymob`
 - `api/boot.ts#job:daily-subscription-expiry`
 - `api/jobs/subscription-expiry-job.ts`
 - `api/lib/paymob.ts`
 - `api/lib/plan-catalog.ts`
+- `api/lib/store-billing/apple-app-store-verifier.ts`
+- `api/lib/store-billing/entitlement.ts`
+- `api/lib/store-billing/google-play-verifier.ts`
+- `api/lib/store-billing/index.ts`
+- `api/lib/store-billing/ledger.ts`
 - `api/lib/subscription-service.ts`
 - `api/pro-router.ts`
-- `api/referral-router.ts`
 - `src/pages/Pro.tsx`
 - `src/pages/UltraLounge.tsx`
 

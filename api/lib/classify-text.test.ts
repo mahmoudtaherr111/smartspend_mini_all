@@ -1,7 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { getSystemSettings } from "./settings-cache";
 import { classifyText } from "./classify-text";
+vi.mock("./settings-cache", () => ({ getSystemSettings: vi.fn(async () => ({ recording_engine: "rules" })) }));
 
 describe("one classifier for the other channels", () => {
+  it("keeps the caller's draft category if it cannot establish the active classifier", async () => {
+    vi.mocked(getSystemSettings).mockRejectedValueOnce(new Error("unavailable"));
+    expect(await classifyText("دفعت مصاريف الحضانة", { amount: 1500 })).toBeNull();
+  });
   it("files a chat sentence as the entry form would", async () => {
     expect(await classifyText("سجل عندك 45 جنيه قهوة من ستاربكس")).toMatchObject({ category: "أكل وشرب", type: "expense" });
     expect(await classifyText("دفعت مصاريف الحضانة", { amount: 1500 })).toMatchObject({ category: "أطفال" });

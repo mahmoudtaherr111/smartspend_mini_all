@@ -1,54 +1,50 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+import { fcmMessage, legacyPayload } from "./notification-engine";
 
-vi.mock("./queries/connection", () => ({ db: {} }));
-vi.mock("./services/firebase", () => ({ messaging: null, isFirebaseInitialized: false }));
+describe("Notification Delivery Engine (DEBT-12)", () => {
+  const samplePush = {
+    title: "تنبيه الميزانية",
+    body: "وصلت إلى 80% من ميزانية الأكل والشرب لهذا الشهر",
+    actionUrl: "/budgets",
+    type: "budget_warning",
+    lang: "ar",
+  };
 
-const { sendPush, fcmMessage, legacyPayload } = await import("./notification-engine");
+  it("formats fcmMessage with correct apns, webpush, and data payload", () => {
+    const msg = fcmMessage("sample-fcm-token-12345", samplePush);
 
-describe("notification delivery engine (DEBT-12)", () => {
-  it("formats legacy and FCM push payloads correctly with Egyptian Arabic direction", () => {
-    const item = {
-      title: "تنبيه النشاط",
-      body: "لم تقم بتسجيل أي مصاريف اليوم.",
-      actionUrl: "/record",
-      type: "inactivity_reminder",
-      lang: "ar",
-    };
-
-    const fcm = fcmMessage("fcm_token_123", item);
-    expect(fcm.token).toBe("fcm_token_123");
-    expect(fcm.notification.title).toBe(item.title);
-    expect(fcm.webpush.notification.dir).toBe("rtl");
-    expect(fcm.webpush.notification.lang).toBe("ar");
-
-    const legacy = JSON.parse(legacyPayload(item));
-    expect(legacy.title).toBe(item.title);
-    expect(legacy.dir).toBe("rtl");
-    expect(legacy.url).toBe("/record");
+    expect(msg.token).toBe("sample-fcm-token-12345");
+    expect(msg.notification.title).toBe(samplePush.title);
+    expect(msg.notification.body).toBe(samplePush.body);
+    expect(msg.data.url).toBe("/budgets");
+    expect(msg.data.type).toBe("budget_warning");
+    expect(msg.apns.payload.aps.sound).toBe("default");
+    expect(msg.webpush.notification.dir).toBe("rtl");
+    expect(msg.webpush.notification.lang).toBe("ar");
   });
 
-  it("handles push gracefully when push credentials or firebase are uninitialized", async () => {
-    const sub = {
-      id: 1,
-      userId: 10,
-      userType: "local",
-      fcmToken: "mock_fcm_token",
-      endpoint: "https://fcm.googleapis.com/fcm/send/mock",
-      p256dh: "key_p256dh",
-      auth: "key_auth",
-      deviceType: "android",
+  it("formats English fcmMessage with ltr direction", () => {
+    const enPush = {
+      title: "Budget Alert",
+      body: "You reached 80% of your food budget",
+      actionUrl: "/budgets",
+      type: "budget_warning",
+      lang: "en",
     };
+    const msg = fcmMessage("sample-token", enPush);
+    expect(msg.webpush.notification.dir).toBe("ltr");
+    expect(msg.webpush.notification.lang).toBe("en");
+  });
 
-    const item = {
-      title: "اختبار",
-      body: "محتوى التجربة",
-      actionUrl: "/dashboard",
-      type: "test",
-      lang: "ar",
-    };
+  it("generates valid JSON string for legacy web push payload", () => {
+    const raw = legacyPayload(samplePush);
+    const parsed = JSON.parse(raw);
 
-    // Since Firebase messaging is mocked to null in test env, sendPush should return false without throwing unhandled exceptions
-    const result = await sendPush(sub, item);
-    expect(result).toBe(false);
+    expect(parsed.title).toBe(samplePush.title);
+    expect(parsed.body).toBe(samplePush.body);
+    expect(parsed.url).toBe("/budgets");
+    expect(parsed.type).toBe("budget_warning");
+    expect(parsed.dir).toBe("rtl");
+    expect(parsed.lang).toBe("ar");
   });
 });

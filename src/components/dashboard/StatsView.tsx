@@ -166,16 +166,20 @@ export const StatsView = memo(function StatsView({
             الشخصية المالية
           </p>
           <p className="text-base font-bold text-violet-700 dark:text-violet-300">
-            {stats?.behavioralInsights?.spendingBehavior === "emotional"
-              ? "صرف عاطفي"
-              : stats?.behavioralInsights?.spendingBehavior === "impulsive"
-                ? "مندفع"
-                : stats?.behavioralInsights?.spendingBehavior === "planned"
-                  ? "مخطط"
-                  : stats?.behavioralInsights?.spendingBehavior ===
-                      "conservative"
-                    ? "محافظ"
-                    : "متوازن"}
+            {stats?.behavioralInsights?.spendingBehaviorLabelAr ||
+              (stats?.behavioralInsights?.spendingBehavior === "emotional"
+                ? "صرف عاطفي"
+                : stats?.behavioralInsights?.spendingBehavior === "impulsive"
+                  ? "مندفع"
+                  : stats?.behavioralInsights?.spendingBehavior === "planned"
+                    ? "مخطط"
+                    : stats?.behavioralInsights?.spendingBehavior === "conservative"
+                      ? "محافظ"
+                      : stats?.behavioralInsights?.spendingBehavior === "spiky"
+                        ? "صرف فجائي"
+                        : stats?.behavioralInsights?.spendingBehavior === "concentrated"
+                          ? "صرف مركز"
+                          : "متوازن")}
           </p>
           <p className="text-[10px] text-violet-500">بناءً على السلوك الشهري</p>
         </div>
@@ -239,8 +243,7 @@ export const StatsView = memo(function StatsView({
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-xs text-slate-400">
-                  المعاملات التي تم تسجيلها تلقائياً عبر SmartSpend Sync من
-                  إشعارات ورسائل البنك.
+                  العمليات اللي اتسجلت لوحدها من رسايل البنك والمحفظة.
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">

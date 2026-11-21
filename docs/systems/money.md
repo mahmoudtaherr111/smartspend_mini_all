@@ -11,26 +11,28 @@ deals with, and the expense export. Saving a new item belongs to [Recording spen
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Home screen | `src/pages/Home.tsx#Home` | Three tabs (record, statistics, calendar) for one month, the summary cards, business mode, the onboarding card, and, for users the rebuilt [voice call](voice-calls.md) is open to, a button that starts it (`src/components/voice/CallSmartButton.tsx#CallSmartButton`) |
+| Home screen | `src/pages/Home.tsx#Home` | Three tabs (record, statistics, calendar) for one month, the summary cards, business mode, the onboarding card, and, for users whose plan has [voice calls](voice-calls.md), a button that starts one (`src/components/voice/CallSmartButton.tsx#CallSmartButton`) |
 | Header and summary | `src/components/dashboard/HomeHeader.tsx`, `src/components/dashboard/HomeSummaryCards.tsx` | Month switcher, tabs, business toggle, streak, the month's spending as a share of income, income and spending totals |
-| Record tab | `src/components/expenses/RecentExpenses.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/goals/FinancialGoalsPanel.tsx#FinancialGoalsPanel` | Beside the entry form: the entries waiting for an answer to their question ("محتاج ردك", [recording spending](expense-capture.md#clarifications)), the bank messages waiting for the user's confirmation when there are any ([bank messages](bank-messages.md#5-over-the-monthly-limit)), the month's latest items, each with details, an edit dialog (amount, kind, category, date, description; `expense.update` stores the category through the registry and records a changed one as the user's correction) and delete, each category badge in the colour the taxonomy gives it, and the goal creation card |
+| Record tab | `src/components/expenses/RecentExpenses.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/goals/FinancialGoalsPanel.tsx#FinancialGoalsPanel` | Beside the entry form: the entries waiting for an answer to their question ("محتاج ردك", [recording spending](expense-capture.md#clarifications)), the month's latest items, each with details, an edit dialog (amount, kind, category, date, description; `expense.update` stores the category through the registry and records a changed one as the user's correction) and delete, each category badge in the colour the taxonomy gives it, and the goal creation card |
 | Statistics tab | `src/components/dashboard/StatsView.tsx#StatsView`, `src/components/dashboard/ExpenseChart.tsx#ExpenseChart`, `src/components/dashboard/BehaviorInsights.tsx`, `src/components/dashboard/GlobalSearch.tsx#GlobalSearch` | Daily average, change, top category and personality; charts by category, family, electronic payments, budget and timing; search; bank-message totals; top categories |
 | Calendar tab | `src/components/dashboard/MonthlyCalendar.tsx` | Spending per day of the calendar month, and the items of a chosen day |
 | Ledger API | `api/expense-router.ts` (`expense.list`, `expense.searchTransactions`, `expense.getById`, `expense.update`, `expense.delete`, `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getYearlyStats`) | Reads, edits and deletes items and computes the month and year figures |
+| Ledger writer | `api/services/ledger-writer.ts` | Adds, changes and removes a row with everything that moves with it (decision 0027) |
 | Daily rollups | `api/services/expense-rollups.ts`, `api/jobs/rollup-reconciliation-job.ts#runRollupReconciliationJob` | Per-day totals kept in step with every write, and repaired every night |
 | Taxonomy migration | `api/jobs/taxonomy-migration-job.ts#runTaxonomyMigrationJob` | Moves stored rows still filed under an old category to the current taxonomy |
 | Financial month | `api/services/financial-month.ts#getFinancialMonthDayRange` | Month boundaries from a salary day, in Cairo business days |
 | Wallets, budgets, goals, business | `api/wallet-router.ts`, `api/budget-router.ts`, `api/goals-router.ts`, `api/business-router.ts` | Their own records and rules |
+| Cards and wallets screen | `src/pages/WalletsPage.tsx`, route `/wallets`, linked from the More page and the sidebar; `src/components/wallets/DigitalBankingSuite.tsx#DigitalBankingSuite` | The user's cards and wallets through `wallet.*`: add one (name, kind, last four digits, balance), delete one, and a chosen one's transactions with its money in and out (`wallet.getWalletMonth`). A balance is what the user entered |
 | Commitments and plans | `api/coach-router.ts`, `api/services/coach/`, the page `src/pages/PlanPage.tsx#PlanPage` at `/plan` | Scheduled commitments and expected income, which payment paid which due date, what is free until payday, the coaching plan the user accepted, and its reminders ([below](#commitments-and-plans)) |
+| Commitments hub (التزاماتي) | `api/commitments-router.ts`, `api/services/coach/commitments.ts`, `api/services/coach/matcher.ts`, `api/services/coach/reminders.ts`; the app's `mobile/app/lib/src/features/commitments/` | Installments, subscriptions, school fees, rent, bills, debts and gam3eyas in five shapes, payments linked to them on their own only when certain, the questions asked otherwise, and reminders before each date ([below](#commitments-hub-التزاماتي), decision 0051) |
 | People | the contact procedures in `api/profile-router.ts` (`profile.listContacts`, `profile.addContact`, `profile.updateContact`, `profile.deleteContact`, `profile.mergeContacts`) | The people behind transfers and family spending |
 | Export | `export.myExpenses` in `api/export-router.ts`, the "نزّل مصاريفك" card of the More page (`src/components/expenses/ExportExpensesCard.tsx`) | The user's items, up to 10,000 newest first, as Excel or CSV (JSON too through the API), protected against spreadsheet formulas: each row dated by Cairo's day, named by its kind (دخل، مصروف، تحويل، استثمار، مرتجع for a refund, with its signed amount), with its subcategory and its source (`exportRow`) |
 
-Screens of other systems use these APIs: wallets in `src/components/bank-sync/DigitalBankingSuite.tsx`
-([bank messages](bank-messages.md)), people in `src/components/settings/PeopleSettingsView.tsx`, the business in
+Screens of other systems use these APIs: people in `src/components/settings/PeopleSettingsView.tsx`, the business in
 `src/components/settings/BusinessSettingsView.tsx`.
 
 ## The ledger and its daily rollups
-- An item is a row of `expenses` with a type (income, expense, transfer, investment), an amount, a category and
+- An item is a row of `expenses` with a stored type (legacy: income, expense, transfer, investment; cashflow-v1: income or expense), an amount, a category and
   subcategory, a date, a source, a status, and optional wallet, business and contact, with its original text
   (`raw_text`) and parsed metadata (`parsed_metadata`) on the same row. A side table that copied those two,
   `expense_details`, was read by nothing and kept the text of deleted expenses; migration
@@ -42,15 +44,26 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   (docs/decisions/0010-refunds-net-their-category.md).
 - Every write that adds, changes or removes an item runs in a transaction that applies a delta to
   `expense_daily_rollups`, one row per user, business (0 for personal) and Cairo business day
-  (`expenseToRollupDelta`, `applyExpenseRollupDelta`). Only confirmed items count; items from bank messages also
-  count as automated income or spending. A negative net-spending day can be a legitimate refund and does not raise a corruption alert. Negative non-spending totals or transaction counts request reconciliation; the log records ids and the day, never financial totals.
-- `expense.update` backs out the old row's delta and applies the new one, stores new text in the details, checks that
-  a referenced wallet, business or contact belongs to the user, marks muscle memory stale (its Redis generation),
-  adds a contact for a person category, and when the category changed marks the classification log as corrected and
-  records a correction rule.
-- `expense.delete` locks the row, deletes it and its details, backs out its delta, lowers the contact's count and
-  marks muscle memory stale.
-- After a write, the user's cache generation is bumped (`invalidateExpenseCache`), which drops the month summaries and
+  (`expenseToRollupDelta`, `applyExpenseRollupDelta`). Only confirmed items count; items recorded from bank messages
+  (source `sms`, saved by the old intake) also count as automated income or spending. A negative net-spending day can be a legitimate refund and does not raise a corruption alert. Negative non-spending totals or transaction counts request reconciliation; the log records ids and the day, never financial totals.
+- **The ledger writer** (`api/services/ledger-writer.ts`, decision 0027) holds these steps for `expense.create`,
+  `expense.batchCreate`, `expense.update`, `expense.delete` and the clarification saves. `createLedgerEntry` inserts
+  the row with its signed amount, rollup delta, contact count and (unless the caller says the save does not count)
+  the streak in one transaction, gives back the row already saved under the same `clientRequestId` instead of
+  writing again, then runs the caller's `afterCommit` and clears the caches and checks budgets for new spending.
+  Changing the category of a row recorded from a bank message also teaches the user's capture memory where that
+  merchant goes ([bank and wallet messages](bank-messages.md)).
+  `insertLedgerEntriesInTx` and `bumpStreakInTx` are the same steps inside a caller's own transaction. The caller
+  still checks ownership, finds or creates the contact and normalizes the category.
+- `expense.update` checks that a referenced wallet, business or contact belongs to the user and normalizes the
+  category through the registry; `updateLedgerEntry` locks the row, keeps its sign in line with its kind and refund,
+  reconciles what it paid toward, backs out the old row's delta and applies the new one, and marks muscle memory stale
+  (its Redis generation). Then the procedure adds a contact for a person category, and when the category changed marks
+  the classification log as corrected and records a correction rule.
+- `expense.delete` (`deleteLedgerEntry`) locks the row, deletes it, releases what it paid toward, backs out its delta,
+  lowers the contact's count and marks muscle memory stale. A row recorded from a bank message also marks its capture
+  event deleted in the same transaction, so a late message of the same payment does not bring it back.
+- After a write, the user's cache generation is bumped (`invalidateLedgerCaches`), which drops the month summaries and
   statistics cached in Redis and the finance facts of the [AI Center](ai-center.md). So do deleting a wallet and
   deleting or merging a person, which change expense rows too. The classification cache needs no clearing: its key
   holds what the answer depends on (docs/decisions/0013-caching-as-one-system.md).
@@ -58,8 +71,9 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   user with items or rollups in the last 60 days, recomputes each day from the confirmed items
   (`reconcileRollupsForRange`): missing days are inserted, wrong days rewritten, days without items deleted, and the
   caches bumped when anything changed.
-- **Streak.** Saving an item updates the user's streak in the same transaction (`updateStreak`): the same Cairo day
-  keeps it, the next day adds one, a gap restarts it.
+- **Streak.** Saving an item updates the user's streak in the same transaction (`bumpStreakInTx`): the same Cairo
+  day keeps it, the next day adds one, a gap restarts it. The writer's caller decides whether a save counts
+  (`countsForStreak`); every save the user makes does.
 - **Money movements.** A gam3eya payment or payout, a loan given, taken or repaid, and an ATM withdrawal are
   `transfer` items (تحويل/جمعية, تحويل/دين/سلفة, تحويل/سحب ATM), so they count as neither spending nor income. Which
   way the money went is in `parsed_metadata.direction` (`incoming` or `outgoing`)
@@ -106,7 +120,7 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   (`api/lib/app-time.ts#parseBusinessInstant`).
 - **Business mode.** A Pro user with a business can switch the statistics and calendar to that business; the choice is
   kept in the browser.
-- **Budget alert.** After a save (typed, a bank message, a confirmed suggestion), `checkUserBudgetExceeded` in
+- **Budget alert.** After a save (typed, spoken or from a receipt), `checkUserBudgetExceeded` in
   `api/notification-engine.ts` runs. A user with budgets gets `budget_near_limit` once per cycle when a budget reaches
   its alert threshold and `budget_category_exceeded` once when it passes its limit (`checkBudgetAlerts`; the cycles
   already warned are kept in the budget's metadata). A user without budgets gets `budget_exceeded` once a month when
@@ -116,10 +130,14 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
 `wallet.getWallets`, `wallet.createWallet` (name, provider, last four digits, balance: an amount, Arabic digits and
 thousands separators read, anything else refused by `walletBalanceSchema`), `wallet.updateWallet` and
 `wallet.deleteWallet`, which detaches the wallet from the user's items in the same transaction.
-`wallet.getWalletTransactions` pages through the items of one wallet. The [AI Center](ai-center.md) can also create and
-change wallets through confirmed actions. A balance is what the user entered, not a running total (no write moves it):
-each one given is stamped with when and by what (`balance_observed_at`, `balance_source`: `user` from these
-procedures, `assistant` from a confirmed action); balances saved before this was kept have an unknown age and are said
+`wallet.getWalletTransactions` pages through the items of one wallet. `wallet.getWalletMonth` sums a wallet's money in
+and out over one Cairo month (from payday when the caller passes a salary day): income and refunds are money in,
+spending and outgoing transfers are money out, incoming transfers are money in, and items waiting for confirmation are left out. The web card and the
+mobile wallet screen both show this sum, over every row of the month rather than a page of them. The [AI Center](ai-center.md) can also create and
+change wallets through confirmed actions. A balance is what the user entered or a bank message said, not a running
+total (no saved item moves it): each one given is stamped with when and by what (`balance_observed_at`,
+`balance_source`: `user` from these procedures, `assistant` from a confirmed action, `bank_message` when a captured
+payment on the wallet is recorded and its message is newer, [bank and wallet messages](bank-messages.md)); balances saved before this was kept have an unknown age and are said
 so, never taken for today's.
 
 ## Budgets
@@ -151,7 +169,9 @@ keyword, adds the ones paid before, and returns paid, remaining and the remainin
 dates ([commitments](#commitments-and-plans)) is counted from the payments linked to them instead
 (`installmentProgressFromLinked`): a partial payment counts for what it paid, an installment is paid once its whole
 amount is in, and a payment whose words also name another plan is not counted twice. `countedBy` says which. `expense.deleteInstallmentPlan`
-archives a plan.
+archives a plan. Since decision 0051 each plan is moved into a `fixed` commitment the first time the commitments hub
+opens (`migrateInstallmentPlans`: its title, monthly amount, count and installments paid before, with the payments
+already counted declared as paid); the app's installments screen is gone and its route opens the hub.
 
 ## Seasons (رمضان كلفني كام)
 A season is a date range, not a category (`api/lib/seasons.ts`): Ramadan and the two Eids come from the Hijri calendar
@@ -223,6 +243,84 @@ paid dates can be opened to inspect and unlink each settlement (`coach.unsettle`
 the ledger payment. `overview` includes settlement ids scoped to the same account and 90-day window. The [voice call](voice-calls.md)'s coach reads the same
 figures and saves plans, steps, reminders and commitments through the same services after the user's consent.
 
+## Commitments hub (التزاماتي)
+Decision 0051 makes every scheduled payment one system on `scheduled_cashflows`, used by the app's «التزاماتي»
+(`commitments.*`, `commitmentsProcedure`: the `commitments` plan feature the admin turns on per plan).
+- **Five shapes** (`api/services/coach/schedule.ts`, pure, Cairo days): `fixed` (N equal installments from `startDay`, counting
+  `paidBeforeCount`), `schedule` (its own `items` of day and amount: school fees), `recurring` (rent, bills,
+  subscriptions, salary; an amount, or `amountVaries`), `balance` (a debt of `totalAmount` repaid once, in
+  installments, or undated: its one open "date" is keyed by `trackedFrom` and stays open until paid) and `gam3eya`
+  (the monthly share; each payout is a row, `direction` in, whose `parentId` is the share's: one per share). An occurrence
+  carries its number of the total, its label, and `effectiveDay` after a move. `commitment_overrides` skip a date,
+  move it or change its amount this time, keyed by the day the rule computed, so links stay put; a skipped date is
+  `skipped`, never owed.
+- **Creating** (`createCommitment`): each shape checks its own fixed fields (`commitments.create`); a person named in the
+  form («فريدة اختي», «محمد ابني») becomes or reuses a contact (`contactName`, `beneficiaryName`). A
+  subscription can carry a `catalogSlug` from `subscription_catalog` (name, Arabic name, match tokens, brand colour
+  and real logo, `commitments.subscriptions`, in the seed's order with its section as `group`). A debt can say what
+  was repaid before it was added (`paidSoFar`, declared over its first dates by `declarePaidOnDates`), as a school's
+  fees can. The app's form for each type is `mobile/app/lib/src/features/commitments/commitment_form.dart`: a
+  subscription's renewal (monthly, every 3 months, yearly), next charge, automatic or by hand (`paymentMethod`) and
+  free trial; an installment's financing company or a loan's bank, what is left and how many in all; a flat paid
+  every 1, 3, 6 or 12 months (`intervalCount`) with its one-off payments saved as a second `schedule` commitment;
+  named school fees and what was paid; lessons monthly or weekly until an end; rent with its landlord and contract
+  end; a bill by type with an estimate when it varies (`amount` with `amountVaries`); a card's due date; a debt's
+  person from the contacts; a gam3eya's holder, its shares (one to three: one share's amount is paid per share every month, and each share collects on its own turn, `gam3eyaTurns`, one payout row per share) and payouts; income by kind. Each type starts with a fitting reminder
+  (a day before an automatic charge, two before a trial ends, a week before a flat's or a school's amount), and the
+  same service or name is asked about before it is added twice.
+- **Where payments are filed** (`filingOf`): the commitment's own category if set, else its kind's: installment, loan
+  and property under أقساط وفوايد › أقساط, school, university and lessons under تعليم, rent under سكن › إيجار,
+  subscriptions under اشتراكات, a debt or gam3eya as its financial movement (`movementKind` loan or gam3eya), a card
+  as a card payment.
+- **Paying from the app** (`payDue`, `commitments.pay`): writes the payment through the ledger writer filed as above
+  (with the outbox item's `clientRequestId` when a sentence asked for it) and settles the date in the same request;
+  `record: false` declares it paid off the records. `commitments.link` and `commitments.unlink` link or unlink a
+  recorded payment; unlinking never touches the ledger row.
+- **Linking what is saved** (`matchSavedExpenses`, called by `expense.create`, `expense.batchCreate` and
+  `expense.answerClarification`, which return `commitmentLinks`; `commitments.linksFor` reads the result again for the
+  app): `decideMatch` (`api/services/coach/matcher.ts`, no model, no category) links only when one commitment is named strongly (title
+  or catalog alias with long vowels folded, a learned phrase or SMS sender, its contact, or, under the understanding
+  engine, the commitment the sentence's reading named: `namedCashflowId`, read from the user's own reading log), no rival is named too, the
+  amount is exact (k installments when the sentence says «قسطين» or «2 قسط»; a part of an undated debt repaid by its
+  contact, never above what is left), `canPayCashflow` allows it, and the date is open (ten days early, or late).
+  Installment kinds also need «قسط», «اقساط», «قسطين», «تقسيط» or «مقدم» in the sentence. A near match becomes a
+  question (`commitment_questions`, `kind` link, candidates); anything weaker is nothing. With
+  `commitments_auto_link_enabled` off every match is a question. A link teaches its phrase (+1 in
+  `commitment_hints`); unlinking an automatic or answered link takes 2. The `commitment-match-sweep` job (every ten
+  minutes, `sweepCapturedPayments`) runs the same matching over payments recorded from bank and wallet messages
+  (`source` sms) in the last 20 minutes, for plans with `commitment_capture_link`.
+- **Naming without an amount** (`commitmentForSentence`, `commitments.forSentence`): «دفعت نتفليكس» returns the one
+  commitment it names strongly and its open date, so the app offers one button that pays it.
+- **Questions when the app opens** (`pendingQuestions`, `answerQuestion`): dates of the last 60 days that passed with
+  no payment (`commitments_due_prompt_enabled`), five at most, and open link questions. «دفعته» links the one
+  recorded payment that fits exactly or records one; «اتدفع بره التسجيل» declares it; «لسه» (and the app's skip)
+  leaves it open and stops asking; a link answer is a candidate's `cashflowId:dueDay` or `none`.
+- **Hub and page** (`commitmentsOverview`, `commitmentDetail`, `commitmentsMonth`): each commitment with its progress
+  (paid of total, what is left, the next date, how many are overdue), the open dates of 60 days ahead and those
+  overdue, this month's due, paid and left; one commitment with every date to its end (a year ahead for an open
+  recurrence) and the payment linked to each with how it was linked; a month's dates with the service's colour and
+  logo for the calendar. The page says what to say when paying it (`sayHint`, with «قسط» added for an installment kind
+  whose title lacks it).
+- **Reminders** (`api/services/coach/reminders.ts`, job `commitment-reminders`, every five minutes in `api/boot.ts`, for plans with
+  `commitment_reminders`): for each open date, the stages
+  `before` (the commitment's `remindDaysBefore`, else `commitments_remind_days_default`), `due`, `after` (the next
+  day) and `week1`/`week2` (`commitments_overdue_followups`), from the hour `commitments_remind_hour_default` unless the
+  commitment sets one, each claimed once per date, stage and channel by an `INSERT IGNORE` on `commitment_reminders`.
+  Several dates due together become one notification (`commitment_due`, to `/commitments`) in the inbox and by push.
+  A charge taken automatically (`paymentMethod` card, auto_debit or app) is worded as one: «هيتخصم قريب، اتأكد إن في
+  رصيد كفاية، ولو عايز تلغيه ده وقته».
+  WhatsApp sends only with `commitments_whatsapp_enabled`, a template (`commitments_whatsapp_template`, two body
+  variables: title and text), the plan's `commitment_whatsapp` feature, inside `commitments_whatsapp_hours` and under
+  `commitments_whatsapp_daily_cap`; the WhatsApp outbox (`enqueueMessage`) then checks the person's consent and
+  opt-out.
+- **The app** (`mobile/app/lib/src/features/commitments/`): the hub from More and the Record tab's card; a commitment's
+  page with its reminder sheet (days before, hour, off) and each date's actions; adding by type with that type's
+  fields, a subscription picked from the catalog with its logo (else its initials on its brand colour,
+  `mobile/app/lib/src/features/commitments/subscription_brands.dart`); the calendar's day cells with the first commitment's mark and the day's sheet with
+  «دفعته»; the record flow's notice after a certain link (undo unlinks) or its question sheet, and the
+  «دفعت Netflix · 240 ج.م» button on a clarification. `CommitmentPromptHost` in the app shell asks the open-app
+  questions at start and after six hours away.
+
 ## Goals
 - `goals.list` returns the user's goals and, when the plan has no goal analysis, an upsell.
 - `goals.create`: a title, a description of up to 120 characters, a target amount and date. The number of active
@@ -246,8 +344,12 @@ business mode:
 - `business.delete` removes the categories, turns linked contacts back into personal ones, moves the business rollups
   and items to personal, and deletes the business in one transaction.
 
-A plan without the feature is told on the first screen of Settings → business (`business.get` answers FORBIDDEN, and
-`src/components/settings/BusinessSettingsView.tsx` shows the lock and a link to the plans instead of the setup steps).
+A plan without the feature is told on the first screen of Settings → business: `pro.myPlan` returns `features.business`
+from the same settings the server gate reads, and `src/components/settings/BusinessSettingsView.tsx` shows the lock and a
+link to the plans instead of the setup steps, without calling `business.get`. A FORBIDDEN answer from `business.get` (the
+plan changed meanwhile) locks it too, and an answer without `features` (an older server) leaves the decision to
+`business.get`. The home screen (`src/pages/Home.tsx`) also asks for the business only when the plan includes it, so a
+free account sends no request the server refuses; without `features` it asks for none.
 
 ## People
 - `profile.listContacts` counts each person's items from `expenses` and filters personal, business or silenced people.
@@ -262,6 +364,7 @@ A plan without the feature is told on the first screen of Settings → business 
 ## Where to change what
 | To change | Edit | Check with |
 | --- | --- | --- |
+| What moves with a saved, edited or deleted row | `api/services/ledger-writer.ts` | `tests/ledger-writer.test.ts`, `tests/expense-rollups.test.ts` (`npm run test:db`) |
 | How a write updates the daily totals | `api/services/expense-rollups.ts` | `tests/expense-rollups.test.ts` |
 | Where old categories move, and how stored rows follow | `LEGACY_TAXONOMY` in `contracts/categories.ts`; the job in `api/jobs/taxonomy-migration-job.ts` | `api/jobs/taxonomy-migration-job.test.ts`, `tests/taxonomy-migration.test.ts` (`npm run test:db`) |
 | The month summary or the statistics | `expense.getMonthSummary`, `expense.getMonthlyStats` in `api/expense-router.ts` | |
@@ -274,10 +377,16 @@ A plan without the feature is told on the first screen of Settings → business 
 | People | the contact procedures in `api/profile-router.ts`; the screen `src/components/settings/PeopleSettingsView.tsx` | |
 | Due dates, payments, what is free until payday | `api/services/coach/schedule.ts`, `api/services/coach/cashflows.ts` | `api/services/coach/schedule.test.ts`, `tests/coach-follow-up.test.ts` (`npm run test:db`) |
 | Plans, steps and reminders | `api/services/coach/plans.ts`, the job in `api/boot.ts`, the page `src/pages/PlanPage.tsx` | `tests/coach-follow-up.test.ts` |
+| The shapes of commitments and their dates | `api/services/coach/schedule.ts` | `api/services/coach/schedule.test.ts` |
+| When a saved payment links to a commitment, or asks | `api/services/coach/matcher.ts` | `api/services/coach/matcher.test.ts`, `tests/commitments-ecosystem.test.ts` (`npm run test:db`) |
+| Where a commitment's payments are filed | `filingOf` in `api/services/coach/commitments.ts` | `tests/commitments-ecosystem.test.ts` |
+| Commitment reminders and their WhatsApp gates | `api/services/coach/reminders.ts`, the `commitments_*` settings | `api/services/coach/reminders.test.ts`, `tests/commitments-ecosystem.test.ts` |
+| The app's commitments screens | `mobile/app/lib/src/features/commitments/` | `mobile/app/test/commitments_test.dart`, `mobile/app/test/calendar_test.dart`, `mobile/app/test/ledger_test.dart` |
 
 ## Rules for changes here
 1. Every write to `expenses` runs in a transaction with its rollup delta (`api/AGENTS.md`, rule 4) and bumps the
-   cache generation afterwards; the nightly repair is a safety net, not the mechanism.
+   cache generation afterwards; the nightly repair is a safety net, not the mechanism. A new writer uses
+   `api/services/ledger-writer.ts` (decision 0027) instead of writing these steps again.
 2. Filter by `userId` and `userType`, and check referenced wallets, businesses, goals and contacts with
    `api/lib/ownership-guard.ts`.
 3. Build alternatives with `or(...)`: `and()` does not parenthesize a raw fragment, and an `OR` left bare inside it
@@ -287,12 +396,17 @@ A plan without the feature is told on the first screen of Settings → business 
 
 ## Tests
 `api/expense-router.test.ts` (including the search's user filter and the person a saved item names),
-`tests/expense-rollups.test.ts`, `tests/taxonomy-migration.test.ts` and `tests/coach-follow-up.test.ts` (partial and
+`tests/ledger-writer.test.ts` (retries, the streak choice, refunds, several rows for one contact, edits, deletes and
+the user-type pair), `tests/expense-rollups.test.ts`, `tests/taxonomy-migration.test.ts` and `tests/coach-follow-up.test.ts` (partial and
 over-allocated payments, release on delete and edit, another account's ids, one schedule per installment plan, one
 active plan, a reminder delivered once under two concurrent runs and never after it moved or was cancelled), whose
 database cases run with
 `npm run test:db` (`docs/guides/testing.md`), `api/jobs/taxonomy-migration-job.test.ts`, and
-`src/components/dashboard/NativeTabPanels.test.tsx`.
+`src/components/dashboard/NativeTabPanels.test.tsx`. The commitments: `api/services/coach/schedule.test.ts`,
+`api/services/coach/matcher.test.ts` and `api/services/coach/reminders.test.ts` without a database, and `tests/commitments-ecosystem.test.ts` on MySQL
+(a fridge linked on its own and undone, «دفعت نتفلكس», «دهان الشقة» left alone, two schools and a question, a debt
+repaid in parts, a passed date answered «لسه» then «دفعته», a gam3eya's payout, a reminder sent once, an installment
+plan moved in).
 
 ## Known issues
 Checked against the code; each one names where it lives.
@@ -306,13 +420,27 @@ Checked against the code; each one names where it lives.
 4. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName` or a budget check (its cost does reach the AI cost ledger);
     `business.get` returns the user's first business even when it is inactive.
 5. **Gap.** `expense.getYearlyStats` has no screen.
-6. **Gap.** A bank message's refund nets its category only when the merchant is one the engine knows well
-    (`categorizeSms` with `readsAsSmsRefund` in `api/services/sms-ledger.ts`); any other refund arrives as an incoming
-    credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative
+6. **Gap.** Refunds the old bank-message intake recorded netted their category only when the merchant was one the
+    engine knew well; the others were saved as income under دخل آخر and keep that filing, as do rows saved before
+    decision 0010. A category can show net negative
     spending in a month when the purchase fell in an earlier one.
 7. **Gap.** Commitments, plans and wallet balances are the personal ledger's only: `business_id` exists on
     `scheduled_cashflows` and `coaching_plans` but nothing writes or reads it yet (`api/services/coach/`).
-8. **Gap.** Reminders reach the in-app notifications only, not web push (`api/services/coach/plans.ts#deliverDueReminders`).
+8. **Gap.** Coaching-plan step reminders reach the in-app notifications only, not push
+    (`api/services/coach/plans.ts#deliverDueReminders`); commitment reminders do reach push.
+9. **Debt.** Writers outside `api/expense-router.ts` still write `expenses` with their own steps instead of the ledger
+    writer: receipts (`api/image-router.ts#parseReceipt`), the AI Center's actions
+    (`api/services/action-runtime/extended-actions.ts`), business, profile and wallet changes
+    (`api/business-router.ts`, `api/profile-router.ts`, `api/wallet-router.ts`), the taxonomy migration and account
+    purge. Each moves to it as its own change (decision 0027).
+10. **Gap.** A service an admin adds without an Android app, a Microsoft Store app or a site icon shows its initials on
+    its brand colour until the admin sets a logo (`mobile/app/lib/src/features/commitments/subscription_brands.dart`,
+    [bank messages](bank-messages.md)); every service the seed ships has its real logo.
+11. **Gap.** WhatsApp commitment reminders stay off until the admin sets an approved Utility template
+    (`commitments_whatsapp_template`) and turns them on; the template's two variables are the title and the text
+    (`api/services/coach/reminders.ts`).
+12. **Gap.** The parked website's «خطتك والتزاماتك» page (`src/pages/PlanPage.tsx`) still adds and settles through
+    `coach.*` and knows nothing of shapes, overrides or questions (decision 0050 parks it).
 
 ## Related systems
 - [Recording spending](expense-capture.md): creates the items this system reads, and triggers the budget alert.
@@ -324,3 +452,68 @@ Checked against the code; each one names where it lives.
 
 ### Installment attribution
 `expense.listInstallmentPlans` groups linked settlements by plan and due date: partial payments on two dates never count as a fully paid installment on either. Unlinked keyword payments use net recorded personal amounts, not row counts, and remain estimates. A word shared by two plans is ambiguous; no final remaining amount is claimed by voice and the installment panel requests linking instead of displaying false precision. Business ledger payments and schedules are excluded from personal installment progress. `tests/coach-follow-up.test.ts` holds these boundaries on migrated MySQL.
+
+## Versioned financial meaning and guarded cutover
+`contracts/ledger-movement.ts` separates physical direction from economic kind. With
+`capture_financial_version=cashflow-v1`, every new shared-writer row is income or expense, with
+`parsedMetadata.financial` version 1. Loans and gam3eya payments/payouts enter expense/income respectively.
+Own-account, cash, card-repayment and investment movements are excluded from those totals; their real direction
+still enters wallet movement. Linked refunds remain negative expense in the purchase category. The SQL lens,
+rollup deltas/reconciliation, direct expense/analytics/budget/goal queries, AI finance facts, export filters and
+web chart use the same buckets. The legacy default remains compatible until cutover. The `cashflow-cutover` job
+(`api/jobs/cashflow-cutover-job.ts`) runs the migration at boot and every ten minutes and turns the flag on once no
+legacy row is left; with rows it cannot resolve it tells the admins (decision 0049). Rows the capture model wrote
+(`promptVersion` sms-v4 or sms-v5) keep their linked fee and canonical kind.
+
+Every ledger mutation locks the identity first. Both wallets of an internal movement are checked against the
+owner pair; the destination is a metadata link, not a second ledger row. Wallet views reverse that leg, and wallet
+month sums include internal movement. Deleting a wallet removes its reverse links and balance-kind policy under
+the same identity lock. Debt/gam3eya readers retain direction without requiring the old physical transfer type.
+Taxonomy migration re-reads locked rows and does not rewrite canonical rows back to legacy types.
+
+`npm run ledger:cashflow` previews bounded batches. `--apply` converts only known legacy directions; unresolved ids
+and reasons are reported without financial text or amounts. `--apply --activate` takes the financial-flag exclusive
+lock, waits for the writers' shared locks, and checks for any remaining unsupported type before enabling new writes.
+`--apply --rollback` disables that flag and restores only authenticated migration snapshots whose financial fields
+have not since changed. Snapshots are HMAC-bound to row and owner and tolerate MySQL JSON key order; edits and forged
+snapshots are skipped. Keep compatible readers deployed during rollback; ordinary new canonical rows are retained.
+This tool has only been exercised on a disposable local MySQL. No production conversion or activation has run.
+
+Wallet balance semantics are deliberately explicit: `capture.walletKind` and `capture.setWalletKind` store a scoped marker
+(cash/bank/debit/credit/unknown) without changing the existing wallet table. A v4 observation changes balance only
+for known cash/bank/debit wallets; a credit limit or an unknown balance never overwrites available cash.
+Web and Flutter retain versioned metadata for display/editing and offline copies. A category-only edit preserves
+economic nature; a deliberate kind change can supply `movementKind`.
+
+Real MySQL coverage: `tests/cashflow-ledger.test.ts`, `tests/financial-migration.test.ts`, writer, rollup, debt,
+taxonomy and action undo suites. The cashflow fixture checks salary, rent, loans/repayment, two-wallet ATM movement,
+purchases, fees, refund, gam3eya, owner-pair checks, old-editor compatibility and zero reconciliation drift.
+
+
+The writer now exposes transaction-scoped edit/delete primitives. `linkedFeeAmount` edits a captured bundle in the same transaction; zero deletes the fee, date/wallet changes propagate, and parent deletion follows adopted fee events into tombstones. Caller-level undo can therefore release capture quota atomically with the deletion.
+
+
+## Exact amounts, display bundles and wallet balance type
+The new opt-in ledger/transaction lists group a captured fee with its parent without changing either stored amount.
+`api/services/ledger-bundles.ts` uses an owned one-to-one SQL join, so concurrent edits cannot mix principal and fee
+from different read snapshots. Orphan fees remain visible. `expense.getById` and search return flat rows with optional
+bundle details. Flutter keeps those details offline and its editor sends principal plus `linkedFeeAmount` atomically.
+Web and Flutter display up to two decimal places; summaries and speech do not discard piastres.
+
+`wallet.getWallets` exposes balance kind and whether the reported balance enters cash totals after cashflow cutover.
+The separate kind is not inferred from Visa/Mastercard branding. Known credit availability is excluded from the AI
+wallet cash total and the coach's cash position, with owner-cache invalidation after a policy change. Its value can
+still be displayed as available credit. Legacy untyped manual balances retain their existing behavior; automatic
+observations still require known cash/bank/debit kinds. Conflicting policies do not make known credit into cash.
+Wallet-kind data is retained when capture data is erased because the wallet itself remains.
+
+Loan/gam3eya standing follows validated financial kind instead of mutable category text; legacy categories remain
+the fallback. A deliberate nature change can remove the standing. Unlinked rows without a complete private phone
+identity no longer cancel unrelated people. An explicitly chosen owned contact can teach a private full-phone alias;
+plain names never make that link. Contact counts follow reassignment, and contact merge/delete take the identity
+lock before updating ledger links. These rules are exercised against the disposable MySQL, not customer data.
+
+Edits/deletion of a captured entry also clear a still-undelivered obsolete model-job notice in the same transaction.
+This is cancellation, not a fabricated delivery timestamp; already delivered notices retain their historical receipt.
+
+A category or subcategory edit marks the classification log linked to the original expense. In a multi-item reading, correction learning uses the uniquely matched clause.

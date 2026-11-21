@@ -1,7 +1,11 @@
 import { router } from "./middleware";
+import { adminConsoleRouter } from "./admin-console-router";
+import { aiSetupRouter } from "./ai-setup-router";
+import { appConfigRouter } from "./app-config-router";
 import { authRouter } from "./auth-router";
 import { localAuthRouter } from "./local-auth-router";
 import { expenseRouter } from "./expense-router";
+import { taxonomyRouter } from "./taxonomy-router";
 import { aiRouter } from "./ai-router";
 import { analyticsRouter } from "./analytics-router";
 import { adminRouter } from "./admin-router";
@@ -11,7 +15,6 @@ import { exportRouter } from "./export-router";
 import { sessionRouter } from "./session-router";
 import { proRouter } from "./pro-router";
 import { adsRouter } from "./ads-router";
-import { referralRouter } from "./referral-router";
 import { seoRouter } from "./seo-router";
 import { profileRouter } from "./profile-router";
 import { walletRouter } from "./wallet-router";
@@ -23,11 +26,18 @@ import { businessRouter } from "./business-router";
 import { budgetRouter } from "./budget-router";
 import { voiceRouter } from "./voice-router";
 import { coachRouter } from "./coach-router";
+import { commitmentsRouter } from "./commitments-router";
+import { captureRouter } from "./capture-router";
+import { captureAdminRouter } from "./capture-admin-router";
 
 export const appRouter = router({
+  adminConsole: adminConsoleRouter,
+  aiSetup: aiSetupRouter,
+  appConfig: appConfigRouter,
   auth: authRouter,
   localAuth: localAuthRouter,
   expense: expenseRouter,
+  taxonomy: taxonomyRouter,
   ai: aiRouter,
   analytics: analyticsRouter,
   admin: adminRouter,
@@ -37,7 +47,6 @@ export const appRouter = router({
   session: sessionRouter,
   pro: proRouter,
   ads: adsRouter,
-  referral: referralRouter,
   seo: seoRouter,
   profile: profileRouter,
   wallet: walletRouter,
@@ -49,6 +58,9 @@ export const appRouter = router({
   business: businessRouter,
   voice: voiceRouter,
   coach: coachRouter,
+  commitments: commitmentsRouter,
+  capture: captureRouter,
+  captureAdmin: captureAdminRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -561,6 +561,10 @@ async function changeDraft(
       ? goalSummary(payload as GoalCreatePayload)
       : actionSummary(actionName, payload);
   ctx.signal.throwIfAborted();
+  const prior = ctx.drafts.latestPending();
+  if (prior && prior.kind === "action") {
+    await dropRuntimeAction(prior, ctx);
+  }
   // The durable action is made now, once; confirming runs this id, however many times confirmation arrives.
   const pending =
     actionName === "goal.create"
@@ -714,6 +718,12 @@ async function confirm(
     gate = ctx.drafts.gate(id, false);
   }
   if (!gate.ok) {
+    if (gate.reason === "expired") {
+      const expiredDraft = ctx.drafts.get(id);
+      if (expiredDraft) {
+        await dropRuntimeAction(expiredDraft, ctx);
+      }
+    }
     return {
       response: {
         ok: false,

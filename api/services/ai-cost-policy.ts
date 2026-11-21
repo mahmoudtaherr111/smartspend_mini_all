@@ -174,8 +174,8 @@ export const AI_GOLDEN_EVAL_DATASET: Array<{
     numericAnswerRequiresFacts: true,
   },
   {
-    id: "sms_linking_help",
-    question: "إزاي أربط SMS البنك؟",
+    id: "card_linking_help",
+    question: "إزاي أربط الفيزا بتاعتي؟",
     expectedIntent: "site_help",
     expectedNeeds: ["site_guide.search"],
     channel: "chat",

@@ -12,7 +12,7 @@ export type SaveDirection = "incoming" | "outgoing";
  * for an expense whose money came back (a refund). Anything else has none.
  */
 export function directionToSave(item: { type?: unknown; direction?: unknown }): SaveDirection | undefined {
-  if (item.type === "transfer") {
+  if (item.type === "transfer" || item.type === "investment") {
     return item.direction === "incoming" || item.direction === "outgoing" ? item.direction : undefined;
   }
   return item.type === "expense" && item.direction === "incoming" ? "incoming" : undefined;

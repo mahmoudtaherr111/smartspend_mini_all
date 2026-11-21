@@ -1,3 +1,4 @@
+import { recordJobRun } from "./job-runs";
 import type { RowDataPacket } from "mysql2/promise";
 import { mysqlPool } from "../queries/connection";
 
@@ -22,9 +23,15 @@ export async function withScheduledJobLock(
       [lockName],
     );
     if (Number(rows[0]?.acquired) !== 1) return false;
+    // Only the process that took the lock ran the job, so only it records the run (api/services/job-runs.ts).
+    const startedAt = new Date();
     try {
       await task();
+      await recordJobRun({ jobName, startedAt, durationMs: Date.now() - startedAt.getTime() });
       return true;
+    } catch (error) {
+      await recordJobRun({ jobName, startedAt, durationMs: Date.now() - startedAt.getTime(), error });
+      throw error;
     } finally {
       await connection.query("SELECT RELEASE_LOCK(?)", [lockName]);
     }

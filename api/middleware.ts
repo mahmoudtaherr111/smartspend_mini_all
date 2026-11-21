@@ -1,5 +1,8 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { Context } from "./context";
+import { logAdminAction } from "./lib/admin-audit";
+import { noteAppSeen } from "./lib/client-platform";
+import { getIncomingHeader } from "./lib/get-client-ip";
 import { createRateLimiter } from "./lib/rate-limit";
 import { getSystemSettings } from "./lib/settings-cache";
 import { isPlanFeatureEnabled, type PlanFeature } from "../contracts/plan-features";
@@ -30,11 +33,13 @@ const t = initTRPC.context<Context>().create({
 export const router = t.router;
 
 /** All anonymous tRPC traffic — generous per-IP cap (SEO, ads list, etc.). */
-const publicIpLimiter = createRateLimiter(400, 60_000);
+// Mobile carriers put many customers behind one address, so a per-IP cap only stops a flood; accounts have their own
+// limits (login-protection.ts).
+const publicIpLimiter = createRateLimiter(3000, 60_000);
 /** Sensitive auth endpoints — stricter per-IP cap. */
-const strictPublicIpLimiter = createRateLimiter(25, 15 * 60_000);
+const strictPublicIpLimiter = createRateLimiter(300, 15 * 60_000);
 /** Authed general user traffic */
-const userRateLimiter = createRateLimiter(100, 60_000);
+const userRateLimiter = createRateLimiter(300, 60_000);
 /** AI Rate Limiter (expensive operations) */
 const aiRateLimiter = createRateLimiter(100, 60_000);
 
@@ -62,8 +67,11 @@ export const authedProcedure = t.procedure.use(async ({ ctx, next }) => {
     `usr:${ctx.user.type}:${ctx.user.id}`,
     "طلبات كتير جداً! اهدى شوية واستنى شوية.",
   );
-
-  return next({ ctx: { ...ctx, user: ctx.user } });
+  const result = await next({ ctx: { ...ctx, user: ctx.user } });
+  // Only a request that was allowed and answered counts as using the app.
+  // Calls made inside the server (voice tools, jobs) have no request.
+  if (result.ok && ctx.req) noteAppSeen(ctx.user, getIncomingHeader(ctx.req, "user-agent"));
+  return result;
 });
 
 export const aiProcedure = authedProcedure.use(async ({ ctx, next }) => {
@@ -75,21 +83,45 @@ export const aiProcedure = authedProcedure.use(async ({ ctx, next }) => {
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
 
-// Moderator: can view everything except delete users/remove admin
-export const moderatorProcedure = authedProcedure.use(async ({ ctx, next }) => {
-  if (ctx.user.role !== "admin" && ctx.user.role !== "moderator") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "مش مسموحلك تدخل هنا" });
+/**
+ * Every change made with staff rights reaches the audit log. A procedure that writes its own, richer entry
+ * (`logAdminAction`) marks the request and this adds nothing; any other mutation is recorded by its path and whether it
+ * succeeded, never by its input, which can hold keys and personal data. A refused or failed change is recorded too.
+ */
+const auditStaffMutations = t.middleware(async ({ ctx, next, type, path }) => {
+  if (type !== "mutation") return next();
+  const audit = { written: false };
+  const result = await next({ ctx: { ...ctx, audit } });
+  if (!audit.written) {
+    await logAdminAction(ctx, {
+      action: path,
+      targetType: "procedure",
+      targetId: path,
+      details: result.ok ? null : { failed: true, code: result.error.code },
+    });
   }
-  return next({ ctx: { ...ctx, user: ctx.user } });
+  return result;
 });
 
+// Moderator: can view everything except delete users/remove admin
+export const moderatorProcedure = authedProcedure
+  .use(async ({ ctx, next }) => {
+    if (ctx.user.role !== "admin" && ctx.user.role !== "moderator") {
+      throw new TRPCError({ code: "FORBIDDEN", message: "مش مسموحلك تدخل هنا" });
+    }
+    return next({ ctx: { ...ctx, user: ctx.user } });
+  })
+  .use(auditStaffMutations);
+
 // Admin: full access
-export const adminProcedure = authedProcedure.use(async ({ ctx, next }) => {
-  if (ctx.user.role !== "admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "الصفحة دي للأدمن بس" });
-  }
-  return next({ ctx: { ...ctx, user: ctx.user } });
-});
+export const adminProcedure = authedProcedure
+  .use(async ({ ctx, next }) => {
+    if (ctx.user.role !== "admin") {
+      throw new TRPCError({ code: "FORBIDDEN", message: "الصفحة دي للأدمن بس" });
+    }
+    return next({ ctx: { ...ctx, user: ctx.user } });
+  })
+  .use(auditStaffMutations);
 
 // Pro subscription required (pro, ultra, or admin bypass)
 export const proProcedure = authedProcedure.use(async ({ ctx, next }) => {
@@ -169,3 +201,5 @@ export const businessAiProcedure = planFeatureAiProcedure("business");
 export const receiptsProcedure = planFeatureProcedure("receipts");
 export const proReportProcedure = planFeatureProcedure("pro_report");
 export const goalAnalysisProcedure = planFeatureProcedure("goal_analysis");
+/** The commitments ecosystem (docs/decisions/0051-commitments-ecosystem.md), on for every plan unless the admin says. */
+export const commitmentsProcedure = planFeatureProcedure("commitments");

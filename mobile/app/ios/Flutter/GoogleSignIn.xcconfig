@@ -1,0 +1,8 @@
+// Google sign-in on iOS (docs/decisions/0022-flutter-mobile-app.md, mobile/README.md).
+//
+// The Google SDK returns to the app through a URL scheme: the iOS OAuth client id reversed, for example
+// com.googleusercontent.apps.1234567890-abcdef for 1234567890-abcdef.apps.googleusercontent.com. Set it here to the
+// reversed form of the id the build gets as --dart-define=GOOGLE_IOS_CLIENT_ID. A client id is a public identifier,
+// not a secret, so the value may be committed. Set both or neither: the button appears when the dart-define is set,
+// and without this scheme the Google SDK stops the app as soon as it is tapped.
+GOOGLE_REVERSED_CLIENT_ID =

@@ -2,6 +2,9 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, authedProcedure } from "./middleware";
 import { db } from "./queries/connection";
+import { lockLedgerOwner } from "./services/ledger-writer";
+import { mergeIdentityContact, removeIdentityContact } from "./lib/capture/identity-links";
+import { getSystemSettings } from "./lib/settings-cache";
 import {
   expenses,
   monthlyBehaviorSnapshots,
@@ -9,16 +12,14 @@ import {
   users,
   localUsers,
   userProfiles,
-  webhookTokens,
-  rawSmsEvents,
   inAppNotifications,
   pushSubscriptions,
   userContacts,
   scheduledCashflows,
 } from "../db/schema";
-import { eq, and, gte, lte, desc, sql, isNotNull } from "drizzle-orm";
+import { eq, and, gte, lt, desc, sql, isNotNull } from "drizzle-orm";
+import { businessMonthKeyRange, shiftMonthKey } from "./lib/app-time";
 
-import { randomBytes, randomInt } from "crypto";
 import {
   getSmartProfile,
   recordProfileLearningEvent,
@@ -35,34 +36,32 @@ import {
   getNextOnboardingQuestion,
 } from "./services/adaptive-question-engine";
 import { buildBehaviorSnapshot } from "./services/lifestyle-inference-engine";
-import {
-  confirmSmsSuggestion,
-  dismissSmsSuggestion,
-  type SmsCategory,
-  type SmsSuggestion,
-} from "./services/sms-ledger";
-import { normalizeTransactionTaxonomy } from "./lib/category-registry";
 import { bumpFinanceCacheGen } from "./services/finance-semantic-layer";
 import { cleanPhoneNumber, comparePassword, validatePhone } from "./local-auth-utils";
-import {
-  executeSlidingWindowRateLimit,
-  stateDel,
-  stateGet,
-  stateSet,
-  stateTake,
-} from "./lib/redis-client";
+import { executeSlidingWindowRateLimit } from "./lib/redis-client";
 import { purgeUserData } from "./services/user-purge-service";
 import { isAccountDeletionConfirmed } from "../contracts/account-deletion";
-import { whatsappService } from "./services/whatsapp-service";
-import { getSystemSettings } from "./lib/settings-cache";
+import {
+  PHONE_CHALLENGE_TTL_MS,
+  confirmPhoneChallenge,
+  consumePhoneChallenge,
+  readPhoneChallenge,
+  startPhoneChallenge,
+} from "./services/phone-challenge";
+import { WhatsAppApiError, whatsAppConfig } from "./lib/whatsapp/client";
+import { sendMessageNow } from "./lib/whatsapp/outbox";
+import { verificationMessage } from "./lib/whatsapp/templates";
+import { createRateLimiter } from "./lib/rate-limit";
 import { invalidatePrincipal } from "./lib/access-control";
 import { validateBusinessOwnership } from "./lib/ownership-guard";
 
 /** A phone-number change: the code sent to the new number, then a one-time grant once it is confirmed. */
-const PHONE_CHANGE_TTL_SECONDS = 10 * 60;
-const PHONE_GRANT_TTL_SECONDS = 15 * 60;
-const phoneChangeKey = (userId: number, phone: string) => `phone-change:local:${userId}:${phone}`;
-const phoneGrantKey = (userId: number, phone: string, token: string) => `phone-grant:local:${userId}:${phone}:${token}`;
+/** One code a minute per account, counted across replicas, as for sign-up codes per number. */
+const phoneChangeCodes = createRateLimiter(1, 60 * 1000);
+const PHONE_CHANGE_RESEND_SECONDS = 60;
+const ONLY_PHONE_ACCOUNTS = "تغيير الرقم متاح لحسابات رقم التليفون بس.";
+const NUMBER_TAKEN = "الرقم ده مسجّل لحساب تاني.";
+const WHATSAPP_UNAVAILABLE = "مش قادرين نبعت كود على واتساب دلوقتي. جرّب تاني بعد شوية.";
 
 // ─── Strict Profile Validation Schemas (Eliminating z.any() wildcards) ───
 
@@ -122,26 +121,13 @@ export const StrictFinancialInfoSchema = z
   })
   .strict();
 
+/** The name and the avatar. A phone number changes only through `requestPhoneChange` and `confirmPhoneChange`. */
 export const StrictProfileUpdateSchema = z
   .object({
     name: z.string().min(1).max(100).optional(),
-    phone: z.string().regex(/^01[0125]\d{8}$/, "رقم هاتف مصري غير صحيح").optional(),
-    otpToken: z.string().min(6).max(64).optional(),
     avatar: z.string().max(200).optional(),
   })
-  .refine(
-    (data) => {
-      // If phone number is being changed, otpToken MUST be supplied
-      if (data.phone !== undefined) {
-        return Boolean(data.otpToken && data.otpToken.trim().length > 0);
-      }
-      return true;
-    },
-    {
-      message: "تغيير رقم الهاتف يتطلب تقديم رمز تأكيد التوثيق (OTP)",
-      path: ["otpToken"],
-    },
-  );
+  .strict();
 
 export const smartProfilePatchSchema = z.object({
   basicInfo: z.union([StrictBasicInfoSchema, safeProfileSectionSchema]).optional(),
@@ -154,12 +140,6 @@ export const smartProfilePatchSchema = z.object({
   profileCompleted: z.boolean().optional(),
 });
 
-function monthRange(month: string) {
-  const [year, monthNumber] = month.split("-").map(Number);
-  const start = new Date(year, monthNumber - 1, 1);
-  const end = new Date(year, monthNumber, 0, 23, 59, 59, 999);
-  return { start, end };
-}
 
 export async function refreshMonthlyInferences(
   userId: number,
@@ -167,10 +147,8 @@ export async function refreshMonthlyInferences(
   month: string,
 ) {
   const profile = await getSmartProfile(userId, userType);
-  const currentRange = monthRange(month);
-  const [year, monthNumber] = month.split("-").map(Number);
-  const prevMonth = `${monthNumber === 1 ? year - 1 : year}-${String(monthNumber === 1 ? 12 : monthNumber - 1).padStart(2, "0")}`;
-  const previousRange = monthRange(prevMonth);
+  const currentRange = businessMonthKeyRange(month);
+  const previousRange = businessMonthKeyRange(shiftMonthKey(month, -1));
 
   const [items, previousItems] = await Promise.all([
     db
@@ -181,7 +159,7 @@ export async function refreshMonthlyInferences(
           eq(expenses.userId, userId),
           eq(expenses.userType, userType),
           gte(expenses.date, currentRange.start),
-          lte(expenses.date, currentRange.end),
+          lt(expenses.date, currentRange.endExclusive),
         ),
       ),
     db
@@ -192,7 +170,7 @@ export async function refreshMonthlyInferences(
           eq(expenses.userId, userId),
           eq(expenses.userType, userType),
           gte(expenses.date, previousRange.start),
-          lte(expenses.date, previousRange.end),
+          lt(expenses.date, previousRange.endExclusive),
         ),
       ),
   ]);
@@ -501,6 +479,10 @@ export const profileRouter = router({
       return { success: true, ...result };
     }),
 
+  /**
+   * Starts moving a phone account to a new number: a code goes to the new number's WhatsApp, as for a sign-up
+   * (decision 0038). The proof is required whatever the sign-up verification switch says.
+   */
   requestPhoneChange: authedProcedure
     .input(
       z.object({
@@ -508,156 +490,89 @@ export const profileRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.type !== "local") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "تغيير رقم الهاتف متاح فقط للحسابات المحلية",
-        });
-      }
+      if (ctx.user.type !== "local") throw new TRPCError({ code: "BAD_REQUEST", message: ONLY_PHONE_ACCOUNTS });
 
       const clean = cleanPhoneNumber(input.newPhone);
       const validation = validatePhone(clean);
-      if (!validation.valid) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: validation.message,
-        });
-      }
+      if (!validation.valid) throw new TRPCError({ code: "BAD_REQUEST", message: validation.message });
 
-      // Check if phone is already registered to another user
-      const existing = await db.query.localUsers.findFirst({
-        where: eq(localUsers.phone, clean),
-      });
-      if (existing && existing.id !== ctx.user.id) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "رقم الهاتف مسجل بالفعل لحساب آخر",
-        });
-      }
+      const existing = await db.query.localUsers.findFirst({ where: eq(localUsers.phone, clean) });
+      if (existing && existing.id !== ctx.user.id) throw new TRPCError({ code: "CONFLICT", message: NUMBER_TAKEN });
 
-      const code = "SS-" + randomInt(100000, 1000000).toString();
-      // Shared state, so the confirmation may reach any replica (api/AGENTS.md, rule 6).
-      await stateSet(phoneChangeKey(ctx.user.id, clean), PHONE_CHANGE_TTL_SECONDS, code);
+      const whatsapp = whatsAppConfig();
+      if (!whatsapp) throw new TRPCError({ code: "SERVICE_UNAVAILABLE", message: WHATSAPP_UNAVAILABLE });
+      await phoneChangeCodes.hit(`phone-change:local:${ctx.user.id}`, "استنى دقيقة قبل ما تطلب كود جديد.");
 
-      const settings = await getSystemSettings();
-      if (settings["whatsapp_otp_enabled"] === "true") {
-        await whatsappService.sendMessage(
-          clean,
-          `رمز تأكيد تغيير رقم الهاتف في SmartSpend هو: ${code}`,
+      const challenge = await startPhoneChallenge(clean);
+      try {
+        await sendMessageNow(
+          {
+            owner: { userId: ctx.user.id, userType: "local" },
+            to: clean,
+            purpose: "verification",
+            message: verificationMessage(challenge.code),
+          },
+          whatsapp,
         );
+      } catch (error) {
+        if (error instanceof WhatsAppApiError && error.code === 131026) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "الرقم ده مش عليه واتساب. اتأكد من الرقم وجرّب تاني." });
+        }
+        throw new TRPCError({ code: "SERVICE_UNAVAILABLE", message: WHATSAPP_UNAVAILABLE });
       }
-
       return {
-        success: true,
-        message: "تم إرسال رمز التأكيد إلى رقم هاتفك الجديد",
+        ticket: challenge.ticket,
+        expiresInSeconds: Math.round(PHONE_CHALLENGE_TTL_MS / 1000),
+        resendInSeconds: PHONE_CHANGE_RESEND_SECONDS,
       };
     }),
 
+  /** The code from the new number's WhatsApp, typed back: the account moves to that number, once. */
   confirmPhoneChange: authedProcedure
     .input(
       z.object({
-        newPhone: z.string().regex(/^01[0125]\d{8}$/, "رقم هاتف مصري غير صحيح"),
-        code: z.string().min(4).max(12),
+        verificationTicket: z.string().min(1).max(200),
+        code: z.string().trim().regex(/^[0-9٠-٩]{6}$/, "الكود 6 أرقام"),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.type !== "local") {
+      if (ctx.user.type !== "local") throw new TRPCError({ code: "BAD_REQUEST", message: ONLY_PHONE_ACCOUNTS });
+
+      const code = input.code.replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660));
+      const { outcome, attemptsLeft } = await confirmPhoneChallenge(input.verificationTicket, code);
+      if (outcome === "wrong") {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "تغيير رقم الهاتف متاح فقط للحسابات المحلية",
+          message: attemptsLeft === 1 ? "الكود غلط. فاضل محاولة واحدة." : `الكود غلط. فاضل ${attemptsLeft} محاولات.`,
         });
       }
-
-      const clean = cleanPhoneNumber(input.newPhone);
-      const cacheKey = phoneChangeKey(ctx.user.id, clean);
-      const expected = await stateGet(cacheKey);
-
-      if (!expected || expected !== input.code.trim()) {
+      if (outcome !== "verified") {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "رمز التأكيد غير صحيح أو منتهي الصلاحية",
+          message: outcome === "closed" ? "جربت كتير بكود غلط. اطلب كود جديد." : "الكود انتهى. اطلب كود جديد.",
         });
       }
+      const challenge = await readPhoneChallenge(input.verificationTicket);
+      if (!challenge) throw new TRPCError({ code: "BAD_REQUEST", message: "الكود انتهى. اطلب كود جديد." });
 
-      await stateDel(cacheKey);
-
-      // Check conflict again before persisting
-      const existing = await db.query.localUsers.findFirst({
-        where: eq(localUsers.phone, clean),
+      // The proof is spent in the transaction that moves the number; a number taken meanwhile gives it back.
+      await db.transaction(async (tx) => {
+        const taken = await tx.query.localUsers.findFirst({ where: eq(localUsers.phone, challenge.phone) });
+        if (taken && taken.id !== ctx.user.id) throw new TRPCError({ code: "CONFLICT", message: NUMBER_TAKEN });
+        if (!(await consumePhoneChallenge(challenge, { tx }))) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "الكود ده اتستخدم قبل كده. اطلب كود جديد." });
+        }
+        await tx.update(localUsers).set({ phone: challenge.phone }).where(eq(localUsers.id, ctx.user.id));
       });
-      if (existing && existing.id !== ctx.user.id) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "رقم الهاتف مسجل بالفعل لحساب آخر",
-        });
-      }
-
-      // Generate verified OTP grant token (usable if client also calls updateUserInfo)
-      const otpToken = `otp_grant_${randomBytes(16).toString("hex")}`;
-      await stateSet(phoneGrantKey(ctx.user.id, clean, otpToken), PHONE_GRANT_TTL_SECONDS, "1");
-
-      // Update phone in DB
-      await db
-        .update(localUsers)
-        .set({ phone: clean })
-        .where(eq(localUsers.id, ctx.user.id));
 
       // The phone is part of the cached principal, so the cache has to resolve again.
       await invalidatePrincipal("local", ctx.user.id);
-
-      return {
-        success: true,
-        otpToken,
-        message: "تم تحديث رقم الهاتف بنجاح",
-      };
+      return { success: true, phone: challenge.phone };
     }),
 
   updateUserInfo: authedProcedure
     .input(StrictProfileUpdateSchema)
     .mutation(async ({ ctx, input }) => {
-      if (input.phone !== undefined) {
-        if (ctx.user.type !== "local") {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "تغيير رقم الهاتف متاح فقط للحسابات المحلية",
-          });
-        }
-
-        const clean = cleanPhoneNumber(input.phone);
-        const directKey = phoneChangeKey(ctx.user.id, clean);
-        const offered = input.otpToken?.trim() ?? "";
-        // A grant from confirmPhoneChange is used once; the code itself is accepted too.
-        const isGrantMatch = offered.length > 0 && (await stateTake(phoneGrantKey(ctx.user.id, clean, offered))) !== null;
-        const directCode = isGrantMatch ? null : await stateGet(directKey);
-        const isDirectCodeMatch = directCode !== null && offered.length > 0 && directCode === offered;
-
-        if (!isDirectCodeMatch && !isGrantMatch) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "رمز تأكيد التوثيق (OTP) غير صحيح أو منتهي الصلاحية",
-          });
-        }
-
-        await stateDel(directKey);
-
-        const existing = await db.query.localUsers.findFirst({
-          where: eq(localUsers.phone, clean),
-        });
-        if (existing && existing.id !== ctx.user.id) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "رقم الهاتف مسجل بالفعل لحساب آخر",
-          });
-        }
-
-        await db
-          .update(localUsers)
-          .set({ phone: clean })
-          .where(eq(localUsers.id, ctx.user.id));
-
-        await invalidatePrincipal("local", ctx.user.id);
-      }
-
       if (ctx.user.type === "oauth") {
         const updates: any = {};
         if (input.name) updates.name = input.name;
@@ -677,167 +592,6 @@ export const profileRouter = router({
         }
       }
       return { success: true };
-    }),
-
-  // ─── Webhook Token Management (for SMS Ingestion via iOS Shortcuts) ───
-  getWebhookToken: authedProcedure.query(async ({ ctx }) => {
-    const [record] = await db
-      .select()
-      .from(webhookTokens)
-      .where(
-        and(
-          eq(webhookTokens.userId, ctx.user.id as number),
-          eq(webhookTokens.userType, ctx.user.type),
-        ),
-      )
-      .limit(1);
-    // A token proves the phone was set up once, not that it still forwards: the last message that arrived does.
-    const [latest] = record
-      ? await db
-          .select({ at: sql<Date | null>`MAX(${rawSmsEvents.createdAt})` })
-          .from(rawSmsEvents)
-          .where(and(eq(rawSmsEvents.userId, ctx.user.id as number), eq(rawSmsEvents.userType, ctx.user.type)))
-      : [];
-    return {
-      token: record?.token || null,
-      hasToken: !!record,
-      createdAt: record?.createdAt || null,
-      lastReceivedAt: latest?.at ? new Date(latest.at).toISOString() : null,
-    };
-  }),
-
-  generateWebhookToken: authedProcedure.mutation(async ({ ctx }) => {
-    // Revoke any existing tokens first
-    await db
-      .delete(webhookTokens)
-      .where(
-        and(
-          eq(webhookTokens.userId, ctx.user.id as number),
-          eq(webhookTokens.userType, ctx.user.type),
-        ),
-      );
-    const newToken = `sms_${randomBytes(32).toString("hex")}`;
-    await db.insert(webhookTokens).values({
-      userId: ctx.user.id as number,
-      userType: ctx.user.type,
-      token: newToken,
-      name: "iOS Shortcut Token",
-    });
-    return { success: true, token: newToken };
-  }),
-
-  // ─── Magic Code for zero-config iOS Shortcut setup ───
-  generateMagicCode: authedProcedure.mutation(async ({ ctx }) => {
-    const [record] = await db
-      .select()
-      .from(webhookTokens)
-      .where(
-        and(
-          eq(webhookTokens.userId, ctx.user.id as number),
-          eq(webhookTokens.userType, ctx.user.type),
-        ),
-      )
-      .limit(1);
-
-    if (!record) {
-      throw new TRPCError({
-        code: "PRECONDITION_FAILED",
-        message: "يجب إنشاء رمز ربط أولاً قبل استخدام الرابط السريع",
-      });
-    }
-
-    const { storeMagicCode } = await import("./sms-router");
-    const code = await storeMagicCode(ctx.user.id as number, ctx.user.type);
-    return { code, expiresInSeconds: 300 };
-  }),
-
-  // ─── Get recent SMS logs ───
-  getSmsLogs: authedProcedure.query(async ({ ctx }) => {
-    return await db
-      .select()
-      .from(rawSmsEvents)
-      .where(
-        and(
-          eq(rawSmsEvents.userId, ctx.user.id as number),
-          eq(rawSmsEvents.userType, ctx.user.type),
-        ),
-      )
-      .orderBy(desc(rawSmsEvents.createdAt))
-      .limit(10);
-  }),
-
-  /**
-   * Bank messages that arrived over the plan's monthly limit, kept for the user to save
-   * or dismiss (docs/decisions/0009-bank-messages-over-the-limit.md).
-   */
-  getSmsSuggestions: authedProcedure.query(async ({ ctx }) => {
-    const rows = await db
-      .select({ id: rawSmsEvents.id, metadata: rawSmsEvents.metadata, createdAt: rawSmsEvents.createdAt })
-      .from(rawSmsEvents)
-      .where(
-        and(
-          eq(rawSmsEvents.userId, ctx.user.id as number),
-          eq(rawSmsEvents.userType, ctx.user.type),
-          eq(rawSmsEvents.status, "suggested"),
-        ),
-      )
-      .orderBy(desc(rawSmsEvents.createdAt))
-      .limit(50);
-    return rows.flatMap((row) => {
-      const suggestion = (row.metadata as { suggestion?: SmsSuggestion } | null)?.suggestion;
-      return suggestion ? [{ id: row.id, receivedAt: row.createdAt, ...suggestion }] : [];
-    });
-  }),
-
-  /** Saves a kept bank message, with the category the user picked when they changed it. */
-  confirmSmsSuggestion: authedProcedure
-    .input(
-      z.object({
-        id: z.number().int().positive(),
-        category: z.string().min(1).max(100).optional(),
-        subCategory: z.string().max(100).optional(),
-        type: z.enum(["income", "expense", "transfer"]).optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      let category: SmsCategory | undefined;
-      if (input.category) {
-        const normalized = normalizeTransactionTaxonomy({
-          category: input.category,
-          subCategory: input.subCategory,
-          type: input.type,
-        });
-        // Without a type, the category's own type is used; an investment is not a bank
-        // message's kind, so it is kept as spending.
-        const resolved = normalized.type as string;
-        const type = resolved === "income" || resolved === "transfer" ? resolved : "expense";
-        category = { category: normalized.category, subCategory: normalized.subCategory, type };
-      }
-      const expenseId = await confirmSmsSuggestion({
-        id: input.id,
-        userId: ctx.user.id as number,
-        userType: ctx.user.type,
-        category,
-      });
-      if (!expenseId) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "الرسالة دي اتسجلت أو اتشالت قبل كده" });
-      }
-      await bumpFinanceCacheGen(ctx.user.id as number, ctx.user.type as "oauth" | "local");
-      const { checkUserBudgetExceeded } = await import("./notification-engine");
-      void checkUserBudgetExceeded(ctx.user.id as number, ctx.user.type);
-      return { success: true, expenseId };
-    }),
-
-  /** Drops a kept bank message the user does not want recorded. */
-  dismissSmsSuggestion: authedProcedure
-    .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ ctx, input }) => {
-      const dismissed = await dismissSmsSuggestion({
-        id: input.id,
-        userId: ctx.user.id as number,
-        userType: ctx.user.type,
-      });
-      return { success: dismissed };
     }),
 
   // ─── Save Push Subscription ───
@@ -1178,6 +932,9 @@ export const profileRouter = router({
       }
 
       await db.transaction(async (tx) => {
+        const owner = { userId: ctx.user.id as number, userType: ctx.user.type };
+        await lockLedgerOwner(tx, owner, "NOT_FOUND");
+        if ((await getSystemSettings(tx, { keys: ["capture_financial_version"] })).capture_financial_version === "cashflow-v1") await removeIdentityContact(tx, owner, input.id);
         await tx
           .update(expenses)
           .set({ contactId: null })
@@ -1283,6 +1040,11 @@ export const profileRouter = router({
       const mergedBusinessId = primary.businessId || secondary.businessId;
 
       await db.transaction(async (tx) => {
+        const owner = { userId: ctx.user.id as number, userType: ctx.user.type };
+        await lockLedgerOwner(tx, owner, "NOT_FOUND");
+        const current = await tx.select({ id: userContacts.id }).from(userContacts).where(and(eq(userContacts.userId, owner.userId), eq(userContacts.userType, owner.userType), sql`${userContacts.id} IN (${primary.id}, ${secondary.id})`)).for("update");
+        if (current.length !== 2) throw new TRPCError({ code: "NOT_FOUND", message: "الشخص مش موجود في حسابك." });
+        if ((await getSystemSettings(tx, { keys: ["capture_financial_version"] })).capture_financial_version === "cashflow-v1") await mergeIdentityContact(tx, owner, secondary.id, primary.id);
         await tx
           .update(expenses)
           .set({ contactId: primary.id })

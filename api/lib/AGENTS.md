@@ -2,7 +2,7 @@
 
 Most of this folder is the expense classification pipeline. Entry point: `smart-pipeline.ts`
 (`runSmartPipeline`). The journey is drawn in `docs/architecture/flows/record-expense.c4`; the modules are
-listed in `docs/atlas/modules.md` (`classification`, `arabic-nlp`, `ai-providers`, `ingestion-parsers`,
+listed in `docs/atlas/modules.md` (`classification`, `arabic-nlp`, `ai-providers`, `capture-ai-reader`,
 `security`, `platform`). The explanations are `docs/systems/expense-capture.md` for the pipeline and
 `docs/systems/ai-platform.md` for the providers and limits; `docs/atlas/systems/files.md` maps any other file
 here to its system.
@@ -14,7 +14,7 @@ Read `smart-pipeline.ts` before changing any stage.
 2. Admissibility gate (`admissibility-gate.ts`), the result cache (`classification-cache.ts`, keyed by
    everything the answer depends on), muscle memory (`muscle-memory.ts`), business scoring (business mode only).
 3. Per segment: `rule-engine.ts` (user dictionary, merchant registry, synonym graph, dictionaries, fuzzy
-   match, embeddings), then user correction rules (`correction-rules.ts`), calibration
+   match), then user correction rules (`correction-rules.ts`), calibration
    (`confidence-calibrator.ts`) and the escalation decision (`classification-decision.ts`).
 4. Only escalated clauses reach a model, through `llm-provider-chain.ts` and `llm-router.ts`, with a fixed
    prompt (`classification-prompt.ts`) and reply contract (`classifier-contract.ts`). The model returns

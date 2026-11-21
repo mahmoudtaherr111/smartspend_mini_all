@@ -77,6 +77,19 @@ describe("spoken numbers", () => {
   it("composes thousands", () => {
     expect(amounts("خمس تلاف جنيه")).toEqual([5000]);
     expect(amounts("الفين وخمسمية")).toEqual([2500]);
+    expect(amounts("دفعت تلت تلاف ومتين")).toEqual([3200]);
+    expect(amounts("دفعت 0 ألف جنيه")).toEqual([]);
+  });
+
+  it("uses the scale named with a fraction", () => {
+    expect(amounts("دفعت نص مليون مقدم العربية")).toEqual([500000]);
+    expect(amounts("دفعت ربع مليون وخمسين ألف")).toEqual([300000]);
+    expect(amounts("دفعت تلت ألف جنيه")).toEqual([333.33]);
+    expect(amounts("دفعت اتنين ونص ألف")).toEqual([2500]);
+    expect(amounts("دفعت مليون ونص مليون")).toEqual([1500000]);
+    expect(amounts("دفعت ألفين و نص")).toEqual([2500]);
+    expect(amounts("دفعت نص باكو")).toEqual([500]);
+    expect(amounts("دفعت نص الفاتورة")).toEqual([]);
   });
 
   it("reads one as the unit of a tens compound", () => {

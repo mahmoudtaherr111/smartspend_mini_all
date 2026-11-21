@@ -1,3 +1,5 @@
+import { financialBucket, financialMovement } from "../../contracts/ledger-movement";
+
 export type TransactionDirection = "incoming" | "outgoing";
 
 export interface TransactionDisplayMeta {
@@ -24,9 +26,10 @@ export function getTransactionDisplayMeta(input: {
   /** The stored amount: a negative expense is a refund. */
   amount?: string | number | null;
 }): TransactionDisplayMeta {
-  const rawType = (input.type || "expense").toLowerCase();
+  const financial = financialMovement(input);
+  const rawType = financial ? financialBucket(input) : (input.type || "expense").toLowerCase();
   const category = input.category || "";
-  const isTransfer = category === "تحويل" || rawType === "transfer";
+  const isTransfer = (!financial && category === "تحويل") || rawType === "transfer";
   const isInvestment = rawType === "investment";
 
   const metaObj =
@@ -37,6 +40,7 @@ export function getTransactionDisplayMeta(input: {
   // Check direction from top-level or parsedMetadata
   const explicitDirection =
     input.direction ||
+    (financial ? (financial.movement === "in" ? "incoming" : "outgoing") : null) ||
     metaObj?.direction ||
     (rawType === "income" ? "incoming" : rawType === "expense" ? "outgoing" : null);
 
@@ -99,9 +103,9 @@ export function getTransactionDisplayMeta(input: {
       isIncome: false,
       isExpense: false,
       isInvestment: true,
-      direction: "outgoing",
+      direction,
       label: "استثمار",
-      sign: "-",
+      sign: direction === "incoming" ? "+" : "-",
       amountClass: "text-amber-600 dark:text-amber-400",
       badgeClass:
         "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-200",

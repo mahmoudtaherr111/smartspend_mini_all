@@ -1,3 +1,6 @@
+import { MOVEMENT_KINDS, type MovementKind } from "../contracts/ledger-movement";
+import { spendingRowSql, ledgerBucketSql } from "./services/ledger-semantics";
+import { ledgerBundle, ledgerBundleColumns, ledgerBundleJoin, linkedLedgerFee, standaloneLedgerRowSql } from "./services/ledger-bundles";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, authedProcedure } from "./middleware";
@@ -7,8 +10,6 @@ import {
   installmentPlans,
   expenseCategories,
   userDictionaries,
-  users,
-  localUsers,
   classificationLogs,
   pendingClarifications,
   userContacts,
@@ -23,56 +24,39 @@ import { parseNameAndRelationship } from "./lib/relationship-normalizer";
 import { eq, and, or, like, gte, lte, desc, sql, lt, inArray, isNull } from "drizzle-orm";
 import Decimal from "decimal.js";
 import { ExpenseInputLimits } from "../contracts/constants";
-import { invalidateUserMemory } from "./lib/muscle-memory";
 import { recordCorrection } from "./lib/correction-rules";
-import { cacheIncr, cacheGet, withCache } from "./lib/redis-client";
+import { cacheGet, withCache } from "./lib/redis-client";
 import { CacheKeys } from "./lib/cache-keys";
-import { checkUserBudgetExceeded } from "./notification-engine";
-import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
-import {
-  applyExpenseRollupDelta,
-  expenseToRollupDelta,
-  ledgerAmount,
-  toDayString,
-} from "./services/expense-rollups";
-import { businessDateKey, businessDayRange, parseBusinessInstant } from "./lib/app-time";
+import { toDayString } from "./services/expense-rollups";
+import { businessDateKey, parseBusinessInstant } from "./lib/app-time";
 import { installmentProgress, installmentProgressFromLinked, installmentProgressFromRecorded } from "./services/installments";
-import { reconcileSettlementsOf, releaseSettlementsOf } from "./services/coach/cashflows";
 import { runRuleEngine } from "./lib/rule-engine";
 import { normalizeV2 } from "./lib/normalizer-v2";
+import { expandArabicSearchVariants } from "./lib/unified-normalizer";
 import { SEASON_IDS, SEASON_LABELS, latestSeasonRange, seasonRange, type SeasonRange } from "./lib/seasons";
 import { assertEntityOwnership } from "./lib/ownership-guard";
 import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
 import { CATEGORIES, normalizeCategoryName, normalizeSubCategoryName } from "./lib/category-registry";
+import { calculateSpendingBehavior } from "./lib/spending-behavior";
 import { createLogger } from "./lib/log";
+import {
+  afterLedgerWrite,
+  bumpStreakInTx,
+  createLedgerEntry,
+  deleteLedgerEntry,
+  insertLedgerEntriesInTx,
+  isDuplicateEntryError,
+  ledgerEntriesByRequestId,
+  updateLedgerEntry,
+  type LedgerTx,
+} from "./services/ledger-writer";
+import { currentRecordingEngine } from "./services/recording/engine-switch";
+import { loadReadingLogItems } from "./services/recording/reading-log";
+import { readSentence } from "./services/recording/read-sentence";
+import { movementKindFor, readingItemFor, readingOf, savedAsRead, withReadingMetadata } from "./services/recording/saved-reading";
 
 const reviewLog = createLogger("expense-review");
-
-async function invalidateExpenseCache(userId: number | string, userType: string) {
-  try {
-    await cacheIncr(CacheKeys.cacheGen(userType, userId));
-    await invalidateFinanceUserCache(userId, userType);
-  } catch (err) {
-    console.warn("Failed to invalidate expense cache", err);
-  }
-}
-
-function isDuplicateEntryError(err: unknown): boolean {
-  if (!err || typeof err !== "object") return false;
-  const errorObj = err as Record<string, unknown>;
-  const code = errorObj.code || (errorObj.cause as any)?.code;
-  const errno = errorObj.errno || (errorObj.cause as any)?.errno;
-  const sqlState = String(errorObj.sqlState || (errorObj.cause as any)?.sqlState || "");
-  const message = String(errorObj.message || (errorObj.cause as any)?.message || "");
-  return (
-    code === "ER_DUP_ENTRY" ||
-    errno === 1062 ||
-    sqlState === "23000" ||
-    message.includes("ER_DUP_ENTRY") ||
-    message.includes("Duplicate entry") ||
-    message.includes("expenses_user_client_request_unique")
-  );
-}
+const readingLog = createLogger("expense-reading");
 
 async function loadBusinessCategoriesForUser(
   userId: number,
@@ -173,7 +157,7 @@ type ExpenseReferenceResult = {
  * Marks a clarification resolved inside the transaction that saves its items, only when it
  * was still pending. Two answers to one question used to save its items twice.
  */
-async function claimClarification(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], id: number, userId: number, userType: string): Promise<void> {
+async function claimClarification(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], id: number, userId: number, userType: string, previous?: { originalText: string; question: string }): Promise<void> {
   const [result] = await tx
     .update(pendingClarifications)
     .set({ status: "resolved" })
@@ -183,14 +167,14 @@ async function claimClarification(tx: Parameters<Parameters<typeof db.transactio
         eq(pendingClarifications.userId, userId),
         eq(pendingClarifications.userType, userType),
         eq(pendingClarifications.status, "pending"),
+        previous && eq(pendingClarifications.originalText, previous.originalText),
+        previous && eq(pendingClarifications.question, previous.question),
       ),
     );
   if (Number((result as { affectedRows?: number })?.affectedRows ?? 0) !== 1) {
     throw new TRPCError({ code: "CONFLICT", message: "السؤال ده اتجاوب قبل كده" });
   }
 }
-
-type LedgerTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /** An item a clarification saves, as the pipeline or the stored question left it. */
 type ClarifiedItem = {
@@ -204,6 +188,8 @@ type ClarifiedItem = {
   businessId?: number | null;
   person_mentioned?: string;
   person_relationship?: string;
+  /** What the understanding engine read, on items it produced. */
+  reading?: unknown;
 };
 
 export type SavedEntry = {
@@ -228,7 +214,8 @@ export function clarifiedItemDate(item: { date?: string }, askedAt: Date | null 
 /**
  * Saves the items of an answered clarification the way `expense.create` saves one: its date
  * and source, the rollup delta, the contact's count and the streak, all in the caller's
- * transaction. Returns what was saved so the app can show it and offer undo.
+ * transaction (`api/services/ledger-writer.ts`). Returns what was saved so the app can show it
+ * and offer undo.
  */
 async function saveClarifiedItems(
   tx: LedgerTx,
@@ -240,8 +227,14 @@ async function saveClarifiedItems(
     source: string;
     askedAt: Date | null | undefined;
     classificationLogId?: number;
+    /**
+     * The items were read by the understanding engine in this request (never sent by a client): each one is saved
+     * with its reading's ledger kind, wallet and `parsed_metadata.reading`.
+     */
+    fromReading?: boolean;
   },
 ): Promise<SavedEntry[]> {
+  const owner = { userId: options.userId, userType: options.userType };
   const saved: SavedEntry[] = [];
   for (const item of items) {
     const references = await resolveExpenseReferences(
@@ -249,46 +242,31 @@ async function saveClarifiedItems(
       options.userId,
       options.userType,
     );
-    const date = clarifiedItemDate(item, options.askedAt);
-    const amount = ledgerAmount(item.type, item.direction, item.amount);
-    const [insertedRow] = await tx.insert(expenses).values({
-      userId: options.userId,
-      userType: options.userType,
-      amount: amount.toString(),
-      description: item.description || options.rawText,
-      category: item.category,
-      subCategory: item.subCategory || "عام",
-      type: item.type,
-      date,
-      source: options.source,
-      rawText: options.rawText,
-      contactId: references.contactId,
-      classificationLogId: references.classificationLogId,
-      businessId: item.businessId || null,
-      parsedMetadata: item.direction ? { direction: item.direction } : null,
-    });
-    const id = Number((insertedRow as { insertId?: number })?.insertId ?? 0);
-    await applyExpenseRollupDelta(
-      tx,
-      expenseToRollupDelta(
-        {
-          userId: options.userId,
-          userType: options.userType,
-          businessId: item.businessId || null,
-          date,
-          type: item.type,
-          amount,
-          source: options.source,
-        },
-        1,
-      ),
-    );
-    if (references.contactId) {
-      await tx
-        .update(userContacts)
-        .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
-        .where(eq(userContacts.id, references.contactId));
-    }
+    const reading = options.fromReading ? readingOf(item.reading) : null;
+    const fromReading = reading
+      ? {
+        movementKind: movementKindFor(reading, item.type),
+        parsedMetadata: withReadingMetadata(undefined, item.direction, reading),
+        ...(reading.walletId ? { walletId: reading.walletId } : {}),
+      }
+      : {};
+    const [id] = await insertLedgerEntriesInTx(tx, owner, [
+      {
+        type: item.type,
+        amount: item.amount,
+        direction: item.direction,
+        category: item.category,
+        subCategory: item.subCategory,
+        description: item.description || options.rawText,
+        rawText: options.rawText,
+        source: options.source,
+        date: clarifiedItemDate(item, options.askedAt),
+        contactId: references.contactId,
+        classificationLogId: references.classificationLogId,
+        businessId: item.businessId,
+        ...fromReading,
+      },
+    ]);
     saved.push({
       id,
       amount: Math.abs(item.amount),
@@ -298,7 +276,7 @@ async function saveClarifiedItems(
       direction: item.direction ?? null,
     });
   }
-  if (saved.length > 0) await updateStreak(tx, options.userId, options.userType);
+  if (saved.length > 0) await bumpStreakInTx(tx, owner);
   return saved;
 }
 
@@ -341,7 +319,7 @@ export function reviewCorrection(
     if (sameAmount.length !== 1 || typeof sameAmount[0].clause !== "string" || !sameAmount[0].clause.trim()) return null;
     proposed = sameAmount[0];
   }
-  if (!proposed?.category || proposed.category === saved.category) return null;
+  if (!proposed?.category || (proposed.category === saved.category && (proposed.subCategory || "عام") === (saved.subCategory || "عام"))) return null;
   return {
     previousCategory: proposed.category,
     previousSubCategory: proposed.subCategory ?? null,
@@ -381,7 +359,7 @@ async function learnFromReview(
           on: "review",
         },
       })
-      .where(eq(classificationLogs.id, log.id));
+      .where(and(eq(classificationLogs.id, log.id), eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)));
     await recordCorrection({
       userId,
       userType,
@@ -652,43 +630,6 @@ function enrichTextWithNameRelation(
   return `${text} (${name} ${relation})`;
 }
 
-async function updateStreak(
-  dbInstance: any,
-  userId: number,
-  userType: string,
-): Promise<void> {
-  const now = new Date();
-  const today = businessDayRange(now);
-  const yesterday = businessDayRange(new Date(today.start.getTime() - 1));
-
-  // Atomic SQL update — avoids the Read-Modify-Write race condition.
-  // Uses a single UPDATE with CASE expression so concurrent requests
-  // cannot read stale streak values.
-  const table = userType === "oauth" ? users : localUsers;
-  await dbInstance
-    .update(table)
-    .set({
-      currentStreak: sql`CASE
-        WHEN ${table.lastStreakAt} >= ${today.start} AND ${table.lastStreakAt} < ${today.endExclusive} THEN ${table.currentStreak}
-        WHEN ${table.lastStreakAt} >= ${yesterday.start} AND ${table.lastStreakAt} < ${today.start} THEN COALESCE(${table.currentStreak}, 0) + 1
-        ELSE 1
-      END`,
-      highestStreak: sql`GREATEST(
-        COALESCE(${table.highestStreak}, 0),
-        CASE
-          WHEN ${table.lastStreakAt} >= ${today.start} AND ${table.lastStreakAt} < ${today.endExclusive} THEN COALESCE(${table.currentStreak}, 0)
-          WHEN ${table.lastStreakAt} >= ${yesterday.start} AND ${table.lastStreakAt} < ${today.start} THEN COALESCE(${table.currentStreak}, 0) + 1
-          ELSE 1
-        END
-      )`,
-      lastStreakAt: sql`CASE
-        WHEN ${table.lastStreakAt} >= ${today.start} AND ${table.lastStreakAt} < ${today.endExclusive} THEN ${table.lastStreakAt}
-        ELSE ${now}
-      END`,
-    })
-    .where(eq(table.id, userId));
-}
-
 const statsCategoryDisplayNames: Record<string, string> = {
   food: "أكل وشرب",
   transport: "مواصلات",
@@ -725,6 +666,195 @@ function ledgerCacheTtl(period: { month?: string; year?: string }): number {
   return open ? 5 * 60 : 60 * 60 * 24;
 }
 
+/** Links what was just saved to the commitment it pays, when certain (docs/decisions/0051-commitments-ecosystem.md). */
+async function commitmentLinksFor(owner: { userId: number; userType: string }, ids: Array<number | undefined>) {
+  const { matchSavedExpenses } = await import("./services/coach/commitments");
+  return matchSavedExpenses(owner, ids.filter((id): id is number => typeof id === "number" && id > 0));
+}
+
+/** An item about to be saved, as far as its reading is concerned. */
+type ReadableSave = {
+  amount: number;
+  type: string;
+  category: string;
+  subCategory?: string;
+  classificationLogId?: number;
+  movementKind?: MovementKind;
+  walletId?: number;
+  direction?: "incoming" | "outgoing";
+  parsedMetadata?: Record<string, unknown>;
+};
+
+/** What a save takes from its reading: set only where the client sent nothing. */
+type ReadingEnrichment = { movementKind?: MovementKind; walletId?: number; parsedMetadata?: Record<string, unknown> };
+
+/**
+ * Under the understanding engine: each saved item's reading, from the user's own log row (loaded once for the
+ * request), never from the client. An item saved as it was read takes the reading's ledger kind and wallet when the
+ * client sent none, and keeps the reading in `parsed_metadata.reading`. A `reading` the client put in its metadata is
+ * dropped. A wallet that is no longer the user's is left out rather than failing the save.
+ */
+async function enrichFromReadings(owner: { userId: number; userType: string }, items: ReadableSave[]): Promise<ReadingEnrichment[]> {
+  const logs = await loadReadingLogItems(owner, items.map((item) => item.classificationLogId));
+  const matched = items.map((item) => {
+    const found = item.classificationLogId && logs.has(item.classificationLogId)
+      ? readingItemFor(logs.get(item.classificationLogId), item)
+      : null;
+    return found && savedAsRead(found, item) ? found.reading : null;
+  });
+  const wanted = [...new Set(matched.flatMap((reading, index) => (reading?.walletId && !items[index].walletId ? [reading.walletId] : [])))];
+  const owned = new Set<number>();
+  for (const walletId of wanted) {
+    try {
+      await assertEntityOwnership({ userId: owner.userId, userType: owner.userType, walletId });
+      owned.add(walletId);
+    } catch {
+      readingLog.info({ event: "reading.wallet_not_owned", userId: owner.userId, walletId }, "A read wallet is no longer the user's");
+    }
+  }
+  return items.map((item, index) => {
+    const reading = matched[index];
+    const clientReading = Boolean(item.parsedMetadata && "reading" in item.parsedMetadata);
+    const enrichment: ReadingEnrichment = {};
+    if (reading || clientReading) enrichment.parsedMetadata = withReadingMetadata(item.parsedMetadata, item.direction, reading);
+    if (reading && !item.movementKind) enrichment.movementKind = movementKindFor(reading, item.type);
+    if (reading?.walletId && !item.walletId && owned.has(reading.walletId)) enrichment.walletId = reading.walletId;
+    return enrichment;
+  });
+}
+
+/** Questions asked again after the first; past this a reading that still asks saves what it can. */
+const MAX_FOLLOW_UPS = 2;
+const NOT_ENOUGH_ANSWER = "التوضيح لسه مش كافي لتسجيل العملية بدقة.";
+
+/**
+ * `expense.answerClarification` under the understanding engine: one mode. The answer is added to the sentence and
+ * the sentence is read again through the recording service, which writes its own log row and opens no second
+ * question. A clean reading can be saved. A reading that needs review becomes an explicit confirmation of the
+ * displayed entries, which uses the stored proposal without a second model call.
+ */
+async function answerByReading(
+  user: { id: number; type: "oauth" | "local"; plan?: string },
+  input: { clarificationId: number; answer: string },
+  clarification: typeof pendingClarifications.$inferSelect,
+  ctxData: Record<string, unknown>,
+) {
+  const owner = { userId: user.id, userType: user.type };
+  const answer = input.answer.trim();
+  const source = ctxData.source === "voice" ? "voice" : ctxData.source === "ai_parsed" ? "ai_parsed" : "manual";
+  const asked = Number(ctxData.followUps);
+  const followUps = Number.isInteger(asked) && asked > 0 ? asked : 0;
+
+  // "تخطي" on a question about a person stops asking about them, as it always has.
+  if (answer === "تخطي" || answer.toLowerCase() === "skip") {
+    const nameMatch = clarification.question?.match(/مين\s+(.*?)؟/);
+    if (nameMatch?.[1]) {
+      try {
+        const { silenceContact } = await import("./services/user-profile-service");
+        await silenceContact(user.id, user.type, nameMatch[1].trim());
+      } catch (err) {
+        readingLog.warn({ err, event: "clarification.silence_failed", userId: user.id }, "Silencing a contact failed");
+      }
+    }
+  }
+
+  const awaitingReview = ctxData.awaitingReadingReview === true;
+  const confirmed = awaitingReview && answer === "احفظ";
+  const text = confirmed ? clarification.originalText
+    : awaitingReview || ctxData.restateSentence === true ? answer : `${clarification.originalText} (${answer})`;
+  const read = confirmed ? null : await readSentence({
+    user,
+    text,
+    channel: source === "voice" ? "voice" : "text",
+    businessMode: ctxData.businessMode === true,
+    skipClarification: false,
+    openClarification: false,
+  });
+  const classificationLogId = confirmed
+    ? (typeof ctxData.classificationLogId === "number" ? ctxData.classificationLogId : undefined)
+    : read?.classificationLogId;
+  const items: ClarifiedItem[] = read?.items ?? (confirmed && Array.isArray(ctxData.items) ? ctxData.items : []);
+  const savable = items.filter(item => item.amount > 0);
+
+  if (read && read.decision !== "auto_save") {
+    const review = read.decision === "review" && savable.length > 0;
+    const question = review
+      ? `${savable.map(item => {
+        const incoming = item.type === "income" || item.direction === "incoming";
+        const purpose = [item.category, item.subCategory].filter(Boolean).join("/");
+        const day = item.date ? `، ${businessDateKey(new Date(item.date))}` : "";
+        return `${incoming ? "داخل" : "خارج"} ${item.amount} جنيه، ${purpose}${day}`;
+      }).join("\n")}\nلو التفاصيل صح اكتب «احفظ»، أو اكتب العملية كاملة بعد التعديل.`
+      : read.clarificationQuestion || "ممكن تكتب العملية تاني بالغرض والمبلغ؟";
+    const [updated] = await getDb()
+      .update(pendingClarifications)
+      .set({
+        originalText: text,
+        question,
+        contextData: {
+          recordingEngine: "understanding",
+          ...(review ? { awaitingReadingReview: true } : {}),
+          ...(read.restateSentence ? { restateSentence: true } : {}),
+          items,
+          classificationLogId,
+          source,
+          followUps: Math.min(followUps + 1, MAX_FOLLOW_UPS),
+          ...(ctxData.businessMode === true ? { businessMode: true } : {}),
+        },
+      })
+      .where(and(
+        eq(pendingClarifications.id, input.clarificationId),
+        eq(pendingClarifications.userId, user.id),
+        eq(pendingClarifications.userType, user.type),
+        eq(pendingClarifications.status, "pending"),
+        eq(pendingClarifications.originalText, clarification.originalText),
+        eq(pendingClarifications.question, clarification.question),
+      ));
+    if (updated.affectedRows !== 1) throw new TRPCError({ code: "CONFLICT", message: "السؤال اتغيّر. افتحه تاني." });
+    return {
+      success: false,
+      savedCount: 0,
+      saved: [] as SavedEntry[],
+      needsClarification: true,
+      clarificationQuestion: question,
+      clarificationId: input.clarificationId,
+      enrichedText: text,
+      newlyAddedContact: null,
+    };
+  }
+
+  if (savable.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: NOT_ENOUGH_ANSWER });
+
+  let saved: SavedEntry[] = [];
+  await getDb().transaction(async (tx) => {
+    // The answer is taken once: a second tap, or a retry, finds it resolved and saves nothing.
+    await claimClarification(tx, input.clarificationId, user.id, user.type, clarification);
+    saved = await saveClarifiedItems(tx, savable, {
+      userId: user.id,
+      userType: user.type,
+      rawText: text,
+      source,
+      askedAt: clarification.createdAt,
+      classificationLogId,
+      fromReading: true,
+    });
+  });
+  const newlyAddedContact = await addMentionedContacts(savable, user.id, user.type);
+  await afterLedgerWrite(owner, { spending: savable.some((item) => item.type === "expense") });
+
+  return {
+    success: true,
+    savedCount: saved.length,
+    saved,
+    needsClarification: false,
+    clarificationQuestion: undefined,
+    clarificationId: undefined,
+    enrichedText: undefined,
+    newlyAddedContact,
+    commitmentLinks: await commitmentLinksFor(owner, saved.map((entry) => entry.id)),
+  };
+}
+
 /** The category installment payments are filed under, read from the registry. */
 const INSTALLMENTS_CATEGORY = CATEGORIES.find((category) => category.id === "installments")!.name_ar;
 
@@ -751,6 +881,8 @@ export const expenseRouter = router({
         contactId: z.number().int().positive().optional(),
         classificationLogId: z.number().int().positive().optional(),
         businessId: z.number().int().positive().optional(),
+        counterWalletId: z.number().int().positive().optional(),
+        movementKind: z.enum(MOVEMENT_KINDS).optional(),
         walletId: z.number().int().positive().optional(),
         clientRequestId: z.string().min(1).max(64).optional(),
         direction: z.enum(["incoming", "outgoing"]).optional(),
@@ -760,30 +892,19 @@ export const expenseRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
       const userId = ctx.user!.id;
       const requestUserType = ctx.user!.type;
+      const owner = { userId, userType: requestUserType };
 
-      // 1. Idempotency Pre-Check: if clientRequestId already exists, return existing expense
+      // 1. Idempotency pre-check, before a contact is created for a retry: the saved row comes back.
       if (input.clientRequestId) {
-        const existing = await db
-          .select()
-          .from(expenses)
-          .where(
-            and(
-              eq(expenses.userId, userId),
-              eq(expenses.userType, requestUserType),
-              eq(expenses.clientRequestId, input.clientRequestId),
-            ),
-          )
-          .limit(1);
-
-        if (existing.length > 0) {
+        const [existing] = await ledgerEntriesByRequestId(owner, [input.clientRequestId]);
+        if (existing) {
           return {
             success: true,
-            id: existing[0].id,
+            id: existing.id,
             duplicate: true,
-            expense: existing[0],
+            expense: existing,
             newlyAddedContact: null,
           };
         }
@@ -807,99 +928,49 @@ export const expenseRouter = router({
       });
 
       const references = await resolveExpenseReferences(input, userId, requestUserType);
-      let insertId: number | undefined;
 
-      // ─── ACID Transaction: expense insert + contact count + streak ───
-      try {
-        await db.transaction(async (tx) => {
-          const metadata =
-            input.parsedMetadata ||
-            (input.direction ? { direction: input.direction } : null);
+      // Under the understanding engine the item takes what its reading knew (the user's own log row, not the client).
+      const fromReading: ReadingEnrichment = (await currentRecordingEngine()) === "understanding"
+        ? (await enrichFromReadings(owner, [input]))[0]
+        : {};
 
-          const [result] = await tx.insert(expenses).values({
-            userId,
-            userType: requestUserType,
-            type: input.type,
-            amount: ledgerAmount(input.type, input.direction, input.amount).toString(),
-            category: input.category,
-            subCategory: input.subCategory || "عام",
-            description: input.description || "",
-            rawText: input.rawText,
-            source: input.source,
-            parsedMetadata: metadata,
-            contactId: references.contactId,
-            classificationLogId: references.classificationLogId,
-            businessId: input.businessId || null,
-            walletId: input.walletId || null,
-            clientRequestId: input.clientRequestId || null,
-            date: expenseDate,
-          });
-
-          insertId = result?.insertId;
-
-          const delta = expenseToRollupDelta(
-            {
-              userId: userId as number,
-              userType: requestUserType,
-              businessId: input.businessId,
-              date: expenseDate,
-              type: input.type,
-              amount: ledgerAmount(input.type, input.direction, input.amount),
-              source: input.source,
-            },
-            1,
-          );
-          await applyExpenseRollupDelta(tx, delta);
-
-          if (references.contactId) {
-            await tx
-              .update(userContacts)
-              .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
-              .where(eq(userContacts.id, references.contactId));
-          }
-
-          // Gamification: Update Streaks (atomic, inside transaction)
-          await updateStreak(tx, userId as number, requestUserType);
-        });
-      } catch (err: unknown) {
-        if (input.clientRequestId && isDuplicateEntryError(err)) {
-          const existing = await db
-            .select()
-            .from(expenses)
-            .where(
-              and(
-                eq(expenses.userId, userId),
-                eq(expenses.userType, requestUserType),
-                eq(expenses.clientRequestId, input.clientRequestId),
-              ),
-            )
-            .limit(1);
-
-          if (existing.length > 0) {
-            return {
-              success: true,
-              id: existing[0].id,
-              duplicate: true,
-              expense: existing[0],
-              newlyAddedContact: references.newlyAddedContact,
-            };
-          }
-        }
-        throw err;
+      // The row, its rollup delta, the contact's count and the streak in one transaction; then the review's
+      // correction is learned before the caches forget (api/services/ledger-writer.ts).
+      const { id, existing } = await createLedgerEntry(
+        owner,
+        {
+          type: input.type,
+          amount: input.amount,
+          direction: input.direction,
+          category: input.category,
+          subCategory: input.subCategory,
+          description: input.description || "",
+          rawText: input.rawText,
+          source: input.source,
+          date: expenseDate,
+          contactId: references.contactId,
+          classificationLogId: references.classificationLogId,
+          businessId: input.businessId,
+          walletId: input.walletId,
+          counterWalletId: input.counterWalletId,
+          movementKind: input.movementKind,
+          clientRequestId: input.clientRequestId,
+          parsedMetadata: input.parsedMetadata,
+          ...fromReading,
+        },
+        { afterCommit: () => learnFromReview(userId, requestUserType, input.classificationLogId, input) },
+      );
+      if (existing) {
+        return {
+          success: true,
+          id: existing.id,
+          duplicate: true,
+          expense: existing,
+          newlyAddedContact: references.newlyAddedContact,
+        };
       }
 
-      // Phase 2: Non-critical side effects (outside transaction)
-      await learnFromReview(userId as number, requestUserType, input.classificationLogId, input);
-      invalidateUserMemory(userId, requestUserType);
-      await invalidateExpenseCache(userId, requestUserType);
-      
-      if (input.type === "expense") {
-        checkUserBudgetExceeded(userId as number, requestUserType).catch(err => {
-          console.error("Budget exceeded check failed:", err);
-        });
-      }
-
-      return { success: true, id: insertId, newlyAddedContact: references.newlyAddedContact };
+      return { success: true, id, newlyAddedContact: references.newlyAddedContact, commitmentLinks: await commitmentLinksFor(owner, [id]) };
     }),
 
   batchCreate: authedProcedure
@@ -917,6 +988,8 @@ export const expenseRouter = router({
           contactId: z.number().int().positive().optional(),
           classificationLogId: z.number().int().positive().optional(),
           businessId: z.number().int().positive().optional(),
+          counterWalletId: z.number().int().positive().optional(),
+          movementKind: z.enum(MOVEMENT_KINDS).optional(),
           walletId: z.number().int().positive().optional(),
           clientRequestId: z.string().min(1).max(64).optional(),
           // Which way a transfer moved (a loan given or received, a gam3eya payment or payout).
@@ -931,6 +1004,7 @@ export const expenseRouter = router({
       const db = getDb();
       const userId = ctx.user!.id;
       const requestUserType = ctx.user!.type;
+      const owner = { userId, userType: requestUserType };
 
       if (input.length === 0) return { success: true, count: 0, newlyAddedContact: null };
 
@@ -951,21 +1025,9 @@ export const expenseRouter = router({
         .filter((id): id is string => typeof id === "string" && id.length > 0);
 
       const existingClientMap = new Map<string, typeof expenses.$inferSelect>();
-      if (clientRequestIds.length > 0) {
-        const existingList = await db
-          .select()
-          .from(expenses)
-          .where(
-            and(
-              eq(expenses.userId, userId),
-              eq(expenses.userType, requestUserType),
-              inArray(expenses.clientRequestId, clientRequestIds),
-            ),
-          );
-        for (const row of existingList) {
-          if (row.clientRequestId) {
-            existingClientMap.set(row.clientRequestId, row);
-          }
+      for (const row of await ledgerEntriesByRequestId(owner, clientRequestIds)) {
+        if (row.clientRequestId) {
+          existingClientMap.set(row.clientRequestId, row);
         }
       }
 
@@ -985,84 +1047,42 @@ export const expenseRouter = router({
 
       const references = await resolveExpenseReferences(itemsToInsert, userId, requestUserType);
 
-      const valuesToInsert = itemsToInsert.map((item, index) => ({
-        userId,
-        userType: requestUserType,
+      // Under the understanding engine each item takes what its reading knew (the user's own log rows, loaded once).
+      const fromReadings: ReadingEnrichment[] = (await currentRecordingEngine()) === "understanding"
+        ? await enrichFromReadings(owner, itemsToInsert)
+        : itemsToInsert.map(() => ({}));
+
+      const entries = itemsToInsert.map((item, index) => ({
         type: item.type,
-        amount: ledgerAmount(item.type, item.direction, item.amount).toString(),
+        amount: item.amount,
+        direction: item.direction,
         category: item.category,
-        subCategory: item.subCategory || "عام",
+        subCategory: item.subCategory,
         description: item.description || "",
         rawText: item.rawText,
         source: item.source,
+        date: item.date ? new Date(item.date) : new Date(),
         contactId: references[index].contactId,
         classificationLogId: references[index].classificationLogId,
-        businessId: item.businessId || null,
-        walletId: item.walletId || null,
-        clientRequestId: item.clientRequestId || null,
-        parsedMetadata: item.direction ? { direction: item.direction } : null,
-        date: item.date ? new Date(item.date) : new Date(),
+        businessId: item.businessId,
+        walletId: item.walletId,
+        counterWalletId: item.counterWalletId,
+        movementKind: item.movementKind,
+        clientRequestId: item.clientRequestId,
+        ...fromReadings[index],
       }));
 
-      // ─── ACID Transaction: batch insert + contact counts + streak ───
+      // ─── ACID Transaction: batch insert + rollups + contact counts + streak (api/services/ledger-writer.ts) ───
       // The ids let the app offer "undo" for exactly what it just saved.
       let insertedIds: number[] = [];
       try {
         await db.transaction(async (tx) => {
-          const [insertResult] = await tx.insert(expenses).values(valuesToInsert);
-          const rawResult: any = insertResult;
-          const firstInsertId = Number(rawResult?.insertId || rawResult?.[0]?.insertId || 0);
-
-          if (firstInsertId) {
-            insertedIds = valuesToInsert.map((_, i) => firstInsertId + i);
-          }
-
-          for (const val of valuesToInsert) {
-            const delta = expenseToRollupDelta(
-              {
-                userId: userId as number,
-                userType: requestUserType,
-                businessId: val.businessId,
-                date: val.date,
-                type: val.type,
-                amount: val.amount,
-                source: val.source,
-              },
-              1,
-            );
-            await applyExpenseRollupDelta(tx, delta);
-          }
-
-          const contactCounts = new Map<number, number>();
-          for (const ref of references) {
-            if (ref.contactId) {
-              contactCounts.set(
-                ref.contactId,
-                (contactCounts.get(ref.contactId) || 0) + 1,
-              );
-            }
-          }
-          for (const [contactId, count] of contactCounts.entries()) {
-            await tx
-              .update(userContacts)
-              .set({ transactionCount: sql`${userContacts.transactionCount} + ${count}` })
-              .where(eq(userContacts.id, contactId));
-          }
-
-          await updateStreak(tx, userId as number, requestUserType);
+          insertedIds = await insertLedgerEntriesInTx(tx, owner, entries);
+          await bumpStreakInTx(tx, owner);
         });
       } catch (err: unknown) {
         if (clientRequestIds.length > 0 && isDuplicateEntryError(err)) {
-          const allExisting = await db
-            .select()
-            .from(expenses)
-            .where(
-              and(
-                eq(expenses.userId, userId),
-                eq(expenses.userType, requestUserType),
-                inArray(expenses.clientRequestId, clientRequestIds),
-              ),
-            );
+          const allExisting = await ledgerEntriesByRequestId(owner, clientRequestIds);
           return {
             success: true,
             count: allExisting.length,
@@ -1078,21 +1098,14 @@ export const expenseRouter = router({
       for (const item of itemsToInsert) {
         await learnFromReview(userId as number, requestUserType, item.classificationLogId, item);
       }
-      invalidateUserMemory(userId, requestUserType);
-      await invalidateExpenseCache(userId, requestUserType);
-      
-      const hasExpenses = input.some(item => item.type === "expense");
-      if (hasExpenses) {
-        checkUserBudgetExceeded(userId as number, requestUserType).catch(err => {
-          console.error("Budget exceeded check failed:", err);
-        });
-      }
+      await afterLedgerWrite(owner, { spending: input.some((item) => item.type === "expense") });
 
       return {
         success: true,
-        count: valuesToInsert.length + existingClientMap.size,
+        count: entries.length + existingClientMap.size,
         ids: insertedIds,
         newlyAddedContact: references.find((reference) => reference.newlyAddedContact)?.newlyAddedContact || null,
+        commitmentLinks: await commitmentLinksFor(owner, insertedIds),
       };
     }),
 
@@ -1107,6 +1120,7 @@ export const expenseRouter = router({
           limit: z.number().min(1).max(100).default(50),
           cursor: z.number().optional(),
           offset: z.number().min(0).optional(),
+          groupLinkedFees: z.boolean().default(false),
         })
         .optional(),
     )
@@ -1128,12 +1142,14 @@ export const expenseRouter = router({
           conditions.push(lte(expenses.date, parseBusinessInstant(input.endDate)));
         if (input?.category)
           conditions.push(eq(expenses.category, input.category));
-        if (input?.type) conditions.push(eq(expenses.type, input.type));
+        if (input?.type) conditions.push(eq(ledgerBucketSql, input.type));
+        if (input?.groupLinkedFees) conditions.push(standaloneLedgerRowSql);
         if (input?.cursor) conditions.push(lt(expenses.id, input.cursor));
 
         const items = await db
-          .select()
+          .select(ledgerBundleColumns)
           .from(expenses)
+          .leftJoin(linkedLedgerFee, ledgerBundleJoin)
           .where(and(...conditions))
           .orderBy(desc(expenses.id))
           .limit(input?.limit || 50)
@@ -1145,7 +1161,7 @@ export const expenseRouter = router({
           .where(and(...conditions));
 
         return {
-          items,
+          items: items.map(({ entry, fee }) => input?.groupLinkedFees ? ledgerBundle(entry, fee) : ({ ...entry, bundle: null })),
           total: Number(countResult[0].count),
         };
       } catch (err) {
@@ -1166,26 +1182,31 @@ export const expenseRouter = router({
       // The text matches go through or(), which parenthesizes them. and() does not wrap a
       // raw fragment, so the bare `a LIKE ? OR b LIKE ?` this used to pass bound tighter
       // to the user filter than to the other matches and returned other users' rows.
-      const q = `%${input.query}%`;
-      const conditions = and(
-        eq(expenses.userId, userId),
-        eq(expenses.userType, userType),
-        or(
+      const variants = expandArabicSearchVariants(input.query);
+      const textConditions = variants.flatMap((v) => {
+        const q = `%${v}%`;
+        return [
           like(expenses.category, q),
           like(expenses.subCategory, q),
           like(expenses.description, q),
           like(expenses.rawText, q),
-        ),
+        ];
+      });
+      const conditions = and(
+        eq(expenses.userId, userId),
+        eq(expenses.userType, userType),
+        or(...textConditions),
       );
 
       const items = await db
-        .select()
+        .select(ledgerBundleColumns)
         .from(expenses)
+        .leftJoin(linkedLedgerFee, ledgerBundleJoin)
         .where(conditions)
         .orderBy(desc(expenses.date))
         .limit(20);
 
-      return items;
+      return items.map(({ entry, fee }) => ledgerBundle(entry, fee));
     }),
 
   getById: authedProcedure
@@ -1195,8 +1216,9 @@ export const expenseRouter = router({
       const userId = ctx.user!.id;
       const userType = ctx.user!.type;
       const result = await db
-        .select()
+        .select(ledgerBundleColumns)
         .from(expenses)
+        .leftJoin(linkedLedgerFee, ledgerBundleJoin)
         .where(
           and(
             eq(expenses.id, input.id),
@@ -1204,7 +1226,7 @@ export const expenseRouter = router({
             eq(expenses.userType, userType),
           ),
         );
-      return result[0] || null;
+      return result[0] ? ledgerBundle(result[0].entry, result[0].fee) : null;
     }),
 
   update: authedProcedure
@@ -1212,6 +1234,7 @@ export const expenseRouter = router({
       z.object({
         id: z.number(),
         amount: expenseAmount.optional(),
+        linkedFeeAmount: z.number().finite().min(0).max(ExpenseInputLimits.amountMax).optional(),
         type: transactionTypeSchema.optional(),
         /** An expense whose money came back; stored negative (ledgerAmount). */
         refund: z.boolean().optional(),
@@ -1226,6 +1249,9 @@ export const expenseRouter = router({
           .optional(),
         rawText: expenseRawText.optional(),
         date: z.string().optional(),
+        counterWalletId: z.number().int().positive().nullable().optional(),
+        movementKind: z.enum(MOVEMENT_KINDS).optional(),
+        direction: z.enum(["incoming", "outgoing"]).optional(),
         walletId: z.number().int().positive().nullable().optional(),
         businessId: z.number().int().positive().nullable().optional(),
         contactId: z.number().int().positive().nullable().optional(),
@@ -1254,89 +1280,26 @@ export const expenseRouter = router({
           ? normalizeSubCategoryName(category ?? input.category ?? "", input.subCategory)
           : undefined;
 
-      const updateData: Record<string, any> = {};
-      if (input.type !== undefined) updateData.type = input.type;
-      if (category !== undefined) updateData.category = category;
-      if (subCategory !== undefined)
-        updateData.subCategory = subCategory;
-      if (input.description !== undefined)
-        updateData.description = input.description;
-      if (input.rawText !== undefined) updateData.rawText = input.rawText;
-      if (input.date !== undefined) updateData.date = new Date(input.date);
-      if (input.walletId !== undefined) updateData.walletId = input.walletId;
-      if (input.businessId !== undefined) updateData.businessId = input.businessId;
-      if (input.contactId !== undefined) updateData.contactId = input.contactId;
-
-      let originalExpense: typeof expenses.$inferSelect | undefined;
-      await db.transaction(async (tx) => {
-        const [row] = await tx
-          .select()
-          .from(expenses)
-          .where(
-            and(
-              eq(expenses.id, input.id),
-              eq(expenses.userId, userId),
-              eq(expenses.userType, userType),
-            ),
-          )
-          .limit(1)
-          .for("update");
-
-        if (!row) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "المصروف غير موجود" });
-        }
-        originalExpense = row;
-
-        // The stored sign follows the kind and whether the money came back: a refund is
-        // a negative expense, anything else is positive.
-        if (input.amount !== undefined || input.type !== undefined || input.refund !== undefined) {
-          const type = input.type ?? row.type;
-          const wasRefund = row.type === "expense" && Number(row.amount) < 0;
-          const refund = input.refund ?? wasRefund;
-          updateData.amount = ledgerAmount(
-            type,
-            refund ? "incoming" : null,
-            input.amount ?? Math.abs(Number(row.amount)),
-          ).toString();
-        }
-
-        await tx
-          .update(expenses)
-          .set(updateData)
-          .where(
-            and(
-              eq(expenses.id, input.id),
-              eq(expenses.userId, userId),
-              eq(expenses.userType, userType),
-            ),
-          );
-
-        await reconcileSettlementsOf(tx, { userId, userType }, input.id);
-
-        const oldDelta = expenseToRollupDelta(originalExpense, -1);
-        await applyExpenseRollupDelta(tx, oldDelta);
-
-        const updatedExpenseObj = {
-          ...originalExpense,
-          ...updateData,
-          amount: updateData.amount ?? originalExpense.amount,
-          date: updateData.date ?? originalExpense.date,
-          type: updateData.type ?? originalExpense.type,
-        };
-        const newDelta = expenseToRollupDelta(updatedExpenseObj, 1);
-        await applyExpenseRollupDelta(tx, newDelta);
-
+      // The row, its stored sign, what it paid toward and its rollup move in one transaction; then muscle
+      // memory and the ledger caches forget it (api/services/ledger-writer.ts). A correction has to clear every
+      // layer that could replay the old answer, not only the one that learns from it.
+      const originalExpense = await updateLedgerEntry({ userId, userType }, input.id, {
+        linkedFeeAmount: input.linkedFeeAmount,
+        type: input.type,
+        amount: input.amount,
+        refund: input.refund,
+        direction: input.direction,
+        movementKind: input.movementKind,
+        counterWalletId: input.counterWalletId,
+        category,
+        subCategory,
+        description: input.description,
+        rawText: input.rawText,
+        date: input.date !== undefined ? new Date(input.date) : undefined,
+        walletId: input.walletId,
+        businessId: input.businessId,
+        contactId: input.contactId,
       });
-
-      // Phase 2: Forget everything that could still serve the answer we just corrected.
-      //
-      // Only muscle memory was cleared here, and the classification cache holds results
-      // for SEVEN DAYS keyed on the normalized text. So the user fixed a category, said
-      // the same sentence again, and got the same wrong answer back from cache — which
-      // reads exactly like "I corrected it and it ignored me", the complaint this is
-      // the mechanical cause of. Correcting a classification has to invalidate every
-      // layer that can replay it, not the one that learns from it.
-      invalidateUserMemory(userId, userType);
 
       let newlyAddedContact: { isNew: boolean; name: string; totalContacts: number } | null = null;
       // Phase 2.5: Auto-learn dynamic contacts from manually edited expenses
@@ -1371,31 +1334,28 @@ export const expenseRouter = router({
       // ── Strategy 6: Auto-Learning Muscle Memory ──
       // When user corrects a category, extract keywords from rawText
       // and auto-save them to user_dictionaries for instant future matching.
-      const categoryChanged =
-        category &&
-        originalExpense &&
-        originalExpense.category !== category;
-      if (categoryChanged && originalExpense?.rawText) {
+      const filingChanged = originalExpense && (
+        (category !== undefined && originalExpense.category !== category) ||
+        (subCategory !== undefined && originalExpense.subCategory !== subCategory)
+      );
+      if (filingChanged && originalExpense.rawText) {
         try {
-          const newCategory = category!;
-          const newSubCategory =
-            subCategory || originalExpense.subCategory || "عام";
-          const rawText = originalExpense.rawText;
-
-          const [latestClassificationLog] = await db
-            .select({ id: classificationLogs.id })
+          const newCategory = category ?? originalExpense.category;
+          const newSubCategory = subCategory ?? originalExpense.subCategory ?? "عام";
+          const [linkedLog] = originalExpense.classificationLogId ? await db
+            .select({ id: classificationLogs.id, finalResult: classificationLogs.finalResult })
             .from(classificationLogs)
-            .where(
-              and(
-                eq(classificationLogs.userId, userId),
-                eq(classificationLogs.userType, userType),
-                eq(classificationLogs.originalText, rawText),
-              ),
-            )
-            .orderBy(desc(classificationLogs.createdAt))
-            .limit(1);
+            .where(and(
+              eq(classificationLogs.id, originalExpense.classificationLogId),
+              eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType),
+            )).limit(1) : [];
+          const parsed = linkedLog?.finalResult;
+          const multiItem = Array.isArray(parsed) && parsed.length > 1;
+          const change = reviewCorrection(parsed, {
+            category: newCategory, subCategory: newSubCategory, amount: Math.abs(Number(originalExpense.amount)), type: originalExpense.type,
+          });
 
-          if (latestClassificationLog) {
+          if (linkedLog) {
             await db
               .update(classificationLogs)
               .set({
@@ -1409,7 +1369,7 @@ export const expenseRouter = router({
                   correctedAt: new Date().toISOString(),
                 },
               })
-              .where(eq(classificationLogs.id, latestClassificationLog.id));
+              .where(and(eq(classificationLogs.id, linkedLog.id), eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)));
           }
 
           // Store what the user told us as an explicit correction rule.
@@ -1420,73 +1380,32 @@ export const expenseRouter = router({
           // guaranteed to miss, so every correction made here vanished on write — which,
           // together with muscle memory skipping corrected rows outright, is why
           // correcting a category never changed anything.
+          if (multiItem && !change?.clause) return { success: true, newlyAddedContact };
           await recordCorrection({
             userId,
             userType,
-            originalText: rawText,
+            originalText: change?.clause ?? originalExpense.rawText,
             category: newCategory,
             subCategory: newSubCategory,
             type: input.type ?? originalExpense.type,
             amount: Math.abs(Number(input.amount ?? originalExpense.amount)) || 0,
-            sourceLogId: latestClassificationLog?.id ?? null,
+            sourceLogId: linkedLog?.id ?? null,
           });
         } catch (learnErr) {
-          console.warn("Auto-learning failed (non-fatal):", learnErr);
+          reviewLog.warn({ err: learnErr, event: "expense.correction_failed", userId }, "Expense correction could not be learned");
         }
       }
 
-      await invalidateExpenseCache(userId, userType);
       return { success: true, newlyAddedContact };
     }),
 
   delete: authedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
-      const userId = ctx.user!.id;
-      const userType = ctx.user!.type;
-
-      // ─── ACID Transaction: fetch with lock + delete expense + decrement contact count + rollup delta ───
-      await db.transaction(async (tx) => {
-        const [expense] = await tx
-          .select()
-          .from(expenses)
-          .where(
-            and(
-              eq(expenses.id, input.id),
-              eq(expenses.userId, userId),
-              eq(expenses.userType, userType),
-            ),
-          )
-          .limit(1)
-          .for("update");
-
-        if (!expense) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "المصروف غير موجود" });
-        }
-
-        await tx
-          .delete(expenses)
-          .where(eq(expenses.id, expense.id));
-        // What it paid toward a commitment is unpaid again (api/services/coach/cashflows.ts).
-        await releaseSettlementsOf(tx, { userId, userType }, [expense.id]);
-
-        const delta = expenseToRollupDelta(expense, -1);
-        await applyExpenseRollupDelta(tx, delta);
-
-        if (expense.contactId) {
-          await tx
-            .update(userContacts)
-            .set({ transactionCount: sql`GREATEST(COALESCE(${userContacts.transactionCount}, 1) - 1, 0)` })
-            .where(eq(userContacts.id, expense.contactId));
-        }
-      });
-
-      // A deleted transaction must stop teaching. Neither cache was cleared here, so a
-      // row the user removed kept shaping future classifications from muscle memory and
-      // kept being replayed from the classification cache.
-      invalidateUserMemory(userId, userType);
-      await invalidateExpenseCache(userId, userType);
+      // Locks the row, deletes it, releases what it paid toward, backs out its rollup and lowers its contact's
+      // count; then muscle memory and the caches forget it, so a removed row stops teaching
+      // (api/services/ledger-writer.ts).
+      await deleteLedgerEntry({ userId: ctx.user!.id, userType: ctx.user!.type }, input.id);
       return { success: true };
     }),
 
@@ -1498,6 +1417,8 @@ export const expenseRouter = router({
   previewCategory: authedProcedure
     .input(z.object({ text: z.string().trim().min(1).max(ExpenseInputLimits.rawTextMax) }))
     .query(async ({ ctx, input }) => {
+      // The understanding engine reads a sentence with a model, never per keystroke: no chip.
+      if ((await currentRecordingEngine()) === "understanding") return null;
       const userDict = await getDb()
         .select({ word: userDictionaries.word, category: userDictionaries.category, subCategory: userDictionaries.subCategory })
         .from(userDictionaries)
@@ -1564,7 +1485,7 @@ export const expenseRouter = router({
             and(
               eq(expenses.userId, userId),
               eq(expenses.userType, userType),
-              eq(expenses.type, "expense"),
+              spendingRowSql,
               eq(expenses.category, INSTALLMENTS_CATEGORY),
               or(isNull(expenses.businessId), eq(expenses.businessId, 0)),
               gte(expenses.date, plan.createdAt),
@@ -1659,7 +1580,7 @@ export const expenseRouter = router({
             and(
               eq(expenses.userId, userId),
               eq(expenses.userType, userType),
-              eq(expenses.type, "expense"),
+              spendingRowSql,
               isNull(expenses.businessId),
               gte(expenses.date, window.start),
               lt(expenses.date, window.endExclusive),
@@ -1930,7 +1851,7 @@ export const expenseRouter = router({
                 ? sql`(${expenses.businessId} IS NULL OR ${expenses.businessId} = 0)`
                 : eq(expenses.businessId, bizFilter),
               sql`(${expenses.status} IS NULL OR ${expenses.status} = 'confirmed')`,
-              eq(expenses.type, "expense"),
+              spendingRowSql,
             ),
           )
           .groupBy(expenses.category, expenses.subCategory);
@@ -2203,7 +2124,7 @@ export const expenseRouter = router({
               ? sql`(${expenses.businessId} IS NULL OR ${expenses.businessId} = 0)`
               : eq(expenses.businessId, bizFilter),
             sql`(${expenses.status} IS NULL OR ${expenses.status} = 'confirmed')`,
-            eq(expenses.type, "expense"),
+            spendingRowSql,
           ),
         )
         .groupBy(expenses.category, expenses.subCategory);
@@ -2312,18 +2233,14 @@ export const expenseRouter = router({
         (d) => d.amount > Math.max(500, dailyAverageSpike * 2.5),
       );
 
-      let spendingBehavior = "planned";
-      if (hasSpike || flexPercent > 45) spendingBehavior = "spiky";
-      if (flexPercent > 55) spendingBehavior = "emotional";
-      if (sortedCategories.length <= 2 && totalExpense > 0)
-        spendingBehavior = "concentrated";
-
-      const expenseIncomeRatio =
-        totalIncome > 0 ? (totalExpense / totalIncome) * 100 : null;
-      if (expenseIncomeRatio !== null) {
-        if (expenseIncomeRatio > 95) spendingBehavior = "impulsive";
-        if (expenseIncomeRatio < 40) spendingBehavior = "conservative";
-      }
+      const behaviorResult = calculateSpendingBehavior({
+        totalExpense,
+        totalIncome,
+        flexPercent,
+        hasSpike,
+        categoryCount: sortedCategories.length,
+      });
+      const spendingBehavior = behaviorResult.behavior;
 
       return {
         structuredMonthlyBreakdown: {
@@ -2373,6 +2290,8 @@ export const expenseRouter = router({
           spendingIncreased:
             expenseChangePercent === null ? null : expenseChangePercent > 0,
           spendingBehavior,
+          spendingBehaviorLabelAr: behaviorResult.labelAr,
+          spendingBehaviorLabelEn: behaviorResult.labelEn,
           comparisonType,
           weekNumber,
         },
@@ -2436,6 +2355,7 @@ export const expenseRouter = router({
         let count = 0;
 
         const monthMap: Record<string, Decimal> = {};
+        const monthsWithData = new Set<string>();
         for (let i = 1; i <= 12; i++) {
           monthMap[`${input.year}-${String(i).padStart(2, "0")}`] = new Decimal(0);
         }
@@ -2443,13 +2363,17 @@ export const expenseRouter = router({
         for (const row of rollups) {
           const exp = new Decimal(row.expense || 0);
           const inc = new Decimal(row.income || 0);
+          const txns = Number(row.txnCount || 0);
           totalExpense = totalExpense.plus(exp);
           totalIncome = totalIncome.plus(inc);
-          count += Number(row.txnCount || 0);
+          count += txns;
 
           const mKey = String(row.day).slice(0, 7);
           if (monthMap[mKey]) {
             monthMap[mKey] = monthMap[mKey].plus(exp);
+          }
+          if (txns > 0 || !exp.isZero() || !inc.isZero()) {
+            monthsWithData.add(mKey);
           }
         }
 
@@ -2471,7 +2395,13 @@ export const expenseRouter = router({
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([month, amount]) => {
             const monthIdx = parseInt(month.split("-")[1]) - 1;
-            return { month: monthNames[monthIdx], amount: amount.toNumber() };
+            const hasData = monthsWithData.has(month);
+            return {
+              month: monthNames[monthIdx],
+              monthKey: month,
+              amount: amount.toNumber(),
+              hasData,
+            };
           });
 
         return {
@@ -2619,6 +2549,10 @@ export const expenseRouter = router({
         ctxData = clarification.contextData as Record<string, any>;
       }
 
+      if (ctxData.recordingEngine === "understanding" || (await currentRecordingEngine()) === "understanding") {
+        return answerByReading({ id: userId, type: userType as "oauth" | "local", plan: ctx.user!.plan ?? undefined }, input, clarification, ctxData);
+      }
+
       // Saved as the sentence came in (typed or spoken); questions stored before the source
       // was kept are typed.
       const clarifiedSource = ctxData.source === "voice" ? "voice" : "manual";
@@ -2651,7 +2585,8 @@ export const expenseRouter = router({
                  } catch {}
                  resolvedAnswers[name] = "جهة اتصال عامة";
                } else {
-                 const finalAnswer = trimmedAnswer.replace(new RegExp(`(?:^|\\s)$${name}(?:\\s|$)`), " ").trim() || trimmedAnswer;
+                 // The name said in the answer ("أحمد أخويا") is dropped, so the relation is what remains.
+                 const finalAnswer = trimmedAnswer.replace(new RegExp(`(?:^|\\s)${escapeRegex(name)}(?:\\s|$)`), " ").trim() || trimmedAnswer;
                  resolvedAnswers[name] = finalAnswer || "معروف";
                }
                anyResolved = true;
@@ -2799,15 +2734,10 @@ export const expenseRouter = router({
           });
 
           newlyAddedContact = (await addMentionedContacts(itemsToSave as ClarifiedItem[], userId as number, userType as string)) ?? newlyAddedContact;
-          invalidateUserMemory(userId, userType);
-          await invalidateExpenseCache(userId as number, userType as string);
-          
-          const hasExpenses = itemsToSave.some((item: any) => item.type === "expense");
-          if (hasExpenses) {
-            checkUserBudgetExceeded(userId as number, userType as string).catch(err => {
-              console.error("Budget exceeded check failed:", err);
-            });
-          }
+          await afterLedgerWrite(
+            { userId: userId as number, userType: userType as string },
+            { spending: itemsToSave.some((item: any) => item.type === "expense") },
+          );
         } catch (err) {
           console.error("Failed to save after queue clarification:", err);
           if (err instanceof TRPCError) throw err;
@@ -2958,15 +2888,10 @@ export const expenseRouter = router({
             savedCount = saved.length;
           });
           newlyAddedContact = (await addMentionedContacts(pipeline.items as ClarifiedItem[], userId as number, userType as string)) ?? newlyAddedContact;
-          invalidateUserMemory(userId, userType);
-          await invalidateExpenseCache(userId as number, userType as string);
-          
-          const hasExpenses = pipeline.items && pipeline.items.some((item: any) => item.type === "expense");
-          if (hasExpenses) {
-            checkUserBudgetExceeded(userId as number, userType as string).catch(err => {
-              console.error("Budget exceeded check failed:", err);
-            });
-          }
+          await afterLedgerWrite(
+            { userId: userId as number, userType: userType as string },
+            { spending: pipeline.items.some((item: any) => item.type === "expense") },
+          );
         }
 
       } catch (err) {
@@ -2991,6 +2916,7 @@ export const expenseRouter = router({
         clarificationId: undefined,
         enrichedText: undefined,
         newlyAddedContact,
+        commitmentLinks: await commitmentLinksFor({ userId: Number(ctx.user!.id), userType: ctx.user!.type }, saved.map((entry) => entry.id)),
       };
     }),
 });

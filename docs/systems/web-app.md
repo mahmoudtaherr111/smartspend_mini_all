@@ -13,7 +13,7 @@ public pages (landing, privacy, terms and the not-found page).
 | --- | --- | --- |
 | Entry | `src/main.tsx` | Mounts React, registers the service worker, consumes a launch event before the first render, and marks a standalone PWA |
 | Shell | `src/App.tsx` | The providers, the route table and its guards, the layout, the error boundary, the per-account query cache, and, for signed-in users, the host of the live [voice call](voice-calls.md) (`src/components/voice/VoiceCallHost.tsx`), so a call keeps going, shrunk to a bar, on every page |
-| API client | `src/providers/trpc.ts`, `src/lib/api-url.ts` | The typed tRPC client, central API and WebSocket URL resolution (`VITE_API_URL` for Capacitor / split deploys, relative paths on same-origin web), the Bearer header, cookies, form-draft preservation and what happens on a 401 |
+| API client | `src/providers/trpc.ts`, `src/lib/api-url.ts` | The typed tRPC client, central API and WebSocket URL resolution (`VITE_API_URL` for Capacitor / split deploys, relative paths on same-origin web), the session cookie, form-draft preservation and what happens on a 401 |
 | Identity | `src/hooks/useAuth.ts` | The device's identity snapshot, the verified session, the role and plan helpers, and logout |
 | Offline cache | `src/lib/queryPersister.ts` | The answers kept in IndexedDB per account, and the identity snapshot |
 | Navigation | `src/components/Sidebar.tsx`, `src/components/layout/MobileBottomNav.tsx`, `src/components/layout/PageTransition.tsx` | The desktop sidebar, the phone tab bar (it carries a month only when the user picked one; on Capacitor iOS it drives the native `LiquidGlassTabBar` instead of rendering a second DOM bar) and the transition between screens |
@@ -22,7 +22,7 @@ public pages (landing, privacy, terms and the not-found page).
 | Native | `src/lib/native-ios-bridge.ts`, `src/hooks/useNativeThemeSync.ts`, `src/hooks/useHaptics.ts`, `src/lib/back-button-manager.ts`, `src/components/layout/mobile-nav-platform.ts`, `ios/App/App/MainViewController.swift`, `ios/App/App/Plugins/LiquidGlassTabBarPlugin.swift`, `ios/App/App/Plugins/LiquidGlassTabBarView.swift`, `ios/App/App/Plugins/SmartSpendNativePlugin.swift` | The Capacitor side: splash screen, theme, native iOS Liquid Glass tab bar + quick-record action, native iOS `LAContext` biometrics and haptics, the Android back button and platform-specific navigation |
 | Lock | `src/providers/BiometricLockProvider.tsx`, `src/lib/biometricAuth.ts`, `src/hooks/useBiometricOnboarding.ts`, `src/hooks/usePasskeyEnrolment.ts` | The app lock (using native `LAContext` Face ID / Touch ID on Capacitor iOS, and WebAuthn elsewhere), and the fingerprint / Face ID sign-in suggestion with its rules ([accounts](accounts.md)) |
 | Robot check | `src/lib/turnstile-config.ts`, `src/components/auth/TurnstileWidget.tsx` | The Cloudflare Turnstile widget on the sign-up form, built in only when `VITE_TURNSTILE_SITE_KEY` is set ([accounts](accounts.md)) |
-| Behaviour hooks | `src/hooks/useAppResume.ts`, `src/hooks/useScrollRestoration.ts`, `src/hooks/useVirtualKeyboard.ts`, `src/hooks/useSwipeNavigation.ts` | Returning to the app, scroll position, the on-screen keyboard and swipe gestures |
+| Behaviour hooks | `src/hooks/useAppResume.ts`, `src/hooks/useScrollRestoration.ts`, `src/hooks/useVirtualKeyboard.ts` | Returning to the app, scroll position, the on-screen keyboard and swipe gestures |
 | Utilities | `src/lib/transactionDisplay.ts`, `src/lib/financial-taxonomy.ts`, `src/lib/utils.ts` | How a transaction is presented; the category pickers, icons and colours, read from the server's taxonomy in `contracts/categories.ts` rather than a copy; the class-name helper |
 | Interface language | `src/i18n/` | Arabic source of truth and default (`src/i18n/ar.ts`), optional English dictionary loaded on demand (`src/i18n/en.ts`), `DirectionProvider`, and pre-render synchronous direction application |
 | Public pages | `src/pages/Landing.tsx`, `src/pages/More.tsx`, `src/pages/Privacy.tsx`, `src/pages/Terms.tsx`, `src/pages/NotFound.tsx` | The landing page, the settings menu (which also holds the expense export card of [money](money.md)), the two legal pages and the 404 |
@@ -35,12 +35,12 @@ public pages (landing, privacy, terms and the not-found page).
 | `/privacy`, `/terms` | open | The legal pages |
 | `/dashboard` | signed in | Home: recording, statistics and the calendar ([money](money.md)) |
 | `/ai` | signed in | The AI Center ([AI Center](ai-center.md)) |
-| `/bank-sync` | signed in | Bank and wallet messages ([bank messages](bank-messages.md)) |
+| `/wallets` | signed in | The user's cards and wallets ([money](money.md)); linked from the More page and the sidebar; it shows the tab bar |
 | `/plan` | signed in | Commitments until payday and the coaching plan ([money](money.md#commitments-and-plans)); linked from the More page and from a plan's reminder; it shows the tab bar |
 | `/pro` | signed in | Plans and checkout ([billing](billing.md)) |
 | `/support` | signed in | Support tickets ([admin](admin.md)) |
 | `/more`, `/settings/*` | signed in | The settings menu and its sections; `/settings` redirects to `/more` |
-| `/ultra` | signed in | The Ultra lounge |
+| `/ultra` | signed in, on Ultra | The Ultra lounge |
 | `/admin` | admin only, after the session is verified | The console ([admin](admin.md)) |
 | anything else | open | Not found |
 
@@ -59,13 +59,13 @@ away: the identity snapshot replayed from the device carries a name, avatar and 
 - The service worker takes over on update and then reloads, so the user does not stay on the old shell.
 
 ## Talking to the API
-- One `httpBatchLink` via `getApiUrl("/api/trpc")` (`src/lib/api-url.ts`): relative `/api/trpc` on same-origin web,
-  or `VITE_API_URL` when the API is deployed separately or wrapped in Capacitor (`capacitor://localhost`), always with
-  cookies. `getAbsoluteApiUrl` and `getPublicOrigin` ensure external webhook URLs use `VITE_API_URL` so
-  `capacitor://localhost` never leaks out, and `getWsUrl` resolves `/api/voice/v2` to `wss:` / `ws:`. A token in
-  `localStorage` is also sent as a Bearer header.
-- A 401 — as a status or inside a batched answer — on a device that was signed in (`deviceHadSession`: a phone token or
-  the offline identity in `localStorage`) preserves every registered form draft in `sessionStorage`, tells the other
+- One `httpBatchLink` to `/api/trpc`, or to `VITE_API_URL` (`resolveApiBaseUrl` in `src/providers/trpc.ts`, enforcing HTTPS in production) when the API is deployed separately or wrapped in Capacitor (`capacitor://localhost`), always with
+  cookies. Shared helpers in `src/lib/api-url.ts` (`getApiUrl`, `getAbsoluteApiUrl`, `getPublicOrigin`, `getWsUrl`) keep external links and WebSocket calls (`/api/voice/v2`) aligned with `VITE_API_URL` so `capacitor://localhost` never leaks out. The session is the HttpOnly `smartspend_token` (phone accounts and passkeys) or `google_session` cookie:
+  no script on the page can read it, and the website never stores, reads or sends a token itself, nor passes one
+  between tabs ([decision 0037](../decisions/0037-website-session-cookie-only.md); `tests/security/web-session-cookie.test.ts`).
+  A token older builds left in `localStorage` is removed when the app starts.
+- A 401 — as a status or inside a batched answer — on a device that was signed in (`deviceHadSession`: the offline
+  identity in `localStorage` that every sign-in leaves) preserves every registered form draft in `sessionStorage`, tells the other
   tabs through a `BroadcastChannel`, and shows one Arabic message instead of dropping the user's typing. Without a
   session it says nothing: a first visit, or a sign-up refused with 401, used to be told the session had ended. So a
   procedure refuses a wrong password inside a session with `BAD_REQUEST`, never `UNAUTHORIZED`.
@@ -151,13 +151,12 @@ and the component tests beside their files.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Gap.** `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page
-   itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in
-   `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
-2. **Security.** The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the
-   API also accepts ([accounts](accounts.md)).
-3. **Debt.** `src/components/ProductTour.tsx` is never mounted, and `src/lib/backButtonManager.ts` only re-exports
-   `src/lib/back-button-manager.ts` for an importer that no longer exists.
+1. **Gap.** `/ultra` sends anyone not on Ultra to the plans page itself, while the page tells the reader it is
+   protected by `UltraFeatureRoute`. Both gates in
+   gate components are unused, so the plan is checked on the server only.
+2. **Gap.** The Capacitor shells (`android/`, `ios/`) serve the build from `https://localhost` and call the API on another
+   site, where a `SameSite=Lax` cookie is not sent, so they cannot keep a session since the website stopped holding the
+   token. The Flutter app replaces them (decision 0022); until they are retired they only reach the sign-in screen.
 4. **Debt.** The list of routes that show the tab bar lives in `BOTTOM_NAV_ROUTES` next to the route table, so a new
    screen has to be added in both places or it loses its navigation.
 5. **Gap.** The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten
@@ -172,3 +171,15 @@ Checked against the code; each one names where it lives.
 - [Plans and payments](billing.md): the plan strip and the upgrade screens.
 - [Admin console, support and growth tools](admin.md): the admin route, the ad banner and the usage events.
 - [Server platform and data](platform.md): the API the client talks to, and the origins it is allowed from.
+
+
+The shared transaction display reads validated financial metadata before legacy category-name heuristics. Canonical loans display as spending/income; internal movements display as transfers/investments. Editing preserves this meaning unless the user deliberately changes kind.
+
+
+The shared money formatter preserves up to two decimal places instead of rounding bank amounts to whole pounds.
+The automatic-capture card on Home shows bounded activity with foreground polling, optional post-save feedback and
+undo. It never renders the legacy record-confirmation button for automatic activity. The Flutter implementation
+uses the same semantics and server-generated procedure names, honors amount privacy, refreshes on resume and is
+covered at 200% text scale/offline. A summary income row wraps at that scale rather than overflowing.
+
+The Flutter recording outbox keeps parsed voice questions and reviews across restarts. A review can show the recorded direction, date and localized reason before saving.

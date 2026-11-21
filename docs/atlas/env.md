@@ -9,54 +9,68 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | Variable | Required | Default | Read by |
 | --- | --- | --- | --- |
 | `AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION` | no | — | `api/lib/redis-client.ts` |
-| `AI_GATEWAY_SECRET` | no | — | `api/lib/provider-key-crypto.ts` |
+| `AI_GATEWAY_SECRET` | no | — | `api/lib/provider-key-crypto.ts`, `api/services/server-status.ts` |
 | `AI_GATEWAY_SECRET_PREVIOUS` | no | — | `api/lib/provider-key-crypto.ts` |
 | `ALLOWED_ORIGINS` | no | — | `api/lib/origin-policy.ts` |
-| `APP_TIMEZONE` | no | `Africa/Cairo` | `api/boot.ts`, `api/lib/app-time.ts`, `api/lib/seasons.ts` |
-| `APP_URL` | no | `http://localhost:5173` | `api/lib/origin-policy.ts`, `api/notification-engine.ts`, `api/webauthn-router.ts` |
+| `APPLE_BUNDLE_ID` | no | `com.smartspend.app` | `api/lib/store-billing/apple-app-store-verifier.ts` |
+| `APPLE_STORE_BILLING_ENABLED` | no | — | `api/lib/store-billing/apple-app-store-verifier.ts` |
+| `APP_TIMEZONE` | no | `Africa/Cairo` | `api/boot.ts`, `api/lib/app-time.ts`, `api/lib/seasons.ts`, `api/services/server-status.ts` |
+| `APP_URL` | no | `http://localhost:5173` | `api/boot.ts`, `api/lib/origin-policy.ts`, `api/notification-engine.ts`, `api/seo-router.ts`, `api/webauthn-router.ts` |
 | `BILLING_SIMULATE` | no | — | `api/pro-router.ts` |
 | `DATABASE_URL` | yes | — | `api/queries/connection.ts` |
-| `ENABLE_CRONS` | no | — | `api/boot.ts` |
-| `ENABLE_WHATSAPP` | no | — | `api/boot.ts` |
+| `ENABLE_CRONS` | no | — | `api/boot.ts`, `api/services/server-status.ts` |
 | `FIREBASE_CLIENT_EMAIL` | no | — | `api/services/firebase.ts` |
 | `FIREBASE_PRIVATE_KEY` | no | — | `api/services/firebase.ts` |
 | `FIREBASE_PROJECT_ID` | no | — | `api/services/firebase.ts` |
-| `FIREWORKS_API_KEY` | no | — | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
+| `FIREWORKS_API_KEY` | no | — | `api/ai-router.ts`, `api/lib/system-settings-registry.ts`, `api/lib/understanding/routes.ts` |
 | `FRONTEND_URL` | no | — | `api/lib/origin-policy.ts` |
-| `GEMINI_API_KEY` | yes | — | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/embedding-provider.ts`, `api/lib/sms-ai-parser.ts`, `api/lib/system-settings-registry.ts`, `api/services/batch-ai-service.ts`, `api/services/voice/gateway/index.ts`, `api/services/voice/text-model.ts` |
+| `GEMINI_API_KEY` | yes | — | `api/admin-router.ts`, `api/ai-router.ts`, `api/ai-setup-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/capture/model-reader.ts`, `api/lib/embedding-provider.ts`, `api/lib/system-settings-registry.ts`, `api/lib/understanding/routes.ts`, `api/services/server-status.ts`, `api/services/voice/gateway/index.ts`, `api/services/voice/text-model.ts` |
 | `GEMINI_MODEL_FREE` | no | `gemini-3.1-flash-lite` | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_PRO` | no | `gemini-3.5-flash` | `api/ai-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_REPORTS` | no | `gemini-3.8-flash` | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
+| `GOOGLE_ANDROID_CLIENT_IDS` | no | — | — |
 | `GOOGLE_CLIENT_ID` | yes | — | `api/auth-router.ts` |
 | `GOOGLE_CLIENT_SECRET` | yes | — | `api/auth-router.ts` |
+| `GOOGLE_IOS_CLIENT_IDS` | no | — | — |
+| `GOOGLE_PLAY_PACKAGE_NAME` | no | `com.smartspend.app` | `api/lib/store-billing/google-play-verifier.ts` |
+| `GOOGLE_PLAY_PUBSUB_AUDIENCE` | no | — | `api/lib/store-billing/google-play-verifier.ts` |
+| `GOOGLE_PLAY_PUBSUB_SERVICE_ACCOUNT` | no | — | `api/lib/store-billing/google-play-verifier.ts` |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | no | — | `api/lib/store-billing/google-play-verifier.ts` |
 | `GOOGLE_REDIRECT_URI` | no | `http://localhost:3000/api/auth/google/callback` | `api/auth-router.ts` |
-| `GROQ_API_KEY` | no | — | `api/ai-router.ts` |
-| `JWT_SECRET` | yes | — | `api/lib/login-protection.ts`, `api/lib/provider-key-crypto.ts`, `api/lib/session-validation.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` |
+| `GROQ_API_KEY` | no | — | `api/ai-router.ts`, `api/lib/understanding/routes.ts` |
+| `JWT_SECRET` | yes | — | `api/lib/capture/memory.ts`, `api/lib/login-protection.ts`, `api/lib/provider-key-crypto.ts`, `api/lib/session-validation.ts`, `api/lib/store-billing/ledger.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` |
 | `LOGIN_ACCOUNT_MAX_FAILURES` | no | `5` | `api/lib/login-protection.ts` |
 | `LOGIN_IP_BURST_MAX_FAILURES` | no | `10` | `api/lib/login-protection.ts` |
 | `LOGIN_IP_MAX_FAILURES` | no | `50` | `api/lib/login-protection.ts` |
 | `LOGIN_PAIR_MAX_FAILURES` | no | `5` | `api/lib/login-protection.ts` |
 | `LOG_SLOW_QUERIES` | no | `true` | `api/queries/connection.ts` |
-| `NODE_ENV` | no | `development` | `api/boot.ts`, `api/chat-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/log.ts`, `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/redis-client.ts`, `api/lib/security-logger.ts`, `api/local-auth-router.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/turnstile-service.ts` |
-| `NVIDIA_API_KEY` | no | — | `api/ai-router.ts` |
+| `NODE_ENV` | no | `development` | `api/boot.ts`, `api/chat-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/client-platform.ts`, `api/lib/log.ts`, `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/redis-client.ts`, `api/lib/security-logger.ts`, `api/local-auth-utils.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/server-status.ts`, `api/services/turnstile-service.ts` |
+| `NVIDIA_API_KEY` | no | — | `api/ai-router.ts`, `api/lib/understanding/routes.ts` |
 | `OWNER_EMAIL` | no | — | — |
 | `PAYMOB_API_KEY` | no | — | `api/lib/paymob.ts` |
-| `PAYMOB_HMAC_SECRET` | no | — | `api/boot.ts`, `api/lib/paymob.ts` |
+| `PAYMOB_HMAC_SECRET` | no | — | `api/boot.ts` |
 | `PAYMOB_IFRAME_ID` | no | — | `api/lib/paymob.ts` |
 | `PAYMOB_INTEGRATION_ID` | no | — | `api/lib/paymob.ts` |
 | `PORT` | no | `3000` | `api/boot.ts`, `api/lib/origin-policy.ts`, `api/server.ts` |
-| `RATE_LIMIT_KEY_SECRET` | no | — | `api/lib/login-protection.ts` |
+| `RATE_LIMIT_KEY_SECRET` | no | — | `api/lib/login-protection.ts`, `api/services/server-status.ts` |
 | `REDIS_URL` | no | — | `api/lib/redis-client.ts` |
-| `SENTRY_DSN` | no | — | `api/lib/error-reporting.ts` |
+| `SENTRY_DSN` | no | — | `api/lib/error-reporting.ts`, `api/services/server-status.ts` |
 | `SENTRY_TRACES_SAMPLE_RATE` | no | `0.1` | `api/lib/error-reporting.ts` |
+| `SERVE_WEB_APP` | no | `false` | `api/boot.ts`, `api/services/server-status.ts` |
 | `SLOW_QUERY_THRESHOLD_MS` | no | `100` | `api/queries/connection.ts` |
 | `TRUSTED_PROXY_HEADER` | no | `x-forwarded-for` | `api/lib/get-client-ip.ts` |
 | `TRUSTED_PROXY_IPS` | no | — | `api/lib/get-client-ip.ts` |
 | `TRUST_PROXY` | no | — | `api/boot.ts`, `api/lib/get-client-ip.ts` |
-| `TURNSTILE_SECRET_KEY` | no | — | `api/services/turnstile-service.ts` |
+| `TURNSTILE_SECRET_KEY` | no | — | `api/services/server-status.ts`, `api/services/turnstile-service.ts` |
 | `VAPID_PRIVATE_KEY` | no | — | `api/notification-engine.ts` |
 | `VAPID_PUBLIC_KEY` | no | — | `api/notification-engine.ts` |
 | `VAPID_SUBJECT` | no | `mailto:contact@smartspend.com` | `api/notification-engine.ts` |
+| `WHATSAPP_CLOUD_ACCESS_TOKEN` | no | — | — |
+| `WHATSAPP_CLOUD_API_VERSION` | no | `v23.0` | — |
+| `WHATSAPP_CLOUD_APP_SECRET` | no | — | `api/boot.ts` |
+| `WHATSAPP_CLOUD_PHONE_NUMBER_ID` | no | — | — |
+| `WHATSAPP_CLOUD_VERIFY_TOKEN` | no | — | `api/boot.ts` |
+| `WHATSAPP_CLOUD_WABA_ID` | no | — | — |
 
 ## Read directly from process.env (not validated)
 
@@ -78,7 +92,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 
 ## Declared but never read outside the schema
 
-`OWNER_EMAIL`
+`GOOGLE_ANDROID_CLIENT_IDS`, `GOOGLE_IOS_CLIENT_IDS`, `OWNER_EMAIL`, `WHATSAPP_CLOUD_ACCESS_TOKEN`, `WHATSAPP_CLOUD_API_VERSION`, `WHATSAPP_CLOUD_PHONE_NUMBER_ID`, `WHATSAPP_CLOUD_WABA_ID`
 
 ## Frontend (Vite)
 
@@ -87,6 +101,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `BASE_URL` | `src/lib/voice/audio-io.ts` |
 | `DEV` | `src/components/ai/AIChatbot.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/insights/AIInsights.tsx`, `src/main.tsx` |
 | `PROD` | `src/pwa/register-sw.ts` |
+| `VITE_API_URL` | `src/providers/trpc.ts` |
 | `VITE_FIREBASE_API_KEY` | `src/pwa/firebase.ts` |
 | `VITE_FIREBASE_APP_ID` | `src/pwa/firebase.ts` |
 | `VITE_FIREBASE_AUTH_DOMAIN` | `src/pwa/firebase.ts` |

@@ -202,6 +202,19 @@ describe("shared state", () => {
     vi.setSystemTime(new Date("2026-09-29T10:10:01Z"));
     expect(await stateGet("phone-change:local:1:01000000000")).toBeNull();
   });
+
+  it("claims a one-time value once, and again only after its time is up", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-29T10:00:00Z"));
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { stateClaim } = await loadRedisClient({ NODE_ENV: "production", REDIS_URL: undefined });
+
+    expect(await stateClaim("google-nonce:abc", 60)).toBe(true);
+    expect(await stateClaim("google-nonce:abc", 60)).toBe(false);
+    expect(await stateClaim("google-nonce:other", 60)).toBe(true);
+    vi.setSystemTime(new Date("2026-10-29T10:01:01Z"));
+    expect(await stateClaim("google-nonce:abc", 60)).toBe(true);
+  });
 });
 
 describe("generation bumps", () => {

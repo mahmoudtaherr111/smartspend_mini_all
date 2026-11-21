@@ -334,7 +334,7 @@ export async function confirmAction(
             targetAmount: result.payload.targetAmount,
             targetDate: result.payload.targetDate,
           }))
-        : await executeRuntimeAction(ctx, action.actionName, action.payload);
+        : await executeRuntimeAction({ ...ctx, actionId }, action.actionName, action.payload);
 
     await db
       .update(aiPendingActions)

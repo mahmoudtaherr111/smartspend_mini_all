@@ -16,18 +16,23 @@ Each system has three pages:
 | System | Start here when the task is about | Explanation | بالعربي | Facts |
 | --- | --- | --- | --- | --- |
 | Recording spending | typing, dictating or photographing an expense; categories and classification; muscle memory; clarifying questions; saving parsed items | [expense-capture.md](expense-capture.md) | [عربي](../ar/systems/expense-capture.md) | [facts](../atlas/systems/expense-capture.md) |
-| Bank and wallet messages | bank or wallet SMS and notifications; the Android companion app; the iOS Shortcut; webhook tokens | [bank-messages.md](bank-messages.md) | [عربي](../ar/systems/bank-messages.md) | [facts](../atlas/systems/bank-messages.md) |
+| Bank and wallet messages | automatic capture of bank and wallet messages, being rebuilt: the capture catalog, the message reader, the bank-message model | [bank-messages.md](bank-messages.md) | [عربي](../ar/systems/bank-messages.md) | [facts](../atlas/systems/bank-messages.md) |
 | Live voice assistant | the live voice call, Gemini Live, voice tools and the call archive | [voice-calls.md](voice-calls.md) | [عربي](../ar/systems/voice-calls.md) | [facts](../atlas/systems/voice-calls.md) |
 | AI Center | the chat assistant: turn planning, finance answers, memory, proposed actions, the site guide | [ai-center.md](ai-center.md) | [عربي](../ar/systems/ai-center.md) | [facts](../atlas/systems/ai-center.md) |
 | Reports, insights and the smart profile | monthly and yearly insights, month comparison, the Pro report, onboarding questions, the smart profile | [insights.md](insights.md) | [عربي](../ar/systems/insights.md) | [facts](../atlas/systems/insights.md) |
 | Money | the dashboard, expense lists and statistics, wallets, budgets, goals, business mode, contacts, rollups, export | [money.md](money.md) | [عربي](../ar/systems/money.md) | [facts](../atlas/systems/money.md) |
 | Accounts, sign-in and security | Google sign-in, phone accounts and codes, passkeys, sessions, rate limits, security headers, account deletion | [accounts.md](accounts.md) | [عربي](../ar/systems/accounts.md) | [facts](../atlas/systems/accounts.md) |
-| Plans and payments | Free, Pro and Ultra; Paymob checkout and webhook; referrals; subscription expiry | [billing.md](billing.md) | [عربي](../ar/systems/billing.md) | [facts](../atlas/systems/billing.md) |
+| Plans and payments | Free, Pro and Ultra; Paymob and store purchases; subscription expiry | [billing.md](billing.md) | [عربي](../ar/systems/billing.md) | [facts](../atlas/systems/billing.md) |
 | Notifications and WhatsApp | web push, in-app notifications, scheduled and activity messages, the WhatsApp service | [notifications.md](notifications.md) | [عربي](../ar/systems/notifications.md) | [facts](../atlas/systems/notifications.md) |
 | Admin console, support and growth tools | the admin console and its settings, support tickets, ads, SEO pages, analytics | [admin.md](admin.md) | [عربي](../ar/systems/admin.md) | [facts](../atlas/systems/admin.md) |
 | AI providers and usage limits | model providers, routing and fallback, model names, token limits and budgets, AI cost | [ai-platform.md](ai-platform.md) | [عربي](../ar/systems/ai-platform.md) | [facts](../atlas/systems/ai-platform.md) |
 | Server platform and data | server and tRPC wiring, environment variables, caches, the database schema, file storage, jobs, data retention | [platform.md](platform.md) | [عربي](../ar/systems/platform.md) | [facts](../atlas/systems/platform.md) |
-| Web and mobile app shell | routes and guards, layout, PWA install and offline behaviour, UI primitives, hooks, client utilities | [web-app.md](web-app.md) | [عربي](../ar/systems/web-app.md) | [facts](../atlas/systems/web-app.md) |
+| Web and mobile app shell | the React app (also run as an installed PWA and in the Capacitor shells): routes and guards, layout, PWA install and offline behaviour, UI primitives, hooks, client utilities | [web-app.md](web-app.md) | [عربي](../ar/systems/web-app.md) | [facts](../atlas/systems/web-app.md) |
+
+Two pieces of code are not systems. The Flutter app in `mobile/` is described by `mobile/README.md`, its rules in
+`mobile/AGENTS.md` and its decision in [0022](../decisions/0022-flutter-mobile-app.md); the atlas does not read Dart,
+so there is nothing for a page here to be checked against. It calls the procedures the other systems own (its list is
+generated from `api/router.ts`), and where it touches one, the page says so ([bank messages](bank-messages.md)).
 
 Before you change a file, find its systems in `docs/atlas/systems/files.md` and read their explanations. A file
 that several systems share is split there down to single procedures, routes and jobs.

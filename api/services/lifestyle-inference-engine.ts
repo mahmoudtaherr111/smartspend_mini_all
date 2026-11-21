@@ -4,6 +4,8 @@ import { getDb } from "../queries/connection";
 import { expenses, monthlyBehaviorSnapshots } from "../../db/schema";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { DISCRETIONARY_CATEGORIES } from "../../contracts/categories";
+import { businessDateKey, businessWeekday } from "../lib/app-time";
+import { calculateSpendingBehavior } from "../lib/spending-behavior";
 
 export interface TransactionLike {
   amount: string | number;
@@ -76,10 +78,11 @@ export function buildBehaviorSnapshot(
     subCategoryMap[subKey].amount += amount;
     subCategoryMap[subKey].count += 1;
 
+    // A Cairo day and weekday: a purchase at 01:00 Cairo time belongs to that day, not to the UTC day before.
     const date = new Date(item.date);
-    const dayKey = date.toISOString().slice(0, 10);
+    const dayKey = businessDateKey(date);
     dayMap[dayKey] = (dayMap[dayKey] || 0) + amount;
-    const weekday = String(date.getDay());
+    const weekday = String(businessWeekday(date));
     weekdayMap[weekday] = (weekdayMap[weekday] || 0) + amount;
   }
 
@@ -144,11 +147,14 @@ export function buildBehaviorSnapshot(
       ? Math.round((totalExpense / incomeBaseline) * 100)
       : null;
 
-  let spendingBehavior = "planned";
-  if (spikeDays.length > 0 || flexPercent > 45) spendingBehavior = "spiky";
-  if (flexPercent > 55) spendingBehavior = "emotional";
-  if (topCategories.length <= 2 && totalExpense > 0)
-    spendingBehavior = "concentrated";
+  const behaviorResult = calculateSpendingBehavior({
+    totalExpense,
+    totalIncome: incomeBaseline,
+    flexPercent,
+    hasSpike: spikeDays.length > 0,
+    categoryCount: topCategories.length,
+  });
+  const spendingBehavior = behaviorResult.behavior;
 
   let financialStability = "unknown";
   if (expenseIncomeRatio !== null) {

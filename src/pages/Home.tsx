@@ -15,8 +15,8 @@ import { BarChart3 } from "lucide-react";
 import { trpc } from "@/providers/trpc";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { RecentExpenses } from "@/components/expenses/RecentExpenses";
-import { SmsSuggestionsCard } from "@/components/bank-sync/SmsSuggestionsCard";
 import { PendingQuestionsCard } from "@/components/expenses/PendingQuestionsCard";
+import { CaptureOverview } from "@/components/bank-capture/CaptureOverview";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OnboardingCard } from "@/components/OnboardingCard";
 import { cn } from "@/lib/utils";
@@ -123,8 +123,12 @@ export default function Home() {
       : undefined;
 
   // Business Mode State
+  // Business mode is a plan feature: ask for the business only when the plan includes it, so a plan
+  // without it sends no request the server is bound to refuse.
+  const planQuery = trpc.pro.myPlan.useQuery(undefined, { staleTime: 60_000 });
   const businessQuery = trpc.business.get.useQuery(undefined, {
     staleTime: 60_000,
+    enabled: planQuery.data?.features?.business === true,
   });
   const hasBusiness = !!businessQuery.data?.business;
   const [businessMode, setBusinessMode] = useState(false);
@@ -289,8 +293,8 @@ export default function Home() {
                     }}
                   />
                   <div className="space-y-4">
+                    <CaptureOverview />
                     <PendingQuestionsCard />
-                    <SmsSuggestionsCard />
                     <RecentExpenses
                       limit={7}
                       month={month}

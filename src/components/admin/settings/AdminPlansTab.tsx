@@ -27,6 +27,9 @@ import {
   SectionHeader,
 } from "./AdminSettingsShared";
 import { AdminVoiceCallSection } from "./AdminVoiceCallSection";
+import { AdminCaptureSection } from "./AdminCaptureSection";
+import { AdminSmsAiSection } from "./AdminSmsAiSection";
+import { AdminOperationsSection } from "./AdminOperationsSection";
 import {
   PLAN_FEATURE_DEFAULTS,
   PLAN_FEATURE_LABELS,
@@ -319,14 +322,6 @@ function PlanAdvancedLimits({
           unit="ثانية"
         />
         <NumInput
-          label="حد رسايل البنك/شهر"
-          hint="عدد رسايل البنك اللي بتتسجل لوحدها في الشهر. اللي بعد الحد بتتحفظ اقتراحات يأكدها المستخدم بضغطة"
-          settingKey={`sms_limit_${plan}`}
-          formData={formData}
-          updateField={updateField}
-          unit="رسالة"
-        />
-        <NumInput
           label="حد العمليات أوفلاين"
           hint="أقصى عدد معاملات نصية يمكن للمستخدم تسجيلها وحفظها محلياً في وضع أوفلاين"
           settingKey={`offline_limit_${plan}`}
@@ -341,6 +336,22 @@ function PlanAdvancedLimits({
           formData={formData}
           updateField={updateField}
           unit="هدف"
+        />
+        <NumInput
+          label="عمليات من رسايل البنك في الشهر"
+          hint="العمليات الجديدة اللي بتتسجل من رسايل البنك في شهر القاهرة. اللي فوق الحد بتتحفظ شهرين وتتسجل لو اشترك. 0 = بدون حد"
+          settingKey={planNumberKey("capture_monthly_limit", plan as PlanId)}
+          formData={formData}
+          updateField={updateField}
+          unit="عملية"
+        />
+        <NumInput
+          label="موبايلات بتبعت رسايل البنك"
+          hint="أقصى عدد موبايلات للمستخدم بتبعت رسايل البنك في نفس الوقت. 0 = بدون حد"
+          settingKey={planNumberKey("capture_devices", plan as PlanId)}
+          formData={formData}
+          updateField={updateField}
+          unit="موبايل"
         />
         <NumInput
           label="طلبات AI في الدقيقة"
@@ -821,6 +832,11 @@ export function AdminPlansTab({
 
       {/* The rebuilt voice call: rollout, models, cost caps and its dashboard */}
       <AdminVoiceCallSection formData={formData} updateField={updateField} />
+
+      {/* The model that reads bank messages: its switch and daily cost cap (decision 0025) */}
+      <AdminOperationsSection formData={formData} updateField={updateField} />
+      <AdminSmsAiSection formData={formData} updateField={updateField} />
+      <AdminCaptureSection formData={formData} updateField={updateField} />
 
       {/* AI Chatbot Settings */}
       <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden border-t-4 border-t-indigo-500">

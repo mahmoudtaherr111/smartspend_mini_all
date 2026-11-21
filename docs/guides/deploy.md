@@ -4,12 +4,15 @@ Written from `Dockerfile`, `docker-compose.yml`, `package.json`, `api/boot.ts`, 
 Update this page in the same change when any of them changes.
 
 ## What runs in production
-`npm run build` builds the web app into `dist/public` and bundles `api/boot.ts` into `dist/boot.js`. `npm start` runs
-`node dist/boot.js` with `NODE_ENV=production`: one Node process on `PORT` (default 3000) that serves
+`npm run build` builds the admin console into `dist/admin` and bundles `api/boot.ts` into `dist/boot.js`; the website
+is parked (decision 0050) and not built. `npm start` runs `node dist/boot.js` with `NODE_ENV=production`: one Node
+process on `PORT` (default 3000) that serves
 
-- the API: tRPC, the SMS ingestion sub-app, Google OAuth, the WhatsApp OTP event stream and the Paymob webhook;
+- the API: tRPC, the SMS ingestion sub-app, Google OAuth, the WhatsApp and Paymob webhooks;
 - the live voice WebSocket at /api/voice/v2, after an origin check;
-- the built web app from `dist/public`, answering any other path outside /api/ with index.html;
+- the admin console from `dist/admin` at /admin/;
+- `/` with `{ service, console }`, `robots.txt` refusing every crawler, and 404 for any other path. With
+  `SERVE_WEB_APP=true` and a `npm run build:web` build it serves the website from `dist/public` again;
 - GET /health, which returns `{ status, timestamp }`.
 
 Every route and scheduled job is listed in [entrypoints](../atlas/entrypoints.md).
@@ -18,16 +21,17 @@ The bundle is an ES module, but CommonJS code inside it calls `require`, so the 
 `createRequire`. The banner imports it as `__bannerCreateRequire`: esbuild cannot rename around banner text, and a
 bundled package that imports `createRequire` itself (sharp 0.35 does) would stop the server with a SyntaxError before
 its first request. Sentry and node-cron stay outside the bundle and load from `node_modules`. `npm run test:build`
-starts `dist/boot.js` and `dist/server/server.js` and asks each for /health.
+starts `dist/boot.js` and `dist/server/server.js` and asks each for /health; `npm run test:build:web` checks the
+website's build.
 
 ## Docker
 The image starts from node:22-alpine, matching CI's Node 22 line, runs `npm run build`, and starts `node dist/boot.js`
-on port 3000 with `NODE_ENV=production`; a host that runs `npm start` instead works too (`cross-env` is a runtime
-dependency). Node 20 has reached end of life ([Node.js release schedule](https://nodejs.org/en/about/previous-releases)). It contains `dist`,
+on port 3000 with `NODE_ENV=production` (not `npm start`, which goes through the development tool `cross-env`). Node 20
+has reached end of life ([Node.js release schedule](https://nodejs.org/en/about/previous-releases)). It contains `dist`,
 `package.json` and a `node_modules` installed with `npm ci --omit=dev` — the bundle reads only Sentry, node-cron and
 native binaries from it — so it cannot run migrations (see Database) and no development package reaches it.
 The build context excludes environment files, `.agents`, Playwright reports and test results, nested `node_modules`,
-and the native projects (`android/`, `android-app/`, `ios/`), which the web and server image never uses.
+and the native projects (`android/`, `ios/`), which the web and server image never uses.
 
 Install with the checked-in lockfile. The gRPC JavaScript override in `package.json` pins `1.14.5` across Firebase's
 client and admin dependency trees to close its high-severity advisory; removing it requires rechecking
@@ -39,7 +43,7 @@ and that only the content patterns in `tailwind.config.js` reach. Passing the ga
 advisories. Do not use `npm audit fix --force` to downgrade
 those parent packages. Development/test dependencies include Undici 8, requiring Node 22.19 or newer.
 
-`docker-compose.yml` defines:
+`docker-compose.yml` defines the local development stack:
 
 | Service | Image | Host port | Notes |
 | --- | --- | --- | --- |
@@ -50,10 +54,38 @@ those parent packages. Development/test dependencies include Undici 8, requiring
 Local services for development: `docker compose up -d mysql redis`. The whole stack:
 `docker compose --profile app up -d --build`. The app service mounts no volume.
 
+### Production VPS Deployment (`docker-compose.prod.yml`)
+For production servers, use `docker-compose.prod.yml`. It provides a hardened, production-ready stack:
+
+| Service | Image | Ports / Network | Notes |
+| --- | --- | --- | --- |
+| proxy | Nginx 1.27-alpine | `80:80`, `443:443` | Reverse proxy terminating TLS; configures WebSocket upgrade for `/api/voice/v2` and a buffering-disabled location for `/api/admin/events` |
+| app | built from Dockerfile | `127.0.0.1:3000:3000` | Single-replica cron runner (`ENABLE_CRONS=true`); loopback-bound; healthcheck on `/health` |
+| mysql | MySQL 8.4 | `127.0.0.1:3308:3306` | Loopback-bound; `--innodb-buffer-pool-size=3G`; internal backend network |
+| redis | Redis 7.4-alpine | `127.0.0.1:6379:6379` | Loopback-bound; `--maxmemory 1gb --maxmemory-policy volatile-lru`; AOF persistence |
+| certbot | Certbot latest | volume mounted | Runs a renewal loop every 12 hours while the container is running; `restart: "no"` |
+
+Start production stack: `docker compose -f docker-compose.prod.yml up -d --build`.
+Full operational runbook, server hardening, and deployment procedures: see [VPS Move Plan](vps-move-plan.md).
+
+### Disaster Recovery & Backup Scripts (`scripts/vps/`)
+Production operational and disaster recovery tooling is located in `scripts/vps/`:
+- `scripts/load/day-one.ts`: The day-one load test (1,000 people, 100 at once, reads and saves, no model calls) on a throwaway database on port 3399.
+- `scripts/ops/backup-restore-check.sh`: Dumps the live database into a scratch database and compares table row counts; it does not test an existing backup archive.
+- `scripts/vps/backup.sh`: MySQL dump, gzip and SHA-256 metadata, best-effort Redis snapshot and rotation of old MySQL archives. Redis snapshot failure does not fail the backup.
+- `scripts/vps/restore.sh`: Checks gzip and, if metadata exists, its checksum; attempts a pre-restore dump, restores MySQL, then restarts the app and checks `/health` if its container exists. The pre-restore dump can fail without stopping the restore.
+- `scripts/vps/rollback.sh`: Optionally restores a snapshot and checks out a Git ref, rebuilds the app and checks health. Restoring an older snapshot can lose subsequent writes.
+- `scripts/vps/preflight.sh`: Checks MySQL health, the age of a backup file and `npm run db:doctor -- --strict`; it does not validate that the backup can be restored.
+
+
 ## Database
 The schema is `db/schema.ts`. `npm run db:generate` writes SQL migrations to `db/migrations` (configured in
 `drizzle.config.ts`); review them, then `npm run db:migrate` applies them to `DATABASE_URL`. Run migrations from a checkout
 or a CI job before starting a new version. `npm run db:push` is only for a throwaway local database.
+A new version may ship ahead of its migration only where the code says it can wait: migration 0048
+(`scheduled_job_runs`) is one, as jobs run as before and «التشغيل» in the console says the table is missing until it is
+applied. Migration 0049 (`support_assignments`) can wait the same way: until it is applied, tickets work and only
+assigning them is unavailable. The console's «حالة السيرفر» lists any migration this build has and the database lacks.
 
 `npm run db:doctor` reads the database in `DATABASE_URL` and prints how it differs from `db/schema.ts` and which
 migrations it has recorded; it changes nothing. Run it before the first `npm run db:migrate` on an existing database:
@@ -77,30 +109,43 @@ template. Decide these explicitly in production:
 | `FRONTEND_URL`, `ALLOWED_ORIGINS` | Further exact origins allowed to call the API and open the voice WebSocket. |
 | `TRUST_PROXY`, `TRUSTED_PROXY_IPS`, `TRUSTED_PROXY_HEADER` | Client IPs behind a reverse proxy. Without them per-IP limits see the proxy's address; the server logs a warning. |
 | `REDIS_URL` | Shared rate limits and caches. Without Redis in production, the cache helpers in `api/lib/redis-client.ts` fall back to memory only when `AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION` is true, and rate limits fall back to per-process memory with a warning. |
-| `ENABLE_CRONS` | Scheduled jobs run only where it is true. `.env.example` sets false and compose does not override it; without it nothing expires subscriptions, builds monthly reports, applies retention, reconciles rollups or deletes expired sessions. Each job takes a MySQL advisory lock, so enabling it on several instances is safe. |
-| `PAYMOB_API_KEY`, `PAYMOB_INTEGRATION_ID`, `PAYMOB_IFRAME_ID`, `PAYMOB_HMAC_SECRET` | Payments. In production the webhook answers 503 when `PAYMOB_HMAC_SECRET` is empty; outside production it skips the signature check instead. |
+| `ENABLE_CRONS` | Scheduled jobs run only where it is true. `.env.example` sets false and development compose does not override it; production compose sets it to true; without it nothing expires subscriptions, builds monthly reports, applies retention, reconciles rollups or deletes expired sessions. Each job takes a MySQL advisory lock, so enabling it on several instances is safe. |
+| `PAYMOB_API_KEY`, `PAYMOB_INTEGRATION_ID`, `PAYMOB_IFRAME_ID`, `PAYMOB_HMAC_SECRET` | Payments. The webhook answers 503 when `PAYMOB_HMAC_SECRET` is empty, in every environment, so set it wherever Paymob is set up. |
 | `BILLING_SIMULATE` | Accepts demo transaction ids in upgrades. Never true in production. |
-| `ENABLE_WHATSAPP` | Connects the WhatsApp client for OTP login. Its session lives in the whatsapp_auth_info folder under the working directory: give that folder a volume and run the client in one instance only. |
 | `TURNSTILE_SECRET_KEY`, `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile in front of the WhatsApp verification code. In production the code request is refused without the secret, and Cloudflare's test values are not accepted; the site key is built into the web app and shows the widget on the sign-up form. |
-| `JWT_SECRET` | Signs sessions. While `AI_GATEWAY_SECRET` is unset it also seals the provider keys saved in the admin console, and rotating it then loses them. In production the server refuses to start when it is under 32 characters (and so for `AI_GATEWAY_SECRET` and `RATE_LIMIT_KEY_SECRET` when set): check the value before deploying a version that has this rule. |
+| `JWT_SECRET` | Signs sessions. While `AI_GATEWAY_SECRET` is unset it also seals the provider keys saved in the admin console, and rotating it then loses them. Production requires at least 32 characters; generate a long random value. |
 | `AI_GATEWAY_SECRET`, `AI_GATEWAY_SECRET_PREVIOUS` | Seal the provider keys saved in the admin console. Set `AI_GATEWAY_SECRET` before rotating `JWT_SECRET`: at the next boot every stored key moves to it, and the providers tab shows which secret each key is on. To rotate it, put the old value in `AI_GATEWAY_SECRET_PREVIOUS` and the new one in `AI_GATEWAY_SECRET`, deploy, and remove the old value once no key shows it. |
 | `SENTRY_DSN` | Optional error reporting. |
 
 ## More than one instance
-State kept in process memory does not cross processes: the classification result cache, muscle memory, the settings
-cache and the phone-change codes (`api/AGENTS.md`, rule 6). Sign-up verification over WhatsApp does: its challenges
-live in `whatsapp_otp_codes`, and an event stream on another instance than the WhatsApp client learns from the
-database within a few seconds.
+State kept in process memory does not cross processes: the classification result cache, muscle memory and the
+settings cache (`api/AGENTS.md`, rule 6). Phone challenges for sign-up, WhatsApp sign-in and phone changes are
+stored in `whatsapp_otp_codes`, so replicas share their state. Meta sends the code and the person types it back
+(`api/services/phone-challenge.ts`); only its HMAC is stored.
 
-## API and web app deployed separately
+## Standalone API and parked website
 - API: `npm run backend:build` bundles `api/server.ts` into `dist/server/server.js` with the same banner and the same
   packages left outside, and `npm run backend:start` runs it
   (the script uses POSIX shell syntax for `NODE_ENV`). It loads `.env`, registers the same routes and jobs, serves the voice
   WebSocket, and does not serve the web app. Add the web app's origin to `FRONTEND_URL` or `ALLOWED_ORIGINS`.
-- Web app: copy `.env.frontend.example` to `.env.local`, set `VITE_API_URL` to the API origin, and run
-  `npm run frontend:build`; upload `dist/public` to any static host. `npm run frontend:dev` runs Vite on port 5173 and proxies
-  /api to `VITE_API_URL`.
+- The website is parked and not deployed (decision 0050). Its separate `frontend:dev` and `frontend:build` scripts remain
+  for development. If it is brought back, review the API origin and its `SameSite=Lax` session cookie before deploying it.
 
 ## Mobile
 - `android/` and `ios/` are Capacitor apps around the built web app.
-- `android-app/` is the native companion that forwards bank notifications; see [its README](../../android-app/README.md).
+- `mobile/` is the Flutter app. `.github/workflows/android-release.yml` (a `v*.*.*` tag or a manual run) builds the
+  store bundle and APKs, which request no SMS permission, and the SMS build (`--android-project-arg=smartspend.sms=true`,
+  artifact `smartspend-sms-apk`) for sideloading until Google Play approves the SMS declaration. Both call
+  `https://api.smartspend.app`.
+
+## Bank-message capture in production
+Decision 0049; the system is [bank and wallet messages](../systems/bank-messages.md).
+- Nothing to switch on: `capture_enabled` and `capture_questions_enabled` are on unless an admin sets them to `false`.
+- On the replica with `ENABLE_CRONS=true`, boot runs the `cashflow-cutover` job, then every ten minutes until it is
+  active. On a new database it activates at once; with legacy rows it cannot resolve it alerts the admins, and
+  `npm run ledger:cashflow` (from a checkout with dev dependencies, not the image) shows them.
+- The model is the admin's route for the `sms` purpose in the AI providers screen; without one, the server's
+  `GEMINI_API_KEY`. Use a paid tier that does not train on requests: messages carry names. Set a second provider with
+  its prices so an outage of one is covered.
+- Before opening to people, score real messages on a private machine: `npm run bench:capture -- --cases <file.json>`
+  (keys from the environment, or `DOTENV_CONFIG_PATH=<.env>`). It prints case ids and totals, never message text.

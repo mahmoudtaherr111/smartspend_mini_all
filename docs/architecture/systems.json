@@ -1,5 +1,5 @@
 {
-  "$comment": "Hand-maintained map from the code to the systems people think in. Every module (clusters.json), tRPC procedure, page, HTTP route, WebSocket and scheduled job belongs to exactly one system: a router's procedures belong to the router's system unless a procedure is listed under another system. `npm run atlas` writes one facts page per system to docs/atlas/systems/, and the knowledge rules fail on anything unassigned or assigned twice. `extraPaths` names files the TypeScript analysis cannot see, such as the Android companion, whose change also asks for a new check of the system's explanation. Each system is explained in docs/systems/<id>.md, and for people who do not read code in docs/ar/systems/<id>.md. Summaries say what the system does and were checked against the code.",
+  "$comment": "Hand-maintained map from the code to the systems people think in. Every module (clusters.json), tRPC procedure, page, HTTP route, WebSocket and scheduled job belongs to exactly one system: a router's procedures belong to the router's system unless a procedure is listed under another system. `npm run atlas` writes one facts page per system to docs/atlas/systems/, and the knowledge rules fail on anything unassigned or assigned twice. `extraPaths` names files the TypeScript analysis cannot see, whose change also asks for a new check of the system's explanation. Each system is explained in docs/systems/<id>.md, and for people who do not read code in docs/ar/systems/<id>.md. Summaries say what the system does and were checked against the code.",
   "systems": [
     {
       "id": "expense-capture",
@@ -7,8 +7,8 @@
       "titleAr": "تسجيل المصاريف",
       "summary": "Turns a typed or dictated sentence, or a receipt photo, into categorized transactions: the entry form, the classification pipeline, Arabic text handling, clarifying questions and saving the items.",
       "summaryAr": "بيحوّل جملة مكتوبة أو متقالة أو صورة إيصال لمعاملات متصنفة: خانة الإدخال وخط التصنيف وفهم العربي والأسئلة التوضيحية وحفظ البنود.",
-      "clusters": ["classification", "classification-qa", "arabic-nlp", "receipt-parsing", "web-capture"],
-      "routers": ["image"],
+      "clusters": ["classification", "understanding", "classification-qa", "arabic-nlp", "receipt-parsing", "web-capture"],
+      "routers": ["image", "taxonomy"],
       "procedures": [
         "ai.parseExpense",
         "ai.parseVoiceExpense",
@@ -29,30 +29,12 @@
       "id": "bank-messages",
       "title": "Bank and wallet messages",
       "titleAr": "رسائل البنوك والمحافظ",
-      "summary": "Receives bank and wallet notifications forwarded by the Android companion app or a personal iOS Shortcut, and parses them with rules first and a model second.",
-      "summaryAr": "بيستقبل إشعارات البنوك والمحافظ اللي بيبعتها تطبيق أندرويد المساعد أو اختصار iOS الشخصي، ويفهمها بالقواعد الأول وبالموديل بعدها.",
-      "clusters": ["ingestion-parsers", "web-bank-sync"],
-      "extraPaths": [
-        "android-app/app/src/main/java/**",
-        "android-app/app/src/main/AndroidManifest.xml",
-        "android-app/app/build.gradle",
-        ".github/workflows/build-apk.yml"
-      ],
-      "procedures": ["profile.generateWebhookToken", "profile.getWebhookToken", "profile.getSmsLogs", "profile.generateMagicCode", "profile.getSmsSuggestions", "profile.confirmSmsSuggestion", "profile.dismissSmsSuggestion"],
-      "pages": ["BankSyncPage"],
-      "routes": [
-        "GET /api/sms/android-connect",
-        "POST /api/sms/android-status",
-        "POST /api/sms/exchange",
-        "POST /api/sms/ingest",
-        "GET /api/sms/logs",
-        "GET /api/sms/metrics",
-        "GET /api/sms/shortcut-download",
-        "GET /api/sms/token",
-        "POST /api/sms/token/generate",
-        "GET /api/sms/unparsed"
-      ],
-      "flows": ["flow_sms_ingest"]
+      "summary": "Automatic capture of bank and wallet messages from phones: the phone's keyword filter, the catalog of banks, wallets and subscriptions the admin edits, the model that reads every message with checks that hold for any bank, the intake that merges signals into payments and records them on their own with undo, and the user's answers and questions.",
+      "summaryAr": "تسجيل رسايل البنوك والمحافظ من الموبايل: قايمة البنوك والمحافظ والاشتراكات اللي الأدمن بيعدّلها، والقارئ اللي بيقرا الرسالة من غير AI، والموديل اللي الأدمن اختاره للي القارئ مش متأكد منه، والاستلام اللي بيجمع الرسايل في عمليات، وإجابة المستخدم اللي بتكتب في الدفتر.",
+      "clusters": ["capture-ai-reader", "capture-catalog", "capture-intake", "web-bank-capture"],
+      "routers": ["capture", "captureAdmin"],
+      "routes": ["GET /api/brand-logos/:file"],
+      "jobs": ["seed-capture-catalog", "capture-ai-sweep", "capture-breaker", "capture-silent-devices", "cashflow-cutover", "cashflow-cutover-at-boot", "brand-logos"]
     },
     {
       "id": "voice-calls",
@@ -108,10 +90,10 @@
       "summary": "The ledger once an item is saved: the dashboard, expense lists and statistics, wallets, budgets, savings goals, commitments and coaching plans, business mode, the people the user deals with, daily rollups and exports.",
       "summaryAr": "الدفتر بعد ما البند يتسجل: الشاشة الرئيسية وقوايم المصاريف والإحصائيات والمحافظ والميزانيات وأهداف الادخار ووضع البيزنس والناس اللي بتتعامل معاهم والتجميع اليومي والتصدير.",
       "clusters": ["ledger", "coaching", "web-finance"],
-      "routers": ["expense", "wallet", "budget", "goals", "business", "coach"],
+      "routers": ["expense", "wallet", "budget", "goals", "business", "coach", "commitments"],
       "procedures": ["export.myExpenses", "profile.listContacts", "profile.addContact", "profile.updateContact", "profile.deleteContact", "profile.mergeContacts"],
-      "pages": ["Home", "PlanPage"],
-      "jobs": ["nightly-rollup-reconciliation", "taxonomy-migration", "coaching-reminders"]
+      "pages": ["Home", "PlanPage", "WalletsPage"],
+      "jobs": ["nightly-rollup-reconciliation", "taxonomy-migration", "coaching-reminders", "commitment-reminders", "commitment-match-sweep"]
     },
     {
       "id": "accounts",
@@ -123,19 +105,23 @@
       "routers": ["auth", "localAuth", "session", "webauthn"],
       "procedures": ["profile.getMyProfile", "profile.updateProfile", "profile.updateUserInfo", "profile.requestPhoneChange", "profile.confirmPhoneChange", "profile.deleteMyAccount"],
       "pages": ["Login", "AuthCallback", "Settings"],
-      "routes": ["GET /api/auth/google/start", "GET /api/auth/google/callback", "GET /api/sse/otp"],
+      "routes": ["GET /api/auth/google/start", "GET /api/auth/google/callback"],
       "jobs": ["daily-auth-cleanup"]
     },
     {
       "id": "billing",
       "title": "Plans and payments",
       "titleAr": "الباقات والدفع",
-      "summary": "The Free, Pro and Ultra plans and the Ultra members page, checkout through Paymob and its webhook, referral codes, and the daily job that ends expired subscriptions.",
-      "summaryAr": "باقات Free وPro وUltra وصفحة مشتركي Ultra، والدفع عن طريق Paymob وإشعاره للسيرفر، وأكواد الإحالة، والمهمة اليومية اللي بتنهي الاشتراكات المنتهية.",
+      "summary": "The Free, Pro and Ultra plans and the Ultra members page, checkout through Paymob and its webhook, and the daily job that ends expired subscriptions.",
+      "summaryAr": "باقات Free وPro وUltra وصفحة مشتركي Ultra، والدفع عن طريق Paymob وإشعاره للسيرفر، والمهمة اليومية اللي بتنهي الاشتراكات المنتهية.",
       "clusters": ["billing"],
-      "routers": ["pro", "referral"],
+      "routers": ["pro"],
       "pages": ["Pro", "UltraLounge"],
-      "routes": ["POST /api/webhooks/paymob"],
+      "routes": [
+        "POST /api/webhooks/paymob",
+        "POST /api/webhooks/google-play",
+        "POST /api/webhooks/apple-asn"
+      ],
       "jobs": ["daily-subscription-expiry"],
       "flows": ["flow_paymob_upgrade"]
     },
@@ -147,9 +133,10 @@
       "summaryAr": "إشعارات المتصفح والموبايل والإشعارات جوه التطبيق والرسايل المجدولة ورسايل النشاط، وخدمة واتساب ومعاها حالة أكواد التأكيد.",
       "clusters": ["notifications", "whatsapp"],
       "routers": ["adminWhatsapp"],
+      "routes": ["GET /api/webhooks/whatsapp", "POST /api/webhooks/whatsapp"],
       "procedures": ["profile.savePushSubscription", "profile.getInAppNotifications", "profile.markInAppNotificationRead", "profile.markAllInAppNotificationsRead"],
       "pages": ["NotificationsPage"],
-      "jobs": ["scheduled-notifications", "smart-activity-notifications", "seed-default-templates"]
+      "jobs": ["scheduled-notifications", "smart-activity-notifications", "seed-default-templates", "whatsapp-outbox"]
     },
     {
       "id": "admin",
@@ -158,7 +145,8 @@
       "summary": "The admin console (users and plans, settings, AI providers, notification templates, learned rules, discount codes), support tickets, ads, SEO pages and usage analytics.",
       "summaryAr": "لوحة الإدارة (المستخدمين والباقات والإعدادات ومزودي الذكاء الاصطناعي وقوالب الإشعارات والقواعد المتعلمة وأكواد الخصم)، وتذاكر الدعم، والإعلانات، وصفحات SEO، وإحصائيات الاستخدام.",
       "clusters": ["web-admin"],
-      "routers": ["admin", "ads", "seo", "support", "analytics"],
+      "routers": ["admin", "adminConsole", "aiSetup", "ads", "seo", "support", "analytics"],
+      "routes": ["GET /admin"],
       "procedures": ["export.allUsers"],
       "pages": ["Admin", "Support"]
     },
@@ -178,8 +166,9 @@
       "summary": "The Hono server and tRPC wiring, environment validation, the Redis and settings caches, the MySQL schema and its storage classes, file storage, shared contracts, scheduled job bodies and data retention.",
       "summaryAr": "السيرفر وتوصيل الـAPI، والتحقق من الإعدادات، والكاش، وقاعدة البيانات وتصنيف تخزينها، وتخزين الملفات، والأنواع المشتركة، وأجسام المهام المجدولة، ومدة الاحتفاظ بالبيانات.",
       "clusters": ["api-core", "api-routers", "platform", "database", "contracts", "jobs", "storage"],
-      "routes": ["GET /health", "ALL /api/trpc/*"],
-      "jobs": ["data-retention-lifecycle"]
+      "routers": ["appConfig"],
+      "routes": ["GET /", "GET /health", "GET /robots.txt", "GET /sitemap.xml", "ALL /api/trpc/*"],
+      "jobs": ["data-retention-lifecycle", "ops-watch"]
     },
     {
       "id": "web-app",

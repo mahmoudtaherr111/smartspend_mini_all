@@ -11,10 +11,10 @@ import {
   ListChecks,
   Palette,
   ShieldCheck,
-  Smartphone,
   Sparkles,
   UserRound,
   Users,
+  Wallet,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { SignOutDialog } from "@/components/auth/SignOutDialog";
@@ -97,10 +97,10 @@ const sections: MoreSection[] = [
         icon: ListChecks,
       },
       {
-        href: "/bank-sync",
-        labelKey: "more.item.bankSync",
-        descKey: "more.item.bankSyncDesc",
-        icon: Smartphone,
+        href: "/wallets",
+        labelKey: "more.item.wallets",
+        descKey: "more.item.walletsDesc",
+        icon: Wallet,
       },
       {
         href: "/support",
@@ -114,7 +114,7 @@ const sections: MoreSection[] = [
 
 function preloadDestination(href: string) {
   if (href === "/admin") return import("@/pages/Admin");
-  if (href === "/bank-sync") return import("@/pages/BankSyncPage");
+  if (href === "/wallets") return import("@/pages/WalletsPage");
   if (href === "/plan") return import("@/pages/PlanPage");
   if (href === "/pro") return import("@/pages/Pro");
   if (href === "/support") return import("@/pages/Support");

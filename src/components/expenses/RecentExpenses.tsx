@@ -40,6 +40,7 @@ import {
 import { useHaptics } from "@/hooks/useHaptics";
 import { getCategoryAppearance } from "@/lib/financial-taxonomy";
 import { EditExpenseDialog } from "./EditExpenseDialog";
+import { formatCurrency } from "@/i18n/format";
 
 interface RecentExpensesProps {
   onRefresh?: () => void;
@@ -252,6 +253,7 @@ export function RecentExpenses({
     : {};
 
   const queryInput = {
+    groupLinkedFees: true,
     limit,
     offset: page * limit,
     ...dateRange,
@@ -445,6 +447,7 @@ function ExpenseItem({
   isDeleting,
 }: {
   expense: {
+    bundle?: { totalAmount: string; feeAmount: string } | null;
     id: number;
     amount: string;
     type: string;
@@ -560,7 +563,7 @@ function ExpenseItem({
               className={cn("font-bold text-lg truncate", typeMeta.amountClass)}
             >
               {typeMeta.sign}
-              {Math.abs(Number(expense.amount)).toFixed(0)} جنيه
+              {formatCurrency(Math.abs(Number(expense.bundle?.totalAmount ?? expense.amount)))}
             </div>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground truncate">
               <Calendar className="w-3 h-3 flex-shrink-0" />
@@ -634,9 +637,13 @@ function ExpenseItem({
                     className={cn("font-bold text-base", typeMeta.amountClass)}
                   >
                     {typeMeta.sign}
-                    {Math.abs(Number(expense.amount)).toFixed(2)} جنيه
+                    {formatCurrency(Math.abs(Number(expense.bundle?.totalAmount ?? expense.amount)))}
                   </span>
                 </div>
+                {expense.bundle && Number(expense.bundle.feeAmount) > 0 && <div className="space-y-1 border-b pb-2 text-sm">
+                  <p>المبلغ قبل الرسوم: {formatCurrency(Math.abs(Number(expense.amount)))}</p>
+                  <p>الرسوم: {formatCurrency(expense.bundle.feeAmount)}</p>
+                </div>}
                 {isSms && expense.parsedMetadata?.provider && (
                   <div className="flex justify-between border-b pb-2 items-center">
                     <span className="text-sm text-muted-foreground">

@@ -25,10 +25,11 @@ facts.
 ## One message, step by step
 
 ### 1. Limits and the conversation
-`chat.sendMessage` reads its configuration from system settings (`loadChatConfig`). The chat must be enabled for the
+`chat.sendMessage` refuses when an admin stopped the chat (`ai_off_chat`, `api/lib/feature-switches.ts`) and reads its configuration from system settings (`loadChatConfig`). The chat must be enabled for the
 plan (`chatbot_enabled_<plan>`), and the user's messages today must be under `chatbot_daily_limit_<plan>`, counted per
 Cairo business day. The model is asked in this order (`chatModels`): the models the admin assigned to "chat" in the
-console for the user's plan, then the older chatbot settings when they hold a key (`chatbot_api_key`, else
+console for the user's plan, in the console's order (a Claude connector through Anthropic's SDK,
+`callChatModel` in `api/services/ai-kernel/index.ts`; the others through the OpenAI shape), then the older chatbot settings when they hold a key (`chatbot_api_key`, else
 `fireworks_api_key`, with `chatbot_base_url` and `chatbot_model`, Fireworks and a DeepSeek model by default), then
 Google's Gemini (the plan's default through Google's OpenAI-compatible endpoint); when one fails, the kernel asks the
 next (`AIKernelActiveConfig.fallbacks`). The length of a model reply is capped by the
@@ -227,7 +228,7 @@ the finance caches are cleared.
 | Which typed words confirm or cancel a draft | `actionReplyKind` in `api/chat-router.ts` | the chat router tests |
 | The model, its key, limits and plans | the `chatbot_*` and `ai_kernel_enabled` system settings; the reply cap in [AI providers and usage limits](ai-platform.md) | |
 | What is remembered and how it is found | `api/services/ai-memory/memory-writer.ts`, `api/services/ai-memory/memory-retriever.ts` | `api/services/ai-memory/` tests |
-| How-to answers (written from the screens they describe: the Android companion app, the iPhone Shortcut, wallets inside the bank-link page, recording on Home, the monthly analysis, the plan page) | `api/services/site-guide/knowledge-base.ts` | `api/services/site-guide/retriever.test.ts` |
+| How-to answers (written from the screens they describe: the cards and wallets page, recording on Home (with the honest answer that bank messages are not recorded on their own today), the monthly analysis, the plan page) | `api/services/site-guide/knowledge-base.ts` | `api/services/site-guide/retriever.test.ts` |
 | What an action does, and what undo can reverse | `api/services/action-runtime/extended-actions.ts`, `api/services/action-runtime/goal-create.ts` | `api/services/action-runtime/` tests |
 | The chat screen | `src/components/ai/AIChatbot.tsx` | `tests/ai-chatbot-resilience.test.ts` |
 
@@ -279,3 +280,12 @@ Checked against the code; each one names where it lives.
 
 ### Atomic memory updates
 `api/services/ai-memory/slot-store.ts` locks the identity row for the user id/type during writes, deletion and account purge. A slotted fact carries an exact observation timestamp; older delayed facts do not replace newer ones, and replacement/insertion roll back together. Conversation memory processes stored message ids after a durable watermark in the conversation metadata, skips deleted conversations, and checks active memory again after asynchronous embedding work. `tests/voice-memory-slots.test.ts` exercises concurrency, rollback, deletion and delayed writes on migrated MySQL.
+
+
+Confirmed expense-create and recategorize actions now use the shared ledger writer. Create carries an action-scoped idempotency key and preserves place/date. Recategorization and undo apply rollup deltas, keep later unrelated fields, and restore financial nature from the prior snapshot. Finance transaction filters and facts use economic buckets, excluding internal movement from ordinary spending queries.
+
+
+Wallet facts now identify credit availability separately and exclude known credit from the reported cash total.
+Cache keys distinguish financial cutover mode; changing wallet policy invalidates the owner's finance facts. The
+ledger lookup/list layer annotates a captured principal/fee display bundle without nesting or changing the existing
+flat row shape. Loan standing and cashflow matching use validated economic nature rather than category wording.

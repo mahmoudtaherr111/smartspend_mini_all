@@ -1,8 +1,15 @@
 import { SEOMeta } from "@/components/seo/SEOMeta";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, Gem } from "lucide-react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function UltraLounge() {
+  const { user, isVerified } = useAuth();
+  if (!isVerified) return null;
+  // The page thanks people on Ultra; anyone else is told what a plan offers instead.
+  if (user?.plan !== "ultra" && user?.role !== "admin") return <Navigate to="/pro" replace />;
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8" dir="rtl">
       <SEOMeta path="/ultra" title="مساحة ألترا - SmartSpend AI" />

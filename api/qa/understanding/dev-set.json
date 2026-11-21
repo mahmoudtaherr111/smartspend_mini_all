@@ -1,0 +1,2389 @@
+{
+ "name": "dev",
+ "note": "Written by the lead on 2026-11-10 BEFORE the prompt existed, from everyday Egyptian speech; labelled against taxonomy v2 (SPEC section 5). Open for tuning: never report it as a held-out number.",
+ "cases": [
+  {
+   "id": "D-001",
+   "text": "دفعت مصاريف مدرسة محمد 15000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 15000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "school_fees",
+     "person": "محمد"
+    }
+   ]
+  },
+  {
+   "id": "D-002",
+   "text": "دفعت القسط التاني للمدرسة 8000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 8000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "school_fees"
+    }
+   ]
+  },
+  {
+   "id": "D-003",
+   "text": "محمد ابني 500 درس",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "tutoring",
+     "person": "محمد"
+    }
+   ]
+  },
+  {
+   "id": "D-004",
+   "text": "دفعت باص المدرسة 1200",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 1200,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "school_extras"
+    }
+   ]
+  },
+  {
+   "id": "D-005",
+   "text": "دفعت للسنتر 400",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 400,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "tutoring"
+    }
+   ]
+  },
+  {
+   "id": "D-006",
+   "text": "دفعت لمستر احمد 600",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 600,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "tutoring",
+     "person": "احمد"
+    }
+   ]
+  },
+  {
+   "id": "D-007",
+   "text": "زي المدرسة ب 1500",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 1500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "school_extras"
+    }
+   ]
+  },
+  {
+   "id": "D-008",
+   "text": "دفعت مصاريف الجامعة 20000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 20000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "university"
+    }
+   ]
+  },
+  {
+   "id": "D-009",
+   "text": "دفعت قسط العربية 4500",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 4500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "car",
+     "sub": "car_purchase"
+    }
+   ]
+  },
+  {
+   "id": "D-010",
+   "text": "قسط الشقة 7000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 7000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "home_purchase"
+    }
+   ]
+  },
+  {
+   "id": "D-011",
+   "text": "قسط فاليو 850",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 850,
+     "kind": "spending",
+     "flow": "out",
+     "category": "financial_fees",
+     "sub": "installment"
+    }
+   ]
+  },
+  {
+   "id": "D-012",
+   "text": "دفعت القسط 2000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 2000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "financial_fees",
+     "sub": "installment"
+    }
+   ]
+  },
+  {
+   "id": "D-013",
+   "text": "سددت اللي عليا في الكريدت 3000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 3000,
+     "kind": "card_payment",
+     "flow": "out",
+     "category": "own_money",
+     "sub": "card_payment"
+    }
+   ]
+  },
+  {
+   "id": "D-014",
+   "text": "دفعت الجمعية 2000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 2000,
+     "kind": "gam3eya",
+     "flow": "out",
+     "category": "gam3eya",
+     "sub": "other"
+    }
+   ]
+  },
+  {
+   "id": "D-015",
+   "text": "قبضت الجمعية 20000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 20000,
+     "kind": "gam3eya",
+     "flow": "in",
+     "category": "gam3eya",
+     "sub": "other"
+    }
+   ]
+  },
+  {
+   "id": "D-016",
+   "text": "قسط التلاجة 600",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 600,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "appliances"
+    }
+   ]
+  },
+  {
+   "id": "D-017",
+   "text": "دفعت مقدم العربية 50000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 50000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "car",
+     "sub": "car_purchase"
+    }
+   ]
+  },
+  {
+   "id": "D-018",
+   "text": "دفعت اشتراك النادي 12000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 12000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "entertainment",
+     "sub": "sports_gym"
+    }
+   ]
+  },
+  {
+   "id": "D-019",
+   "text": "دفعت تأمين العربية 6000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 6000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "car",
+     "sub": "car_insurance"
+    }
+   ]
+  },
+  {
+   "id": "D-020",
+   "text": "شحنت كارت الكهربا ب 300",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 300,
+     "kind": "spending",
+     "flow": "out",
+     "category": "bills",
+     "sub": "electricity"
+    }
+   ]
+  },
+  {
+   "id": "D-021",
+   "text": "عداد الميه 150",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 150,
+     "kind": "spending",
+     "flow": "out",
+     "category": "bills",
+     "sub": "water"
+    }
+   ]
+  },
+  {
+   "id": "D-022",
+   "text": "جبت انبوبة ب 250",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 250,
+     "kind": "spending",
+     "flow": "out",
+     "category": "bills",
+     "sub": "gas"
+    }
+   ]
+  },
+  {
+   "id": "D-023",
+   "text": "مليت تانك بنزين ب 800",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 800,
+     "kind": "spending",
+     "flow": "out",
+     "category": "car",
+     "sub": "fuel"
+    }
+   ]
+  },
+  {
+   "id": "D-024",
+   "text": "غيرت زيت العربية 1200",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 1200,
+     "kind": "spending",
+     "flow": "out",
+     "category": "car",
+     "sub": "maintenance"
+    }
+   ]
+  },
+  {
+   "id": "D-025",
+   "text": "اديت الشغالة 500",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "home_services"
+    }
+   ]
+  },
+  {
+   "id": "D-026",
+   "text": "البواب 200 الشهرية",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 200,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "home_services"
+    }
+   ]
+  },
+  {
+   "id": "D-027",
+   "text": "اديت مراتي مصروف البيت 5000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 5000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "family_support",
+     "sub": "household_allowance",
+     "person": "مراتي"
+    }
+   ]
+  },
+  {
+   "id": "D-028",
+   "text": "اديت الواد مصروفه 100",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 100,
+     "kind": "spending",
+     "flow": "out",
+     "category": "kids",
+     "sub": "pocket_money"
+    }
+   ]
+  },
+  {
+   "id": "D-029",
+   "text": "كشفت عند الدكتور ب 400 وجبت علاج ب 320",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 400,
+     "kind": "spending",
+     "flow": "out",
+     "category": "health",
+     "sub": "doctor"
+    },
+    {
+     "amount": 320,
+     "kind": "spending",
+     "flow": "out",
+     "category": "health",
+     "sub": "pharmacy"
+    }
+   ]
+  },
+  {
+   "id": "D-030",
+   "text": "عملت تحاليل ب 950",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 950,
+     "kind": "spending",
+     "flow": "out",
+     "category": "health",
+     "sub": "lab_scan"
+    }
+   ]
+  },
+  {
+   "id": "D-031",
+   "text": "جلسة علاج طبيعي 300",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 300,
+     "kind": "spending",
+     "flow": "out",
+     "category": "health",
+     "sub": "therapy"
+    }
+   ]
+  },
+  {
+   "id": "D-032",
+   "text": "نقطت في فرح ابن خالتي 500",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "gifts_occasions",
+     "sub": "social_duty"
+    }
+   ]
+  },
+  {
+   "id": "D-033",
+   "text": "عزمت صحابي على العشا ودفعت 1200",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 1200,
+     "kind": "spending",
+     "flow": "out",
+     "category": "dining",
+     "sub": "restaurant"
+    }
+   ]
+  },
+  {
+   "id": "D-034",
+   "text": "سلفت احمد 1000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 1000,
+     "kind": "loan",
+     "flow": "out",
+     "category": "debts",
+     "sub": "people",
+     "person": "احمد"
+    }
+   ]
+  },
+  {
+   "id": "D-035",
+   "text": "احمد رجعلي ال 500 اللي عليه",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 500,
+     "kind": "loan",
+     "flow": "in",
+     "category": "debts",
+     "sub": "people",
+     "person": "احمد"
+    }
+   ]
+  },
+  {
+   "id": "D-036",
+   "text": "حولت لامي 2000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 2000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "family_support",
+     "sub": "parents",
+     "person": "امي"
+    }
+   ]
+  },
+  {
+   "id": "D-037",
+   "text": "سحبت 3000 من الماكينة",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 3000,
+     "kind": "cash_transfer",
+     "flow": "out",
+     "category": "own_money",
+     "sub": "cash"
+    }
+   ]
+  },
+  {
+   "id": "D-038",
+   "text": "نزل المرتب 12000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 12000,
+     "kind": "income",
+     "flow": "in",
+     "category": "salary",
+     "sub": "base"
+    }
+   ]
+  },
+  {
+   "id": "D-039",
+   "text": "جالي حافز 1500",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 1500,
+     "kind": "income",
+     "flow": "in",
+     "category": "salary",
+     "sub": "bonus"
+    }
+   ]
+  },
+  {
+   "id": "D-040",
+   "text": "قبضت 800 من شغلانة",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 800,
+     "kind": "income",
+     "flow": "in",
+     "category": "business_income",
+     "sub": "side_gig"
+    }
+   ]
+  },
+  {
+   "id": "D-041",
+   "text": "خلصت على 150 في الكافيه",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 150,
+     "kind": "spending",
+     "flow": "out",
+     "category": "dining",
+     "sub": "cafe"
+    }
+   ]
+  },
+  {
+   "id": "D-042",
+   "text": "طيرت 300 في السوبر ماركت",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 300,
+     "kind": "spending",
+     "flow": "out",
+     "category": "groceries",
+     "sub": "supermarket"
+    }
+   ]
+  },
+  {
+   "id": "D-043",
+   "text": "اتلسعت في 2000 مخالفة",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 2000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "car",
+     "sub": "license_fines",
+     "alt": [
+      [
+       "government",
+       "fines"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D-044",
+   "text": "حاسبت على القعدة 400",
+   "expect": "doubt",
+   "events": [
+    {
+     "amount": 400,
+     "kind": "spending",
+     "flow": "out",
+     "category": "dining",
+     "sub": "cafe",
+     "alt": [
+      [
+       "entertainment",
+       "outing"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D-045",
+   "text": "جبت حاجات للبيت ب 600",
+   "expect": "doubt",
+   "events": [
+    {
+     "amount": 600,
+     "kind": "spending",
+     "flow": "out",
+     "category": "groceries",
+     "sub": "supermarket",
+     "alt": [
+      [
+       "housing",
+       "supplies"
+      ],
+      [
+       "groceries",
+       "other"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D-046",
+   "text": "اشتريت لبس العيد للعيال 3500",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 3500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "kids",
+     "sub": "clothes_toys"
+    }
+   ]
+  },
+  {
+   "id": "D-047",
+   "text": "دفعت الدروس 1500",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 1500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "tutoring"
+    }
+   ]
+  },
+  {
+   "id": "D-048",
+   "text": "دفعت حق الدرس 150",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 150,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "tutoring"
+    }
+   ]
+  },
+  {
+   "id": "D-049",
+   "text": "دفعت الف وخمسمية ايجار",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 1500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "rent"
+    }
+   ]
+  },
+  {
+   "id": "D-050",
+   "text": "جبت بخمسة وسبعين جنيه خضار",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 75,
+     "kind": "spending",
+     "flow": "out",
+     "category": "groceries",
+     "sub": "vegetables_fruits"
+    }
+   ]
+  },
+  {
+   "id": "D-051",
+   "text": "تلتلاف وخمسمية قسط العربية",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 3500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "car",
+     "sub": "car_purchase"
+    }
+   ]
+  },
+  {
+   "id": "D-052",
+   "text": "دفعت نتفليكس 200",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 200,
+     "kind": "spending",
+     "flow": "out",
+     "category": "subscriptions",
+     "sub": "streaming"
+    }
+   ]
+  },
+  {
+   "id": "D-053",
+   "text": "جددت باقة النت 450",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 450,
+     "kind": "spending",
+     "flow": "out",
+     "category": "bills",
+     "sub": "internet_landline",
+     "alt": [
+      [
+       "bills",
+       "mobile"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D-054",
+   "text": "اشتراك الجيم 600",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 600,
+     "kind": "spending",
+     "flow": "out",
+     "category": "entertainment",
+     "sub": "sports_gym"
+    }
+   ]
+  },
+  {
+   "id": "D-055",
+   "text": "حجزت مصيف ب 9000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 9000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "travel",
+     "sub": "trips"
+    }
+   ]
+  },
+  {
+   "id": "D-056",
+   "text": "دفعت الصيانة بتاعة العمارة 300",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 300,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "building_fees"
+    }
+   ]
+  },
+  {
+   "id": "D-057",
+   "text": "اتحاد الملاك 250",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 250,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "building_fees"
+    }
+   ]
+  },
+  {
+   "id": "D-058",
+   "text": "طلعت زكاة المال 2500",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 2500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "charity",
+     "sub": "zakat"
+    }
+   ]
+  },
+  {
+   "id": "D-059",
+   "text": "كفالة يتيم 300",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 300,
+     "kind": "spending",
+     "flow": "out",
+     "category": "charity",
+     "sub": "sponsorship"
+    }
+   ]
+  },
+  {
+   "id": "D-060",
+   "text": "اشتريت دهب ب 30000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 30000,
+     "kind": "investment",
+     "flow": "out",
+     "category": "investment",
+     "sub": "gold"
+    }
+   ]
+  },
+  {
+   "id": "D-061",
+   "text": "حطيت 5000 في التحويشة",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 5000,
+     "kind": "own_transfer",
+     "flow": "out",
+     "category": "own_money",
+     "sub": "savings"
+    }
+   ]
+  },
+  {
+   "id": "D-062",
+   "text": "اتبرعت ب 100 لمستشفى 57357",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 100,
+     "kind": "spending",
+     "flow": "out",
+     "category": "charity",
+     "sub": "sadaqa"
+    }
+   ]
+  },
+  {
+   "id": "D-063",
+   "text": "ركنت العربية ب 20",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 20,
+     "kind": "spending",
+     "flow": "out",
+     "category": "car",
+     "sub": "wash_parking_tolls"
+    }
+   ]
+  },
+  {
+   "id": "D-064",
+   "text": "دفعت الكهربا والمية والغاز 900",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 900,
+     "kind": "spending",
+     "flow": "out",
+     "category": "bills",
+     "sub": "other",
+     "alt": [
+      [
+       "bills",
+       "electricity"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D-065",
+   "text": "جبت هدية لمراتي ب 1500",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 1500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "gifts_occasions",
+     "sub": "gifts",
+     "person": "مراتي"
+    }
+   ]
+  },
+  {
+   "id": "D-066",
+   "text": "غسلت العربية ب 100",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 100,
+     "kind": "spending",
+     "flow": "out",
+     "category": "car",
+     "sub": "wash_parking_tolls"
+    }
+   ]
+  },
+  {
+   "id": "D-067",
+   "text": "صلحت الموبايل ب 700",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 700,
+     "kind": "spending",
+     "flow": "out",
+     "category": "shopping",
+     "sub": "electronics"
+    }
+   ]
+  },
+  {
+   "id": "D-068",
+   "text": "جبت جراب وسكرينة ب 250",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 250,
+     "kind": "spending",
+     "flow": "out",
+     "category": "shopping",
+     "sub": "electronics",
+     "alt": [
+      [
+       "shopping",
+       "accessories"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D-069",
+   "text": "قصيت شعري ب 150",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 150,
+     "kind": "spending",
+     "flow": "out",
+     "category": "personal_care",
+     "sub": "barber_salon"
+    }
+   ]
+  },
+  {
+   "id": "D-070",
+   "text": "دفعت ايجار المحل 6000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 6000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "work",
+     "sub": "workplace_rent"
+    }
+   ]
+  },
+  {
+   "id": "D-071",
+   "text": "النهارده فطرت ب 40 وركبت مواصلات ب 25 وبعدين اتغديت مع صحابي ودفعت 180 وجبت سجاير ب 95",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 40,
+     "kind": "spending",
+     "flow": "out",
+     "category": "dining",
+     "sub": "fast_food",
+     "alt": [
+      [
+       "dining",
+       "other"
+      ],
+      [
+       "dining",
+       "restaurant"
+      ]
+     ]
+    },
+    {
+     "amount": 25,
+     "kind": "spending",
+     "flow": "out",
+     "category": "transport",
+     "sub": "other",
+     "alt": [
+      [
+       "transport",
+       "microbus_bus"
+      ]
+     ]
+    },
+    {
+     "amount": 180,
+     "kind": "spending",
+     "flow": "out",
+     "category": "dining",
+     "sub": "restaurant",
+     "alt": [
+      [
+       "dining",
+       "other"
+      ],
+      [
+       "dining",
+       "fast_food"
+      ]
+     ]
+    },
+    {
+     "amount": 95,
+     "kind": "spending",
+     "flow": "out",
+     "category": "smoking",
+     "sub": "cigarettes"
+    }
+   ]
+  },
+  {
+   "id": "D-072",
+   "text": "جبت لبن وعيش وجبنة ب 120 وكيلو لحمة ب 420",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 120,
+     "kind": "spending",
+     "flow": "out",
+     "category": "groceries",
+     "sub": "supermarket",
+     "alt": [
+      [
+       "groceries",
+       "dairy_eggs"
+      ],
+      [
+       "groceries",
+       "other"
+      ]
+     ]
+    },
+    {
+     "amount": 420,
+     "kind": "spending",
+     "flow": "out",
+     "category": "groceries",
+     "sub": "meat_poultry_fish"
+    }
+   ]
+  },
+  {
+   "id": "D-073",
+   "text": "دفعت 350 توصيل اوردر نون",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 350,
+     "kind": "spending",
+     "flow": "out",
+     "category": "shopping",
+     "sub": "other"
+    }
+   ]
+  },
+  {
+   "id": "D-074",
+   "text": "اشتريت من امازون سماعة ب 900",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 900,
+     "kind": "spending",
+     "flow": "out",
+     "category": "shopping",
+     "sub": "electronics"
+    }
+   ]
+  },
+  {
+   "id": "D-075",
+   "text": "طلبت اكل من طلبات ب 230",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 230,
+     "kind": "spending",
+     "flow": "out",
+     "category": "dining",
+     "sub": "delivery"
+    }
+   ]
+  },
+  {
+   "id": "D-076",
+   "text": "دفعت فاتورة التليفون الارضي 180",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 180,
+     "kind": "spending",
+     "flow": "out",
+     "category": "bills",
+     "sub": "internet_landline"
+    }
+   ]
+  },
+  {
+   "id": "D-077",
+   "text": "جبت بامبرز ولبن للبيبي ب 650",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 650,
+     "kind": "spending",
+     "flow": "out",
+     "category": "kids",
+     "sub": "baby_supplies"
+    }
+   ]
+  },
+  {
+   "id": "D-078",
+   "text": "دفعت للحضانة 1800",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 1800,
+     "kind": "spending",
+     "flow": "out",
+     "category": "kids",
+     "sub": "nursery"
+    }
+   ]
+  },
+  {
+   "id": "D-079",
+   "text": "اشتريت علبة سجاير ب 85 وولاعة ب 10",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 85,
+     "kind": "spending",
+     "flow": "out",
+     "category": "smoking",
+     "sub": "cigarettes"
+    },
+    {
+     "amount": 10,
+     "kind": "spending",
+     "flow": "out",
+     "category": "smoking",
+     "sub": "other"
+    }
+   ]
+  },
+  {
+   "id": "D-080",
+   "text": "كتبت الكتاب ودفعت للمأذون 3000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 3000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "gifts_occasions",
+     "sub": "marriage"
+    }
+   ]
+  },
+  {
+   "id": "D-081",
+   "text": "يعني النهارده صرفت كتير اوي جبت خضار وفاكهة بميتين وخمسين وبعدين عديت على الصيدلية جبت دوا الضغط بتاع ابويا بتلتمية وعشرين",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 250,
+     "kind": "spending",
+     "flow": "out",
+     "category": "groceries",
+     "sub": "vegetables_fruits"
+    },
+    {
+     "amount": 320,
+     "kind": "spending",
+     "flow": "out",
+     "category": "health",
+     "sub": "pharmacy",
+     "person": "ابويا"
+    }
+   ]
+  },
+  {
+   "id": "D-082",
+   "text": "دفعت مصاريف المدرسة بتاعة يوسف ومريم 24000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 24000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "school_fees"
+    }
+   ]
+  },
+  {
+   "id": "D-083",
+   "text": "دفعت لمدرسة العيال القسط الاول 12000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 12000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "school_fees"
+    }
+   ]
+  },
+  {
+   "id": "D-084",
+   "text": "يوسف خد 300 درس الرياضة",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 300,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "tutoring",
+     "person": "يوسف"
+    }
+   ]
+  },
+  {
+   "id": "D-085",
+   "text": "اديت يوسف 50 مصروف",
+   "expect": "doubt",
+   "events": [
+    {
+     "amount": 50,
+     "kind": "spending",
+     "flow": "out",
+     "category": "kids",
+     "sub": "pocket_money",
+     "person": "يوسف",
+     "alt": [
+      [
+       "family_support",
+       "other"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D-086",
+   "text": "دفعت قسط البنك 3200",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 3200,
+     "kind": "loan",
+     "flow": "out",
+     "category": "debts",
+     "sub": "bank_loan"
+    }
+   ]
+  },
+  {
+   "id": "D-087",
+   "text": "دفعت قسط القرض 3200",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 3200,
+     "kind": "loan",
+     "flow": "out",
+     "category": "debts",
+     "sub": "bank_loan"
+    }
+   ]
+  },
+  {
+   "id": "D-088",
+   "text": "سددت قسط الموبايل 900",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 900,
+     "kind": "spending",
+     "flow": "out",
+     "category": "shopping",
+     "sub": "electronics"
+    }
+   ]
+  },
+  {
+   "id": "D-089",
+   "text": "دفعت اللي عليا للبقال 450",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 450,
+     "kind": "spending",
+     "flow": "out",
+     "category": "groceries",
+     "sub": "supermarket"
+    }
+   ]
+  },
+  {
+   "id": "D-090",
+   "text": "دفعت للبقال 450",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 450,
+     "kind": "spending",
+     "flow": "out",
+     "category": "groceries",
+     "sub": "supermarket"
+    }
+   ]
+  },
+  {
+   "id": "D-091",
+   "text": "حاسبت البقال على الشكك 450",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 450,
+     "kind": "spending",
+     "flow": "out",
+     "category": "groceries",
+     "sub": "supermarket"
+    }
+   ]
+  },
+  {
+   "id": "D-092",
+   "text": "دفعت 2 كيلو لحمة ب 800",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 800,
+     "kind": "spending",
+     "flow": "out",
+     "category": "groceries",
+     "sub": "meat_poultry_fish"
+    }
+   ]
+  },
+  {
+   "id": "D-093",
+   "text": "اشتريت 3 تيشيرتات ب 450",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 450,
+     "kind": "spending",
+     "flow": "out",
+     "category": "shopping",
+     "sub": "clothes"
+    }
+   ]
+  },
+  {
+   "id": "D-094",
+   "text": "اتنين قهوة ب 90",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 90,
+     "kind": "spending",
+     "flow": "out",
+     "category": "dining",
+     "sub": "cafe"
+    }
+   ]
+  },
+  {
+   "id": "D-095",
+   "text": "روحت شارع 9 واتغديت ب 300",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 300,
+     "kind": "spending",
+     "flow": "out",
+     "category": "dining",
+     "sub": "restaurant",
+     "alt": [
+      [
+       "dining",
+       "other"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D-096",
+   "text": "ركبت اتوبيس 15 ودفعت 10",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 10,
+     "kind": "spending",
+     "flow": "out",
+     "category": "transport",
+     "sub": "microbus_bus"
+    }
+   ]
+  },
+  {
+   "id": "D-097",
+   "text": "الساعة 7 فطرت ب 35",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 35,
+     "kind": "spending",
+     "flow": "out",
+     "category": "dining",
+     "sub": "fast_food",
+     "alt": [
+      [
+       "dining",
+       "other"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D-098",
+   "text": "يوم 5 دفعت الايجار 4000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 4000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "rent",
+     "date": "day:5"
+    }
+   ]
+  },
+  {
+   "id": "D-099",
+   "text": "دفعت ايجار شهر 10 4000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 4000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "rent"
+    }
+   ]
+  },
+  {
+   "id": "D-100",
+   "text": "امبارح دفعت فاتورة النت 600",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 600,
+     "kind": "spending",
+     "flow": "out",
+     "category": "bills",
+     "sub": "internet_landline",
+     "date": "offset:-1"
+    }
+   ]
+  },
+  {
+   "id": "D-101",
+   "text": "الشهر اللي فات دفعت 1500 كهربا",
+   "expect": "doubt",
+   "events": [
+    {
+     "amount": 1500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "bills",
+     "sub": "electricity"
+    }
+   ]
+  },
+  {
+   "id": "D-102",
+   "text": "دفعت نص ايجار الشقة 2500 والباقي اخر الشهر",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 2500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "rent"
+    }
+   ]
+  },
+  {
+   "id": "D-103",
+   "text": "لسه هدفع 500 للسباك",
+   "expect": "none",
+   "events": []
+  },
+  {
+   "id": "D-104",
+   "text": "كنت دافع 200 بس رجعولي 50",
+   "expect": "doubt",
+   "events": []
+  },
+  {
+   "id": "D-105",
+   "text": "اشتريت جزمة ب 900 بس بالتقسيط على 3 شهور",
+   "expect": "doubt",
+   "events": [
+    {
+     "amount": 900,
+     "kind": "spending",
+     "flow": "out",
+     "category": "shopping",
+     "sub": "shoes_bags"
+    }
+   ]
+  },
+  {
+   "id": "D-106",
+   "text": "اخدت قرض 50000 من البنك",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 50000,
+     "kind": "loan",
+     "flow": "in",
+     "category": "debts",
+     "sub": "bank_loan"
+    }
+   ]
+  },
+  {
+   "id": "D-107",
+   "text": "استلفت 2000 من صاحبي",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 2000,
+     "kind": "loan",
+     "flow": "in",
+     "category": "debts",
+     "sub": "people"
+    }
+   ]
+  },
+  {
+   "id": "D-108",
+   "text": "رديت لخالد ال 2000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 2000,
+     "kind": "loan",
+     "flow": "out",
+     "category": "debts",
+     "sub": "people",
+     "person": "خالد"
+    }
+   ]
+  },
+  {
+   "id": "D-109",
+   "text": "صاحب البيت خد 4000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 4000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "rent"
+    }
+   ]
+  },
+  {
+   "id": "D-110",
+   "text": "اديت السباك 350",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 350,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "maintenance"
+    }
+   ]
+  },
+  {
+   "id": "D-111",
+   "text": "الكهربائي خد 200 والنقاش 1500",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 200,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "maintenance"
+    },
+    {
+     "amount": 1500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "maintenance"
+    }
+   ]
+  },
+  {
+   "id": "D-112",
+   "text": "جبت كارت فودافون ب 25",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 25,
+     "kind": "spending",
+     "flow": "out",
+     "category": "bills",
+     "sub": "mobile"
+    }
+   ]
+  },
+  {
+   "id": "D-113",
+   "text": "حولت 500 فودافون كاش لاخويا",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "family_support",
+     "sub": "relatives",
+     "person": "اخويا"
+    }
+   ]
+  },
+  {
+   "id": "D-114",
+   "text": "شحنت المحفظة ب 1000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 1000,
+     "kind": "own_transfer",
+     "flow": "out",
+     "category": "own_money",
+     "sub": "between_accounts"
+    }
+   ]
+  },
+  {
+   "id": "D-115",
+   "text": "دخلت 300 جنيه رصيد",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 300,
+     "kind": "spending",
+     "flow": "out",
+     "category": "bills",
+     "sub": "mobile"
+    }
+   ]
+  },
+  {
+   "id": "D-116",
+   "text": "كسبت 400 في البورصة",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 400,
+     "kind": "income",
+     "flow": "in",
+     "category": "returns",
+     "sub": "profits"
+    }
+   ]
+  },
+  {
+   "id": "D-117",
+   "text": "بعت العربية ب 250000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 250000,
+     "kind": "income",
+     "flow": "in",
+     "category": "other_income",
+     "sub": "sold_item"
+    }
+   ]
+  },
+  {
+   "id": "D-118",
+   "text": "المدام خدت 3000 مصروف الشهر",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 3000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "family_support",
+     "sub": "household_allowance"
+    }
+   ]
+  },
+  {
+   "id": "D-119",
+   "text": "جبت طلبات البيت من كارفور ب 2300",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 2300,
+     "kind": "spending",
+     "flow": "out",
+     "category": "groceries",
+     "sub": "supermarket"
+    }
+   ]
+  },
+  {
+   "id": "D-120",
+   "text": "7awelt 500 l a7med",
+   "expect": "doubt",
+   "events": [
+    {
+     "amount": 500,
+     "kind": "personal_transfer",
+     "flow": "out",
+     "category": "people_transfer",
+     "sub": "other",
+     "person": "احمد"
+    }
+   ]
+  },
+  {
+   "id": "D-121",
+   "text": "dafa3t 200 benzine",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 200,
+     "kind": "spending",
+     "flow": "out",
+     "category": "car",
+     "sub": "fuel"
+    }
+   ]
+  },
+  {
+   "id": "D-122",
+   "text": "paid 300 for uber",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 300,
+     "kind": "spending",
+     "flow": "out",
+     "category": "transport",
+     "sub": "ride_apps"
+    }
+   ]
+  },
+  {
+   "id": "D-123",
+   "text": "netflix 200",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 200,
+     "kind": "spending",
+     "flow": "out",
+     "category": "subscriptions",
+     "sub": "streaming"
+    }
+   ]
+  },
+  {
+   "id": "D-124",
+   "text": "دفعت ٣٥٠ جنيه نت",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 350,
+     "kind": "spending",
+     "flow": "out",
+     "category": "bills",
+     "sub": "internet_landline",
+     "alt": [
+      [
+       "bills",
+       "mobile"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D-125",
+   "text": "صرفت خمسة الاف وميتين على العربية",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 5200,
+     "kind": "spending",
+     "flow": "out",
+     "category": "car",
+     "sub": "other",
+     "alt": [
+      [
+       "car",
+       "maintenance"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D-126",
+   "text": "عشرين جنيه عيش",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 20,
+     "kind": "spending",
+     "flow": "out",
+     "category": "groceries",
+     "sub": "bakery"
+    }
+   ]
+  },
+  {
+   "id": "D-127",
+   "text": "جبت سندوتشين ب تلاتين",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 30,
+     "kind": "spending",
+     "flow": "out",
+     "category": "dining",
+     "sub": "fast_food"
+    }
+   ]
+  },
+  {
+   "id": "D-128",
+   "text": "دفعت الف ونص ايجار",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 1500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "rent"
+    }
+   ]
+  },
+  {
+   "id": "D-129",
+   "text": "ربع جنيه دهب ب 12000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 12000,
+     "kind": "investment",
+     "flow": "out",
+     "category": "investment",
+     "sub": "gold"
+    }
+   ]
+  },
+  {
+   "id": "D-130",
+   "text": "اتغديت في ماك ب 250 ودفعت بالفيزا",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 250,
+     "kind": "spending",
+     "flow": "out",
+     "category": "dining",
+     "sub": "fast_food"
+    }
+   ]
+  },
+  {
+   "id": "D-131",
+   "text": "دفعت 150 بقشيش للدليفري",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 150,
+     "kind": "spending",
+     "flow": "out",
+     "category": "misc",
+     "sub": "tips"
+    }
+   ]
+  },
+  {
+   "id": "D-132",
+   "text": "راحت عليا 200 جنيه غرامة تأخير",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 200,
+     "kind": "spending",
+     "flow": "out",
+     "category": "financial_fees",
+     "sub": "late_fees",
+     "alt": [
+      [
+       "government",
+       "fines"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D-133",
+   "text": "جددت رخصة العربية ب 1800",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 1800,
+     "kind": "spending",
+     "flow": "out",
+     "category": "car",
+     "sub": "license_fines"
+    }
+   ]
+  },
+  {
+   "id": "D-134",
+   "text": "طلعت جواز سفر ب 1200",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 1200,
+     "kind": "spending",
+     "flow": "out",
+     "category": "government",
+     "sub": "documents"
+    }
+   ]
+  },
+  {
+   "id": "D-135",
+   "text": "عملت كشف نظر وعملت نضارة ب 2200",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 2200,
+     "kind": "spending",
+     "flow": "out",
+     "category": "health",
+     "sub": "optical"
+    }
+   ]
+  },
+  {
+   "id": "D-136",
+   "text": "جبت اكل للقطة ب 180",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 180,
+     "kind": "spending",
+     "flow": "out",
+     "category": "pets",
+     "sub": "food"
+    }
+   ]
+  },
+  {
+   "id": "D-137",
+   "text": "اشتركت في كورس انجليزي ب 3000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 3000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "courses"
+    }
+   ]
+  },
+  {
+   "id": "D-138",
+   "text": "دفعت فلوس الدرس الخصوصي بتاع الانجليزي 400",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 400,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "tutoring"
+    }
+   ]
+  },
+  {
+   "id": "D-139",
+   "text": "رحلة المدرسة 350",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 350,
+     "kind": "spending",
+     "flow": "out",
+     "category": "education",
+     "sub": "school_extras"
+    }
+   ]
+  },
+  {
+   "id": "D-140",
+   "text": "عيد ميلاد بنتي عملتلها تورتة ب 600",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 600,
+     "kind": "spending",
+     "flow": "out",
+     "category": "gifts_occasions",
+     "sub": "family_events"
+    }
+   ]
+  },
+  {
+   "id": "D-141",
+   "text": "شبكة العروسة 80000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 80000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "gifts_occasions",
+     "sub": "marriage"
+    }
+   ]
+  },
+  {
+   "id": "D-142",
+   "text": "دفعت عربون الشقة 10000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 10000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "housing",
+     "sub": "home_purchase",
+     "alt": [
+      [
+       "housing",
+       "rent"
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D-143",
+   "text": "حق الاوبر 85",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 85,
+     "kind": "spending",
+     "flow": "out",
+     "category": "transport",
+     "sub": "ride_apps"
+    }
+   ]
+  },
+  {
+   "id": "D-144",
+   "text": "تمن الدوا 140",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 140,
+     "kind": "spending",
+     "flow": "out",
+     "category": "health",
+     "sub": "pharmacy"
+    }
+   ]
+  },
+  {
+   "id": "D-145",
+   "text": "فكة 20",
+   "expect": "ask",
+   "events": []
+  },
+  {
+   "id": "D-146",
+   "text": "جبت ب 50",
+   "expect": "ask",
+   "events": []
+  },
+  {
+   "id": "D-147",
+   "text": "500",
+   "expect": "ask",
+   "events": []
+  },
+  {
+   "id": "D-148",
+   "text": "اشتريت شاحن",
+   "expect": "ask",
+   "events": []
+  },
+  {
+   "id": "D-149",
+   "text": "انا تعبان النهارده",
+   "expect": "none",
+   "events": []
+  },
+  {
+   "id": "D-150",
+   "text": "كام صرفت الشهر ده",
+   "expect": "none",
+   "events": []
+  },
+  {
+   "id": "D-151",
+   "text": "دفعت 100 و 200 و 300",
+   "expect": "ask",
+   "events": []
+  },
+  {
+   "id": "D-152",
+   "text": "صرفت 1000 منهم 400 اكل و 600 بنزين",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 400,
+     "kind": "spending",
+     "flow": "out",
+     "category": "dining",
+     "sub": "other",
+     "alt": [
+      [
+       "groceries",
+       "other"
+      ],
+      [
+       "groceries",
+       "supermarket"
+      ]
+     ]
+    },
+    {
+     "amount": 600,
+     "kind": "spending",
+     "flow": "out",
+     "category": "car",
+     "sub": "fuel"
+    }
+   ]
+  },
+  {
+   "id": "D-153",
+   "text": "جبت قهوة ب 45 لا 55",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 55,
+     "kind": "spending",
+     "flow": "out",
+     "category": "dining",
+     "sub": "cafe"
+    }
+   ]
+  },
+  {
+   "id": "D-154",
+   "text": "مراتي جابت هدوم ب 2000 من فلوسي",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 2000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "shopping",
+     "sub": "clothes"
+    }
+   ]
+  },
+  {
+   "id": "D-155",
+   "text": "ابني اشترى بلايستيشن ب 25000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 25000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "entertainment",
+     "sub": "gaming"
+    }
+   ]
+  },
+  {
+   "id": "D-156",
+   "text": "دفعت تمن العملية بتاعة امي 35000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 35000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "health",
+     "sub": "hospital",
+     "person": "امي"
+    }
+   ]
+  },
+  {
+   "id": "D-157",
+   "text": "قسط الجمعية الشهري 1500",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 1500,
+     "kind": "gam3eya",
+     "flow": "out",
+     "category": "gam3eya",
+     "sub": "other"
+    }
+   ]
+  },
+  {
+   "id": "D-158",
+   "text": "قبضت الجمعية 30000 وسددت بيها قسط العربية 5000",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 30000,
+     "kind": "gam3eya",
+     "flow": "in",
+     "category": "gam3eya",
+     "sub": "other"
+    },
+    {
+     "amount": 5000,
+     "kind": "spending",
+     "flow": "out",
+     "category": "car",
+     "sub": "car_purchase"
+    }
+   ]
+  },
+  {
+   "id": "D-159",
+   "text": "اتخصم مني 300 تأمينات",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 300,
+     "kind": "spending",
+     "flow": "out",
+     "category": "government",
+     "sub": "social_insurance"
+    }
+   ]
+  },
+  {
+   "id": "D-160",
+   "text": "اتخصم 500 ضرايب من المرتب",
+   "expect": "clear",
+   "events": [
+    {
+     "amount": 500,
+     "kind": "spending",
+     "flow": "out",
+     "category": "government",
+     "sub": "taxes"
+    }
+   ]
+  }
+ ]
+}

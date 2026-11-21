@@ -1,3 +1,6 @@
+import { financialMovement, movementOf, normalizeFinancialMovement } from "../../../contracts/ledger-movement";
+import { createLedgerEntry, updateLedgerEntry } from "../ledger-writer";
+import { businessDateKey } from "../../lib/app-time";
 import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
 import {
@@ -479,60 +482,20 @@ async function executeExpenseCreate(
   const expense = expenseCreatePayloadSchema.parse(payload);
   const expenseDate = expense.date ? new Date(expense.date) : new Date();
   const finalDate = Number.isNaN(expenseDate.getTime()) ? new Date() : expenseDate;
-  const {
-    applyExpenseRollupDelta,
-    expenseToRollupDelta,
-    ledgerAmount,
-  } = await import("../expense-rollups");
-
-  let insertedId = 0;
-  await db.transaction(async (tx) => {
-    const [inserted] = await tx.insert(expenses).values({
-      userId: ctx.userId,
-      userType: ctx.userType,
-      type: expense.type ?? "expense",
-      amount: ledgerAmount(expense.type ?? "expense", expense.direction, expense.amount).toString(),
-      parsedMetadata: expense.direction ? { direction: expense.direction } : null,
-      category: expense.category,
-      subCategory: expense.subCategory || "عام",
-      description: expense.description || "",
-      rawText: expense.rawText,
-      source: "ai_parsed",
-      placeHint: expense.placeHint || null,
-      date: finalDate,
-    });
-
-    insertedId = Number((inserted as any)?.insertId || 0);
-
-
-    const delta = expenseToRollupDelta(
-      {
-        userId: ctx.userId,
-        userType: ctx.userType,
-        date: finalDate,
-        type: expense.type ?? "expense",
-        amount: ledgerAmount(expense.type ?? "expense", expense.direction, expense.amount),
-        source: "ai_parsed",
-      },
-      1,
-    );
-    await applyExpenseRollupDelta(tx, delta);
-  });
-
-  invalidateUserMemory(ctx.userId, ctx.userType);
-  await bumpFinanceCacheGen(ctx.userId, ctx.userType);
-  // Like a save from the entry form: a budget this spending reaches warns once.
-  if ((expense.type ?? "expense") === "expense") {
-    const { checkUserBudgetExceeded } = await import("../../notification-engine");
-    void checkUserBudgetExceeded(ctx.userId, ctx.userType).catch(() => undefined);
-  }
+  const saved = await createLedgerEntry({ userId: ctx.userId, userType: ctx.userType }, {
+    type: expense.type ?? "expense", amount: expense.amount, direction: expense.direction,
+    category: expense.category, subCategory: expense.subCategory || "عام", description: expense.description || "",
+    rawText: expense.rawText, source: "ai_parsed", placeHint: expense.placeHint || null, date: finalDate,
+    clientRequestId: ctx.actionId ? `action:${ctx.actionId}` : undefined,
+  }, { countsForStreak: false });
+  const insertedId = saved.id;
 
   return {
     expenseId: insertedId,
     amount: expense.amount,
     category: expense.category,
     description: expense.description || "",
-    date: (Number.isNaN(expenseDate.getTime()) ? new Date() : expenseDate).toISOString().slice(0, 10),
+    date: businessDateKey(finalDate),
   };
 }
 
@@ -669,30 +632,7 @@ async function executeExpenseRecategorize(
     recategorize.category,
     recategorize.subCategory || existing.subCategory,
   );
-  await db
-    .update(expenses)
-    .set({
-      category: recategorize.category,
-      subCategory,
-      parsedMetadata: {
-        ...(existing.parsedMetadata && typeof existing.parsedMetadata === "object"
-          ? (existing.parsedMetadata as Record<string, unknown>)
-          : {}),
-        aiRecategorizedAt: new Date().toISOString(),
-        aiRecategorizeReason: recategorize.reason || null,
-        previousCategory: existing.category,
-        previousSubCategory: existing.subCategory,
-      },
-    })
-    .where(
-      and(
-        eq(expenses.id, recategorize.expenseId),
-        eq(expenses.userId, ctx.userId),
-        eq(expenses.userType, ctx.userType),
-      ),
-    );
-  invalidateUserMemory(ctx.userId, ctx.userType);
-  await bumpFinanceCacheGen(ctx.userId, ctx.userType);
+  await updateLedgerEntry({ userId: ctx.userId, userType: ctx.userType }, recategorize.expenseId, { category: recategorize.category, subCategory });
   // A category changed from the chat teaches the parser like one changed in the edit dialog.
   if (existing.rawText && existing.category !== recategorize.category) {
     await recordCorrection({
@@ -977,22 +917,15 @@ async function undoAction(
     const expenseId = Number(targetPayload.expenseId);
     const previous = targetPayload.previous as Record<string, unknown> | undefined;
     if (!expenseId || !previous) throw new Error("Expense recategorize action has no previous state to undo");
-    await db
-      .update(expenses)
-      .set({
-        category: String(previous.category || "uncategorized"),
-        subCategory: previous.subCategory ? String(previous.subCategory) : null,
-        parsedMetadata: previous.parsedMetadata ?? null,
-      })
-      .where(
-        and(
-          eq(expenses.id, expenseId),
-          eq(expenses.userId, ctx.userId),
-          eq(expenses.userType, ctx.userType),
-        ),
-      );
-    invalidateUserMemory(ctx.userId, ctx.userType);
-    await bumpFinanceCacheGen(ctx.userId, ctx.userType);
+    const owner = { userId: ctx.userId, userType: ctx.userType };
+    const [current] = await db.select().from(expenses).where(and(eq(expenses.id, expenseId), eq(expenses.userId, owner.userId), eq(expenses.userType, owner.userType)));
+    if (!current) throw new Error("Expense not found");
+    const category = String(previous.category || "uncategorized");
+    const subCategory = previous.subCategory ? String(previous.subCategory) : "عام";
+    const previousKind = financialMovement({ parsedMetadata: previous.parsedMetadata })?.kind
+      ?? normalizeFinancialMovement({ ...current, category, subCategory, parsedMetadata: previous.parsedMetadata,
+        direction: movementOf(current) === "in" ? "incoming" : "outgoing" })?.financial.kind;
+    await updateLedgerEntry(owner, expenseId, { category, subCategory, movementKind: previousKind });
     return { undoneActionMemoryId: target.id, undoneActionName: target.actionName, expenseId };
   }
 

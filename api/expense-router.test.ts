@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { MySqlDialect } from "drizzle-orm/mysql-core";
 import type { SQL } from "drizzle-orm";
 import { clarifiedItemDate, expenseRouter, namedPersonOf, reviewCorrection } from "./expense-router";
+import { expandArabicSearchVariants } from "./lib/unified-normalizer";
 import { db } from "./queries/connection";
 import { expenses } from "../db/schema";
 
@@ -14,12 +15,14 @@ const { dbMock } = vi.hoisted(() => {
   const mock = {
     select: vi.fn((fields?: Record<string, unknown>) => {
       const isCountQuery = Boolean(fields?.count);
+      const resultRows = fields?.entry ? rows.map((entry) => ({ entry, fee: null })) : rows;
       const chain: QueryChain = {
         from: vi.fn(() => chain),
+        leftJoin: vi.fn(() => chain),
         where: vi.fn(() => (isCountQuery ? Promise.resolve(countRows) : chain)),
         orderBy: vi.fn(() => chain),
         limit: vi.fn(() => chain),
-        offset: vi.fn(() => Promise.resolve(rows)),
+        offset: vi.fn(() => Promise.resolve(resultRows)),
       };
       return chain;
     }),
@@ -67,6 +70,7 @@ describe("Expense Router", () => {
     dbMock.select.mockImplementationOnce(() => {
       const chain: QueryChain = {
         from: vi.fn(() => chain),
+        leftJoin: vi.fn(() => chain),
         where: vi.fn((condition: SQL) => {
           where = condition;
           return chain;
@@ -89,6 +93,20 @@ describe("Expense Router", () => {
       /^\(`expenses`\.`user_id` = \? and `expenses`\.`user_type` = \? and \(.+ or .+\)\)$/,
     );
     expect(query.params.slice(0, 2)).toEqual([7, "local"]);
+  });
+
+  it("expands Arabic letter variants so alternative spellings match", () => {
+    const variants = expandArabicSearchVariants("اوبر");
+    expect(variants).toContain("اوبر");
+    expect(variants).toContain("أوبر");
+
+    const haTaVariants = expandArabicSearchVariants("صيدليه");
+    expect(haTaVariants).toContain("صيدليه");
+    expect(haTaVariants).toContain("صيدلية");
+
+    const yaVariants = expandArabicSearchVariants("على");
+    expect(yaVariants).toContain("على");
+    expect(yaVariants).toContain("علي");
   });
 });
 
@@ -138,7 +156,7 @@ describe("learning from the review card", () => {
       clause: "اشتريت كريم للوش 150",
     });
     // The item kept as it was teaches nothing.
-    expect(reviewCorrection(parsed, { ...saved, category: "أكل وشرب", amount: 60 })).toBeNull();
+    expect(reviewCorrection(parsed, { ...saved, category: "أكل وشرب", subCategory: "قهوة وكافيه", amount: 60 })).toBeNull();
   });
 
   it("does not guess which item was changed when two share the amount or the clause is unknown", () => {
@@ -147,7 +165,7 @@ describe("learning from the review card", () => {
       { category: "أكل وشرب", amount: 150, clause: "غدا 150" },
     ];
     expect(reviewCorrection(twins, saved)).toBeNull();
-    expect(reviewCorrection([{ category: "مواصلات", amount: 150 }, { category: "أكل وشرب", amount: 60 }], saved)).toBeNull();
+    expect(reviewCorrection([{ category: "مواصلات", amount: 150 }, { category: "أكل وشرب", subCategory: "قهوة وكافيه", amount: 60 }], saved)).toBeNull();
   });
 });
 

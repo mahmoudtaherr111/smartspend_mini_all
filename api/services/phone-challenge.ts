@@ -1,131 +1,132 @@
 /**
- * Proving a phone number before a sign-up or a WhatsApp sign-in.
+ * Proving a phone number before a sign-up, a WhatsApp sign-in or a phone change (decision 0038).
  *
- * The user sends a code from their own WhatsApp to the bot, and that inbound message is the proof — so the code
- * is a label, not a secret, and the page shows it. What must stay secret is the ticket: only the browser that
- * started the challenge holds it, and only the ticket turns a verified challenge into an account or a session,
- * once. Before this, `localAuth.verifyOtp` issued a session to anyone who sent a phone number and its code, the
- * sign-up accepted any number some browser had verified, and the whole state lived in one process's memory.
+ * We send a six-digit code to the number's WhatsApp in Meta's authentication template, and the person types it back:
+ * delivery to that WhatsApp account proves the number, even when the person hides it behind a username. Only an HMAC
+ * of the code is stored; five wrong codes close the challenge. The ticket stays with the screen that started it, and
+ * only the ticket turns a verified challenge into an account or a session, once.
  *
  * A challenge is a row of `whatsapp_otp_codes`, so every replica sees the same state:
  *
- *   started ── the bot receives the code from the challenge's own number ──▶ verified
+ *   started ── the right code typed with the ticket ──▶ verified
  *   verified ── the first request that presents the ticket ──▶ consumed (the row is deleted)
+ *   started ── five wrong codes ──▶ closed (a new code is needed)
  *   any state ── ten minutes ──▶ expired (the nightly cleanup deletes it)
- *
- * Starting one returns two tokens, both HMACs of the row under a key derived from `JWT_SECRET`:
- *   - `ticket`, sent in a request body to `localAuth.register` or `localAuth.verifyOtp`;
- *   - `watch`, sent in the URL of `/api/sse/otp`, which can follow the challenge and do nothing else, so a URL
- *     that ends up in a proxy log gives nobody an account.
- *
- * The table's columns are the ones production already has; nothing here needs a migration.
  */
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
-import { and, desc, eq, gt, lt } from "drizzle-orm";
+import { and, eq, gt, lt, sql } from "drizzle-orm";
 import { whatsappOtpCodes } from "../../db/schema";
 import { env } from "../lib/env";
 import { db } from "../queries/connection";
 
 export const PHONE_CHALLENGE_TTL_MS = 10 * 60 * 1000;
+/** Wrong codes a challenge accepts before it closes. */
+export const PHONE_CHALLENGE_MAX_ATTEMPTS = 5;
 
-type Purpose = "ticket" | "watch";
 type Writer = Pick<typeof db, "delete">;
 
 export interface PhoneChallenge {
   id: number;
   phone: string;
-  code: string;
   verified: boolean;
+  attempts: number;
   expiresAt: Date;
 }
 
 export interface StartedChallenge {
+  /** The code to send on WhatsApp; never returned to the screen and never stored. */
   code: string;
   ticket: string;
-  watch: string;
   expiresAt: Date;
 }
 
-/** Its own key, so a ticket can never be mistaken for anything else signed with `JWT_SECRET`. */
+/** Its own key, so neither a ticket nor a code hash can be mistaken for anything else signed with `JWT_SECRET`. */
 function challengeKey(): Buffer {
-  return createHmac("sha256", env.JWT_SECRET).update("smartspend:phone-challenge:v1").digest();
+  return createHmac("sha256", env.JWT_SECRET).update("smartspend:phone-challenge:v2").digest();
 }
 
-function signature(purpose: Purpose, row: Pick<PhoneChallenge, "id" | "phone" | "code">): string {
-  return createHmac("sha256", challengeKey())
-    .update(`${purpose}:${row.id}:${row.phone}:${row.code}`)
-    .digest("base64url");
+function hmac(text: string): string {
+  return createHmac("sha256", challengeKey()).update(text).digest("base64url");
 }
 
-function tokenFor(purpose: Purpose, row: Pick<PhoneChallenge, "id" | "phone" | "code">): string {
-  return `${row.id}.${signature(purpose, row)}`;
+function codeHash(phone: string, code: string): string {
+  return createHmac("sha256", challengeKey()).update(`code:${phone}:${code}`).digest("hex");
 }
 
-function sameSignature(given: string, expected: string): boolean {
+function ticketFor(row: { id: number; phone: string; codeHash: string }): string {
+  return `${row.id}.${hmac(`ticket:${row.id}:${row.phone}:${row.codeHash}`)}`;
+}
+
+function sameText(given: string, expected: string): boolean {
   const a = Buffer.from(given);
   const b = Buffer.from(expected);
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-function idOf(token: string): number | null {
-  const match = /^(\d{1,12})\.[A-Za-z0-9_-]{43}$/.exec(token);
+function idOf(ticket: string): number | null {
+  const match = /^(\d{1,12})\.[A-Za-z0-9_-]{43}$/.exec(ticket);
   return match ? Number(match[1]) : null;
 }
 
-const newCode = () => `SS-${randomInt(100000, 1000000)}`;
-
-/**
- * Opens a challenge for a number that `validatePhone` accepted and `cleanPhoneNumber` normalised.
- *
- * Its code differs from every other open challenge's, so the bot never has to guess which one a message means.
- */
-export async function startPhoneChallenge(phone: string, now = new Date()): Promise<StartedChallenge> {
-  const expiresAt = new Date(now.getTime() + PHONE_CHALLENGE_TTL_MS);
-  let code = newCode();
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const [taken] = await db
-      .select({ id: whatsappOtpCodes.id })
-      .from(whatsappOtpCodes)
-      .where(and(eq(whatsappOtpCodes.code, code), gt(whatsappOtpCodes.expiresAt, now)))
-      .limit(1);
-    if (!taken) break;
-    code = newCode();
-  }
-  const [row] = await db.insert(whatsappOtpCodes).values({ phone, code, verified: false, expiresAt }).$returningId();
-  const saved = { id: row.id, phone, code };
-  return { code, ticket: tokenFor("ticket", saved), watch: tokenFor("watch", saved), expiresAt };
+/** Six digits, leading zeros included. */
+export function newVerificationCode(): string {
+  return String(randomInt(0, 1_000_000)).padStart(6, "0");
 }
 
-/** The challenge a ticket or watch token names, if the token is genuine and the challenge still open. */
-export async function readPhoneChallenge(token: string, purpose: Purpose, now = new Date()): Promise<PhoneChallenge | null> {
-  const id = idOf(token);
+/** Opens a challenge for a number that `validatePhone` accepted and `cleanPhoneNumber` normalised. */
+export async function startPhoneChallenge(phone: string, now = new Date()): Promise<StartedChallenge> {
+  const expiresAt = new Date(now.getTime() + PHONE_CHALLENGE_TTL_MS);
+  const code = newVerificationCode();
+  const hash = codeHash(phone, code);
+  const [row] = await db
+    .insert(whatsappOtpCodes)
+    .values({ phone, codeHash: hash, attempts: 0, verified: false, expiresAt })
+    .$returningId();
+  return { code, ticket: ticketFor({ id: row.id, phone, codeHash: hash }), expiresAt };
+}
+
+/** The challenge a ticket names, if the ticket is genuine and the challenge still open. */
+export async function readPhoneChallenge(ticket: string, now = new Date()): Promise<PhoneChallenge | null> {
+  const id = idOf(ticket);
   if (id === null) return null;
   const [row] = await db.select().from(whatsappOtpCodes).where(eq(whatsappOtpCodes.id, id)).limit(1);
   if (!row || row.expiresAt <= now) return null;
-  if (!sameSignature(token.slice(token.indexOf(".") + 1), signature(purpose, row))) return null;
-  return { id: row.id, phone: row.phone, code: row.code, verified: row.verified, expiresAt: row.expiresAt };
+  if (!sameText(ticket, ticketFor(row))) return null;
+  return { id: row.id, phone: row.phone, verified: row.verified, attempts: row.attempts, expiresAt: row.expiresAt };
 }
 
-/** Open, unverified challenges carrying a code: what an inbound WhatsApp message may be answering. */
-export async function openChallengesWithCode(code: string, now = new Date()): Promise<PhoneChallenge[]> {
-  const rows = await db
-    .select()
-    .from(whatsappOtpCodes)
-    .where(
-      and(eq(whatsappOtpCodes.code, code), eq(whatsappOtpCodes.verified, false), gt(whatsappOtpCodes.expiresAt, now)),
-    )
-    .orderBy(desc(whatsappOtpCodes.id))
-    .limit(5);
-  return rows.map((row) => ({ id: row.id, phone: row.phone, code: row.code, verified: row.verified, expiresAt: row.expiresAt }));
-}
+export type ConfirmOutcome = "verified" | "wrong" | "closed" | "expired";
 
-/** Called by the bot once the sender is the challenge's number. */
-export async function markPhoneChallengeVerified(id: number): Promise<boolean> {
-  const [result] = await db
+/**
+ * Checks the code the person typed against the challenge the ticket names. A wrong code is counted in the same
+ * statement that checks the limit, so parallel guesses cannot pass five.
+ */
+export async function confirmPhoneChallenge(
+  ticket: string,
+  code: string,
+  now = new Date(),
+): Promise<{ outcome: ConfirmOutcome; attemptsLeft: number }> {
+  const id = idOf(ticket);
+  const [row] = id === null ? [] : await db.select().from(whatsappOtpCodes).where(eq(whatsappOtpCodes.id, id)).limit(1);
+  if (!row || row.expiresAt <= now || !sameText(ticket, ticketFor(row))) return { outcome: "expired", attemptsLeft: 0 };
+  if (row.verified) return { outcome: "verified", attemptsLeft: PHONE_CHALLENGE_MAX_ATTEMPTS - row.attempts };
+  if (row.attempts >= PHONE_CHALLENGE_MAX_ATTEMPTS) return { outcome: "closed", attemptsLeft: 0 };
+
+  if (/^\d{6}$/.test(code) && sameText(codeHash(row.phone, code), row.codeHash)) {
+    await db
+      .update(whatsappOtpCodes)
+      .set({ verified: true })
+      .where(and(eq(whatsappOtpCodes.id, row.id), lt(whatsappOtpCodes.attempts, PHONE_CHALLENGE_MAX_ATTEMPTS)));
+    return { outcome: "verified", attemptsLeft: PHONE_CHALLENGE_MAX_ATTEMPTS - row.attempts };
+  }
+
+  const [counted] = await db
     .update(whatsappOtpCodes)
-    .set({ verified: true })
-    .where(and(eq(whatsappOtpCodes.id, id), eq(whatsappOtpCodes.verified, false)));
-  return Number((result as { affectedRows?: number }).affectedRows ?? 0) === 1;
+    .set({ attempts: sql`${whatsappOtpCodes.attempts} + 1` })
+    .where(and(eq(whatsappOtpCodes.id, row.id), lt(whatsappOtpCodes.attempts, PHONE_CHALLENGE_MAX_ATTEMPTS)));
+  const countedNow = Number((counted as { affectedRows?: number }).affectedRows ?? 0) === 1;
+  const attemptsLeft = countedNow ? Math.max(0, PHONE_CHALLENGE_MAX_ATTEMPTS - row.attempts - 1) : 0;
+  return { outcome: attemptsLeft === 0 ? "closed" : "wrong", attemptsLeft };
 }
 
 /**
@@ -158,4 +159,4 @@ export async function purgeExpiredPhoneChallenges(now = new Date()): Promise<voi
   await db.delete(whatsappOtpCodes).where(lt(whatsappOtpCodes.expiresAt, now));
 }
 
-export const __testing = { tokenFor, idOf };
+export const __testing = { idOf, codeHash, ticketFor };

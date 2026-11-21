@@ -15,7 +15,6 @@ flowchart LR
   subgraph g_screens["Screens"]
     screens_accounts["Screens of Accounts, sign-in and security"]
     screens_ai_center["Screens of AI Center"]
-    screens_bank_messages["Screens of Bank and wallet messages"]
     screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
     screens_web_app["Screens of Web and mobile app shell"]
   end
@@ -41,7 +40,6 @@ flowchart LR
     tbl_user_profiles[("user_profiles")]
     tbl_users[("users")]
   end
-  ext_gemini{{"Google Gemini API"}}
   sys_accounts[["Accounts, sign-in and security (system)"]]
   sys_ai_center[["AI Center (system)"]]
   sys_ai_platform[["AI providers and usage limits (system)"]]
@@ -51,7 +49,6 @@ flowchart LR
   sys_web_app[["Web and mobile app shell (system)"]]
   job_monthly_behavior_snapshots --> sys_platform
   job_monthly_report_generation --> sys_platform
-  mod_ai_insights --> ext_gemini
   mod_ai_insights --> sys_expense_capture
   mod_ai_insights --> sys_platform
   mod_ai_insights -.-> tbl_expenses
@@ -68,12 +65,13 @@ flowchart LR
   router_ai --> sys_money
   router_ai --> sys_platform
   router_ai -.-> tbl_expenses
+  router_ai -.-> tbl_local_users
+  router_ai -.-> tbl_users
   router_ai ==> tbl_ai_summaries
-  router_ai ==> tbl_local_users
   router_ai ==> tbl_monthly_behavior_snapshots
-  router_ai ==> tbl_users
   router_export --> mod_ai_insights
   router_profile --> mod_ai_insights
+  router_profile --> sys_platform
   router_profile -.-> tbl_expenses
   router_profile -.-> tbl_onboarding_questions
   router_profile ==> tbl_monthly_behavior_snapshots
@@ -81,7 +79,6 @@ flowchart LR
   screens_accounts --> router_profile
   screens_ai_center --> router_ai
   screens_ai_center --> router_export
-  screens_bank_messages --> router_profile
   screens_money --> router_profile
   screens_web_app --> router_profile
 ```
@@ -90,7 +87,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `ai-insights` — AI insights and reports | The smart profile and the contacts it reads from user_contacts, adaptive onboarding questions, monthly behaviour snapshots, the personal context added to classification and report prompts, the printable Pro report, and the wait each plan has between two AI reports. The Gemini batch service only simulates its calls. | 8 |
+| `ai-insights` — AI insights and reports | The smart profile and the contacts it reads from user_contacts, adaptive onboarding questions, monthly behaviour snapshots, spending behavior SSOT calculation, the personal context added to classification and report prompts, the printable Pro report, and the wait each plan has between two AI reports. | 8 |
 | `web-insights` — Insights UI | The monthly AI insights view shown in the AI Center's analysis tab. | 1 |
 
 ## API procedures
@@ -98,17 +95,17 @@ flowchart LR
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
 | `ai.compareMonths` | mutation | `aiProcedure` | — | — | `AICenter` |
-| `ai.generateMonthlyInsights` | mutation | `aiProcedure` | `ai_summaries`, `expenses`, `local_users`, `users` | `ai_summaries`, `local_users`, `monthly_behavior_snapshots`, `users` | `AICenter` |
+| `ai.generateMonthlyInsights` | mutation | `aiProcedure` | `ai_summaries`, `expenses`, `local_users`, `users` | `ai_summaries`, `monthly_behavior_snapshots` | `AICenter` |
 | `ai.generateYearlyInsights` | mutation | `aiProcedure` | — | — | — |
 | `ai.getCachedMonthlyInsights` | query | `authedProcedure` | `ai_summaries` | — | `AICenter` |
 | `export.monthlyReportHtml` | mutation | `proReportProcedure` | — | — | `AICenter` |
 | `profile.dismissOnboarding` | mutation | `authedProcedure` | — | `user_profiles` | `Home` |
 | `profile.getNextOnboardingQuestion` | query | `authedProcedure` | `user_profiles` | — | `Home`, `More`, `Settings` |
 | `profile.getQuestions` | query | `authedProcedure` | `onboarding_questions` | — | — |
-| `profile.getSmartProfile` | query | `authedProcedure` | — | — | `App shell`, `BankSyncPage`, `Home`, `More`, `Settings` |
+| `profile.getSmartProfile` | query | `authedProcedure` | — | — | `App shell`, `Home`, `More`, `Settings` |
 | `profile.refreshInferences` | mutation | `authedProcedure` | `expenses` | `monthly_behavior_snapshots` | — |
 | `profile.submitOnboardingAnswer` | mutation | `authedProcedure` | — | — | `Home`, `More`, `Settings` |
-| `profile.updateSmartProfile` | mutation | `authedProcedure` | — | — | `App shell`, `BankSyncPage`, `More`, `Settings` |
+| `profile.updateSmartProfile` | mutation | `authedProcedure` | — | — | `App shell`, `More`, `Settings` |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
@@ -125,31 +122,28 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | --- | --- | --- | --- |
 | `ai_summaries` | C | `ai.generateMonthlyInsights` | `ai.generateMonthlyInsights`, `ai.getCachedMonthlyInsights` |
 | `expenses` | B | — | `ai-insights`, `ai.generateMonthlyInsights`, `profile.refreshInferences` |
-| `local_users` | A | `ai.generateMonthlyInsights` | `ai-insights`, `ai.generateMonthlyInsights` |
+| `local_users` | A | — | `ai-insights`, `ai.generateMonthlyInsights` |
 | `monthly_behavior_snapshots` | C | `ai.generateMonthlyInsights`, `profile.refreshInferences` | — |
 | `onboarding_questions` | A | — | `profile.getQuestions` |
 | `profile_learning_events` | E | `ai-insights` | `ai-insights` |
 | `user_contacts` | A | `ai-insights` | `ai-insights` |
 | `user_profiles` | A | `ai-insights`, `profile.dismissOnboarding` | `ai-insights`, `profile.getNextOnboardingQuestion` |
-| `users` | A | `ai.generateMonthlyInsights` | `ai-insights`, `ai.generateMonthlyInsights` |
+| `users` | A | — | `ai-insights`, `ai.generateMonthlyInsights` |
 
 ## Outside systems
 
-| System | Kind | Modules |
-| --- | --- | --- |
-| Google Gemini API | ai-provider | `ai-insights` |
+_None._
 
 ## Other systems
 
 Depends on: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
-Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
+Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | yes | `api/services/batch-ai-service.ts` |
 | `DEV` | frontend | `src/components/insights/AIInsights.tsx` |
 
 ## Source its explanation describes
@@ -170,6 +164,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/jobs/monthly-behavior-job.ts`
 - `api/jobs/monthly-report-job.ts`
 - `api/lib/report-wait.ts`
+- `api/lib/spending-behavior.ts`
 - `api/profile-router.ts#profile.dismissOnboarding`
 - `api/profile-router.ts#profile.getNextOnboardingQuestion`
 - `api/profile-router.ts#profile.getQuestions`
@@ -179,7 +174,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/profile-router.ts#profile.updateSmartProfile`
 - `api/profile-router.ts#rest-of-file`
 - `api/services/adaptive-question-engine.ts`
-- `api/services/batch-ai-service.ts`
 - `api/services/lifestyle-inference-engine.ts`
 - `api/services/personal-context-builder.ts`
 - `api/services/pro-report-engine.ts`

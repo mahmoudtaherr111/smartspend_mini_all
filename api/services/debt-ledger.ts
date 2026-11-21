@@ -6,9 +6,11 @@
  * outgoing minus incoming: positive means they owe the user, negative that the user owes them.
  */
 import Decimal from "decimal.js";
+import { movementOf } from "../../contracts/ledger-movement";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "../queries/connection";
 import { expenses, userContacts } from "../../db/schema";
+import { economicKindSql } from "./ledger-semantics";
 
 export const LOAN_CATEGORY = "تحويل";
 export const LOAN_SUBCATEGORY = "دين/سلفة";
@@ -44,16 +46,14 @@ export function gam3eyaStanding(rows: Array<{ amount: string | number; direction
 /** The user's gam3eya standing across all its recorded payments and payouts. */
 export async function getGam3eyaStanding(userId: number, userType: string): Promise<Gam3eyaStanding> {
   const rows = await db
-    .select({ amount: expenses.amount, parsedMetadata: expenses.parsedMetadata })
+    .select({ amount: expenses.amount, type: expenses.type, parsedMetadata: expenses.parsedMetadata })
     .from(expenses)
     .where(
       and(
         eq(expenses.userId, userId),
         eq(expenses.userType, userType),
         isNull(expenses.businessId),
-        eq(expenses.type, "transfer"),
-        eq(expenses.category, LOAN_CATEGORY),
-        eq(expenses.subCategory, GAM3EYA_SUBCATEGORY),
+        economicKindSql("gam3eya", LOAN_CATEGORY, GAM3EYA_SUBCATEGORY),
         eq(expenses.status, "confirmed"),
       ),
     )
@@ -61,12 +61,13 @@ export async function getGam3eyaStanding(userId: number, userType: string): Prom
   return gam3eyaStanding(
     rows.map((row) => ({
       amount: row.amount,
-      direction: ((row.parsedMetadata ?? {}) as { direction?: string }).direction ?? null,
+      direction: movementOf(row) === "in" ? "incoming" : movementOf(row) === "out" ? "outgoing" : null,
     })),
   );
 }
 
 export interface LoanRow {
+  unlinkedKey?: string;
   amount: string | number;
   contactId: number | null;
   contactName: string | null;
@@ -94,7 +95,7 @@ export function debtBalances(rows: LoanRow[]): DebtBalance[] {
     const direction = row.direction === "incoming" ? "incoming" : row.direction === "outgoing" ? "outgoing" : null;
     if (!direction) continue;
     const name = row.contactName?.trim() || "من غير اسم";
-    const key = row.contactId ? `c:${row.contactId}` : `n:${name}`;
+    const key = row.contactId ? `c:${row.contactId}` : row.unlinkedKey ? `u:${row.unlinkedKey}` : `n:${name}`;
     const amount = Math.abs(Number(row.amount)) || 0;
     const entry = byPerson.get(key) ?? {
       contactId: row.contactId,
@@ -121,7 +122,9 @@ export function debtBalances(rows: LoanRow[]): DebtBalance[] {
 export async function listDebtBalances(userId: number, userType: string): Promise<DebtBalance[]> {
   const rows = await db
     .select({
+      id: expenses.id,
       amount: expenses.amount,
+      type: expenses.type,
       contactId: expenses.contactId,
       contactName: userContacts.name,
       description: expenses.description,
@@ -142,21 +145,22 @@ export async function listDebtBalances(userId: number, userType: string): Promis
         eq(expenses.userId, userId),
         eq(expenses.userType, userType),
         isNull(expenses.businessId),
-        eq(expenses.type, "transfer"),
-        eq(expenses.category, LOAN_CATEGORY),
-        eq(expenses.subCategory, LOAN_SUBCATEGORY),
+        economicKindSql("loan", LOAN_CATEGORY, LOAN_SUBCATEGORY),
         eq(expenses.status, "confirmed"),
       ),
     )
     .limit(5000);
   return debtBalances(
-    rows.map((row) => ({
+    rows.map((row) => {
+      const details = (row.parsedMetadata as { capture?: { details?: { identityKind?: string; memoryKey?: string } } } | null)?.capture?.details;
+      return {
       amount: row.amount,
       contactId: row.contactId,
       contactName: row.contactName,
       description: row.description,
-      direction: ((row.parsedMetadata ?? {}) as { direction?: string }).direction ?? null,
+      direction: movementOf(row) === "in" ? "incoming" : movementOf(row) === "out" ? "outgoing" : null,
       date: row.date,
-    })),
+      unlinkedKey: details?.identityKind === "phone" && /^p:[a-f0-9]{64}$/.test(details.memoryKey ?? "") ? details!.memoryKey : `row:${row.id}`,
+    }; }),
   );
 }

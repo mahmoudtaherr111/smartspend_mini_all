@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import {
-  getTrpcHeaders,
   friendlyHttpError,
   saveFormDraft,
   getFormDraft,
@@ -12,6 +11,7 @@ import {
   preserveActiveFormDrafts,
   handleUnauthenticatedSession,
   deviceHadSession,
+  resolveApiBaseUrl,
   DRAFT_STORAGE_PREFIX,
   ACTIVE_DRAFTS_INDEX_KEY,
 } from "./trpc";
@@ -72,70 +72,12 @@ describe("tRPC Client Headers & Tunnel Bypass Removal", () => {
   // =========================================================================
   // 2. RUNTIME HEADERS BEHAVIOR
   // =========================================================================
-  describe("2. Runtime Headers Generation", () => {
-    it("returns Authorization Bearer header when local_auth_token exists", () => {
-      const mockStorage = {
-        getItem: vi.fn((key: string) => {
-          if (key === "local_auth_token") return "test_jwt_token_xyz123";
-          return null;
-        }),
-      };
-      Object.defineProperty(globalThis, "localStorage", {
-        value: mockStorage,
-        writable: true,
-        configurable: true,
-      });
-
-      const headers = getTrpcHeaders();
-
-      expect(headers).toEqual({
-        Authorization: "Bearer test_jwt_token_xyz123",
-      });
-      expect(headers).not.toHaveProperty("bypass-tunnel-reminder");
-      expect(headers).not.toHaveProperty("ngrok-skip-browser-warning");
-    });
-
-    it("returns empty object when no token is present", () => {
-      const mockStorage = {
-        getItem: vi.fn(() => null),
-      };
-      Object.defineProperty(globalThis, "localStorage", {
-        value: mockStorage,
-        writable: true,
-        configurable: true,
-      });
-
-      const headers = getTrpcHeaders();
-
-      expect(headers).toEqual({});
-      expect(Object.keys(headers)).toHaveLength(0);
-    });
-
-    it("returns empty object when token is empty string", () => {
-      const mockStorage = {
-        getItem: vi.fn(() => ""),
-      };
-      Object.defineProperty(globalThis, "localStorage", {
-        value: mockStorage,
-        writable: true,
-        configurable: true,
-      });
-
-      const headers = getTrpcHeaders();
-
-      expect(headers).toEqual({});
-    });
-
-    it("handles undefined localStorage safely without throwing", () => {
-      Object.defineProperty(globalThis, "localStorage", {
-        value: undefined,
-        writable: true,
-        configurable: true,
-      });
-
-      expect(() => getTrpcHeaders()).not.toThrow();
-      const headers = getTrpcHeaders();
-      expect(headers).toEqual({});
+  describe("2. The session travels in the HttpOnly cookie", () => {
+    it("adds no Authorization header, even when an older build left a token in storage", () => {
+      // The cookie is sent by the browser on its own; the client must not read storage for a token.
+      const sourceCode = fs.readFileSync(path.resolve(process.cwd(), "src/providers/trpc.ts"), "utf-8");
+      expect(sourceCode).not.toContain("local_auth_token");
+      expect(sourceCode).not.toMatch(/Authorization/);
     });
   });
 
@@ -314,8 +256,46 @@ describe("tRPC Client Headers & Tunnel Bypass Removal", () => {
       store.set("smartspend_offline_identity_v1", "{}");
       expect(deviceHadSession()).toBe(true);
       store.clear();
+      // A token older builds kept is not a session: only the identity a sign-in leaves counts.
       store.set("local_auth_token", "t");
-      expect(deviceHadSession()).toBe(true);
+      expect(deviceHadSession()).toBe(false);
+    });
+  });
+
+  // =========================================================================
+  // 6. DYNAMIC API CONFIGURATION & HTTPS ENFORCEMENT (REL-04)
+  // =========================================================================
+  describe("6. Dynamic API Configuration & HTTPS Enforcement (REL-04)", () => {
+    it("defaults to /api/trpc when no apiUrl is provided", () => {
+      expect(resolveApiBaseUrl("", false)).toBe("/api/trpc");
+      expect(resolveApiBaseUrl(undefined, true)).toBe("/api/trpc");
+    });
+
+    it("accepts HTTP in development", () => {
+      expect(resolveApiBaseUrl("http://localhost:3000", false)).toBe("http://localhost:3000/api/trpc");
+      expect(resolveApiBaseUrl("http://api.dev.test", false)).toBe("http://api.dev.test/api/trpc");
+    });
+
+    it("accepts HTTPS in production", () => {
+      expect(resolveApiBaseUrl("https://api.smartspend.app", true)).toBe("https://api.smartspend.app/api/trpc");
+    });
+
+    it("allows localhost HTTP in production for container/e2e testing", () => {
+      expect(resolveApiBaseUrl("http://localhost:3000", true)).toBe("http://localhost:3000/api/trpc");
+      expect(resolveApiBaseUrl("http://127.0.0.1:3000", true)).toBe("http://127.0.0.1:3000/api/trpc");
+      expect(resolveApiBaseUrl("http://test.local:3000", true)).toBe("http://test.local:3000/api/trpc");
+    });
+
+    it("rejects non-HTTPS external URLs in production", () => {
+      expect(() => resolveApiBaseUrl("http://api.smartspend.app", true)).toThrow(
+        /Insecure API URL rejected in production/,
+      );
+    });
+
+    it("rejects invalid URL formats", () => {
+      expect(() => resolveApiBaseUrl("not-a-valid-url", false)).toThrow(
+        /Invalid VITE_API_URL format/,
+      );
     });
   });
 });

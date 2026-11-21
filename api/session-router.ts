@@ -6,11 +6,33 @@ import { sessions, userAnalytics } from "../db/schema";
 import { eq, desc, and, sql, count, gte } from "drizzle-orm";
 import { revokeSession } from "./lib/access-control";
 
+import { hashSessionToken } from "./lib/session-validation";
+
 export const sessionRouter = router({
   // ─── My Sessions ───
   listMine: authedProcedure.query(async ({ ctx }) => {
-    return await db
-      .select(sessionMetadataFields)
+    let currentTokenHash: string | null = null;
+    try {
+      const authHeader =
+        "header" in ctx.req && typeof (ctx.req as unknown as { header?: unknown }).header === "function"
+          ? (ctx.req as unknown as { header(name: string): string | undefined }).header("authorization")
+          : (ctx.req as Request).headers?.get("authorization");
+      let token: string | undefined;
+      if (authHeader?.startsWith("Bearer ")) {
+        token = authHeader.slice(7).trim();
+      }
+      if (token) {
+        currentTokenHash = hashSessionToken(token).hex;
+      }
+    } catch {
+      // No readable token: no session is marked as this one.
+    }
+
+    const rows = await db
+      .select({
+        ...sessionMetadataFields,
+        tokenHash: sessions.tokenHash,
+      })
       .from(sessions)
       .where(
         and(
@@ -19,6 +41,17 @@ export const sessionRouter = router({
         ),
       )
       .orderBy(desc(sessions.createdAt));
+
+    return rows.map((row) => ({
+      id: row.id,
+      userId: row.userId,
+      userType: row.userType,
+      ipAddress: row.ipAddress,
+      userAgent: row.userAgent,
+      expiresAt: row.expiresAt,
+      createdAt: row.createdAt,
+      isCurrent: Boolean(currentTokenHash && row.tokenHash === currentTokenHash),
+    }));
   }),
 
   // ─── Revoke My Session ───
@@ -112,7 +145,6 @@ export const sessionRouter = router({
           "upgrade_to_pro",
           "export_data",
           "voice_record",
-          "sms_ingest",
           "onboarding_complete",
           "budget_exceeded",
           "chat_message",

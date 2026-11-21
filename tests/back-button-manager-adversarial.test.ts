@@ -375,7 +375,7 @@ describe("Adversarial Stress Test: BackButtonManager Priority & LIFO Stack", () 
   describe("6. Default Root Route Detection", () => {
     it("correctly classifies root paths vs subroutes", () => {
       const rootPaths = ["/", "/dashboard", "/login", "/home"];
-      const nonRootPaths = ["/ai", "/settings", "/pro", "/support", "/bank-sync", "/expenses", "/admin"];
+      const nonRootPaths = ["/ai", "/settings", "/pro", "/support", "/wallets", "/expenses", "/admin"];
 
       rootPaths.forEach((path) => {
         window.history.pushState({}, "", path);

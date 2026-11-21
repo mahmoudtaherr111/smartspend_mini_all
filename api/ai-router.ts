@@ -25,10 +25,11 @@ import {
 } from "../db/schema";
 import { reportWaitDays, reportWaitMessage } from "./lib/report-wait";
 import { getSystemSettings } from "./lib/settings-cache";
-import { eq, sql, desc, count, and, gte, lte, sum } from "drizzle-orm";
+import { eq, sql, desc, count, and, gte, lt, sum } from "drizzle-orm";
 import { env } from "./lib/env";
 import { recordAiLedger, recordModelCalls } from "./lib/ai-ledger";
 import { businessDateKey, businessMonthRange } from "./lib/app-time";
+import { reportPeriod } from "./services/financial-month";
 import { voiceMonth } from "./services/entitlements/voice";
 import { runSmartPipeline, SMART_PIPELINE_VERSION } from "./lib/smart-pipeline";
 import { CATEGORIES } from "./lib/category-registry";
@@ -70,6 +71,8 @@ import {
 } from "./lib/model-mapper";
 import { callFireworksAPI } from "./lib/fireworks-client";
 import { callNvidiaAPI } from "./lib/nvidia-client";
+import { resolveAdminRoutes } from "./lib/ai-gateway";
+import { asLlmProtocol, executeLlmChain, type LlmRoute } from "./lib/llm-router";
 import {
   assertAiBudget,
   asPlan,
@@ -79,6 +82,7 @@ import {
   estimateTokensFromText,
   getAiBudget,
   recordAiUsageEvent,
+  trackAiTokens,
   type AiUsageChannel,
 } from "./lib/ai-usage-policy";
 import {
@@ -99,6 +103,8 @@ import {
   validateNumbersAgainstFacts,
 } from "./services/ai-cost-policy";
 import { buildParserTrace } from "./services/parser-trace";
+import { currentRecordingEngine, recordingEngineOf } from "./services/recording/engine-switch";
+import { assertSentenceAllowed, readSentence } from "./services/recording/read-sentence";
 import { planNumber } from "../contracts/plan-features";
 import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
 
@@ -287,32 +293,12 @@ async function trackTokens(
   channel: AiUsageChannel = "parse",
   model?: string,
 ) {
-  if (!tokens || tokens <= 0) return;
-  try {
-    // 1. Legacy running-sum counter (backward compat)
-    if (userType === "oauth") {
-      await db
-        .update(users)
-        .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
-        .where(eq(users.id, userId));
-    } else {
-      await db
-        .update(localUsers)
-        .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
-        .where(eq(localUsers.id, userId));
-    }
-
-    // 2. Legacy usage event
-    await recordAiUsageEvent({
-      userId,
-      userType: userType as "oauth" | "local",
-      channel,
-      model,
-      tokens,
-    });
-  } catch (err) {
-    console.error("Failed to track tokens:", err);
-  }
+  await trackAiTokens(
+    { id: userId, type: userType as "oauth" | "local" },
+    tokens,
+    channel,
+    model,
+  );
 }
 
 
@@ -577,6 +563,19 @@ export const aiRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const startTime = Date.now();
+      // Setting `recording_engine`: the understanding engine reads the sentence through one service; otherwise the
+      // classification pipeline below runs as it always has.
+      if ((await currentRecordingEngine()) === "understanding") {
+        return readSentence({
+          user: ctx.user,
+          text: input.text,
+          channel: input.inputChannel,
+          businessMode: input.businessMode,
+          skipClarification: input.skipClarification,
+          ...(input.voiceModelUsed ? { stt: { model: input.voiceModelUsed, tokensUsed: input.sttTokensUsed ?? 0, seconds: 0 } } : {}),
+          startedAt: startTime,
+        });
+      }
       // Check daily limits
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -902,7 +901,7 @@ export const aiRouter = router({
             firstQuestion = `محتاج أوضح دول مين: ${unknownNames.join(" و ")}؟`;
           }
 
-          await db.insert(pendingClarifications).values({
+          const [pending] = await db.insert(pendingClarifications).values({
             userId: ctx.user.id,
             userType: ctx.user.type,
             question: firstQuestion,
@@ -919,19 +918,8 @@ export const aiRouter = router({
               resolvedAnswers: {},
             },
           });
-          const [pending] = await db
-            .select({ id: pendingClarifications.id })
-            .from(pendingClarifications)
-            .where(
-              and(
-                eq(pendingClarifications.userId, ctx.user.id),
-                eq(pendingClarifications.userType, ctx.user.type),
-                eq(pendingClarifications.status, "pending"),
-              ),
-            )
-            .orderBy(desc(pendingClarifications.id))
-            .limit(1);
-          clarificationId = pending?.id;
+          // The row this INSERT made, not the user's latest pending one: two parses at once swapped ids.
+          clarificationId = Number(pending.insertId) || undefined;
           // Override the clarification question returned to frontend with the first one
           result.clarificationQuestion = firstQuestion;
         } catch (err) {
@@ -1074,7 +1062,8 @@ export const aiRouter = router({
         }
         // Gemini:
         const slot = slotPreference || sttKeySlot;
-        if (slot === "key2" && cfg.ai_api_key_2) return cfg.ai_api_key_2;
+        // The second slot uses the console's second speech key, then the second general key.
+        if (slot === "key2" && (cfg.stt_api_key_2 || cfg.ai_api_key_2)) return cfg.stt_api_key_2 || cfg.ai_api_key_2;
         if (
           cfg.stt_api_key &&
           cfg.stt_api_key !== "YOUR_GEMINI_API_KEY_HERE"
@@ -1261,6 +1250,11 @@ export const aiRouter = router({
         });
       }
 
+      // Under the understanding engine a recording is admitted as typed text is (the plan's parse switch and the
+      // daily limit), and before the transcription is paid for.
+      const understandingEngine = recordingEngineOf(cfg) === "understanding";
+      if (understandingEngine) await assertSentenceAllowed(ctx.user, cfg);
+
       // The spend is reserved before the network call, not reconciled after it.
       await assertAiBudget(
         ctx.user,
@@ -1320,6 +1314,38 @@ export const aiRouter = router({
           source: "gemini_stt",
         });
       } catch (e) {}
+
+      if (understandingEngine) {
+        const sttProvider = isGroqModel(sttResult.modelUsed) ? "groq" : "gemini";
+        recordModelCalls(ctx.user, "speech", undefined, { model: sttResult.modelUsed, tokens: sttResult.tokensUsed, providerSlug: sttProvider });
+        void recordAICostMetric({
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          channel: "speech",
+          plan: ctx.user.plan || "free",
+          intentKind: "stt",
+          model: sttResult.modelUsed,
+          inputTokens: 0,
+          outputTokens: sttResult.tokensUsed,
+          totalTokens: sttResult.tokensUsed,
+          embeddingCalls: 0,
+          llmCalls: 0,
+          toolCalls: 0,
+          latencyMs: Date.now() - startTime,
+          metadata: { durationSeconds: voiceVerdict.billableSeconds, claimedDurationSeconds: input.durationSeconds, mimeType: cleanMimeType, provider: sttProvider },
+        });
+        // The daily limit and the plan switch were checked before the transcription.
+        return readSentence({
+          user: ctx.user,
+          text: transcribedText,
+          channel: "voice",
+          businessMode: input.businessMode,
+          skipClarification: false,
+          stt: { model: sttResult.modelUsed, tokensUsed: sttResult.tokensUsed, seconds: voiceVerdict.billableSeconds },
+          startedAt: startTime,
+          gateChecked: true,
+        });
+      }
 
       // 2. Run Parse Logic
       const client = await getAiClient("parse", ctx.user.plan);
@@ -1611,7 +1637,7 @@ export const aiRouter = router({
             ? `مين ${unknownNames[0]}؟ (أخوك، صديقك، موظف عندك...)`
             : (parseResult.clarificationQuestion || "ممكن توضح أكتر؟");
 
-          await db.insert(pendingClarifications).values({
+          const [pending] = await db.insert(pendingClarifications).values({
             userId: ctx.user.id,
             userType: ctx.user.type,
             question: firstQuestion,
@@ -1628,19 +1654,8 @@ export const aiRouter = router({
               resolvedAnswers: {},
             },
           });
-          const [pending] = await db
-            .select({ id: pendingClarifications.id })
-            .from(pendingClarifications)
-            .where(
-              and(
-                eq(pendingClarifications.userId, ctx.user.id),
-                eq(pendingClarifications.userType, ctx.user.type),
-                eq(pendingClarifications.status, "pending"),
-              ),
-            )
-            .orderBy(desc(pendingClarifications.id))
-            .limit(1);
-          clarificationId = pending?.id;
+          // The row this INSERT made, not the user's latest pending one: two parses at once swapped ids.
+          clarificationId = Number(pending.insertId) || undefined;
           parseResult.clarificationQuestion = firstQuestion;
         } catch (err) {
           console.error("Failed to insert pending voice clarification:", err);
@@ -1786,36 +1801,13 @@ export const aiRouter = router({
         return null;
       });
 
-      let startDate: Date;
-      let endDate: Date;
-      let prevStart: Date;
-      let prevEnd: Date;
-      let daysInMonth: number;
-
-      if (salaryDay > 1) {
-        const { getFinancialMonthDates } = await import("./services/financial-month");
-        const currentDates = getFinancialMonthDates(input.month, salaryDay);
-        startDate = currentDates.startDate;
-        endDate = currentDates.endDate;
-
-        // Calculate previous month string
-        const [y, m] = input.month.split("-").map(Number);
-        const prevMonthDate = new Date(y, m - 2, 1);
-        const prevMonthStr = prevMonthDate.toISOString().slice(0, 7);
-        const prevDates = getFinancialMonthDates(prevMonthStr, salaryDay);
-        prevStart = prevDates.startDate;
-        prevEnd = prevDates.endDate;
-
-        daysInMonth = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      } else {
-        const [year, month] = input.month.split("-");
-        startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-        endDate = new Date(parseInt(year), parseInt(month), 0);
-        daysInMonth = endDate.getDate();
-
-        prevStart = new Date(parseInt(year), parseInt(month) - 2, 1);
-        prevEnd = new Date(parseInt(year), parseInt(month) - 1, 0);
-      }
+      // The month and the one before it as Cairo days, from payday to payday when there is one (golden rule 6).
+      const period = reportPeriod(input.month, salaryDay);
+      const startDate = period.current.startUtc;
+      const endDate = period.current.endUtc;
+      const prevStart = period.previous.startUtc;
+      const prevEnd = period.previous.endUtc;
+      const daysInMonth = period.days;
 
       // Current month expenses
       const userExpenses = await db
@@ -1826,7 +1818,7 @@ export const aiRouter = router({
             eq(expenses.userId, ctx.user.id),
             eq(expenses.userType, ctx.user.type),
             gte(expenses.date, startDate),
-            lte(expenses.date, endDate),
+            lt(expenses.date, endDate),
           ),
         );
 
@@ -1853,7 +1845,7 @@ export const aiRouter = router({
             eq(expenses.userId, ctx.user.id),
             eq(expenses.userType, ctx.user.type),
             gte(expenses.date, prevStart),
-            lte(expenses.date, prevEnd),
+            lt(expenses.date, prevEnd),
           ),
         );
 
@@ -2056,12 +2048,12 @@ export const aiRouter = router({
       // Financial Forecasting
       const today = new Date();
       let forecast = "";
-      // Only forecast if looking at current month
-      if (
-        today.getMonth() === endDate.getMonth() &&
-        today.getFullYear() === endDate.getFullYear()
-      ) {
-        const currentDay = Math.max(1, today.getDate());
+      // Only forecast while the month is running: today's Cairo day counted from the month's first day (payday).
+      if (today >= startDate && today < endDate) {
+        const currentDay = Math.max(
+          1,
+          (Date.parse(`${businessDateKey(today)}T00:00:00Z`) - Date.parse(`${period.current.startDay}T00:00:00Z`)) / 86_400_000 + 1,
+        );
         const runRate = Math.round((totalExpense / currentDay) * daysInMonth);
         if (comparisonIncome > 0) {
           if (runRate > comparisonIncome) {
@@ -2130,11 +2122,17 @@ export const aiRouter = router({
           reportTopItemsLimit = 0;
           aiResponseLength = "short";
           aiFocus = "statistics";
-          aiSystemPrompt =
-            "أنت مستشار مالي مصري ذكي. اكتب تقريرا شهريا مختصرا ودقيقا من الحقائق المرسلة فقط، ولا تخترع أي رقم.";
-          aiAdvancedInstructions =
+          const factPromptSuffix =
+            "\nاكتب تقريرا شهريا مختصرا ودقيقا من الحقائق المرسلة فقط، ولا تخترع أي رقم.";
+          aiSystemPrompt = (settings.ai_system_prompt || aiSystemPrompt) + factPromptSuffix;
+          const factInstructions =
             "- استخدم SEMANTIC_REPORT_FACTS فقط كمصدر للأرقام.\n- لا تقرب الأرقام المالية؛ انسخ القيم العشرية كما هي مثل 2337.5.\n- لا تطلب أدوات ولا بيانات إضافية.\n- اكتب توصيات عملية قصيرة مبنية على أعلى الفئات والصافي والأهداف إن وجدت.";
-          aiReportStructureOverride = "";
+          aiAdvancedInstructions = settings.ai_advanced_instructions
+            ? `${settings.ai_advanced_instructions}\n${factInstructions}`
+            : factInstructions;
+          if (!settings.ai_report_structure_override) {
+            aiReportStructureOverride = "";
+          }
         }
 
         // Check token limit
@@ -2257,6 +2255,8 @@ ${prevTotal > 0 ? `تغير إجمالي المصاريف عن الشهر الس
         `user_name: ${userProfile.basicInfo.name || ctx.user.name || "SmartSpend user"}`,
         salaryDay > 0 ? `salary_day: ${salaryDay}` : "",
         financialMonthContext ? `financial_month: ${financialMonthContext.slice(0, 280)}` : "",
+        familyReportContext ? `family_context: ${familyReportContext.slice(0, 300)}` : "",
+        reportPersonalizationContext ? `personalization: ${reportPersonalizationContext.slice(0, 300)}` : "",
       ]
         .filter(Boolean)
         .join("\n");
@@ -2273,7 +2273,13 @@ ${prevTotal > 0 ? `تغير إجمالي المصاريف عن الشهر الس
         return Number.isFinite(parsed) ? parsed : undefined;
       };
 
-      if (modelName !== "backend" && (aiModel || reportProvider === "groq" || isGroqModel(modelName))) {
+      // The admin's report models from the console, in its order. With none, the report settings below answer as they did.
+      const reportTier = ctx.user.plan === "ultra" ? "ultra" : ctx.user.plan === "pro" ? "pro" : "free";
+      const adminReportRoutes: LlmRoute[] = basicReportReason === "tokens"
+        ? []
+        : ((await resolveAdminRoutes("report", reportTier).catch(() => null))?.routes ?? []).map((route) => ({ ...route, protocol: asLlmProtocol(route.protocol) }));
+
+      if (adminReportRoutes.length || (modelName !== "backend" && (aiModel || reportProvider === "groq" || isGroqModel(modelName)))) {
         try {
           const planId = asPlan(ctx.user.plan);
           const reportCostPolicy = resolveAICostPolicy({
@@ -2377,12 +2383,37 @@ ${personalizedSummaryForAI}
   "data_table": []
 }`;
 
+            const estimatedInputTokens = estimateTokensFromText(prompt);
+            await assertAiBudget(
+              { id: ctx.user.id, type: ctx.user.type, plan: ctx.user.plan },
+              "report",
+              estimatedInputTokens,
+              await getSystemSettings(),
+            );
+
             let raw = "";
             let tokens = 0;
             // What the report's one model call used, split so it is priced at the provider's input and output rates.
             let usage = { prompt: 0, completion: 0, cached: 0 };
             let reportSlug = "gemini";
-            if (reportProvider === "nvidia" || isNvidiaModel(modelName)) {
+            if (adminReportRoutes.length) {
+              const answer = await executeLlmChain(adminReportRoutes, {
+                systemPrompt: aiSystemPrompt,
+                userPrompt: prompt,
+                maxOutputTokens: capRequestOutputTokens(
+                  ctx.user.plan,
+                  "report",
+                  Math.min(reportTargetWords * 4, reportCostPolicy.maxOutputTokens),
+                ),
+                timeoutMs: 60_000,
+                deadlineMs: 120_000,
+              });
+              raw = answer.text.replace(/```json?/g, "").replace(/```/g, "").trim();
+              tokens = answer.totalTokens;
+              usage = { prompt: answer.promptTokens, completion: answer.completionTokens, cached: answer.cachedTokens };
+              reportSlug = answer.route.slug;
+              modelName = answer.route.model;
+            } else if (reportProvider === "nvidia" || isNvidiaModel(modelName)) {
               reportSlug = "nvidia";
               const res = await callNvidiaAPI(
                 nvidiaApiKey || reportApiKey,
@@ -2466,7 +2497,6 @@ ${personalizedSummaryForAI}
             } else {
               recordModelCalls(ctx.user, "report", undefined, { model: modelName, tokens, providerSlug: reportSlug });
             }
-            const estimatedInputTokens = estimateTokensFromText(prompt);
             reportEstimatedInputTokens = estimatedInputTokens;
             reportTotalTokens = tokens;
             reportLlmCalls = tokens > 0 ? 1 : 0;
@@ -2603,6 +2633,23 @@ ${personalizedSummaryForAI}
           ? validateNumbersAgainstFacts(reportText, validationFacts)
           : { accuracy: 1, numbers: [], supported: [], missing: [] };
         const hallucination = reportHallucinationRisk(numericAccuracy.missing, reportLlmCalls);
+
+        if (reportLlmCalls > 0 && numericAccuracy.missing.length > 0) {
+          // BUG-02: Enforce accuracy. Do NOT show model-written report with unsupported numbers as is.
+          const fallbackDailyAvg = semanticNumber("daily_average_expense") ?? dailyAvg;
+          const fallbackTotalExpense = semanticNumber("total_expense") ?? totalExpense;
+          let safeText = "💡 (ملاحظة: تم استخدام الأرقام المؤكدة فقط لحماية دقة التقرير المالي)\n\n";
+          safeText += `إجمالي المصاريف المؤكدة لشهر ${input.month}: ${fallbackTotalExpense} ج.م بمتوسط يومي ${fallbackDailyAvg} ج.م.\n\n`;
+          if (topCategory) {
+            safeText += `أعلى بند إنفاق: ${topCategory[0]} بنسبة ${topCategoryPercent}% (${topCategory[1]} ج.م).\n\n`;
+          }
+          if (monthlyChange !== 0 && prevTotal > 0) {
+            safeText += `مقارنة بالشهر السابق: المصاريف ${monthlyChange > 0 ? "زادت" : "قلت"} بنسبة ${Math.abs(monthlyChange)}%.\n\n`;
+          }
+          safeText += "التوصية: تم إخفاء الأرقام غير المؤكدة حفاظاً على دقة تحليلاتك المالية. راجع تفاصيل العمليات من تبويب الإحصائيات.";
+          responseJson.response_text = safeText;
+          responseJson.hallucination_blocked = true;
+        }
         responseJson.semantic_facts = {
           source: semanticReportFacts?.source ?? "unavailable",
           factCount: semanticReportFacts?.facts.length ?? 0,

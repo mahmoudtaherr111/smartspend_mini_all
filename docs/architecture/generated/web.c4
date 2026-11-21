@@ -33,13 +33,6 @@ model {
         routes '/auth/callback'
       }
     }
-    BankSyncPage = page 'BankSyncPage' {
-      description 'src/pages/BankSyncPage.tsx'
-      metadata {
-        file 'src/pages/BankSyncPage.tsx'
-        routes '/bank-sync'
-      }
-    }
     Home = page 'Home' {
       description 'src/pages/Home.tsx'
       metadata {
@@ -129,6 +122,13 @@ model {
       metadata {
         file 'src/pages/UltraLounge.tsx'
         routes '/ultra'
+      }
+    }
+    WalletsPage = page 'WalletsPage' {
+      description 'src/pages/WalletsPage.tsx'
+      metadata {
+        file 'src/pages/WalletsPage.tsx'
+        routes '/wallets'
       }
     }
   }

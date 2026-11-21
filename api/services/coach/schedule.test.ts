@@ -135,3 +135,77 @@ describe("cashPosition", () => {
     expect(position).toMatchObject({ until: "2026-10-01", untilIsPayday: false, duesKnown: 4000, freeBeforeIncome: -4000 });
   });
 });
+
+describe("shapes (docs/decisions/0051-commitments-ecosystem.md)", () => {
+  it("stops a fixed installment plan after its installments, numbering them from those paid before", () => {
+    const plan = row({ shape: "fixed", amount: "1500.00", startDay: "2026-11-05", occurrenceCount: 12, paidBeforeCount: 9 });
+    expect(dueDays(plan, "2026-01-01", "2027-12-31")).toEqual(["2026-11-05", "2026-12-05", "2027-01-05"]);
+    const list = occurrences([plan], [], "2026-01-01", "2027-12-31", "2026-11-01");
+    expect(list.map((o) => [o.number, o.total])).toEqual([[10, 12], [11, 12], [12, 12]]);
+    expect(dueDays(row({ shape: "fixed", startDay: "2026-11-05", occurrenceCount: 12, paidBeforeCount: 12 }), "2026-01-01", "2027-12-31")).toEqual([]);
+  });
+
+  it("steps every few months for a quarterly plan and keeps counting across a window", () => {
+    const quarterly = row({ shape: "fixed", startDay: "2026-01-15", intervalCount: 3, occurrenceCount: 4 });
+    expect(dueDays(quarterly, "2026-01-01", "2027-12-31")).toEqual(["2026-01-15", "2026-04-15", "2026-07-15", "2026-10-15"]);
+    expect(dueDays(row({ startDay: "2026-01-15", intervalCount: 3 }), "2026-06-01", "2026-12-31")).toEqual(["2026-07-15", "2026-10-15"]);
+  });
+
+  it("uses a schedule's own dates and amounts, with their labels and numbers", () => {
+    const school = row({
+      shape: "schedule", startDay: null, amount: null,
+      items: [
+        { dueDay: "2026-09-01", amount: "5000.00", label: "القسط الأول" },
+        { dueDay: "2027-01-15", amount: "4000.00", label: "القسط التاني" },
+        { dueDay: "2026-10-01", amount: "1200.00", label: "الباص" },
+      ],
+    });
+    const list = occurrences([school], [{ cashflowId: 1, dueDay: "2026-09-01", amount: "5000.00", expenseId: 9 }], "2026-08-01", "2027-06-30", "2026-10-05");
+    expect(list.map((o) => [o.dueDay, o.amount, o.status, o.label, o.number, o.total])).toEqual([
+      ["2026-09-01", 5000, "paid", "القسط الأول", 1, 3],
+      ["2026-10-01", 1200, "overdue", "الباص", 2, 3],
+      ["2027-01-15", 4000, "due", "القسط التاني", 3, 3],
+    ]);
+  });
+
+  it("applies a skip, a move and another amount to one date, keyed by the computed date", () => {
+    const rent = row({ startDay: "2026-09-01", amount: "4000.00", overrides: [
+      { dueDay: "2026-10-01", action: "skip" },
+      { dueDay: "2026-11-01", action: "move", newDay: "2026-11-10" },
+      { dueDay: "2026-12-01", action: "amount", amount: "4500.00" },
+    ] });
+    const list = occurrences([rent], [], "2026-10-01", "2026-12-31", "2026-11-05");
+    expect(list.map((o) => [o.dueDay, o.effectiveDay, o.status, o.amount])).toEqual([
+      ["2026-10-01", "2026-10-01", "skipped", 4000],
+      ["2026-11-01", "2026-11-10", "due", 4000],
+      ["2026-12-01", "2026-12-01", "due", 4500],
+    ]);
+    // A date moved into the window from before it still shows.
+    expect(occurrences([rent], [], "2026-11-05", "2026-11-30", "2026-11-05").map((o) => o.effectiveDay)).toEqual(["2026-11-10"]);
+  });
+
+  it("keeps a debt with no date open until paid, never overdue, and out of what is due before payday", () => {
+    const debt = row({ shape: "balance", kind: "debt", startDay: null, amount: null, totalAmount: "1000.00", trackedFrom: "2026-09-01" });
+    const list = occurrences([debt], [{ cashflowId: 1, dueDay: "2026-09-01", amount: "400.00", expenseId: 3 }], "2026-01-01", "2026-12-31", "2026-11-01");
+    expect(list.map((o) => [o.status, o.remaining, o.undated])).toEqual([["partial", 600, true]]);
+    const position = cashPosition({ today: "2026-11-01", salaryDay: 25, wallets: [], rows: [debt], settlements: [], overdueLookbackDays: 400 });
+    expect(position.duesKnown).toBe(0);
+  });
+
+  it("stops a gam3eya after its months and estimates a varying bill from recent payments", () => {
+    expect(dueDays(row({ shape: "gam3eya", startDay: "2026-01-10", occurrenceCount: 3 }), "2026-01-01", "2026-12-31"))
+      .toEqual(["2026-01-10", "2026-02-10", "2026-03-10"]);
+    const bill = row({ kind: "bill", amount: null, amountVaries: true, estimatedAmount: 420, startDay: "2026-10-05" });
+    const [first] = occurrences([bill], [], "2026-10-01", "2026-10-31", "2026-10-01");
+    expect([first.amount, first.estimated]).toEqual([420, true]);
+  });
+
+  it("does not subtract a skipped date, and keeps overdue dates owed as long as the caller asks", () => {
+    const rent = row({ startDay: "2026-01-01", amount: "1000.00", overrides: [{ dueDay: "2026-10-01", action: "skip" }] });
+    const short = cashPosition({ today: "2026-10-20", salaryDay: 25, wallets: [], rows: [rent], settlements: [] });
+    const long = cashPosition({ today: "2026-10-20", salaryDay: 25, wallets: [], rows: [rent], settlements: [], overdueLookbackDays: 400 });
+    // 45 days back holds the skipped October only; 400 days back owes January to September too.
+    expect(short.duesKnown).toBe(0);
+    expect(long.duesKnown).toBe(9000);
+  });
+});

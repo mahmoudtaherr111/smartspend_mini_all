@@ -14,9 +14,9 @@ when it is unsure, and the writes that put items in the ledger.
 | Entry form | `src/components/expenses/ExpenseForm.tsx#ExpenseForm`, on the Home screen | Text box, microphone and camera; the review and clarification steps; a queue for text typed offline |
 | Text entry point | `api/ai-router.ts#parseExpense` | Plan and budget checks, loads the user's context, runs the pipeline, stores the trace, opens a clarification |
 | Voice entry point | `api/ai-router.ts#parseVoiceExpense` | Voice quota gate, speech to text, then the same pipeline |
-| Receipt entry point | `api/image-router.ts#parseReceipt` | Plans whose receipts switch is on (Pro and Ultra by default): reads a photo and saves one expense directly |
+| Receipt entry point | `api/image-router.ts#parseReceipt` | Plans whose receipts switch is on: reads a photo and saves through the ledger writer (`api/services/ledger-writer.ts`) |
 | The pipeline | `api/lib/smart-pipeline.ts#runSmartPipeline` | A sentence in; items and a decision out: `auto_save`, `review` or `clarify` |
-| Saving | `expense.create` and `expense.batchCreate` in `api/expense-router.ts` | Writes the items, their rollup delta, contacts and streak in one transaction |
+| Saving | `expense.create` and `expense.batchCreate` in `api/expense-router.ts`, through the ledger writer (`api/services/ledger-writer.ts`) | Writes the items, their rollup delta, contacts and streak in one transaction |
 | Clarifications | `api/expense-router.ts#answerClarification` | Takes the user's answer, re-runs the pipeline and saves |
 
 ## One sentence, step by step
@@ -79,7 +79,7 @@ spends nothing.
 1. **Admissibility gate**: `api/lib/admissibility-gate.ts#checkAdmissibility` answers chatter, questions about
    spending and negated single-amount statements with a reply before anything costs money.
 2. **Result cache** (`api/lib/classification-cache.ts`, decision 0013): an in-process LRU whose key
-   (`classificationCacheKey`) holds everything the answer depends on: pipeline and calibration versions, user, plan,
+   (`classificationCacheKey`) holds everything the answer depends on: pipeline, calibration and taxonomy versions, user, plan,
    business scope, model, thresholds, normalized text, and a hash of the user's dictionary and known people, profile
    hints, business categories, settings, correction rules (loaded here, with the key, and reused below), a
    fingerprint of muscle memory (`userMemoryFingerprint`), the clarification switch and the month's totals in 10%
@@ -207,7 +207,8 @@ After a layer answers, negated clauses are dropped, and the money movements whos
 (الجمعية, سلفة, رجعلي, "اللي عليا") become transfers through
 `api/lib/direction-governed-taxonomy.ts#resolveGovernedTaxonomy`: تحويل/جمعية or تحويل/دين/سلفة, with the direction
 the verb gave (`direction`: `incoming` or `outgoing`). A bank loan's installment or interest paid ("دفعت قسط القرض",
-"دفعت فوائد القرض") is not a loan moving but spending under أقساط وفوايد. Profile
+"دفعت فوائد القرض") is not a loan moving but spending under أقساط وفوايد, and so is what the bank itself charges
+("رسوم بنكية", "عمولة البنك", "رسوم انستاباي"), under its own subcategory رسوم بنكية (decision 0024). Profile
 hints apply last (children lead to education, or to أطفال/حضانة for a nursery; running the household to
 groceries).
 
@@ -293,7 +294,12 @@ panel, to admins only.
   proposed for it (found through the log id), the save records it as the user's correction and marks the log
   corrected, as editing a saved item does. In a several-item sentence each item carries the clause it was read from
   (`clause`), and the rule is learned from that clause, matched to the saved row by its amount; an amount two items
-  share teaches nothing (`api/expense-router.ts#reviewCorrection`).
+  share teaches nothing (`api/expense-router.ts#reviewCorrection`). The answers of `expense.create`,
+  `expense.batchCreate` and `expense.answerClarification` also carry `commitmentLinks`: each saved payment linked to
+  the commitment it pays when that is certain, or the question to ask about it (`matchSavedExpenses`,
+  [Money](money.md#commitments-hub-التزاماتي), decision 0051). The phone app reads the same through
+  `commitments.linksFor` after its outbox saves, says which commitment a payment counted for (its "تراجع" unlinks),
+  and offers one button that pays a commitment a clarified sentence names without an amount («دفعت نتفليكس»).
 - `review`: editable cards with totals per direction; the user fixes or removes rows, then saves. A card's
   category list holds the categories of its item's kind (`src/lib/financial-taxonomy.ts#getCategoryOptionsForType`),
   and a newly picked category starts at its general subcategory.
@@ -305,11 +311,12 @@ referenced wallets, businesses and contacts belong to the user
 (`api/lib/ownership-guard.ts#assertEntityOwnership`), and link the named person to a contact
 (`api/expense-router.ts#namedPersonOf`): the person subcategory of a person category, or the `personName` and
 `personRelationship` the form sends for a person named beside a purpose. A transfer's direction is stored in
-`parsed_metadata.direction`. In one
-transaction they insert the rows, apply the daily rollup delta
-(`api/services/expense-rollups.ts#applyExpenseRollupDelta`), count the contact's transactions and update the
-streak. Afterwards they clear muscle memory, the classification cache and the finance caches, and check budget
-alerts (`api/notification-engine.ts#checkUserBudgetExceeded`).
+`parsed_metadata.direction`. They write through the ledger writer (`api/services/ledger-writer.ts`, decision 0027):
+in one transaction it inserts the rows, applies the daily rollup delta
+(`api/services/expense-rollups.ts#applyExpenseRollupDelta`), counts the contact's transactions and updates the
+streak. Afterwards the review's correction is learned, muscle memory and the finance caches are cleared, and new
+spending is checked against the budgets (`api/notification-engine.ts#checkUserBudgetExceeded`). The classification
+cache needs no clearing: its key holds what the answer depends on.
 
 ## Voice
 `parseVoiceExpense` refuses before it spends anything: `api/lib/voice-intake-gate.ts#checkVoiceIntake` checks the
@@ -320,7 +327,8 @@ seconds, from the per-plan settings `voice_limit_<plan>` and `voice_per_req_<pla
 in `voice_usage`, and runs the same pipeline on the transcript, in business mode when the form's switch is on and the user has a business. The form stops a recording
 at the plan's per-recording limit and at the seconds left this month.
 
-`ai.speechToText` transcribes without parsing; no screen calls it.
+`ai.speechToText` transcribes without parsing; no screen calls it. Its Gemini key comes from the speech key slot the admin picks; the second slot
+uses `stt_api_key_2`, the second speech key the console edits, and falls back to `ai_api_key_2`.
 
 ## Receipts
 `image.parseReceipt` is gated by the plan's receipts switch (`receiptsProcedure`, `feature_receipts_<plan>`). It checks the payload size and the image signature (JPEG, PNG or WebP),
@@ -350,8 +358,9 @@ pending (`claimClarification`), so a second tap or a retry saves nothing and get
 Both modes save through `saveClarifiedItems`, as `expense.create` saves: each item on the date the sentence named,
 else the day the question was asked (`clarifiedItemDate`); with the source the sentence came in (`voice` for a
 spoken one, whose question stores `source`, else `manual`); with its contact, classification log, direction and
-signed amount (`ledgerAmount`); with the rollup delta and the streak in the same transaction. Afterwards muscle
-memory, the classification cache and the finance caches are cleared, and the saved items come back (`saved`): the
+signed amount (`ledgerAmount`); with the rollup delta and the streak in the same transaction
+(`insertLedgerEntriesInTx` and `bumpStreakInTx` of the ledger writer). Afterwards muscle memory and the finance caches
+are cleared, spending is checked against the budgets, and the saved items come back (`saved`): the
 entry form and the "محتاج ردك" card say what was saved and offer "تراجع", which deletes exactly those ids.
 
 `expense.getPendingClarifications` lists the open questions. The Home record tab shows them under "محتاج ردك"
@@ -415,12 +424,91 @@ the sentence through `ai.parseExpense` like the normal button, and cannot start 
 phone-side keyword guess that used to fill the chip, and disagreed with the saved result, is gone; offline text is only
 checked (`src/lib/clientRulesEngine.ts#validateOfflineInput`) and classified by the server when it syncs.
 
+## The understanding engine (built; serves a channel only when `recording_engine` is `understanding`)
+Decision [0052](../decisions/0052-understanding-engine.md) replaces the pipeline above with a model that reads the
+sentence and code that verifies the reading. Its modules are in `api/lib/understanding/`. With the default setting
+everything above still describes what users get.
+
+- `api/lib/understanding/contract.ts`: the reply a model returns for one sentence (`READING_SCHEMA`: short keys, a
+  field left out when it has nothing to say and no quote when the event is the whole sentence, since output tokens
+  cost the most) and
+  `parseReply`, which turns any reply into a well-formed `Reading` or null. Each event carries the person's own
+  words, the amount, the ledger kind and flow (`contracts/ledger-movement.ts`), a category and subcategory id of
+  taxonomy v2 (`contracts/taxonomy.ts`), the person, role and relation, a reference to a commitment and a wallet, a
+  date and the model's own doubt.
+- `api/lib/understanding/numbers.ts`: what the code reads without a model: the numbers of the sentence through the
+  Arabic number parser (`numberMentions`), whether a quote is the person's words (`quoteIsFromText`), and whether an
+  amount is stated, derived or absent (`sourceOfAmount`).
+- `api/lib/understanding/guard.ts#guardReading`: exact checks that put named flags on an event: an amount not in the
+  sentence, a derived amount, a quote that is not the person's, a category that does not exist or cannot hold that
+  kind of money, an impossible flow, a reference that was not offered, a date in the future, the local negation
+  detector disagreeing, and, for the reply, a number of the sentence nothing accounts for.
+- `api/lib/understanding/policy.ts#decide`: save, show or ask, with no confidence number. A clean ordinary event is
+  saved; any flag, a large amount in a category the user never saved, an entry dated on another day or a loan to
+  someone the user has not named is shown first; a question is asked only when nothing can be recorded.
+- `api/lib/understanding/prompt.ts`: the static system prompt built from the taxonomy's guide lines and worked
+  examples, and the per-request prompt with today's date, the user's people, commitments, wallets and own words, and
+  the sentence fenced and last.
+- `api/lib/understanding/bridge.ts#storedShape`: a v2 answer as the category names, row type and direction the
+  ledger stores today.
+- `api/lib/understanding/context.ts#loadReadingContext`: what the engine knows about the user for one reading, each
+  part bounded and filtered on the user: their contacts, active commitments with what is due next and a reference
+  (`c1`…) for each, wallets with references, the words they taught (correction rules and dictionary, translated to
+  v2 ids by `api/lib/understanding/bridge.ts#v2OfStored`), the stored pairs they saved at least twice, and the
+  business's categories in business mode. A part whose query fails is left empty. The pure half
+  (`api/lib/understanding/reading-context.ts#assembleContext`) has no database, so the engine imports only that.
+- `api/lib/understanding/routes.ts#resolveUnderstandingRoutes`: the admin's `classification` models for the plan's
+  tier, then the built-in providers that have a key.
+- `api/lib/understanding/engine.ts#understand`: one chain call with the static prompt and the schema, `parseReply`,
+  the guard, the policy, and the references resolved to ids. An unreadable reply is asked again on the routes that
+  remain; when nothing answers it throws `UnderstandingUnavailableError` and never falls back to a local guess.
+  Empty or over-long text is answered without a model. The engine does no database work and no budget check: its
+  caller admits the call and records it.
+### Behind the entry points (setting `recording_engine`)
+`recording_engine` is `rules` by default: everything above. Set to `understanding`, the same procedures answer in
+the same shapes through `api/services/recording/`, so both apps need no change:
+
+- `ai.parseExpense` and `ai.parseVoiceExpense` call `api/services/recording/read-sentence.ts#readSentence`: admission
+  (the plan's parse switch, the daily limit and the token budget, for voice as for text) while the settings and
+  `loadReadingContext` load; `understand`; the cost recorded as every parse records it; one slim
+  `classification_logs` row whose `finalResult` holds the items with their reading; and, for a question, one
+  `pending_clarifications` row found by its own insert id. When no provider can read the sentence the person is
+  told to try again shortly and nothing is guessed. `api/services/recording/items.ts#toParsedItems` maps events to
+  the items the apps read: the stored category names from the bridge, a date only when the sentence named one, the
+  person and relation, and an optional `reading` (v2 ids, kind, flow, commitment and wallet ids, flags).
+- `expense.create` and `expense.batchCreate`: an item saved with its `classificationLogId` is matched to its reading
+  in the user's own log row (`api/services/recording/saved-reading.ts#readingItemFor`: the only item, or the one
+  item with the same amount). When the person kept the reading's category, subcategory and type, the row gets the
+  reading's ledger kind, its wallet when none was sent, and `parsed_metadata.reading`. A `reading` a client sends is
+  dropped: only the log's is used.
+- Commitments: `matchSavedExpenses` passes the reading's commitment to `decideMatch` as `namedCashflowId`, which
+  names that commitment as strongly as its title does. Every other rule of decision 0051 holds: the commitment must
+  be payable, the amount exact, no rival named, the date open, and an instalment kind still needs its cue word.
+- `expense.answerClarification`: a missing detail is added to the sentence. An EGP restatement or a corrected proposal replaces the sentence. A clean reading saves once. A flagged reading lists the proposed entries and waits for an explicit «احفظ» before writing them. Confirmation reuses the stored proposal.
+- `expense.previewCategory` and `api/lib/classify-text.ts#classifyText` answer null: no model is called per
+  keystroke, the AI Center keeps the category its own model chose and capture questions use their default.
+
+`understanding_prompt_detail=compact` sends a shorter system prompt (subcategory ids without their wording, fewer
+examples) and, beside the sentence, only the guide lines whose usual wording appears in it
+(`api/lib/understanding/prompt.ts#hintsFor`), so the system prompt stays the same for everyone. The policy and guard limits are the `understanding_*` settings.
+
+Tests: `api/lib/understanding/understanding-core.test.ts`, `api/lib/understanding/engine.test.ts`,
+`api/lib/understanding/context.test.ts`, `api/lib/understanding/routes.test.ts`, `api/services/recording/items.test.ts`,
+`api/services/recording/read-sentence.test.ts`, `api/services/recording/saved-reading.test.ts`, the reading cases of
+`api/services/coach/matcher.test.ts`, and on MySQL `tests/recording-reading.test.ts`. The labelled development sentences are
+`api/qa/understanding/dev-set.json`; `npm run eval:understand` reads them through one named model at a
+requests-per-minute limit and writes a report (the share of automatic saves that are wrong, questions, field
+accuracy, tokens and time). The harness also runs on the locked set. Reports separate provider coverage, wrong automatic saves, errors across all labelled fields, and latency.
+
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Gap.** A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع"
-   rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
-2. **Gap.** `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and
-   `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere. (People a recording names become contacts
+1. **Clarifications save immediately with undo (Decision 0039).** A clarification saves as soon as it is answered;
+   the saved items are shown afterwards with an immediate "تراجع" (Undo) banner rather than requiring a blocking
+   confirmation modal. This design eliminates friction during frequent Egyptian micro-transaction and voice recording;
+   undo and post-save edits remain instant and safe. Questions stored before the source was kept save a spoken sentence as `manual`.
+2. **Gap.** `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app (a
+   corrected category is learned by `expense.update` through `recordCorrection`, not by `ai.learnWord`), and
+   The website has no receipt capture. (People a recording names become contacts
    when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in
    `api/services/entitlements/voice.ts`.)
 
@@ -432,4 +520,15 @@ Checked against the code; each one names where it lives.
 - [Admin console, support and growth tools](admin.md): the rule sandbox and the clarifications tab.
 - [AI Center](ai-center.md): the assistant can also propose recording an expense.
 
-A filing-only clause such as «سجلها في حساب مشروع ورشة النجارة» after a priced purchase is retained as a rejected instruction, not an incomplete financial event needing another amount. Real unpriced purchases or payments still require clarification. Pipeline version v3.1 separates the cache from results before this change. «للمحل» alone can name a merchant and never establishes that the user is recording in their own business ledger.
+A filing-only clause such as «سجلها في حساب مشروع ورشة النجارة» after a priced purchase is retained as a rejected instruction, not an incomplete financial event needing another amount. Real unpriced purchases or payments still require clarification. «للمحل» alone can name a merchant and never establishes that the user is recording in their own business ledger.
+
+
+The classifier keeps its semantic transfer/investment output for compatibility. The shared writer converts it only after the cashflow-v1 cutover, using explicit direction and independent financial metadata; missing legacy transfer direction is refused rather than inferred from the amount.
+
+
+Saved capture-purpose feedback edits the already stored row through the shared writer and does not run the entry
+parse/save flow again. Lists can opt into fee grouping; existing clients retain ungrouped rows. This does not change
+text/voice classification decisions or the explicit review of manually entered drafts.
+
+On a fresh configuration, switching to the understanding reader starts in review mode. Automated saving requires an explicit understanding_auto_save=true. The evaluation harness enables that policy for measurement. Under the understanding engine, amount evidence belongs to the quoted event. Unit prices, totals, contradicted dates, dropped events, repaired subcategories and incomplete personal context can require review. An explicitly foreign-currency reading asks for a restatement in Egyptian pounds before producing ledger items. The authenticated taxonomy.get query returns the versioned purpose labels. Flutter review receives these labels alongside the filing used by the ledger, the direction, date and reasons for review. Typed retries and transcribed voice drafts use the outbox.
+The reading schema requires the person, their role and stated relationship, with empty values when nobody was named. A proposed name missing from the sentence requires review. Contact matching uses full names and aliases. A first name shared by multiple contacts cannot choose one contact for a payment.

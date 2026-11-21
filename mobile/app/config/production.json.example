@@ -1,0 +1,12 @@
+{
+  "SMARTSPEND_ENV": "production",
+  "SMARTSPEND_API_URL": "https://api.smartspend.app",
+  "GOOGLE_SERVER_CLIENT_ID": "YOUR_SERVER_WEB_CLIENT_ID.apps.googleusercontent.com",
+  "GOOGLE_IOS_CLIENT_ID": "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com",
+  "TURNSTILE_SITE_KEY": "0x4AAAAAAAxXxXxXxXxXxXxX",
+  "SENTRY_DSN": "https://examplePublicKey@o0.ingest.sentry.io/0",
+  "REVENUECAT_GOOGLE_API_KEY": "goog_your_revenuecat_google_api_key",
+  "REVENUECAT_APPLE_API_KEY": "appl_your_revenuecat_apple_api_key",
+  "GOOGLE_PLAY_LICENSE_KEY": "YOUR_BASE64_GOOGLE_PLAY_PUBLIC_KEY",
+  "APPLE_APP_STORE_SHARED_SECRET": "YOUR_APPLE_APP_STORE_SHARED_SECRET"
+}

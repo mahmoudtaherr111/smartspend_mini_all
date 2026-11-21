@@ -1,9 +1,26 @@
 import { z } from "zod";
 import { router, authedProcedure, adminProcedure } from "./middleware";
 import { db } from "./queries/connection";
-import { users, localUsers, proSubscriptions } from "../db/schema";
+import { users, localUsers, proSubscriptions, storePurchases } from "../db/schema";
 import { eq, and, desc, count } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import {
+  acknowledgeGooglePurchase,
+  applyStoreEvent,
+  fetchGoogleSubscription,
+  googlePurchaseKey,
+  grantsAccess,
+  isAppStoreConfigured,
+  isGooglePlayConfigured,
+  STORE_IDS,
+  STORE_PRODUCT_IDS,
+  storeAccountToken,
+  validateTokenInput,
+  verifyAppleStoreKitTransaction,
+  type EntitlementState,
+  type StoreEventResult,
+  type StoreId,
+} from "./lib/store-billing";
 import { env } from "./lib/env";
 import { grantProSubscription } from "./lib/subscription-service";
 import {
@@ -30,6 +47,70 @@ function planFeatures(settings: Record<string, string>, plan: string, role: stri
   };
 }
 
+const storePurchaseInput = z.object({
+  store: z.enum(STORE_IDS),
+  purchaseToken: z.string().min(1).max(16_384),
+});
+
+function storeUnavailable(): TRPCError {
+  return new TRPCError({ code: "PRECONDITION_FAILED", message: "الشراء من المتجر مش متاح دلوقتي." });
+}
+
+/** Asks the store what this token really is and writes that through the ledger. */
+async function confirmStorePurchase(
+  user: { id: number; type: string },
+  store: StoreId,
+  token: string,
+): Promise<StoreEventResult> {
+  const owner = { userId: user.id, userType: user.type as "local" | "oauth" };
+  const expectedAccount = storeAccountToken(owner);
+
+  if (store === "google_play") {
+    if (!isGooglePlayConfigured()) throw storeUnavailable();
+    if (!validateTokenInput(token)) return { outcome: "unknown_purchase" };
+    const purchase = await fetchGoogleSubscription(token);
+    if (!purchase) return { outcome: "unknown_purchase" };
+    if (purchase.accountToken && purchase.accountToken !== expectedAccount) {
+      return { outcome: "owned_by_another_account" };
+    }
+    const result = await applyStoreEvent({
+      store,
+      purchaseKey: googlePurchaseKey(token),
+      replacesPurchaseKey: purchase.linkedPurchaseToken ? googlePurchaseKey(purchase.linkedPurchaseToken) : null,
+      purchaseToken: token,
+      productId: purchase.productId,
+      state: purchase.state,
+      expiresAt: purchase.expiresAt,
+      eventId: `confirm:${purchase.orderId ?? googlePurchaseKey(token)}:${purchase.state}`,
+      eventType: "confirm",
+      eventTime: new Date(),
+      owner,
+    });
+    if (result.outcome === "applied" && !purchase.acknowledged) {
+      await acknowledgeGooglePurchase(token, purchase.productId);
+    }
+    return result;
+  }
+
+  if (!isAppStoreConfigured()) throw storeUnavailable();
+  const tx = verifyAppleStoreKitTransaction(token);
+  if (!tx || !(STORE_PRODUCT_IDS as readonly string[]).includes(tx.productId)) return { outcome: "unknown_purchase" };
+  if (tx.accountToken && tx.accountToken !== expectedAccount) return { outcome: "owned_by_another_account" };
+  const state: EntitlementState = tx.revoked ? "revoked" : "active";
+  return applyStoreEvent({
+    store,
+    purchaseKey: tx.originalTransactionId,
+    purchaseToken: tx.transactionId,
+    productId: tx.productId,
+    state: grantsAccess(state, tx.expiresAt, new Date()) || tx.revoked ? state : "expired",
+    expiresAt: tx.expiresAt,
+    eventId: `confirm:${tx.transactionId}:${state}`,
+    eventType: "confirm",
+    eventTime: new Date(),
+    owner,
+  });
+}
+
 export const proRouter = router({
   myPlan: authedProcedure.query(async ({ ctx }) => {
     const table = ctx.user.type === "oauth" ? users : localUsers;
@@ -50,36 +131,78 @@ export const proRouter = router({
       .orderBy(desc(proSubscriptions.createdAt))
       .limit(1);
 
+    const storeSubs = await db
+      .select()
+      .from(storePurchases)
+      .where(
+        and(
+          eq(storePurchases.userId, ctx.user.id),
+          eq(storePurchases.userType, ctx.user.type),
+        ),
+      )
+      .orderBy(desc(storePurchases.createdAt))
+      .limit(1);
+
     const row = user[0];
     let plan = row?.plan ?? "free";
     const role = row?.role ?? "user";
+    const now = new Date();
 
-    // Subscription expiration check
     const sub = subs[0];
-    if (
-      sub &&
-      plan !== "free" &&
-      (sub.status === "active" || sub.status === "cancelled") &&
-      sub.endDate < new Date()
-    ) {
-      await db
-        .update(proSubscriptions)
-        .set({ status: "expired" })
-        .where(eq(proSubscriptions.id, sub.id));
-      // A read that writes, on purpose: the daily job in api/jobs/subscription-expiry-job.ts is the owner of
-      // this downgrade, and this is the safety net for the hours between its runs. It goes through the same
-      // helper so the paid plan does not survive in a cached session.
+    const storeSub = storeSubs[0];
+    let activeSubscriptionFound = false;
+
+    // Check web subscription
+    if (sub) {
+      if ((sub.status === "active" || sub.status === "cancelled") && sub.endDate >= now) {
+        activeSubscriptionFound = true;
+      } else if ((sub.status === "active" || sub.status === "cancelled") && sub.endDate < now) {
+        await db
+          .update(proSubscriptions)
+          .set({ status: "expired" })
+          .where(eq(proSubscriptions.id, sub.id));
+        sub.status = "expired";
+      }
+    }
+
+    // Check mobile store subscription
+    if (storeSub) {
+      if (storeSub.status === "in_grace_period") {
+        activeSubscriptionFound = true;
+      } else if (storeSub.expiresAt && (storeSub.status === "active" || storeSub.status === "cancelled") && storeSub.expiresAt >= now) {
+        activeSubscriptionFound = true;
+      } else if (storeSub.expiresAt && (storeSub.status === "active" || storeSub.status === "cancelled") && storeSub.expiresAt < now) {
+        await db
+          .update(storePurchases)
+          .set({ status: "expired" })
+          .where(eq(storePurchases.id, storeSub.id));
+        storeSub.status = "expired";
+      }
+    }
+
+    // Downgrade to free if no active subscription exists
+    if (!activeSubscriptionFound && plan !== "free" && role !== "admin") {
       await setPlan(ctx.user.type, ctx.user.id, "free");
       plan = "free";
-      sub.status = "expired";
     }
+
+    const effectiveSubscription = sub ?? (storeSub ? {
+      id: storeSub.id,
+      userId: storeSub.userId,
+      userType: storeSub.userType,
+      plan: storeSub.storeProductId?.toLowerCase().includes("ultra") ? "ultra" : "pro",
+      status: storeSub.status,
+      startDate: storeSub.createdAt,
+      endDate: storeSub.expiresAt ?? storeSub.createdAt,
+      paymobOrderId: storeSub.originalTransactionId,
+    } : null);
 
     const settings = await getSystemSettings().catch(() => ({} as Record<string, string>));
 
     return {
       plan,
       role,
-      subscription: sub ?? null,
+      subscription: effectiveSubscription,
       features: planFeatures(settings, plan, role),
       included: buildPlanCatalogEntry(settings, asPlanId(plan)),
     };
@@ -199,5 +322,38 @@ export const proRouter = router({
         ? await totalQuery.where(eq(proSubscriptions.status, status))
         : await totalQuery;
       return { list, total: total[0]?.count ?? 0, page, limit };
+    }),
+
+  /** Whether the stores can sell here, and the value the app passes with a purchase to tie it to this account. */
+  storeBilling: authedProcedure.query(({ ctx }) => ({
+    googlePlay: isGooglePlayConfigured(),
+    appStore: isAppStoreConfigured(),
+    productIds: STORE_PRODUCT_IDS,
+    accountToken: storeAccountToken({ userId: ctx.user.id, userType: ctx.user.type as "local" | "oauth" }),
+  })),
+
+  /** Records a purchase the store confirms. What the phone sends only says where to look. */
+  verifyStorePurchase: authedProcedure
+    .input(storePurchaseInput)
+    .mutation(async ({ ctx, input }) => {
+      const result = await confirmStorePurchase(ctx.user, input.store, input.purchaseToken);
+      if (result.outcome === "owned_by_another_account") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "عملية الشراء دي مسجلة على حساب تاني." });
+      }
+      if (result.outcome === "unknown_purchase") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "المتجر ما أكدش عملية الشراء دي." });
+      }
+      return { state: result.state, plan: result.plan };
+    }),
+
+  /** Restores the store purchases this phone holds, for a new phone or a reinstall. */
+  restorePurchases: authedProcedure
+    .input(z.object({ store: z.enum(STORE_IDS), tokens: z.array(storePurchaseInput.shape.purchaseToken).max(20) }))
+    .mutation(async ({ ctx, input }) => {
+      const results = await Promise.all(
+        input.tokens.map((token) => confirmStorePurchase(ctx.user, input.store, token)),
+      );
+      const restored = results.some((result) => "state" in result && (result.state === "active" || result.state === "in_grace_period"));
+      return { restored };
     }),
 });

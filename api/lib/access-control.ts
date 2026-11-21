@@ -20,6 +20,7 @@ type Writer = Pick<typeof db, "update">;
 import { CacheKeys } from "./cache-keys";
 import { cacheDel } from "./redis-client";
 import { bumpAuthVersion, hashSessionToken, type SessionUserType } from "./session-validation";
+import { revokeAllCaptureDevices } from "./capture/devices";
 
 export type UserRole = "user" | "moderator" | "admin";
 export type UserPlan = "free" | "pro" | "ultra";
@@ -75,15 +76,21 @@ export async function setPlan(
   userType: SessionUserType,
   userId: number,
   plan: UserPlan,
-  options: { tx?: Writer } = {},
-): Promise<void> {
+  options: { tx?: Writer; deferInvalidation?: boolean } = {},
+): Promise<(() => Promise<void>) | void> {
   const writer = options.tx ?? db;
   if (userType === "oauth") {
     await writer.update(users).set({ plan }).where(eq(users.id, userId));
   } else {
     await writer.update(localUsers).set({ plan }).where(eq(localUsers.id, userId));
   }
-  await bumpAuthVersion(userType, userId);
+  const invalidate = async (): Promise<void> => {
+    await bumpAuthVersion(userType, userId);
+  };
+  if (options.deferInvalidation) {
+    return invalidate;
+  }
+  await invalidate();
 }
 
 /**
@@ -119,6 +126,9 @@ export async function revokeSession(input: {
 
 /** Ends every session of one user: account deletion, a password change, "sign out everywhere". */
 export async function revokeAllSessions(userType: SessionUserType, userId: number): Promise<number> {
+  // The phones that send captured notifications stop too; the auth version bumped below makes their cached tokens
+  // be read again (api/lib/capture/devices.ts).
+  await revokeAllCaptureDevices({ userId, userType });
   const rows = await db.query.sessions.findMany({
     where: and(eq(sessions.userId, userId), eq(sessions.userType, userType)),
   });

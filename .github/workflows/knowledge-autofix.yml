@@ -1,7 +1,7 @@
 name: Knowledge autofix
 
-# When code reaches main without its regenerated atlas, rebuild docs/atlas and docs/architecture/generated
-# from the code and commit them to main, and write a summary of what changed in the system. Pushes made with
+# When code reaches main without its regenerated atlas, rebuild the generated folders (docs/atlas,
+# docs/architecture/generated and the mobile app's procedure catalog) from the code and commit them to main, and write a summary of what changed in the system. Pushes made with
 # GITHUB_TOKEN do not start other workflows, so the bot commit cannot loop.
 on:
   push:
@@ -33,17 +33,20 @@ jobs:
         continue-on-error: true
         run: npm run --silent changes -- --from "${{ github.event.before }}" --to "${{ github.sha }}" --lang ar >> "$GITHUB_STEP_SUMMARY"
       - name: Regenerate, and commit when the atlas is stale
+        env:
+          # GENERATED_PATHS in scripts/agent/lib.mjs.
+          GENERATED: docs/atlas docs/architecture/generated mobile/packages/smartspend_api/lib/src/generated
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           for attempt in 1 2 3; do
             npm run atlas
-            if git diff --quiet -- docs/atlas docs/architecture/generated \
-              && [ -z "$(git ls-files --others --exclude-standard -- docs/atlas docs/architecture/generated)" ]; then
+            if git diff --quiet -- $GENERATED \
+              && [ -z "$(git ls-files --others --exclude-standard -- $GENERATED)" ]; then
               echo "The atlas already matches the code on main."
               exit 0
             fi
-            git add -- docs/atlas docs/architecture/generated
+            git add -- $GENERATED
             git commit -m "chore(atlas): regenerate from the code on main" -m "Agent: ci-autofix"
             if git push origin HEAD:main; then
               echo "Committed the regenerated atlas to main."

@@ -7,20 +7,26 @@
 import { TRPCError } from "@trpc/server";
 import Decimal from "decimal.js";
 import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
-import { cashflowSettlements, expenses, installmentPlans, scheduledCashflows, userContacts, userWallets } from "../../../db/schema";
+import { cashflowSettlements, commitmentOverrides, commitmentScheduleItems, expenses, installmentPlans, scheduledCashflows, userContacts, userWallets } from "../../../db/schema";
 import { businessDateKey, startOfBusinessDay } from "../../lib/app-time";
 import { normalizeArabic } from "../../lib/unified-normalizer";
 import { db } from "../../queries/connection";
+import { getSystemSettings } from "../../lib/settings-cache";
+import { walletBalancePolicies } from "../wallet-balance-policy";
+import { financialMovement } from "../../../contracts/ledger-movement";
 import { LOAN_CATEGORY, LOAN_SUBCATEGORY } from "../debt-ledger";
 import { getProfileSnapshot } from "../finance-semantic-layer";
-import { addDays, cashPosition, dueDays, isCalendarDay, occurrences, type CashPosition, type Occurrence, type ScheduleRow } from "./schedule";
+import { addDays, cashPosition, dueDays, isCalendarDay, occurrences, type CashPosition, type Occurrence, type ScheduleRow, type Shape } from "./schedule";
 
 export interface CoachUser {
   userId: number;
   userType: string;
 }
 
-export const CASHFLOW_KINDS = ["rent", "bill", "subscription", "school", "installment", "debt", "gam3eya", "salary", "freelance", "other"] as const;
+export const CASHFLOW_KINDS = [
+  "rent", "bill", "subscription", "school", "university", "lessons", "installment", "loan", "property", "card",
+  "debt", "gam3eya", "salary", "freelance", "other",
+] as const;
 export type CashflowKind = (typeof CASHFLOW_KINDS)[number];
 
 export interface CashflowInput {
@@ -34,12 +40,32 @@ export interface CashflowInput {
   certainty: "confirmed" | "estimated";
   installmentPlanId?: number | null;
   contactId?: number | null;
+  businessId?: number | null;
   source: "user" | "voice" | "chat";
+  /** The commitments ecosystem's fields (docs/decisions/0051-commitments-ecosystem.md); absent on older callers. */
+  shape?: Shape | null;
+  provider?: string | null;
+  catalogSlug?: string | null;
+  beneficiaryContactId?: number | null;
+  intervalCount?: number | null;
+  occurrenceCount?: number | null;
+  paidBeforeCount?: number | null;
+  totalAmount?: number | null;
+  amountVaries?: boolean | null;
+  paymentMethod?: string | null;
+  gam3eyaTurn?: number | null;
+  parentId?: number | null;
+  category?: string | null;
+  subCategory?: string | null;
+  originExpenseId?: number | null;
+  remindDaysBefore?: number | null;
+  remindHour?: number | null;
+  remindersEnabled?: boolean | null;
 }
 
 const scope = (user: CoachUser) => and(eq(scheduledCashflows.userId, user.userId), eq(scheduledCashflows.userType, user.userType));
 
-function toScheduleRow(row: typeof scheduledCashflows.$inferSelect, contactName: string | null = null): ScheduleRow {
+export function toScheduleRow(row: typeof scheduledCashflows.$inferSelect, contactName: string | null = null): ScheduleRow {
   return {
     id: row.id,
     kind: row.kind,
@@ -54,7 +80,46 @@ function toScheduleRow(row: typeof scheduledCashflows.$inferSelect, contactName:
     trackedFrom: businessDateKey(row.createdAt),
     contactId: row.contactId,
     contactName,
+    shape: (row.shape as Shape | null) ?? null,
+    intervalCount: row.intervalCount,
+    occurrenceCount: row.occurrenceCount,
+    paidBeforeCount: row.paidBeforeCount,
+    totalAmount: row.totalAmount,
+    amountVaries: row.amountVaries,
+    parentId: row.parentId,
   };
+}
+
+/** Attaches each row's dated items, its overrides and, for a varying amount, the average of its last three payments. */
+export async function withScheduleDetails(user: CoachUser, rows: ScheduleRow[]): Promise<ScheduleRow[]> {
+  if (!rows.length) return rows;
+  const ids = rows.map((row) => row.id);
+  const owner = (table: typeof commitmentScheduleItems | typeof commitmentOverrides | typeof cashflowSettlements) =>
+    and(eq(table.userId, user.userId), eq(table.userType, user.userType), inArray(table.cashflowId, ids));
+  const [items, overrides, paid] = await Promise.all([
+    db.select().from(commitmentScheduleItems).where(owner(commitmentScheduleItems)),
+    db.select().from(commitmentOverrides).where(owner(commitmentOverrides)),
+    rows.some((row) => row.amountVaries)
+      ? db.select({ cashflowId: cashflowSettlements.cashflowId, dueDay: cashflowSettlements.dueDay, amount: cashflowSettlements.amount })
+        .from(cashflowSettlements).where(owner(cashflowSettlements)).orderBy(desc(cashflowSettlements.dueDay)).limit(500)
+      : Promise.resolve([]),
+  ]);
+  return rows.map((row) => {
+    const own = paid.filter((settlement) => settlement.cashflowId === row.id);
+    const byDay = new Map<string, Decimal>();
+    for (const settlement of own) byDay.set(settlement.dueDay, (byDay.get(settlement.dueDay) ?? new Decimal(0)).plus(settlement.amount));
+    const recent = [...byDay.values()].slice(0, 3);
+    return {
+      ...row,
+      items: items.filter((item) => item.cashflowId === row.id).map((item) => ({ dueDay: item.dueDay, amount: item.amount, label: item.label })),
+      overrides: overrides.filter((item) => item.cashflowId === row.id).map((item) => ({
+        dueDay: item.dueDay, action: item.action as "skip" | "move" | "amount", newDay: item.newDay, amount: item.amount,
+      })),
+      estimatedAmount: row.amountVaries && recent.length
+        ? recent.reduce((sum, value) => sum.plus(value), new Decimal(0)).div(recent.length).toDecimalPlaces(2).toNumber()
+        : null,
+    };
+  });
 }
 
 export async function listCashflows(user: CoachUser): Promise<ScheduleRow[]> {
@@ -62,7 +127,7 @@ export async function listCashflows(user: CoachUser): Promise<ScheduleRow[]> {
     .leftJoin(userContacts, and(eq(userContacts.id, scheduledCashflows.contactId), eq(userContacts.userId, user.userId), eq(userContacts.userType, user.userType)))
     .where(and(scope(user), inArray(scheduledCashflows.status, ["active", "paused"])))
     .orderBy(desc(scheduledCashflows.createdAt)).limit(200);
-  return rows.map((row) => toScheduleRow(row.schedule, row.contactName));
+  return withScheduleDetails(user, rows.map((row) => toScheduleRow(row.schedule, row.contactName)));
 }
 
 /** Exact normalized names only: overlapping or duplicate names need the user's choice, never a fuzzy guess. */
@@ -91,7 +156,10 @@ export function canPayCashflow(schedule: Payable, payment: Payment): boolean {
     ? direction === (schedule.direction === "in" ? "incoming" : "outgoing")
     : payment.type === (schedule.direction === "in" ? "income" : "expense");
   if (!rightWay || (schedule.contactId != null && payment.contactId !== schedule.contactId)) return false;
-  return schedule.kind !== "debt" || (payment.type === "transfer" && payment.category === LOAN_CATEGORY && payment.subCategory === LOAN_SUBCATEGORY);
+  const financial = financialMovement(payment);
+  // Paying a credit card moves the user's own money: it is a card payment, never new spending.
+  if (schedule.kind === "card") return financial?.kind === "card_payment";
+  return schedule.kind !== "debt" || (financial ? financial.kind === "loan" : payment.category === LOAN_CATEGORY && payment.subCategory === LOAN_SUBCATEGORY);
 }
 
 async function assertOwned(user: CoachUser, input: Pick<CashflowInput, "installmentPlanId" | "contactId">): Promise<void> {
@@ -133,6 +201,25 @@ export async function createCashflow(user: CoachUser, input: CashflowInput): Pro
     source: input.source,
     installmentPlanId: input.installmentPlanId ?? null,
     contactId: input.contactId ?? null,
+    businessId: input.businessId ?? null,
+    shape: input.shape ?? null,
+    provider: input.provider ?? null,
+    catalogSlug: input.catalogSlug ?? null,
+    beneficiaryContactId: input.beneficiaryContactId ?? null,
+    intervalCount: Math.max(1, Math.floor(input.intervalCount ?? 1)),
+    occurrenceCount: input.occurrenceCount ?? null,
+    paidBeforeCount: Math.max(0, Math.floor(input.paidBeforeCount ?? 0)),
+    totalAmount: input.totalAmount == null ? null : new Decimal(input.totalAmount).toFixed(2),
+    amountVaries: input.amountVaries ?? false,
+    paymentMethod: input.paymentMethod ?? null,
+    gam3eyaTurn: input.gam3eyaTurn ?? null,
+    parentId: input.parentId ?? null,
+    category: input.category ?? null,
+    subCategory: input.subCategory ?? null,
+    originExpenseId: input.originExpenseId ?? null,
+    remindDaysBefore: input.remindDaysBefore ?? null,
+    remindHour: input.remindHour ?? null,
+    remindersEnabled: input.remindersEnabled ?? true,
   });
   return { id: Number(inserted.insertId) };
 }
@@ -147,10 +234,25 @@ function assertDates(input: { startDay?: string | null; endDay?: string | null }
 export async function updateCashflow(
   user: CoachUser,
   id: number,
-  patch: Partial<Omit<CashflowInput, "source" | "installmentPlanId">> & { status?: "active" | "paused" | "ended" },
+  patch: Partial<Omit<CashflowInput, "source" | "installmentPlanId" | "parentId" | "originExpenseId" | "shape">> & { status?: "active" | "paused" | "ended" },
 ): Promise<void> {
   await assertOwned(user, { contactId: patch.contactId });
+  if (patch.beneficiaryContactId) await assertOwned(user, { contactId: patch.beneficiaryContactId });
   const set: Partial<typeof scheduledCashflows.$inferInsert> = {};
+  if (patch.provider !== undefined) set.provider = patch.provider;
+  if (patch.beneficiaryContactId !== undefined) set.beneficiaryContactId = patch.beneficiaryContactId;
+  if (patch.intervalCount != null) set.intervalCount = Math.max(1, Math.floor(patch.intervalCount));
+  if (patch.occurrenceCount !== undefined) set.occurrenceCount = patch.occurrenceCount;
+  if (patch.paidBeforeCount != null) set.paidBeforeCount = Math.max(0, Math.floor(patch.paidBeforeCount));
+  if (patch.totalAmount !== undefined) set.totalAmount = patch.totalAmount === null ? null : new Decimal(patch.totalAmount).toFixed(2);
+  if (patch.amountVaries != null) set.amountVaries = patch.amountVaries;
+  if (patch.paymentMethod !== undefined) set.paymentMethod = patch.paymentMethod;
+  if (patch.gam3eyaTurn !== undefined) set.gam3eyaTurn = patch.gam3eyaTurn;
+  if (patch.category !== undefined) set.category = patch.category;
+  if (patch.subCategory !== undefined) set.subCategory = patch.subCategory;
+  if (patch.remindDaysBefore !== undefined) set.remindDaysBefore = patch.remindDaysBefore;
+  if (patch.remindHour !== undefined) set.remindHour = patch.remindHour;
+  if (patch.remindersEnabled != null) set.remindersEnabled = patch.remindersEnabled;
   if (patch.kind) set.kind = patch.kind;
   if (patch.direction) set.direction = patch.direction;
   if (patch.title) set.title = patch.title;
@@ -160,12 +262,13 @@ export async function updateCashflow(
   if (patch.endDay !== undefined) set.endDay = patch.endDay;
   if (patch.certainty) set.certainty = patch.certainty;
   if (patch.contactId !== undefined) set.contactId = patch.contactId;
+  if (patch.businessId !== undefined) set.businessId = patch.businessId;
   if (patch.status) set.status = patch.status;
   await db.transaction(async (tx) => {
     const [row] = await tx.select().from(scheduledCashflows).where(and(scope(user), eq(scheduledCashflows.id, id))).limit(1).for("update");
     if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "الالتزام ده مش موجود." });
     if (!Object.keys(set).length) return;
-    const changed = toScheduleRow({ ...row, ...set } as typeof row);
+    const [changed] = await withScheduleDetails(user, [toScheduleRow({ ...row, ...set } as typeof row)]);
     assertDates(changed);
     const allocations = await tx.select().from(cashflowSettlements).where(and(
       eq(cashflowSettlements.userId, user.userId), eq(cashflowSettlements.userType, user.userType), eq(cashflowSettlements.cashflowId, id),
@@ -191,12 +294,12 @@ export async function updateCashflow(
  */
 export async function settle(
   user: CoachUser,
-  input: { cashflowId: number; dueDay: string; expenseId?: number | null; amount?: number | null },
+  input: { cashflowId: number; dueDay: string; expenseId?: number | null; amount?: number | null; matchedBy?: "user" | "auto" | "question" | "voice" | "chat" },
 ): Promise<{ id: number; amount: number }> {
   return db.transaction(async (tx) => {
     const [row] = await tx.select().from(scheduledCashflows).where(and(scope(user), eq(scheduledCashflows.id, input.cashflowId))).limit(1).for("update");
     if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "الالتزام ده مش موجود." });
-    const schedule = toScheduleRow(row);
+    const [schedule] = await withScheduleDetails(user, [toScheduleRow(row)]);
     if (!dueDays(schedule, input.dueDay, input.dueDay).length) {
       throw new TRPCError({ code: "BAD_REQUEST", message: "اليوم ده مش من مواعيد الالتزام ده." });
     }
@@ -205,7 +308,10 @@ export async function settle(
       eq(cashflowSettlements.cashflowId, input.cashflowId), eq(cashflowSettlements.dueDay, input.dueDay),
     ));
     const paid = paidRows.reduce((sum, paidRow) => sum.plus(paidRow.amount), new Decimal(0));
-    const due = row.amount === null ? null : new Decimal(row.amount);
+    // What this date owes: its own override or item amount, a debt's total, or the row's amount.
+    const [occurrence] = occurrences([{ ...schedule, status: "active" }], [], input.dueDay, input.dueDay, input.dueDay)
+      .filter((item) => item.dueDay === input.dueDay);
+    const due = occurrence?.amount != null && !occurrence.estimated ? new Decimal(occurrence.amount) : row.amount === null ? null : new Decimal(row.amount);
     const owed = due ? Decimal.max(0, due.minus(paid)) : null;
     if (owed?.isZero() || (due === null && paidRows.length > 0)) {
       throw new TRPCError({ code: "CONFLICT", message: "الموعد ده متسدد بالفعل." });
@@ -249,6 +355,7 @@ export async function settle(
       expenseId: input.expenseId ?? null,
       amount: amount.toFixed(2),
       source: input.expenseId ? "linked" : "declared",
+      matchedBy: input.matchedBy ?? "user",
     });
     return { id: Number(inserted.insertId), amount: amount.toNumber() };
   });
@@ -279,14 +386,19 @@ export async function upcoming(user: CoachUser, from: string, to: string, today 
 /** What the records say is free until the next payday (api/services/coach/schedule.ts#cashPosition). */
 export async function position(user: CoachUser, now = new Date()): Promise<CashPosition> {
   const today = businessDateKey(now);
+  const policy = (await getSystemSettings()).capture_financial_version === "cashflow-v1" ? await walletBalancePolicies(user) : null;
   const [rows, settlements, wallets, profile] = await Promise.all([
     listCashflows(user),
-    listSettlements(user, addDays(today, -60)),
-    db.select({ balance: userWallets.balance, observedAt: userWallets.balanceObservedAt }).from(userWallets)
+    listSettlements(user, addDays(today, -410)),
+    db.select({ id: userWallets.id, balance: userWallets.balance, observedAt: userWallets.balanceObservedAt }).from(userWallets)
       .where(and(eq(userWallets.userId, user.userId), eq(userWallets.userType, user.userType))),
     getProfileSnapshot({ userId: user.userId, userType: user.userType }).catch(() => null),
   ]);
-  return cashPosition({ today, salaryDay: profile?.salaryDay ?? null, wallets, rows, settlements });
+  return cashPosition({
+    today, salaryDay: profile?.salaryDay ?? null, wallets: wallets.filter((wallet) => !policy?.creditWalletIds.has(wallet.id)), rows, settlements,
+    // An unpaid date stays owed for a year (docs/decisions/0051-commitments-ecosystem.md).
+    overdueLookbackDays: 400,
+  });
 }
 
 /**

@@ -14,6 +14,7 @@ import {
   AdaptiveDialogTitle,
 } from "@/components/ui/adaptive-dialog";
 import { ExpenseInputLimits } from "@contracts/constants";
+import { financialBucket } from "@contracts/ledger-movement";
 import {
   defaultSubCategory,
   getCategoryOptionsForType,
@@ -21,6 +22,8 @@ import {
 } from "@/lib/financial-taxonomy";
 
 export interface EditableExpense {
+  bundle?: { feeAmount: string } | null;
+  parsedMetadata?: unknown;
   id: number;
   amount: string | number;
   type: string;
@@ -41,9 +44,9 @@ const TYPE_OPTIONS = [
 type ExpenseType = (typeof TYPE_OPTIONS)[number]["value"];
 
 /** A refund is stored as a negative expense (ledgerAmount on the server). */
-function kindOf(expense: { type: string; amount: string | number }): ExpenseType {
+function kindOf(expense: EditableExpense): ExpenseType {
   if (expense.type === "expense" && Number(expense.amount) < 0) return "refund";
-  return (expense.type as ExpenseType) || "expense";
+  return (financialBucket(expense) as ExpenseType) || "expense";
 }
 
 /** The day of an instant on this device, as the date input shows it (YYYY-MM-DD). */
@@ -72,6 +75,7 @@ export function EditExpenseDialog({
   const originalKind = kindOf(expense);
   const originalAmount = Math.abs(Number(expense.amount));
   const [amount, setAmount] = useState(String(originalAmount));
+  const [fee, setFee] = useState(String(Number(expense.bundle?.feeAmount ?? 0)));
   const [type, setType] = useState<ExpenseType>(originalKind);
   const [category, setCategory] = useState(expense.category);
   const [subCategory, setSubCategory] = useState(expense.subCategory || "عام");
@@ -96,8 +100,13 @@ export function EditExpenseDialog({
     }
     // Only what changed is sent, so an untouched date keeps its time of day.
     const changes: Parameters<typeof update.mutate>[0] = { id: expense.id };
+    if (expense.bundle && Number(fee) !== Number(expense.bundle.feeAmount)) {
+      if (!Number.isFinite(Number(fee)) || Number(fee) < 0 || Number(fee) > ExpenseInputLimits.amountMax) { toast.error("اكتب رسوم صحيحة أو صفر"); return; }
+      changes.linkedFeeAmount = Number(fee);
+    }
     if (value !== originalAmount) changes.amount = value;
     if (type !== originalKind) {
+      changes.movementKind = type === "refund" ? "refund" : type === "transfer" ? "personal_transfer" : type === "investment" ? "investment" : type === "income" ? "income" : "spending";
       const storedType = type === "refund" ? "expense" : type;
       if (storedType !== expense.type) changes.type = storedType;
       changes.refund = type === "refund";
@@ -126,7 +135,7 @@ export function EditExpenseDialog({
         </AdaptiveDialogHeader>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <Label htmlFor={`edit-amount-${expense.id}`}>المبلغ</Label>
+            <Label htmlFor={`edit-amount-${expense.id}`}>{expense.bundle ? "المبلغ قبل الرسوم" : "المبلغ"}</Label>
             <Input
               id={`edit-amount-${expense.id}`}
               type="number"
@@ -135,6 +144,7 @@ export function EditExpenseDialog({
               onChange={(event) => setAmount(event.target.value)}
             />
           </div>
+          {expense.bundle && <div className="space-y-1"><Label htmlFor={`edit-fee-${expense.id}`}>الرسوم</Label><Input id={`edit-fee-${expense.id}`} type="number" inputMode="decimal" min="0" step="0.01" value={fee} onChange={(event) => setFee(event.target.value)} /></div>}
           <div className="space-y-1">
             <Label htmlFor={`edit-type-${expense.id}`}>النوع</Label>
             <select

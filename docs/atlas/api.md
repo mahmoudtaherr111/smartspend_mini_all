@@ -10,17 +10,18 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | --- | --- | --- | --- | --- | --- |
 | `adminProcedure` | `authedProcedure` | inherited | — | admin | — |
 | `aiProcedure` | `authedProcedure` | inherited | 100 per 1 min (`aiRateLimiter`) | — | — |
-| `authedProcedure` | `t.procedure` | yes | 100 per 1 min (`userRateLimiter`) | — | — |
+| `authedProcedure` | `t.procedure` | yes | 300 per 1 min (`userRateLimiter`) | — | — |
 | `businessAiProcedure` | `planFeatureAiProcedure` | inherited | — | — | — |
 | `businessProcedure` | `planFeatureProcedure` | inherited | — | — | — |
+| `commitmentsProcedure` | `planFeatureProcedure` | inherited | — | — | — |
 | `goalAnalysisProcedure` | `planFeatureProcedure` | inherited | — | — | — |
 | `moderatorProcedure` | `authedProcedure` | inherited | — | admin, moderator | — |
 | `proAiProcedure` | `proProcedure` | inherited | 100 per 1 min (`aiRateLimiter`) | — | — |
 | `proProcedure` | `authedProcedure` | inherited | — | admin | pro, ultra |
 | `proReportProcedure` | `planFeatureProcedure` | inherited | — | — | — |
-| `publicProcedure` | `t.procedure` | no | 400 per 1 min (`publicIpLimiter`) | — | — |
+| `publicProcedure` | `t.procedure` | no | 3000 per 1 min (`publicIpLimiter`) | — | — |
 | `receiptsProcedure` | `planFeatureProcedure` | inherited | — | — | — |
-| `strictPublicProcedure` | `t.procedure` | no | 25 per 15 min (`strictPublicIpLimiter`) | — | — |
+| `strictPublicProcedure` | `t.procedure` | no | 300 per 15 min (`strictPublicIpLimiter`) | — | — |
 | `ultraProcedure` | `authedProcedure` | inherited | — | admin | ultra |
 
 ## Routers
@@ -28,28 +29,34 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | Router | File | Procedures | Queries | Mutations | Builders used |
 | --- | --- | --- | --- | --- | --- |
 | `admin` | `api/admin-router.ts` | 57 | 29 | 28 | `adminProcedure` |
-| `adminWhatsapp` | `api/admin-whatsapp-router.ts` | 9 | 3 | 6 | `adminProcedure` |
-| `ads` | `api/ads-router.ts` | 7 | 2 | 5 | `adminProcedure`, `authedProcedure`, `publicProcedure` |
+| `adminConsole` | `api/admin-console-router.ts` | 15 | 14 | 1 | `adminProcedure`, `moderatorProcedure` |
+| `adminWhatsapp` | `api/admin-whatsapp-router.ts` | 14 | 5 | 9 | `adminProcedure` |
+| `ads` | `api/ads-router.ts` | 8 | 2 | 6 | `adminProcedure`, `authedProcedure`, `publicProcedure` |
 | `ai` | `api/ai-router.ts` | 9 | 2 | 7 | `aiProcedure`, `authedProcedure` |
+| `aiSetup` | `api/ai-setup-router.ts` | 6 | 1 | 5 | `adminProcedure` |
 | `analytics` | `api/analytics-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
-| `auth` | `api/auth-router.ts` | 4 | 2 | 2 | `authedProcedure`, `publicProcedure`, `strictPublicProcedure` |
+| `appConfig` | `api/app-config-router.ts` | 1 | 1 | 0 | `publicProcedure` |
+| `auth` | `api/auth-router.ts` | 5 | 2 | 3 | `authedProcedure`, `publicProcedure`, `strictPublicProcedure` |
 | `budget` | `api/budget-router.ts` | 4 | 1 | 3 | `authedProcedure` |
 | `business` | `api/business-router.ts` | 10 | 2 | 8 | `businessAiProcedure`, `businessProcedure` |
+| `capture` | `api/capture-router.ts` | 21 | 9 | 12 | `authedProcedure` |
+| `captureAdmin` | `api/capture-admin-router.ts` | 13 | 3 | 10 | `adminProcedure` |
 | `chat` | `api/chat-router.ts` | 10 | 4 | 6 | `aiProcedure`, `authedProcedure` |
 | `coach` | `api/coach-router.ts` | 10 | 2 | 8 | `authedProcedure` |
+| `commitments` | `api/commitments-router.ts` | 17 | 8 | 9 | `commitmentsProcedure` |
 | `expense` | `api/expense-router.ts` | 21 | 12 | 9 | `authedProcedure` |
 | `export` | `api/export-router.ts` | 3 | 0 | 3 | `adminProcedure`, `authedProcedure`, `proReportProcedure` |
 | `goals` | `api/goals-router.ts` | 5 | 1 | 4 | `authedProcedure`, `goalAnalysisProcedure` |
 | `image` | `api/image-router.ts` | 1 | 0 | 1 | `receiptsProcedure` |
-| `localAuth` | `api/local-auth-router.ts` | 12 | 5 | 7 | `adminProcedure`, `publicProcedure`, `strictPublicProcedure` |
-| `pro` | `api/pro-router.ts` | 6 | 3 | 3 | `adminProcedure`, `authedProcedure` |
-| `profile` | `api/profile-router.ts` | 29 | 9 | 20 | `authedProcedure` |
-| `referral` | `api/referral-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
-| `seo` | `api/seo-router.ts` | 5 | 3 | 2 | `adminProcedure`, `publicProcedure` |
+| `localAuth` | `api/local-auth-router.ts` | 13 | 4 | 9 | `adminProcedure`, `publicProcedure`, `strictPublicProcedure` |
+| `pro` | `api/pro-router.ts` | 9 | 4 | 5 | `adminProcedure`, `authedProcedure` |
+| `profile` | `api/profile-router.ts` | 22 | 6 | 16 | `authedProcedure` |
+| `seo` | `api/seo-router.ts` | 4 | 2 | 2 | `adminProcedure`, `publicProcedure` |
 | `session` | `api/session-router.ts` | 5 | 3 | 2 | `adminProcedure`, `authedProcedure` |
-| `support` | `api/support-router.ts` | 7 | 3 | 4 | `adminProcedure`, `authedProcedure` |
+| `support` | `api/support-router.ts` | 7 | 3 | 4 | `adminProcedure`, `authedProcedure`, `moderatorProcedure` |
+| `taxonomy` | `api/taxonomy-router.ts` | 1 | 1 | 0 | `authedProcedure` |
 | `voice` | `api/voice-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
-| `wallet` | `api/wallet-router.ts` | 5 | 2 | 3 | `authedProcedure` |
+| `wallet` | `api/wallet-router.ts` | 6 | 3 | 3 | `authedProcedure` |
 | `webauthn` | `api/webauthn-router.ts` | 6 | 1 | 5 | `authedProcedure`, `strictPublicProcedure` |
 
 ## Procedures by router
@@ -58,17 +65,16 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `admin.addAiProvider` | mutation | `adminProcedure` | yes | — | `ai_providers` | `api/lib/ai-gateway.ts`, `api/lib/provider-key-crypto.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.addAiProvider` | mutation | `adminProcedure` | yes | — | `ai_providers` | `api/lib/admin-audit.ts`, `api/lib/ai-gateway.ts`, `api/lib/provider-key-crypto.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.checkProviderHealth` | mutation | `adminProcedure` | no | `ai_providers` | `ai_providers` | `api/lib/ai-gateway.ts`, `api/lib/provider-key-crypto.ts` | — |
-| `admin.clearAllApiKeyErrors` | mutation | `adminProcedure` | no | — | — | `api/lib/error-logger.ts` | `src/pages/Admin.tsx` |
-| `admin.createDiscountCode` | mutation | `adminProcedure` | yes | `discount_codes` | `discount_codes` | — | `src/components/admin/settings/AdminCodesTab.tsx` |
-| `admin.createNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | — | `src/components/admin/NotificationsTab.tsx` |
-| `admin.deleteAiProvider` | mutation | `adminProcedure` | yes | — | `ai_models`, `ai_providers` | `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.deleteDiscountCode` | mutation | `adminProcedure` | yes | — | `discount_codes` | — | `src/components/admin/settings/AdminCodesTab.tsx` |
-| `admin.deleteLearnedRule` | mutation | `adminProcedure` | yes | — | `user_dictionaries` | — | `src/components/admin/AdminRulesTab.tsx` |
-| `admin.deleteNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | — | `src/components/admin/NotificationsTab.tsx` |
-| `admin.deleteUser` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts`, `api/services/user-purge-service.ts` | `src/hooks/useAdmin.ts` |
+| `admin.clearAllApiKeyErrors` | mutation | `adminProcedure` | no | — | — | `api/lib/admin-audit.ts`, `api/lib/error-logger.ts` | `src/pages/Admin.tsx` |
+| `admin.createNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | `api/lib/admin-audit.ts` | `src/components/admin/NotificationsTab.tsx` |
+| `admin.deleteAiProvider` | mutation | `adminProcedure` | yes | — | `ai_models`, `ai_providers` | `api/lib/admin-audit.ts`, `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.deleteLearnedRule` | mutation | `adminProcedure` | yes | — | `user_dictionaries` | `api/lib/admin-audit.ts` | `src/components/admin/AdminRulesTab.tsx` |
+| `admin.deleteNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | `api/lib/admin-audit.ts` | `src/components/admin/NotificationsTab.tsx` |
+| `admin.deleteUser` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts`, `api/lib/admin-audit.ts`, `api/services/user-purge-service.ts` | `src/hooks/useAdmin.ts` |
 | `admin.discoverProviderModels` | mutation | `adminProcedure` | yes | — | — | `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.generateBackupExport` | mutation | `adminProcedure` | no | — | — | `api/lib/admin-audit.ts` | — |
 | `admin.getAIClassificationStats` | query | `adminProcedure` | no | `classification_logs` | — | — | `src/hooks/useAdmin.ts` |
 | `admin.getAICostOverview` | query | `adminProcedure` | yes | — | — | `api/services/ai-cost-analytics.ts` | `src/pages/Admin.tsx` |
 | `admin.getActivityLog` | query | `adminProcedure` | yes | `local_users`, `sessions`, `users` | — | — | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
@@ -77,19 +83,18 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `admin.getAiTelemetryOverview` | query | `adminProcedure` | no | `ai_token_ledgers` | — | `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` |
 | `admin.getAiTokenLedger` | query | `adminProcedure` | yes | `ai_token_ledgers` | — | — | — |
 | `admin.getApiKeyErrors` | query | `adminProcedure` | yes | — | — | `api/lib/error-logger.ts` | `src/pages/Admin.tsx` |
+| `admin.getAuditLogs` | query | `adminProcedure` | yes | `admin_audit_logs`, `local_users`, `users` | — | — | `src/components/admin/AdminAuditTab.tsx` |
 | `admin.getAvailableModels` | query | `adminProcedure` | no | — | — | `api/lib/env.ts`, `api/lib/settings-cache.ts` | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getClassificationLogs` | query | `adminProcedure` | yes | `classification_logs`, `local_users`, `users` | — | — | `src/hooks/useAdmin.ts` |
 | `admin.getClassificationQuality` | query | `adminProcedure` | yes | `classification_logs` | — | — | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` |
-| `admin.getDashboardStats` | query | `adminProcedure` | no | `expense_daily_rollups`, `local_users`, `sessions`, `support_tickets`, `users` | — | `api/lib/app-time.ts` | `src/hooks/useAdmin.ts` |
-| `admin.getDiscountCodes` | query | `adminProcedure` | no | `discount_codes` | — | — | `src/components/admin/settings/AdminCodesTab.tsx` |
-| `admin.getFounderMetrics` | query | `adminProcedure` | no | `local_users`, `pro_subscriptions`, `sessions`, `support_tickets`, `users` | — | `api/lib/app-time.ts` | `src/pages/Admin.tsx` |
+| `admin.getDashboardStats` | query | `adminProcedure` | no | `expense_daily_rollups`, `local_users`, `pro_subscriptions`, `sessions`, `store_purchases`, `support_tickets`, `users` | — | `api/lib/app-time.ts` | `src/hooks/useAdmin.ts` |
+| `admin.getFounderMetrics` | query | `adminProcedure` | no | `expenses`, `local_users`, `pro_subscriptions`, `store_purchases`, `support_tickets`, `users` | — | `api/lib/app-time.ts` | `src/pages/Admin.tsx` |
 | `admin.getLearnedRules` | query | `adminProcedure` | yes | `local_users`, `user_dictionaries`, `users` | — | — | `src/components/admin/AdminRulesTab.tsx` |
 | `admin.getNotificationLogs` | query | `adminProcedure` | no | `notification_logs` | — | — | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getNotificationStats` | query | `adminProcedure` | no | `push_subscriptions` | — | — | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getNotificationTemplates` | query | `adminProcedure` | no | `notification_templates` | — | — | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getPendingClarifications` | query | `adminProcedure` | no | `pending_clarifications` | — | — | `src/components/admin/ClarificationsTab.tsx` |
 | `admin.getPipelineVersionStats` | query | `adminProcedure` | no | `classification_logs` | — | `api/lib/smart-pipeline.ts` | — |
-| `admin.getRawSmsLogs` | query | `adminProcedure` | yes | `local_users`, `raw_sms_events`, `users` | — | — | `src/components/admin/AdminRawSmsTab.tsx` |
 | `admin.getSettings` | query | `adminProcedure` | no | — | — | `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getStorageRuntimeMetrics` | query | `adminProcedure` | no | — | — | `api/lib/redis-client.ts` | — |
 | `admin.getUserAiQuota` | query | `adminProcedure` | yes | `ai_token_ledgers`, `local_users`, `users` | — | `api/lib/ai-gateway.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/settings-cache.ts` | `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx` |
@@ -97,73 +102,118 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `admin.getUserSmartProfile` | query | `adminProcedure` | yes | — | — | `api/services/user-profile-service.ts` | `src/pages/Admin.tsx` |
 | `admin.getVoiceUsageStats` | query | `adminProcedure` | no | `voice_usage` | — | — | `src/hooks/useAdmin.ts` |
 | `admin.listAllUsers` | query | `adminProcedure` | yes | `expenses`, `local_users`, `users` | — | — | `src/components/admin/NotificationsTab.tsx`, `src/hooks/useAdmin.ts` |
+| `admin.listStorePurchasesAdmin` | query | `adminProcedure` | yes | `store_purchases` | — | — | `src/pages/Admin.tsx` |
 | `admin.listSubscriptionsAdmin` | query | `adminProcedure` | yes | `pro_subscriptions` | — | — | `src/pages/Admin.tsx` |
-| `admin.resetUserTokens` | mutation | `adminProcedure` | yes | — | `local_users`, `users` | — | — |
-| `admin.resolveApiKeyError` | mutation | `adminProcedure` | yes | — | — | `api/lib/error-logger.ts` | `src/pages/Admin.tsx` |
-| `admin.resolveClarification` | mutation | `adminProcedure` | yes | — | `pending_clarifications` | — | `src/components/admin/ClarificationsTab.tsx` |
-| `admin.revokeSession` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts` | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
-| `admin.saveAiModels` | mutation | `adminProcedure` | yes | `ai_models` | `ai_models` | `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.sendPushNotification` | mutation | `adminProcedure` | yes | `local_users`, `push_subscriptions`, `users` | — | `api/notification-engine.ts`, `contracts/notification-types.ts` | — |
-| `admin.setUserTokenLimit` | mutation | `adminProcedure` | yes | `system_settings` | `system_settings` | `api/lib/settings-cache.ts` | — |
-| `admin.toggleNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | — | `src/components/admin/NotificationsTab.tsx` |
+| `admin.resetUserTokens` | mutation | `adminProcedure` | yes | — | `local_users`, `users` | `api/lib/admin-audit.ts` | — |
+| `admin.resolveApiKeyError` | mutation | `adminProcedure` | yes | — | — | `api/lib/admin-audit.ts`, `api/lib/error-logger.ts` | `src/pages/Admin.tsx` |
+| `admin.resolveClarification` | mutation | `adminProcedure` | yes | — | `pending_clarifications` | `api/lib/admin-audit.ts` | `src/components/admin/ClarificationsTab.tsx` |
+| `admin.revokeSession` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts`, `api/lib/admin-audit.ts` | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
+| `admin.saveAiModels` | mutation | `adminProcedure` | yes | `ai_models` | `ai_models` | `api/lib/admin-audit.ts`, `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.sendInstantNotification` | mutation | `adminProcedure` | yes | `local_users`, `push_subscriptions`, `users` | `notification_logs` | `api/lib/admin-audit.ts`, `api/notification-engine.ts` | `src/components/admin/NotificationsTab.tsx` |
+| `admin.sendPushNotification` | mutation | `adminProcedure` | yes | `local_users`, `push_subscriptions`, `users` | — | `api/lib/admin-audit.ts`, `api/notification-engine.ts`, `contracts/notification-types.ts` | — |
+| `admin.setUserTokenLimit` | mutation | `adminProcedure` | yes | `system_settings` | `system_settings` | `api/lib/admin-audit.ts`, `api/lib/settings-cache.ts` | — |
+| `admin.toggleNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | `api/lib/admin-audit.ts` | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerActivityCheck` | mutation | `adminProcedure` | no | — | — | `api/notification-engine.ts` | `src/components/admin/NotificationsTab.tsx` |
-| `admin.triggerBackupDemo` | mutation | `adminProcedure` | no | `ads`, `discount_codes`, `onboarding_questions` | — | `api/lib/settings-cache.ts` | `src/components/admin/AdminSettingsTab.tsx` |
-| `admin.updateAiProvider` | mutation | `adminProcedure` | yes | — | `ai_providers` | `api/lib/ai-gateway.ts`, `api/lib/provider-key-crypto.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.updateNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | — | `src/components/admin/NotificationsTab.tsx` |
-| `admin.updateSettings` | mutation | `adminProcedure` | yes | — | `system_settings` | `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` | `src/components/admin/AdminSettingsTab.tsx` |
-| `admin.updateUserPlan` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts` | — |
-| `admin.updateUserPlanV2` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts` | `src/hooks/useAdmin.ts` |
-| `admin.updateUserRole` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts` | `src/hooks/useAdmin.ts` |
+| `admin.triggerBackupDemo` | mutation | `adminProcedure` | no | `ads`, `onboarding_questions` | — | `api/lib/settings-cache.ts` | `src/components/admin/AdminSettingsTab.tsx` |
+| `admin.updateAiProvider` | mutation | `adminProcedure` | yes | — | `ai_providers` | `api/lib/admin-audit.ts`, `api/lib/ai-gateway.ts`, `api/lib/provider-key-crypto.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.updateNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | `api/lib/admin-audit.ts` | `src/components/admin/NotificationsTab.tsx` |
+| `admin.updateSettings` | mutation | `adminProcedure` | yes | — | `system_settings` | `api/lib/admin-audit.ts`, `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` | `src/components/admin/AdminSettingsTab.tsx` |
+| `admin.updateUserPlan` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts`, `api/lib/admin-audit.ts` | — |
+| `admin.updateUserPlanV2` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts`, `api/lib/admin-audit.ts` | `src/hooks/useAdmin.ts` |
+| `admin.updateUserRole` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts`, `api/lib/admin-audit.ts` | `src/hooks/useAdmin.ts` |
 | `admin.validateApiKey` | mutation | `adminProcedure` | yes | — | — | `api/lib/ai-gateway.ts`, `api/lib/error-logger.ts`, `api/lib/llm-provider-chain.ts` | `src/components/admin/settings/AdminKeysTab.tsx` |
+
+### `adminConsole` — `api/admin-console-router.ts`
+
+| Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `adminConsole.aiCalls` | query | `adminProcedure` | yes | `ai_token_ledgers`, `local_users`, `users` | — | `api/lib/app-time.ts` | — |
+| `adminConsole.alerts` | query | `adminProcedure` | no | — | — | `api/services/admin-alerts.ts` | — |
+| `adminConsole.classifications` | query | `adminProcedure` | yes | `classification_logs`, `local_users`, `users` | — | `api/lib/app-time.ts` | — |
+| `adminConsole.growth` | query | `adminProcedure` | yes | `expenses`, `local_users`, `store_purchases`, `user_analytics`, `users` | — | `api/lib/app-time.ts` | — |
+| `adminConsole.jobs` | query | `adminProcedure` | no | — | — | `api/services/job-runs.ts` | — |
+| `adminConsole.markAlertsRead` | mutation | `adminProcedure` | no | — | — | `api/services/admin-alerts.ts` | — |
+| `adminConsole.money` | query | `adminProcedure` | no | `local_users`, `store_purchases`, `users` | — | `api/lib/app-time.ts`, `contracts/plans.ts` | — |
+| `adminConsole.person` | query | `adminProcedure` | yes | `ai_token_ledgers`, `capture_devices`, `expenses`, `local_users`, `sessions`, `store_purchases`, `support_tickets`, `users` | — | `api/lib/app-time.ts`, `api/lib/client-platform.ts` | — |
+| `adminConsole.searchPeople` | query | `adminProcedure` | yes | `local_users`, `users` | — | — | — |
+| `adminConsole.session` | query | `moderatorProcedure` | no | — | — | — | — |
+| `adminConsole.settingsCatalog` | query | `adminProcedure` | no | — | — | `api/lib/system-settings-registry.ts` | — |
+| `adminConsole.status` | query | `adminProcedure` | no | — | — | `api/services/server-status.ts` | — |
+| `adminConsole.supportTeam` | query | `moderatorProcedure` | no | `local_users`, `support_assignments`, `users` | — | — | — |
+| `adminConsole.today` | query | `adminProcedure` | no | `ai_token_ledgers`, `api_key_errors`, `expenses`, `local_users`, `store_purchases`, `support_tickets`, `users` | — | `api/lib/ai-ledger.ts`, `api/lib/app-time.ts`, `api/lib/feature-switches.ts`, `api/lib/redis-client.ts`, `api/lib/settings-cache.ts` | — |
+| `adminConsole.understandingQuality` | query | `adminProcedure` | yes | `classification_logs` | — | `api/lib/app-time.ts` | — |
 
 ### `adminWhatsapp` — `api/admin-whatsapp-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `adminWhatsapp.broadcastMessage` | mutation | `adminProcedure` | yes | `local_users` | — | `api/lib/log.ts`, `api/services/whatsapp-service.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.clearQueue` | mutation | `adminProcedure` | no | — | — | — | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.broadcastMessage` | mutation | `adminProcedure` | yes | — | — | — | — |
+| `adminWhatsapp.broadcastTemplate` | mutation | `adminProcedure` | yes | `local_users`, `whatsapp_contacts` | — | `api/lib/admin-audit.ts`, `api/lib/whatsapp/outbox.ts` | — |
+| `adminWhatsapp.clearQueue` | mutation | `adminProcedure` | no | — | — | — | — |
+| `adminWhatsapp.getOutboxLog` | query | `adminProcedure` | yes | `whatsapp_messages` | — | `api/lib/log.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.getSettings` | query | `adminProcedure` | no | — | — | `api/lib/settings-cache.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.getStatus` | query | `adminProcedure` | no | — | — | `api/services/whatsapp-service.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.getUsers` | query | `adminProcedure` | no | `local_users`, `users` | — | — | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.sendDirectMessage` | mutation | `adminProcedure` | yes | — | — | `api/services/whatsapp-service.ts` | `src/components/admin/AdminWhatsAppTab.tsx`, `src/pages/Admin.tsx` |
-| `adminWhatsapp.startService` | mutation | `adminProcedure` | no | — | — | `api/services/whatsapp-service.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.stopService` | mutation | `adminProcedure` | no | — | — | `api/services/whatsapp-service.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.toggleOtpVerification` | mutation | `adminProcedure` | yes | — | `system_settings` | `api/lib/settings-cache.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.getStatus` | query | `adminProcedure` | no | `whatsapp_contacts`, `whatsapp_messages` | — | `api/lib/app-time.ts`, `api/lib/whatsapp/client.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.getTemplates` | query | `adminProcedure` | no | — | — | `api/lib/whatsapp/client.ts`, `api/lib/whatsapp/templates.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.getUsers` | query | `adminProcedure` | no | `local_users`, `users` | — | — | — |
+| `adminWhatsapp.sendDirectMessage` | mutation | `adminProcedure` | yes | `local_users`, `whatsapp_contacts` | `whatsapp_messages` | `api/lib/admin-audit.ts`, `api/lib/log.ts`, `api/lib/whatsapp/client.ts` | `src/components/admin/AdminWhatsAppTab.tsx`, `src/pages/Admin.tsx` |
+| `adminWhatsapp.startService` | mutation | `adminProcedure` | no | — | — | — | — |
+| `adminWhatsapp.stopService` | mutation | `adminProcedure` | no | — | — | — | — |
+| `adminWhatsapp.syncTemplates` | mutation | `adminProcedure` | no | — | — | `api/lib/whatsapp/client.ts`, `api/lib/whatsapp/templates.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.toggleOtpVerification` | mutation | `adminProcedure` | yes | — | `system_settings` | `api/lib/admin-audit.ts`, `api/lib/settings-cache.ts` | — |
+| `adminWhatsapp.updateSettings` | mutation | `adminProcedure` | yes | — | `system_settings` | `api/lib/admin-audit.ts`, `api/lib/settings-cache.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
 
 ### `ads` — `api/ads-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `ads.click` | mutation | `authedProcedure` | yes | — | `ad_clicks`, `ads` | — | `src/hooks/useAds.ts` |
-| `ads.create` | mutation | `adminProcedure` | yes | — | `ads` | — | `src/components/admin/AdminAdsTab.tsx` |
-| `ads.delete` | mutation | `adminProcedure` | yes | — | `ad_clicks`, `ads` | — | `src/components/admin/AdminAdsTab.tsx` |
+| `ads.create` | mutation | `adminProcedure` | yes | — | `ads` | `api/lib/admin-audit.ts` | `src/components/admin/AdminAdsTab.tsx` |
+| `ads.delete` | mutation | `adminProcedure` | yes | — | `ad_clicks`, `ad_impressions`, `ads` | `api/lib/admin-audit.ts` | `src/components/admin/AdminAdsTab.tsx` |
 | `ads.impression` | mutation | `publicProcedure` | yes | — | `ads` | — | — |
-| `ads.list` | query | `publicProcedure` | yes | `ads` | — | — | `src/hooks/useAds.ts` |
+| `ads.list` | query | `publicProcedure` | yes | `ad_impressions`, `ads` | — | `api/lib/app-time.ts` | `src/hooks/useAds.ts` |
+| `ads.recordImpression` | mutation | `publicProcedure` | yes | `ad_impressions` | `ad_impressions`, `ads` | — | `src/components/ads/AdBanner.tsx` |
 | `ads.stats` | query | `adminProcedure` | no | `ads` | — | — | `src/components/admin/AdminAdsTab.tsx` |
-| `ads.update` | mutation | `adminProcedure` | yes | — | `ads` | — | `src/components/admin/AdminAdsTab.tsx` |
+| `ads.update` | mutation | `adminProcedure` | yes | — | `ads` | `api/lib/admin-audit.ts` | `src/components/admin/AdminAdsTab.tsx` |
 
 ### `ai` — `api/ai-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `ai.compareMonths` | mutation | `aiProcedure` | yes | — | — | `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/settings-cache.ts`, `api/services/ai-cost-policy.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts` | `src/components/insights/AIInsights.tsx` |
-| `ai.generateMonthlyInsights` | mutation | `aiProcedure` | yes | `ai_summaries`, `expenses`, `local_users`, `users` | `ai_summaries`, `local_users`, `monthly_behavior_snapshots`, `users` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/anonymizer.ts`, `api/lib/env.ts`, `api/lib/fireworks-client.ts`, `api/lib/model-mapper.ts`, `api/lib/nvidia-client.ts`, `api/lib/report-wait.ts`, `api/lib/settings-cache.ts`, `api/services/ai-cost-policy.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/financial-month.ts`, `api/services/lifestyle-inference-engine.ts`, `api/services/personal-context-builder.ts`, `api/services/report-personalization-engine.ts`, `api/services/user-profile-service.ts`, `contracts/categories.ts` | `src/components/insights/AIInsights.tsx` |
+| `ai.generateMonthlyInsights` | mutation | `aiProcedure` | yes | `ai_summaries`, `expenses`, `local_users`, `users` | `ai_summaries`, `monthly_behavior_snapshots` | `api/lib/ai-gateway.ts`, `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/anonymizer.ts`, `api/lib/app-time.ts`, `api/lib/env.ts`, `api/lib/fireworks-client.ts`, `api/lib/llm-router.ts`, `api/lib/model-mapper.ts`, `api/lib/nvidia-client.ts`, `api/lib/report-wait.ts`, `api/lib/settings-cache.ts`, `api/services/ai-cost-policy.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/financial-month.ts`, `api/services/lifestyle-inference-engine.ts`, `api/services/personal-context-builder.ts`, `api/services/report-personalization-engine.ts`, `api/services/user-profile-service.ts`, `contracts/categories.ts` | `src/components/insights/AIInsights.tsx` |
 | `ai.generateYearlyInsights` | mutation | `aiProcedure` | yes | — | — | `api/lib/ai-usage-policy.ts`, `api/lib/settings-cache.ts`, `api/services/ai-cost-policy.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts` | — |
 | `ai.getCachedMonthlyInsights` | query | `authedProcedure` | yes | `ai_summaries` | — | — | `src/components/insights/AIInsights.tsx` |
 | `ai.getUserLimits` | query | `authedProcedure` | no | `voice_usage` | — | `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/settings-cache.ts`, `api/services/entitlements/voice.ts`, `contracts/plan-features.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/components/profile/ProfileScreen.tsx` |
 | `ai.learnWord` | mutation | `authedProcedure` | yes | — | `user_dictionaries` | — | — |
-| `ai.parseExpense` | mutation | `aiProcedure` | yes | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries` | `classification_logs`, `local_users`, `pending_clarifications`, `users` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/entity-extractor.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/lib/person-resolver.ts`, `api/lib/settings-cache.ts`, `api/lib/smart-pipeline.ts`, `api/services/ai-cost-policy.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/parser-trace.ts`, `api/services/personal-context-builder.ts`, `api/services/user-profile-service.ts` | `src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx`, `src/components/expenses/ExpenseForm.tsx` |
-| `ai.parseVoiceExpense` | mutation | `aiProcedure` | yes | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries`, `voice_usage` | `classification_logs`, `local_users`, `pending_clarifications`, `users`, `voice_usage` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/entity-extractor.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/lib/person-resolver.ts`, `api/lib/settings-cache.ts`, `api/lib/smart-pipeline.ts`, `api/lib/voice-intake-gate.ts`, `api/services/ai-cost-policy.ts`, `api/services/entitlements/voice.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/parser-trace.ts`, `api/services/personal-context-builder.ts`, `api/services/user-profile-service.ts` | `src/components/expenses/ExpenseForm.tsx` |
-| `ai.speechToText` | mutation | `aiProcedure` | yes | `voice_usage` | `local_users`, `users`, `voice_usage` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/lib/settings-cache.ts`, `api/lib/voice-intake-gate.ts`, `api/services/entitlements/voice.ts` | — |
+| `ai.parseExpense` | mutation | `aiProcedure` | yes | `business_categories`, `user_businesses`, `user_dictionaries` | `classification_logs`, `pending_clarifications` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/entity-extractor.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/lib/person-resolver.ts`, `api/lib/settings-cache.ts`, `api/lib/smart-pipeline.ts`, `api/services/ai-cost-policy.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/parser-trace.ts`, `api/services/personal-context-builder.ts`, `api/services/recording/engine-switch.ts`, `api/services/recording/read-sentence.ts`, `api/services/user-profile-service.ts` | `src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx`, `src/components/expenses/ExpenseForm.tsx` |
+| `ai.parseVoiceExpense` | mutation | `aiProcedure` | yes | `business_categories`, `user_businesses`, `user_dictionaries`, `voice_usage` | `classification_logs`, `pending_clarifications`, `voice_usage` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/entity-extractor.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/lib/person-resolver.ts`, `api/lib/settings-cache.ts`, `api/lib/smart-pipeline.ts`, `api/lib/voice-intake-gate.ts`, `api/services/ai-cost-policy.ts`, `api/services/entitlements/voice.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/parser-trace.ts`, `api/services/personal-context-builder.ts`, `api/services/recording/engine-switch.ts`, `api/services/recording/read-sentence.ts`, `api/services/user-profile-service.ts` | `src/components/expenses/ExpenseForm.tsx` |
+| `ai.speechToText` | mutation | `aiProcedure` | yes | `voice_usage` | `voice_usage` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/lib/settings-cache.ts`, `api/lib/voice-intake-gate.ts`, `api/services/entitlements/voice.ts` | — |
+
+### `aiSetup` — `api/ai-setup-router.ts`
+
+| Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `aiSetup.discover` | mutation | `adminProcedure` | yes | `ai_providers` | — | `api/lib/ai-gateway.ts`, `api/lib/provider-key-crypto.ts` | — |
+| `aiSetup.overview` | query | `adminProcedure` | no | `ai_models`, `ai_providers` | — | `api/lib/ai-gateway.ts`, `api/lib/capture/model-reader.ts`, `api/lib/embedding-provider.ts`, `api/lib/env.ts`, `api/lib/llm-router.ts`, `api/lib/model-mapper.ts`, `api/lib/provider-key-crypto.ts`, `api/lib/settings-cache.ts`, `contracts/ai-models.ts` | — |
+| `aiSetup.removeModel` | mutation | `adminProcedure` | yes | — | `ai_models` | `api/lib/admin-audit.ts`, `api/lib/ai-gateway.ts` | — |
+| `aiSetup.reorder` | mutation | `adminProcedure` | yes | `ai_models`, `ai_providers` | `ai_models` | `api/lib/admin-audit.ts`, `api/lib/ai-gateway.ts` | — |
+| `aiSetup.saveModel` | mutation | `adminProcedure` | yes | `ai_models`, `ai_providers` | `ai_models` | `api/lib/admin-audit.ts`, `api/lib/ai-gateway.ts` | — |
+| `aiSetup.test` | mutation | `adminProcedure` | yes | `ai_models`, `ai_providers` | — | `api/lib/ai-gateway.ts`, `api/lib/ai-pricing.ts`, `api/lib/llm-router.ts`, `api/lib/provider-key-crypto.ts` | — |
 
 ### `analytics` — `api/analytics-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `analytics.getAllUserStats` | query | `adminProcedure` | yes | `expenses`, `local_users`, `users` | — | — | — |
-| `analytics.getDashboardStats` | query | `adminProcedure` | no | `expenses`, `local_users`, `users` | — | `api/lib/app-time.ts` | — |
+| `analytics.getAllUserStats` | query | `adminProcedure` | yes | `expenses`, `local_users`, `users` | — | `api/services/ledger-semantics.ts` | — |
+| `analytics.getDashboardStats` | query | `adminProcedure` | no | `expenses`, `local_users`, `users` | — | `api/lib/app-time.ts`, `api/services/ledger-semantics.ts` | — |
 | `analytics.getMyAnalytics` | query | `authedProcedure` | no | `user_analytics` | — | — | — |
 | `analytics.trackEvent` | mutation | `authedProcedure` | yes | — | `user_analytics` | — | `src/hooks/useSessionTracker.ts` |
+
+### `appConfig` — `api/app-config-router.ts`
+
+| Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `appConfig.get` | query | `publicProcedure` | no | — | — | `api/lib/app-time.ts`, `api/lib/feature-switches.ts`, `api/lib/settings-cache.ts` | — |
 
 ### `auth` — `api/auth-router.ts`
 
@@ -173,6 +223,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `auth.googleUrl` | query | `publicProcedure` | no | — | — | `api/lib/env.ts` | `src/pages/Login.tsx` |
 | `auth.logout` | mutation | `authedProcedure` | no | — | — | `api/local-auth-utils.ts` | `src/hooks/useAuth.ts` |
 | `auth.me` | query | `publicProcedure` | no | `users` | — | — | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
+| `auth.signInWithGoogle` | mutation | `strictPublicProcedure` | yes | `users` | `users` | `api/lib/google-id-token.ts`, `api/lib/redis-client.ts`, `api/local-auth-utils.ts` | — |
 
 ### `budget` — `api/budget-router.ts`
 
@@ -193,10 +244,54 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `business.get` | query | `businessProcedure` | yes | `business_categories`, `user_businesses`, `user_contacts` | — | — | `src/components/settings/BusinessSettingsView.tsx`, `src/pages/Home.tsx` |
 | `business.linkContact` | mutation | `businessProcedure` | yes | `user_businesses`, `user_contacts` | `user_contacts` | — | — |
 | `business.removeCategory` | mutation | `businessProcedure` | yes | `business_categories`, `user_businesses` | `business_categories` | — | `src/components/settings/BusinessSettingsView.tsx` |
-| `business.suggestCategories` | mutation | `businessAiProcedure` | yes | — | — | `api/lib/ai-ledger.ts`, `api/lib/env.ts`, `api/lib/settings-cache.ts` | `src/components/settings/BusinessSettingsView.tsx` |
+| `business.suggestCategories` | mutation | `businessAiProcedure` | yes | — | — | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/lib/settings-cache.ts` | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.types` | query | `businessProcedure` | no | — | — | — | — |
 | `business.update` | mutation | `businessProcedure` | yes | `user_businesses` | `user_businesses` | — | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.updateCategory` | mutation | `businessProcedure` | yes | `business_categories`, `user_businesses` | `business_categories` | — | — |
+
+### `capture` — `api/capture-router.ts`
+
+| Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `capture.activity` | query | `authedProcedure` | yes | — | — | `api/lib/capture/activity.ts` | `src/components/bank-capture/CaptureOverview.tsx` |
+| `capture.answer` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/intake.ts`, `contracts/capture-intake.ts` | `src/components/bank-capture/CaptureOverview.tsx` |
+| `capture.answerQuestion` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/questions.ts`, `contracts/ledger-movement.ts` | `src/components/bank-capture/CaptureOverview.tsx` |
+| `capture.answerWalletOffer` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/care.ts` | — |
+| `capture.autoOffers` | query | `authedProcedure` | no | — | — | `api/lib/capture/catalog.ts`, `api/lib/capture/memory.ts` | — |
+| `capture.deleteMyData` | mutation | `authedProcedure` | no | — | — | `api/lib/capture/care.ts` | — |
+| `capture.devices` | query | `authedProcedure` | no | — | — | `api/lib/capture/devices.ts` | — |
+| `capture.ignore` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/markers.ts` | — |
+| `capture.ignored` | query | `authedProcedure` | no | — | — | `api/lib/capture/markers.ts` | — |
+| `capture.nextQuestion` | mutation | `authedProcedure` | no | — | — | `api/lib/capture/questions.ts` | `src/components/bank-capture/CaptureOverview.tsx` |
+| `capture.pending` | query | `authedProcedure` | no | — | — | `api/lib/capture/intake.ts` | — |
+| `capture.registerDevice` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/access.ts`, `api/lib/capture/devices.ts`, `api/lib/settings-cache.ts`, `contracts/plan-features.ts` | — |
+| `capture.revokeDevice` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/devices.ts` | — |
+| `capture.setAuto` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/memory.ts` | — |
+| `capture.setConsent` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/consent.ts`, `contracts/capture-intake.ts` | — |
+| `capture.setWalletKind` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/markers.ts`, `contracts/capture.ts` | `src/components/wallets/WalletBalanceKind.tsx` |
+| `capture.sources` | query | `authedProcedure` | no | — | — | `api/lib/capture/catalog.ts` | — |
+| `capture.status` | query | `authedProcedure` | no | — | — | `api/lib/capture/access.ts`, `api/lib/capture/consent.ts`, `api/lib/capture/intake.ts`, `api/lib/settings-cache.ts` | `src/components/bank-capture/CaptureOverview.tsx`, `src/components/wallets/WalletBalanceKind.tsx` |
+| `capture.unignore` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/markers.ts` | — |
+| `capture.walletKind` | query | `authedProcedure` | yes | — | — | `api/lib/capture/markers.ts` | `src/components/wallets/WalletBalanceKind.tsx` |
+| `capture.walletOffers` | query | `authedProcedure` | no | — | — | `api/lib/capture/care.ts` | — |
+
+### `captureAdmin` — `api/capture-admin-router.ts`
+
+| Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `captureAdmin.bulkUndo` | mutation | `adminProcedure` | yes | — | — | `api/lib/admin-audit.ts`, `api/lib/capture/operations.ts` | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
+| `captureAdmin.catalog` | query | `adminProcedure` | no | `capture_sources`, `subscription_catalog` | — | `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.funnel` | query | `adminProcedure` | yes | — | — | `api/lib/capture/operations.ts` | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
+| `captureAdmin.refreshMissingSubscriptionLogos` | mutation | `adminProcedure` | no | — | — | `api/lib/admin-audit.ts`, `api/lib/capture/brand-logos.ts` | — |
+| `captureAdmin.refreshSubscriptionLogo` | mutation | `adminProcedure` | yes | `subscription_catalog` | — | `api/lib/admin-audit.ts`, `api/lib/capture/brand-logos.ts` | — |
+| `captureAdmin.restoreSeed` | mutation | `adminProcedure` | yes | `capture_sources`, `subscription_catalog` | `capture_sources`, `subscription_catalog` | `api/lib/admin-audit.ts`, `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.saveSource` | mutation | `adminProcedure` | yes | `capture_sources` | `capture_sources` | `api/lib/admin-audit.ts`, `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.saveSubscription` | mutation | `adminProcedure` | yes | `subscription_catalog` | `subscription_catalog` | `api/lib/admin-audit.ts`, `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.setSourceStatus` | mutation | `adminProcedure` | yes | `capture_sources` | `capture_sources` | `api/lib/admin-audit.ts`, `api/lib/capture/catalog.ts`, `contracts/capture.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.setSubscriptionStatus` | mutation | `adminProcedure` | yes | `subscription_catalog` | `subscription_catalog` | `api/lib/admin-audit.ts`, `api/lib/capture/catalog.ts`, `contracts/capture.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.simulate` | mutation | `adminProcedure` | yes | — | — | `api/lib/admin-audit.ts`, `api/lib/capture/simulator.ts` | — |
+| `captureAdmin.syncSeed` | mutation | `adminProcedure` | no | — | — | `api/lib/admin-audit.ts`, `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.timeline` | query | `adminProcedure` | yes | — | — | `api/lib/capture/operations.ts` | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 
 ### `chat` — `api/chat-router.ts`
 
@@ -211,7 +306,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `chat.getConversations` | query | `authedProcedure` | no | `chat_conversations` | — | — | `src/components/ai/AIChatbot.tsx` |
 | `chat.getQuickActions` | query | `authedProcedure` | no | — | — | — | `src/components/ai/AIChatbot.tsx` |
 | `chat.listMemories` | query | `authedProcedure` | no | `ai_memory_items` | — | `api/services/ai-memory/slots.ts` | `src/components/ai/AIMemoryManager.tsx`, `src/components/voice/VoiceCallHost.tsx` |
-| `chat.sendMessage` | mutation | `aiProcedure` | yes | `ai_pending_actions`, `chat_conversations`, `chat_messages` | `chat_conversations`, `chat_messages`, `local_users`, `users` | `api/lib/ai-gateway.ts`, `api/lib/ai-ledger.ts`, `api/lib/app-time.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/lib/settings-cache.ts`, `api/services/action-runtime/confirmation-phrases.ts`, `api/services/action-runtime/index.ts`, `api/services/ai-cost-policy.ts`, `api/services/ai-kernel/capability-registry.ts`, `api/services/ai-kernel/clarification-machine.ts`, `api/services/ai-kernel/index.ts`, `api/services/ai-kernel/intent-router.ts`, `api/services/ai-memory/index.ts`, `api/services/finance-semantic-layer/category-matcher.ts` | `src/components/ai/AIChatbot.tsx` |
+| `chat.sendMessage` | mutation | `aiProcedure` | yes | `ai_pending_actions`, `chat_conversations`, `chat_messages` | `chat_conversations`, `chat_messages`, `local_users`, `users` | `api/lib/ai-gateway.ts`, `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/anthropic-client.ts`, `api/lib/app-time.ts`, `api/lib/env.ts`, `api/lib/feature-switches.ts`, `api/lib/model-mapper.ts`, `api/lib/settings-cache.ts`, `api/services/action-runtime/confirmation-phrases.ts`, `api/services/action-runtime/index.ts`, `api/services/ai-cost-policy.ts`, `api/services/ai-kernel/capability-registry.ts`, `api/services/ai-kernel/clarification-machine.ts`, `api/services/ai-kernel/index.ts`, `api/services/ai-kernel/intent-router.ts`, `api/services/ai-memory/index.ts`, `api/services/finance-semantic-layer/category-matcher.ts` | `src/components/ai/AIChatbot.tsx` |
 
 ### `coach` — `api/coach-router.ts`
 
@@ -220,7 +315,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `coach.addCashflow` | mutation | `authedProcedure` | yes | — | — | `api/services/coach/cashflows.ts` | `src/pages/PlanPage.tsx` |
 | `coach.cancelReminder` | mutation | `authedProcedure` | yes | — | — | `api/services/coach/plans.ts` | `src/pages/PlanPage.tsx` |
 | `coach.endPlan` | mutation | `authedProcedure` | yes | — | — | `api/services/coach/plans.ts` | `src/pages/PlanPage.tsx` |
-| `coach.overview` | query | `authedProcedure` | no | — | — | `api/lib/app-time.ts`, `api/services/coach/cashflows.ts`, `api/services/coach/plans.ts`, `api/services/coach/schedule.ts` | `src/pages/PlanPage.tsx` |
+| `coach.overview` | query | `authedProcedure` | no | — | — | `api/lib/app-time.ts`, `api/services/coach/cashflows.ts`, `api/services/coach/plans.ts`, `api/services/coach/schedule.ts` | `src/components/wallets/WalletBalanceKind.tsx`, `src/pages/PlanPage.tsx` |
 | `coach.paymentSuggestions` | query | `authedProcedure` | yes | — | — | `api/services/coach/cashflows.ts` | `src/pages/PlanPage.tsx` |
 | `coach.setReminder` | mutation | `authedProcedure` | yes | — | — | `api/lib/app-time.ts`, `api/services/coach/plans.ts` | `src/pages/PlanPage.tsx` |
 | `coach.setStepStatus` | mutation | `authedProcedure` | yes | — | — | `api/services/coach/plans.ts` | `src/pages/PlanPage.tsx` |
@@ -228,45 +323,67 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `coach.unsettle` | mutation | `authedProcedure` | yes | — | — | `api/services/coach/cashflows.ts` | `src/pages/PlanPage.tsx` |
 | `coach.updateCashflow` | mutation | `authedProcedure` | yes | — | — | `api/services/coach/cashflows.ts` | — |
 
+### `commitments` — `api/commitments-router.ts`
+
+| Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `commitments.answer` | mutation | `commitmentsProcedure` | yes | — | — | `api/services/coach/commitments.ts` | — |
+| `commitments.create` | mutation | `commitmentsProcedure` | yes | — | — | `api/services/coach/commitments.ts` | — |
+| `commitments.defaults` | query | `commitmentsProcedure` | no | — | — | `api/lib/settings-cache.ts` | — |
+| `commitments.detail` | query | `commitmentsProcedure` | yes | — | — | `api/services/coach/commitments.ts` | — |
+| `commitments.forSentence` | query | `commitmentsProcedure` | yes | — | — | `api/services/coach/commitments.ts` | — |
+| `commitments.link` | mutation | `commitmentsProcedure` | yes | — | — | `api/services/coach/commitments.ts` | — |
+| `commitments.linksFor` | query | `commitmentsProcedure` | yes | — | — | `api/services/coach/commitments.ts` | — |
+| `commitments.month` | query | `commitmentsProcedure` | yes | — | — | `api/services/coach/commitments.ts` | — |
+| `commitments.overview` | query | `commitmentsProcedure` | no | — | — | `api/services/coach/commitments.ts` | — |
+| `commitments.pay` | mutation | `commitmentsProcedure` | yes | — | — | `api/services/coach/commitments.ts` | — |
+| `commitments.questions` | query | `commitmentsProcedure` | no | — | — | `api/services/coach/commitments.ts` | — |
+| `commitments.replaceItems` | mutation | `commitmentsProcedure` | yes | — | — | `api/services/coach/commitments.ts` | — |
+| `commitments.setOverride` | mutation | `commitmentsProcedure` | yes | — | — | `api/services/coach/commitments.ts` | — |
+| `commitments.setStatus` | mutation | `commitmentsProcedure` | yes | — | — | `api/services/coach/commitments.ts` | — |
+| `commitments.subscriptions` | query | `commitmentsProcedure` | no | — | — | `api/services/coach/commitments.ts` | — |
+| `commitments.unlink` | mutation | `commitmentsProcedure` | yes | — | — | `api/services/coach/commitments.ts` | — |
+| `commitments.update` | mutation | `commitmentsProcedure` | yes | — | — | `api/services/coach/commitments.ts` | — |
+
 ### `expense` — `api/expense-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `expense.answerClarification` | mutation | `authedProcedure` | yes | `business_categories`, `classification_logs`, `pending_clarifications`, `user_businesses`, `user_contacts`, `user_dictionaries` | `expenses`, `local_users`, `pending_clarifications`, `user_contacts`, `users` | `api/ai-router.ts`, `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/env.ts`, `api/lib/muscle-memory.ts`, `api/lib/person-resolver.ts`, `api/lib/redis-client.ts`, `api/lib/relationship-normalizer.ts`, `api/lib/settings-cache.ts`, `api/lib/smart-pipeline.ts`, `api/notification-engine.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/personal-context-builder.ts`, `api/services/user-profile-service.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
-| `expense.batchCreate` | mutation | `authedProcedure` | yes | `classification_logs`, `expenses`, `user_contacts` | `classification_logs`, `expenses`, `local_users`, `user_contacts`, `users` | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/correction-rules.ts`, `api/lib/muscle-memory.ts`, `api/lib/ownership-guard.ts`, `api/lib/redis-client.ts`, `api/lib/relationship-normalizer.ts`, `api/notification-engine.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts` | `src/components/expenses/ExpenseForm.tsx` |
-| `expense.create` | mutation | `authedProcedure` | yes | `classification_logs`, `expenses`, `user_contacts` | `classification_logs`, `expenses`, `local_users`, `user_contacts`, `users` | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/correction-rules.ts`, `api/lib/muscle-memory.ts`, `api/lib/ownership-guard.ts`, `api/lib/redis-client.ts`, `api/lib/relationship-normalizer.ts`, `api/notification-engine.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts` | `src/components/expenses/ExpenseForm.tsx` |
+| `expense.answerClarification` | mutation | `authedProcedure` | yes | `business_categories`, `classification_logs`, `pending_clarifications`, `user_businesses`, `user_contacts`, `user_dictionaries` | `pending_clarifications` | `api/ai-router.ts`, `api/lib/app-time.ts`, `api/lib/env.ts`, `api/lib/person-resolver.ts`, `api/lib/relationship-normalizer.ts`, `api/lib/settings-cache.ts`, `api/lib/smart-pipeline.ts`, `api/services/coach/commitments.ts`, `api/services/ledger-writer.ts`, `api/services/personal-context-builder.ts`, `api/services/recording/engine-switch.ts`, `api/services/recording/read-sentence.ts`, `api/services/recording/saved-reading.ts`, `api/services/user-profile-service.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
+| `expense.batchCreate` | mutation | `authedProcedure` | yes | `classification_logs`, `user_contacts` | `classification_logs` | `api/lib/correction-rules.ts`, `api/lib/ownership-guard.ts`, `api/lib/relationship-normalizer.ts`, `api/services/coach/commitments.ts`, `api/services/ledger-writer.ts`, `api/services/recording/engine-switch.ts`, `api/services/recording/reading-log.ts`, `api/services/recording/saved-reading.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts`, `contracts/ledger-movement.ts` | `src/components/expenses/ExpenseForm.tsx` |
+| `expense.create` | mutation | `authedProcedure` | yes | `classification_logs`, `user_contacts` | `classification_logs` | `api/lib/correction-rules.ts`, `api/lib/ownership-guard.ts`, `api/lib/relationship-normalizer.ts`, `api/services/coach/commitments.ts`, `api/services/ledger-writer.ts`, `api/services/recording/engine-switch.ts`, `api/services/recording/reading-log.ts`, `api/services/recording/saved-reading.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts`, `contracts/ledger-movement.ts` | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.createCategory` | mutation | `authedProcedure` | yes | — | `expense_categories` | — | — |
 | `expense.createInstallmentPlan` | mutation | `authedProcedure` | yes | — | `installment_plans` | — | `src/components/installments/InstallmentsPanel.tsx` |
-| `expense.delete` | mutation | `authedProcedure` | yes | `expenses` | `expenses`, `user_contacts` | `api/lib/cache-keys.ts`, `api/lib/muscle-memory.ts`, `api/lib/redis-client.ts`, `api/services/coach/cashflows.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/components/expenses/RecentExpenses.tsx` |
+| `expense.delete` | mutation | `authedProcedure` | yes | — | — | `api/services/ledger-writer.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/components/expenses/RecentExpenses.tsx` |
 | `expense.deleteInstallmentPlan` | mutation | `authedProcedure` | yes | — | `installment_plans` | — | `src/components/installments/InstallmentsPanel.tsx` |
 | `expense.dismissClarification` | mutation | `authedProcedure` | yes | — | `pending_clarifications` | — | `src/components/expenses/PendingQuestionsCard.tsx` |
-| `expense.getById` | query | `authedProcedure` | yes | `expenses` | — | — | — |
+| `expense.getById` | query | `authedProcedure` | yes | `expenses` | — | `api/services/ledger-bundles.ts` | — |
 | `expense.getCategoryList` | query | `authedProcedure` | no | `expense_categories` | — | — | — |
 | `expense.getDebtBalances` | query | `authedProcedure` | no | — | — | `api/services/debt-ledger.ts` | `src/components/debts/DebtsPanel.tsx` |
 | `expense.getMonthSummary` | query | `authedProcedure` | yes | `expense_daily_rollups` | — | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/redis-client.ts`, `api/services/financial-month.ts` | `src/pages/Home.tsx` |
-| `expense.getMonthlyStats` | query | `authedProcedure` | yes | `expense_daily_rollups`, `expenses` | — | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/redis-client.ts`, `api/services/expense-rollups.ts`, `api/services/financial-month.ts`, `contracts/categories.ts` | `src/components/settings/BusinessSettingsView.tsx`, `src/pages/Home.tsx` |
+| `expense.getMonthlyStats` | query | `authedProcedure` | yes | `expense_daily_rollups`, `expenses` | — | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/redis-client.ts`, `api/lib/spending-behavior.ts`, `api/services/expense-rollups.ts`, `api/services/financial-month.ts`, `api/services/ledger-semantics.ts`, `contracts/categories.ts` | `src/components/settings/BusinessSettingsView.tsx`, `src/pages/Home.tsx` |
 | `expense.getPendingClarifications` | query | `authedProcedure` | no | `pending_clarifications` | — | — | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
-| `expense.getSeasonSpending` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/seasons.ts` | `src/components/seasons/SeasonsPanel.tsx` |
+| `expense.getSeasonSpending` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/seasons.ts`, `api/services/ledger-semantics.ts` | `src/components/seasons/SeasonsPanel.tsx` |
 | `expense.getYearlyStats` | query | `authedProcedure` | yes | `expense_daily_rollups` | — | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/redis-client.ts` | — |
-| `expense.list` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/app-time.ts`, `contracts/constants.ts` | `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
-| `expense.listInstallmentPlans` | query | `authedProcedure` | no | `cashflow_settlements`, `expenses`, `installment_plans`, `scheduled_cashflows` | — | `api/lib/normalizer-v2.ts`, `api/services/installments.ts` | `src/components/installments/InstallmentsPanel.tsx` |
-| `expense.previewCategory` | query | `authedProcedure` | yes | `user_dictionaries` | — | `api/lib/normalizer-v2.ts`, `api/lib/rule-engine.ts`, `contracts/constants.ts` | `src/components/expenses/ExpenseForm.tsx` |
-| `expense.searchTransactions` | query | `authedProcedure` | yes | `expenses` | — | — | `src/components/dashboard/GlobalSearch.tsx` |
-| `expense.update` | mutation | `authedProcedure` | yes | `classification_logs`, `expenses` | `classification_logs`, `expenses` | `api/lib/cache-keys.ts`, `api/lib/category-registry.ts`, `api/lib/correction-rules.ts`, `api/lib/muscle-memory.ts`, `api/lib/ownership-guard.ts`, `api/lib/redis-client.ts`, `api/lib/relationship-normalizer.ts`, `api/services/coach/cashflows.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts` | `src/components/expenses/EditExpenseDialog.tsx` |
+| `expense.list` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/app-time.ts`, `api/services/ledger-bundles.ts`, `api/services/ledger-semantics.ts`, `contracts/constants.ts` | `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
+| `expense.listInstallmentPlans` | query | `authedProcedure` | no | `cashflow_settlements`, `expenses`, `installment_plans`, `scheduled_cashflows` | — | `api/lib/normalizer-v2.ts`, `api/services/installments.ts`, `api/services/ledger-semantics.ts` | `src/components/installments/InstallmentsPanel.tsx` |
+| `expense.previewCategory` | query | `authedProcedure` | yes | `user_dictionaries` | — | `api/lib/normalizer-v2.ts`, `api/lib/rule-engine.ts`, `api/services/recording/engine-switch.ts`, `contracts/constants.ts` | `src/components/expenses/ExpenseForm.tsx` |
+| `expense.searchTransactions` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/unified-normalizer.ts`, `api/services/ledger-bundles.ts` | `src/components/dashboard/GlobalSearch.tsx` |
+| `expense.update` | mutation | `authedProcedure` | yes | `classification_logs` | `classification_logs` | `api/lib/category-registry.ts`, `api/lib/correction-rules.ts`, `api/lib/ownership-guard.ts`, `api/lib/relationship-normalizer.ts`, `api/services/ledger-writer.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts`, `contracts/ledger-movement.ts` | `src/components/expenses/EditExpenseDialog.tsx` |
 
 ### `export` — `api/export-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `export.allUsers` | mutation | `adminProcedure` | yes | `local_users`, `users` | — | — | `src/pages/Admin.tsx` |
+| `export.allUsers` | mutation | `adminProcedure` | yes | `local_users`, `users` | — | `api/lib/admin-audit.ts` | `src/pages/Admin.tsx` |
 | `export.monthlyReportHtml` | mutation | `proReportProcedure` | yes | — | — | `api/services/pro-report-engine.ts` | `src/components/insights/AIInsights.tsx` |
-| `export.myExpenses` | mutation | `authedProcedure` | yes | `expenses` | — | `api/lib/app-time.ts` | `src/components/expenses/ExportExpensesCard.tsx` |
+| `export.myExpenses` | mutation | `authedProcedure` | yes | `expenses` | — | `api/lib/app-time.ts`, `api/services/ledger-semantics.ts`, `contracts/ledger-movement.ts` | `src/components/expenses/ExportExpensesCard.tsx` |
 
 ### `goals` — `api/goals-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `goals.analyze` | mutation | `goalAnalysisProcedure` | yes | `expenses`, `financial_goals` | `financial_goals`, `local_users`, `users` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts` | `src/components/goals/FinancialGoalsPanel.tsx` |
+| `goals.analyze` | mutation | `goalAnalysisProcedure` | yes | `expenses`, `financial_goals` | `financial_goals` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/ledger-semantics.ts`, `api/services/user-profile-service.ts` | `src/components/goals/FinancialGoalsPanel.tsx` |
 | `goals.create` | mutation | `authedProcedure` | yes | `financial_goals` | `financial_goals` | `api/lib/settings-cache.ts`, `api/services/finance-semantic-layer/index.ts`, `contracts/constants.ts`, `contracts/plan-features.ts` | `src/components/goals/FinancialGoalsPanel.tsx` |
 | `goals.delete` | mutation | `authedProcedure` | yes | — | `financial_goals`, `user_budgets` | `api/services/finance-semantic-layer/index.ts` | — |
 | `goals.list` | query | `authedProcedure` | no | `financial_goals` | — | `api/lib/settings-cache.ts`, `contracts/plan-features.ts` | `src/components/goals/FinancialGoalsPanel.tsx` |
@@ -276,15 +393,15 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `image.parseReceipt` | mutation | `receiptsProcedure` | yes | `expenses`, `user_dictionaries` | `expenses`, `local_users`, `users` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/category-registry.ts`, `api/lib/env.ts`, `api/lib/image-magic-bytes.ts`, `api/lib/model-mapper.ts`, `api/lib/muscle-memory.ts`, `api/lib/receipt-image-parser.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts` | `src/components/expenses/ExpenseForm.tsx` |
+| `image.parseReceipt` | mutation | `receiptsProcedure` | yes | `expenses`, `user_dictionaries` | — | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/category-registry.ts`, `api/lib/env.ts`, `api/lib/image-magic-bytes.ts`, `api/lib/model-mapper.ts`, `api/lib/receipt-image-parser.ts`, `api/services/ledger-writer.ts`, `api/services/user-profile-service.ts` | `src/components/expenses/ExpenseForm.tsx` |
 
 ### `localAuth` — `api/local-auth-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| `localAuth.confirmVerificationCode` | mutation | `strictPublicProcedure` | yes | — | — | `api/services/phone-challenge.ts` | `src/pages/Login.tsx` |
 | `localAuth.deleteUser` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts`, `api/services/user-purge-service.ts` | — |
-| `localAuth.generateVerificationCode` | mutation | `strictPublicProcedure` | yes | — | — | `api/lib/settings-cache.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts`, `api/services/turnstile-service.ts` | `src/pages/Login.tsx` |
-| `localAuth.getBotPhoneNumber` | query | `publicProcedure` | no | — | — | `api/services/whatsapp-service.ts` | `src/pages/Login.tsx` |
+| `localAuth.generateVerificationCode` | mutation | `strictPublicProcedure` | yes | — | — | `api/lib/settings-cache.ts`, `api/lib/whatsapp/client.ts`, `api/lib/whatsapp/outbox.ts`, `api/lib/whatsapp/templates.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts`, `api/services/turnstile-service.ts` | `src/pages/Login.tsx` |
 | `localAuth.getStats` | query | `adminProcedure` | no | `expenses`, `local_users` | — | — | — |
 | `localAuth.getVerificationSettings` | query | `publicProcedure` | no | — | — | `api/lib/settings-cache.ts` | `src/pages/Login.tsx` |
 | `localAuth.listUsers` | query | `adminProcedure` | no | `expenses`, `local_users` | — | — | — |
@@ -292,6 +409,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `localAuth.logout` | mutation | `publicProcedure` | no | — | — | `api/lib/get-client-ip.ts`, `api/local-auth-utils.ts` | `src/hooks/useAuth.ts` |
 | `localAuth.me` | query | `publicProcedure` | no | `local_users` | — | — | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
 | `localAuth.register` | mutation | `strictPublicProcedure` | yes | `local_users` | `local_users` | `api/lib/settings-cache.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` | `src/pages/Login.tsx` |
+| `localAuth.resetPassword` | mutation | `strictPublicProcedure` | yes | `local_users` | `local_users` | `api/lib/access-control.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` | — |
 | `localAuth.updateRole` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts` | — |
 | `localAuth.verifyOtp` | mutation | `strictPublicProcedure` | yes | `local_users` | — | `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` | — |
 
@@ -302,52 +420,39 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `pro.cancel` | mutation | `authedProcedure` | no | — | `pro_subscriptions` | — | `src/hooks/usePro.ts` |
 | `pro.createCheckoutSession` | mutation | `authedProcedure` | yes | — | — | `api/lib/env.ts`, `api/lib/paymob.ts`, `contracts/plans.ts` | `src/hooks/usePro.ts` |
 | `pro.listSubscriptions` | query | `adminProcedure` | yes | `pro_subscriptions` | — | — | — |
-| `pro.myPlan` | query | `authedProcedure` | no | `local_users`, `pro_subscriptions`, `users` | `pro_subscriptions` | `api/lib/access-control.ts`, `api/lib/plan-catalog.ts`, `api/lib/settings-cache.ts`, `contracts/plan-features.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/hooks/usePro.ts` |
+| `pro.myPlan` | query | `authedProcedure` | no | `local_users`, `pro_subscriptions`, `store_purchases`, `users` | `pro_subscriptions`, `store_purchases` | `api/lib/access-control.ts`, `api/lib/plan-catalog.ts`, `api/lib/settings-cache.ts`, `contracts/plan-features.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/components/settings/BusinessSettingsView.tsx`, `src/hooks/usePro.ts`, `src/pages/Home.tsx` |
 | `pro.planCatalog` | query | `authedProcedure` | no | — | — | `api/lib/plan-catalog.ts`, `api/lib/settings-cache.ts` | `src/pages/Pro.tsx` |
+| `pro.restorePurchases` | mutation | `authedProcedure` | yes | — | — | `api/lib/store-billing/index.ts` | — |
+| `pro.storeBilling` | query | `authedProcedure` | no | — | — | `api/lib/store-billing/index.ts` | — |
 | `pro.upgrade` | mutation | `authedProcedure` | yes | — | — | `api/lib/env.ts`, `api/lib/subscription-service.ts`, `contracts/plans.ts` | `src/hooks/usePro.ts` |
+| `pro.verifyStorePurchase` | mutation | `authedProcedure` | yes | — | — | `api/lib/store-billing/index.ts` | — |
 
 ### `profile` — `api/profile-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `profile.addContact` | mutation | `authedProcedure` | yes | `user_contacts` | `user_contacts` | `api/lib/muscle-memory.ts`, `api/lib/ownership-guard.ts` | `src/components/settings/PeopleSettingsView.tsx` |
-| `profile.confirmPhoneChange` | mutation | `authedProcedure` | yes | `local_users` | `local_users` | `api/lib/access-control.ts`, `api/lib/redis-client.ts`, `api/local-auth-utils.ts` | — |
-| `profile.confirmSmsSuggestion` | mutation | `authedProcedure` | yes | — | — | `api/lib/category-registry.ts`, `api/notification-engine.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/sms-ledger.ts` | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
-| `profile.deleteContact` | mutation | `authedProcedure` | yes | `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `api/lib/muscle-memory.ts`, `api/services/finance-semantic-layer/index.ts` | `src/components/settings/PeopleSettingsView.tsx` |
+| `profile.confirmPhoneChange` | mutation | `authedProcedure` | yes | `local_users` | `local_users` | `api/lib/access-control.ts`, `api/services/phone-challenge.ts` | — |
+| `profile.deleteContact` | mutation | `authedProcedure` | yes | `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `api/lib/capture/identity-links.ts`, `api/lib/muscle-memory.ts`, `api/lib/settings-cache.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/ledger-writer.ts` | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteMyAccount` | mutation | `authedProcedure` | yes | `local_users` | — | `api/lib/access-control.ts`, `api/lib/redis-client.ts`, `api/local-auth-utils.ts`, `api/services/user-purge-service.ts`, `contracts/account-deletion.ts` | `src/components/profile/ProfileScreen.tsx` |
 | `profile.dismissOnboarding` | mutation | `authedProcedure` | no | — | `user_profiles` | — | `src/components/OnboardingCard.tsx` |
-| `profile.dismissSmsSuggestion` | mutation | `authedProcedure` | yes | — | — | `api/services/sms-ledger.ts` | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
-| `profile.generateMagicCode` | mutation | `authedProcedure` | no | `webhook_tokens` | — | `api/sms-router.ts` | — |
-| `profile.generateWebhookToken` | mutation | `authedProcedure` | no | — | `webhook_tokens` | — | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getInAppNotifications` | query | `authedProcedure` | no | `in_app_notifications` | — | — | `src/components/NotificationBell.tsx`, `src/components/notifications/NotificationList.tsx` |
 | `profile.getMyProfile` | query | `authedProcedure` | no | `user_profiles` | — | — | — |
 | `profile.getNextOnboardingQuestion` | query | `authedProcedure` | no | `user_profiles` | — | `api/services/adaptive-question-engine.ts`, `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/profile/ProfileScreen.tsx` |
 | `profile.getQuestions` | query | `authedProcedure` | no | `onboarding_questions` | — | `api/services/adaptive-question-engine.ts` | — |
-| `profile.getSmartProfile` | query | `authedProcedure` | no | — | — | `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/components/notifications/NotificationSettings.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/hooks/useBiometricOnboarding.ts`, `src/i18n/LanguagePreferenceSync.tsx`, `src/pages/Home.tsx`, `src/pages/Settings.tsx` |
-| `profile.getSmsLogs` | query | `authedProcedure` | no | `raw_sms_events` | — | — | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `profile.getSmsSuggestions` | query | `authedProcedure` | no | `raw_sms_events` | — | — | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
-| `profile.getWebhookToken` | query | `authedProcedure` | no | `raw_sms_events`, `webhook_tokens` | — | — | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/DigitalBankingSuite.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
-| `profile.listContacts` | query | `authedProcedure` | yes | `expenses`, `user_contacts` | — | — | `src/components/settings/PeopleSettingsView.tsx`, `src/pages/PlanPage.tsx` |
+| `profile.getSmartProfile` | query | `authedProcedure` | no | — | — | `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/components/notifications/NotificationSettings.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/hooks/useBiometricOnboarding.ts`, `src/i18n/LanguagePreferenceSync.tsx`, `src/pages/Home.tsx`, `src/pages/Settings.tsx` |
+| `profile.listContacts` | query | `authedProcedure` | yes | `expenses`, `user_contacts` | — | — | `src/components/bank-capture/CaptureOverview.tsx`, `src/components/settings/PeopleSettingsView.tsx`, `src/pages/PlanPage.tsx` |
 | `profile.markAllInAppNotificationsRead` | mutation | `authedProcedure` | no | — | `in_app_notifications` | — | `src/components/notifications/NotificationList.tsx` |
 | `profile.markInAppNotificationRead` | mutation | `authedProcedure` | yes | — | `in_app_notifications` | — | `src/components/notifications/NotificationList.tsx` |
-| `profile.mergeContacts` | mutation | `authedProcedure` | yes | `expenses`, `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `api/lib/muscle-memory.ts`, `api/services/finance-semantic-layer/index.ts` | `src/components/settings/PeopleSettingsView.tsx` |
-| `profile.refreshInferences` | mutation | `authedProcedure` | yes | `expenses` | `monthly_behavior_snapshots` | `api/services/lifestyle-inference-engine.ts`, `api/services/user-profile-service.ts` | — |
-| `profile.requestPhoneChange` | mutation | `authedProcedure` | yes | `local_users` | — | `api/lib/redis-client.ts`, `api/lib/settings-cache.ts`, `api/local-auth-utils.ts`, `api/services/whatsapp-service.ts` | — |
+| `profile.mergeContacts` | mutation | `authedProcedure` | yes | `expenses`, `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `api/lib/capture/identity-links.ts`, `api/lib/muscle-memory.ts`, `api/lib/settings-cache.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/ledger-writer.ts` | `src/components/settings/PeopleSettingsView.tsx` |
+| `profile.refreshInferences` | mutation | `authedProcedure` | yes | `expenses` | `monthly_behavior_snapshots` | `api/lib/app-time.ts`, `api/services/lifestyle-inference-engine.ts`, `api/services/user-profile-service.ts` | — |
+| `profile.requestPhoneChange` | mutation | `authedProcedure` | yes | `local_users` | — | `api/lib/whatsapp/client.ts`, `api/lib/whatsapp/outbox.ts`, `api/lib/whatsapp/templates.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` | — |
 | `profile.savePushSubscription` | mutation | `authedProcedure` | yes | `push_subscriptions` | `push_subscriptions` | — | `src/hooks/usePushNotifications.ts` |
 | `profile.submitOnboardingAnswer` | mutation | `authedProcedure` | yes | — | — | `api/services/adaptive-question-engine.ts`, `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/profile/ProfileScreen.tsx` |
 | `profile.updateContact` | mutation | `authedProcedure` | yes | `user_contacts` | `user_contacts` | `api/lib/muscle-memory.ts`, `api/lib/ownership-guard.ts` | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.updateProfile` | mutation | `authedProcedure` | yes | — | `user_profiles` | — | — |
-| `profile.updateSmartProfile` | mutation | `authedProcedure` | yes | — | — | `api/services/user-profile-service.ts` | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/notifications/NotificationSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/hooks/useBiometricOnboarding.ts`, `src/pages/Settings.tsx` |
-| `profile.updateUserInfo` | mutation | `authedProcedure` | yes | `local_users` | `local_users`, `users` | `api/lib/access-control.ts`, `api/lib/redis-client.ts`, `api/local-auth-utils.ts` | `src/components/profile/ProfileScreen.tsx` |
-
-### `referral` — `api/referral-router.ts`
-
-| Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `referral.applyCode` | mutation | `authedProcedure` | yes | `local_users`, `referrals`, `users` | `local_users`, `referrals`, `users` | — | `src/pages/Pro.tsx` |
-| `referral.listAll` | query | `adminProcedure` | yes | `referrals` | — | — | — |
-| `referral.myCode` | query | `authedProcedure` | no | `discount_codes`, `local_users`, `referrals`, `users` | `local_users`, `users` | `api/lib/settings-cache.ts` | `src/pages/Pro.tsx` |
-| `referral.myReferrals` | query | `authedProcedure` | no | `referrals` | — | — | — |
+| `profile.updateSmartProfile` | mutation | `authedProcedure` | yes | — | — | `api/services/user-profile-service.ts` | `src/components/notifications/NotificationSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/hooks/useBiometricOnboarding.ts`, `src/pages/Settings.tsx` |
+| `profile.updateUserInfo` | mutation | `authedProcedure` | yes | — | `local_users`, `users` | — | `src/components/profile/ProfileScreen.tsx` |
 
 ### `seo` — `api/seo-router.ts`
 
@@ -356,7 +461,6 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `seo.delete` | mutation | `adminProcedure` | yes | — | `seo_pages` | — | — |
 | `seo.getPage` | query | `publicProcedure` | yes | `seo_pages` | — | — | `src/components/seo/SEOMeta.tsx` |
 | `seo.list` | query | `adminProcedure` | no | `seo_pages` | — | — | — |
-| `seo.sitemap` | query | `publicProcedure` | no | `seo_pages` | — | — | — |
 | `seo.upsert` | mutation | `adminProcedure` | yes | `seo_pages` | `seo_pages` | — | — |
 
 ### `session` — `api/session-router.ts`
@@ -364,7 +468,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `session.listAll` | query | `adminProcedure` | yes | `sessions` | — | `api/lib/admin-safe-fields.ts` | — |
-| `session.listMine` | query | `authedProcedure` | no | `sessions` | — | `api/lib/admin-safe-fields.ts` | — |
+| `session.listMine` | query | `authedProcedure` | no | `sessions` | — | `api/lib/admin-safe-fields.ts`, `api/lib/session-validation.ts` | — |
 | `session.revokeMine` | mutation | `authedProcedure` | yes | — | — | `api/lib/access-control.ts` | — |
 | `session.stats` | query | `adminProcedure` | no | `sessions` | — | — | — |
 | `session.trackEvent` | mutation | `authedProcedure` | yes | — | `user_analytics` | — | — |
@@ -373,13 +477,19 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `support.assign` | mutation | `adminProcedure` | yes | `support_tickets` | `support_tickets` | — | — |
-| `support.close` | mutation | `authedProcedure` | yes | `support_tickets` | `support_tickets` | — | `src/pages/Admin.tsx` |
+| `support.assign` | mutation | `adminProcedure` | yes | `local_users`, `support_tickets`, `users` | `support_assignments` | `api/lib/admin-audit.ts` | — |
+| `support.close` | mutation | `authedProcedure` | yes | `support_tickets` | `support_tickets` | `api/lib/admin-audit.ts` | `src/pages/Admin.tsx` |
 | `support.create` | mutation | `authedProcedure` | yes | — | `support_tickets` | — | `src/pages/Support.tsx` |
 | `support.getById` | query | `authedProcedure` | yes | `support_tickets` | — | — | — |
-| `support.listAll` | query | `adminProcedure` | yes | `local_users`, `support_tickets`, `users` | — | — | `src/pages/Admin.tsx` |
+| `support.listAll` | query | `moderatorProcedure` | yes | `local_users`, `support_tickets`, `users` | — | — | `src/pages/Admin.tsx` |
 | `support.listMine` | query | `authedProcedure` | no | `support_tickets` | — | — | `src/pages/Support.tsx` |
-| `support.respond` | mutation | `adminProcedure` | yes | `support_tickets` | `support_tickets` | — | `src/pages/Admin.tsx` |
+| `support.respond` | mutation | `moderatorProcedure` | yes | `support_tickets` | `in_app_notifications`, `support_tickets` | `api/lib/admin-audit.ts`, `api/notification-engine.ts` | `src/pages/Admin.tsx` |
+
+### `taxonomy` — `api/taxonomy-router.ts`
+
+| Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `taxonomy.get` | query | `authedProcedure` | no | — | — | `contracts/taxonomy.ts` | — |
 
 ### `voice` — `api/voice-router.ts`
 
@@ -394,10 +504,11 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `wallet.createWallet` | mutation | `authedProcedure` | yes | — | `user_wallets` | — | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `wallet.deleteWallet` | mutation | `authedProcedure` | yes | — | `expenses`, `user_wallets` | `api/services/finance-semantic-layer/index.ts` | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `wallet.getWalletTransactions` | query | `authedProcedure` | yes | `expenses` | — | — | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `wallet.getWallets` | query | `authedProcedure` | no | `user_wallets` | — | — | `src/components/bank-sync/DigitalBankingSuite.tsx` |
+| `wallet.createWallet` | mutation | `authedProcedure` | yes | — | `user_wallets` | — | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.deleteWallet` | mutation | `authedProcedure` | yes | — | `capture_markers`, `expenses`, `user_wallets` | `api/services/finance-semantic-layer/index.ts`, `api/services/ledger-semantics.ts`, `api/services/ledger-writer.ts` | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWalletMonth` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/app-time.ts`, `api/services/financial-month.ts`, `api/services/ledger-semantics.ts` | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWalletTransactions` | query | `authedProcedure` | yes | `expenses` | — | `api/services/ledger-bundles.ts`, `api/services/ledger-semantics.ts`, `contracts/ledger-movement.ts` | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWallets` | query | `authedProcedure` | no | `user_wallets` | — | `api/lib/settings-cache.ts`, `api/services/wallet-balance-policy.ts` | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.updateWallet` | mutation | `authedProcedure` | yes | — | `user_wallets` | — | — |
 
 ### `webauthn` — `api/webauthn-router.ts`
@@ -415,4 +526,4 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 These are not referenced by the web app. Some may be called by other clients (Android app, iOS shortcuts) or server-side through `createCaller`; the rest are candidates for removal.
 
-`admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `auth.googleCallback`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `coach.updateCashflow`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `goals.delete`, `goals.setStatus`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `profile.confirmPhoneChange`, `profile.generateMagicCode`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `referral.listAll`, `referral.myReferrals`, `seo.delete`, `seo.list`, `seo.sitemap`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `voice.startCall`, `wallet.updateWallet`
+`admin.checkProviderHealth`, `admin.generateBackupExport`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `adminConsole.aiCalls`, `adminConsole.alerts`, `adminConsole.classifications`, `adminConsole.growth`, `adminConsole.jobs`, `adminConsole.markAlertsRead`, `adminConsole.money`, `adminConsole.person`, `adminConsole.searchPeople`, `adminConsole.session`, `adminConsole.settingsCatalog`, `adminConsole.status`, `adminConsole.supportTeam`, `adminConsole.today`, `adminConsole.understandingQuality`, `adminWhatsapp.broadcastMessage`, `adminWhatsapp.broadcastTemplate`, `adminWhatsapp.clearQueue`, `adminWhatsapp.getUsers`, `adminWhatsapp.startService`, `adminWhatsapp.stopService`, `adminWhatsapp.toggleOtpVerification`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.speechToText`, `aiSetup.discover`, `aiSetup.overview`, `aiSetup.removeModel`, `aiSetup.reorder`, `aiSetup.saveModel`, `aiSetup.test`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `appConfig.get`, `auth.googleCallback`, `auth.signInWithGoogle`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `capture.answerWalletOffer`, `capture.autoOffers`, `capture.deleteMyData`, `capture.devices`, `capture.ignore`, `capture.ignored`, `capture.pending`, `capture.registerDevice`, `capture.revokeDevice`, `capture.setAuto`, `capture.setConsent`, `capture.sources`, `capture.unignore`, `capture.walletOffers`, `captureAdmin.refreshMissingSubscriptionLogos`, `captureAdmin.refreshSubscriptionLogo`, `captureAdmin.simulate`, `coach.updateCashflow`, `commitments.answer`, `commitments.create`, `commitments.defaults`, `commitments.detail`, `commitments.forSentence`, `commitments.link`, `commitments.linksFor`, `commitments.month`, `commitments.overview`, `commitments.pay`, `commitments.questions`, `commitments.replaceItems`, `commitments.setOverride`, `commitments.setStatus`, `commitments.subscriptions`, `commitments.unlink`, `commitments.update`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `goals.delete`, `goals.setStatus`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.resetPassword`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `pro.restorePurchases`, `pro.storeBilling`, `pro.verifyStorePurchase`, `profile.confirmPhoneChange`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `seo.delete`, `seo.list`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `taxonomy.get`, `voice.startCall`, `wallet.updateWallet`

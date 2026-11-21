@@ -31,9 +31,9 @@ export type AuthBroadcastEventType =
   | "TOKEN_REFRESH"
   | "AUTH_REFRESH";
 
+/** What tabs tell each other. Never a token: the session lives in an HttpOnly cookie no script can read. */
 export interface AuthBroadcastEvent {
   type: AuthBroadcastEventType;
-  token?: string;
   user?: AuthUser;
   timestamp?: number;
 }
@@ -53,8 +53,8 @@ export function broadcastAuthEvent(event: AuthBroadcastEvent): void {
   }
 }
 
-export function broadcastLogin(token: string, user?: AuthUser): void {
-  broadcastAuthEvent({ type: "AUTH_LOGIN", token, user });
+export function broadcastLogin(user?: AuthUser): void {
+  broadcastAuthEvent({ type: "AUTH_LOGIN", user });
 }
 
 export function broadcastLogout(): void {
@@ -65,8 +65,8 @@ export function broadcastSessionExpired(): void {
   broadcastAuthEvent({ type: "SESSION_EXPIRED" });
 }
 
-export function broadcastTokenRefresh(token: string): void {
-  broadcastAuthEvent({ type: "TOKEN_REFRESH", token });
+export function broadcastTokenRefresh(): void {
+  broadcastAuthEvent({ type: "TOKEN_REFRESH" });
 }
 
 /**
@@ -139,8 +139,15 @@ export function useAuth() {
     };
   }, []);
 
-  // Multi-tab session synchronization via BroadcastChannel and window storage events
+  // Multi-tab session synchronization via BroadcastChannel
   useEffect(() => {
+    // Builds before the cookie-only session kept the phone account's token here, where any script could read it.
+    try {
+      localStorage.removeItem("local_auth_token");
+    } catch {
+      // Storage unavailable: nothing was kept there either.
+    }
+
     const handleAuthMessage = (eventData: AuthBroadcastEvent) => {
       if (!eventData || !eventData.type) return;
 
@@ -209,24 +216,11 @@ export function useAuth() {
       // BroadcastChannel unavailable in this environment
     }
 
-    const handleStorageEvent = (event: StorageEvent) => {
-      if (event.key === "local_auth_token") {
-        if (event.newValue) {
-          // Token updated in another tab -> sync login state
-          handleAuthMessage({ type: "AUTH_LOGIN", token: event.newValue });
-        } else if (event.newValue === null && event.oldValue !== null) {
-          // Token removed in another tab -> sync logout state
-          handleAuthMessage({ type: "AUTH_LOGOUT" });
-        }
-      }
-    };
-
     const handleSessionExpiredEvent = () => {
       handleAuthMessage({ type: "SESSION_EXPIRED" });
     };
 
     if (typeof window !== "undefined") {
-      window.addEventListener("storage", handleStorageEvent);
       window.addEventListener(
         "smartspend_session_expired",
         handleSessionExpiredEvent,
@@ -242,7 +236,6 @@ export function useAuth() {
         channel.close();
       }
       if (typeof window !== "undefined") {
-        window.removeEventListener("storage", handleStorageEvent);
         window.removeEventListener(
           "smartspend_session_expired",
           handleSessionExpiredEvent,
@@ -319,7 +312,6 @@ export function useAuth() {
   }, [oauthUser, localUser, oauthFetched, localFetched, isOnline]);
 
   const logout = useCallback(async () => {
-    localStorage.removeItem("local_auth_token");
     // Queued data and hydrated query results belong to the previous user. Never
     // carry either into the next account on a shared phone.
     localStorage.removeItem("smartspend_offline_texts");

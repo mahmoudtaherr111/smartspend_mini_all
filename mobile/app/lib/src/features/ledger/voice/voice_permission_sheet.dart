@@ -1,0 +1,72 @@
+import 'package:flutter/material.dart';
+import 'package:smartspend_ui/smartspend_ui.dart';
+
+import '../../../l10n/app_localizations.dart';
+
+/// Shows an explanation sheet before prompting for OS microphone permission (REC-05).
+/// Clearly articulates the privacy policy (instant speech-to-text, no audio saved).
+Future<bool> showVoicePermissionSheet(BuildContext context) async {
+  final result = await showSmartSpendSheet<bool>(
+    context: context,
+    builder: (context) => const VoicePermissionSheet(),
+  );
+  return result ?? false;
+}
+
+class VoicePermissionSheet extends StatelessWidget {
+  const VoicePermissionSheet({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.smartSpendColors;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SmartSpendSpacing.screen,
+        vertical: SmartSpendSpacing.lg,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: colors.accent.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.mic_rounded, size: 28, color: colors.accent),
+            ),
+          ),
+          const SizedBox(height: SmartSpendSpacing.lg),
+          Text(
+            AppLocalizations.of(context).monRecordByVoice,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleLarge!
+                .copyWith(color: colors.foreground),
+          ),
+          const SizedBox(height: SmartSpendSpacing.sm),
+          Text(
+            AppLocalizations.of(context).monToRecordYourSpendingBy,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium!
+                .copyWith(color: colors.mutedForeground, height: 1.5),
+          ),
+          const SizedBox(height: SmartSpendSpacing.xl),
+          SmartSpendButton(
+            label: AppLocalizations.of(context).monAllowTheMicrophone,
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+          const SizedBox(height: SmartSpendSpacing.sm),
+          SmartSpendButton(
+            label: AppLocalizations.of(context).monNotNow,
+            variant: ButtonVariant.quiet,
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+        ],
+      ),
+    );
+  }
+}

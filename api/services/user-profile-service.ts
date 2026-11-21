@@ -344,42 +344,23 @@ export async function getSmartProfile(
   } catch (err) {
     if (!isSmartProfileSchemaError(err)) throw err;
 
-    log.warn({ err, event: "profile.read.repairing", userId }, "Profile read failed; repairing the table");
-    try {
-      await autoRepairProfileSchema();
-      // Retry full read after repair
-      const rows = await db
-        .select()
-        .from(userProfiles)
-        .where(
-          and(
-            eq(userProfiles.userId, userId),
-            eq(userProfiles.userType, userType),
-          ),
-        )
-        .limit(1);
-      row = rows[0];
-      log.info({ event: "profile.read.repaired", userId }, "Profile table repaired");
-    } catch (retryErr) {
-      log.error({ err: retryErr, event: "profile.read.legacy", userId }, "Profile repair failed; reading the legacy columns");
-      const legacyRows = await db
-        .select({
-          monthlyIncome: userProfiles.monthlyIncome,
-          financialGoal: userProfiles.financialGoal,
-          financialPersonality: userProfiles.financialPersonality,
-          profileCompleted: userProfiles.profileCompleted,
-        })
-        .from(userProfiles)
-        .where(
-          and(
-            eq(userProfiles.userId, userId),
-            eq(userProfiles.userType, userType),
-          ),
-        )
-        .limit(1);
-
-      row = legacyRows[0];
-    }
+    log.warn({ err, event: "profile.read.legacy", userId }, "Profile schema mismatch; reading legacy columns");
+    const legacyRows = await db
+      .select({
+        monthlyIncome: userProfiles.monthlyIncome,
+        financialGoal: userProfiles.financialGoal,
+        financialPersonality: userProfiles.financialPersonality,
+        profileCompleted: userProfiles.profileCompleted,
+      })
+      .from(userProfiles)
+      .where(
+        and(
+          eq(userProfiles.userId, userId),
+          eq(userProfiles.userType, userType),
+        ),
+      )
+      .limit(1);
+    row = legacyRows[0];
   }
 
   // Fetch streak from the user identity table (users or localUsers)
@@ -591,12 +572,12 @@ export async function saveSmartProfile(
         (user_id, user_type, monthly_income, financial_goal, financial_personality,
          profile_completed, onboarding_answers, basic_info, financial_info,
          lifestyle_info, ai_inferred_attributes, preferences, avatar_id,
-         profile_version)
+         profile_version, last_ai_refresh_at)
         VALUES
         (${userId}, ${userType}, ${monthlyIncome}, ${financialGoal}, ${financialPersonality},
          ${completed}, ${onboardingJson}, ${basicJson}, ${financialJson},
          ${lifestyleJson}, ${inferredJson}, ${prefsJson}, ${profile.avatarId},
-         ${SMART_PROFILE_VERSION})
+         ${SMART_PROFILE_VERSION}, ${profile.lastAiRefreshAt ?? null})
         ON DUPLICATE KEY UPDATE
           monthly_income = VALUES(monthly_income),
           financial_goal = VALUES(financial_goal),
@@ -609,7 +590,8 @@ export async function saveSmartProfile(
           ai_inferred_attributes = VALUES(ai_inferred_attributes),
           preferences = VALUES(preferences),
           avatar_id = VALUES(avatar_id),
-          profile_version = VALUES(profile_version)`,
+          profile_version = VALUES(profile_version),
+          last_ai_refresh_at = VALUES(last_ai_refresh_at)`,
     );
     log.info(
       {
@@ -658,36 +640,6 @@ export async function saveSmartProfile(
 /**
  * Auto-repair: add missing JSON columns to user_profiles if they don't exist.
  */
-async function autoRepairProfileSchema(): Promise<void> {
-  const { db } = await import("../queries/connection");
-  const requiredColumns = [
-    { name: "basic_info", type: "JSON DEFAULT NULL" },
-    { name: "financial_info", type: "JSON DEFAULT NULL" },
-    { name: "lifestyle_info", type: "JSON DEFAULT NULL" },
-    { name: "onboarding_answers", type: "JSON DEFAULT NULL" },
-    { name: "ai_inferred_attributes", type: "JSON DEFAULT NULL" },
-    { name: "preferences", type: "JSON DEFAULT NULL" },
-    { name: "avatar_id", type: "VARCHAR(100) DEFAULT NULL" },
-    { name: "profile_version", type: "INT DEFAULT 2" },
-    { name: "last_ai_refresh_at", type: "DATETIME DEFAULT NULL" },
-    { name: "last_asked_at", type: "DATETIME DEFAULT NULL" },
-  ];
-
-  for (const col of requiredColumns) {
-    try {
-      await db.execute(
-        `ALTER TABLE user_profiles ADD COLUMN \`${col.name}\` ${col.type}`,
-      );
-      log.info({ event: "profile.repair.column_added", column: col.name }, "Added a missing profile column");
-    } catch (e: any) {
-      // Column already exists — ignore
-      if (!e.message?.includes("Duplicate column")) {
-        log.warn({ err: e, event: "profile.repair.column_failed", column: col.name }, "Could not add a profile column");
-      }
-    }
-  }
-}
-
 export async function updateSmartProfile(
   userId: number,
   userType: string,

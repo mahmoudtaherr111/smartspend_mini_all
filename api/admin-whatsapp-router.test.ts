@@ -2,8 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const settings = vi.hoisted(() => ({ value: {} as Record<string, string> }));
 
-vi.mock("./queries/connection", () => ({ db: {} }));
-vi.mock("./services/whatsapp-service", () => ({ whatsappService: {} }));
+vi.mock("./queries/connection", () => ({
+  db: {},
+  getDb: vi.fn(() => ({})),
+}));
+
 vi.mock("./lib/settings-cache", () => ({
   getSystemSettings: vi.fn(async () => settings.value),
   invalidateSettingsCache: vi.fn(),
@@ -25,8 +28,8 @@ describe("WhatsApp verification in the admin console", () => {
 
   it("shows the value sign-up reads, on and off", async () => {
     settings.value = { whatsapp_otp_enabled: "true" };
-    await expect(admin().getSettings()).resolves.toEqual({ otpEnabled: true });
+    await expect(admin().getSettings()).resolves.toMatchObject({ otpEnabled: true });
     settings.value = { whatsapp_otp_enabled: "false" };
-    await expect(admin().getSettings()).resolves.toEqual({ otpEnabled: false });
+    await expect(admin().getSettings()).resolves.toMatchObject({ otpEnabled: false });
   });
 });

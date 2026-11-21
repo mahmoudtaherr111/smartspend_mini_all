@@ -9,8 +9,10 @@ import type {
 } from "./types";
 import { canonicalCategoryForRow, displayFinanceCategory } from "./category-matcher";
 import { businessDateKey } from "../../lib/app-time";
+import { financialBucket } from "../../../contracts/ledger-movement";
 
 export interface FinanceRowLike {
+  parsedMetadata?: unknown;
   id?: number | null;
   type?: string | null;
   amount?: string | number | null;
@@ -108,8 +110,8 @@ function timeBucketLabels(
  * ATM withdrawal), investments and income are money that moved or came in, not money
  * spent (docs/decisions/0008-money-movements-and-taxonomy.md).
  */
-export function isSpendingRow(row: Pick<FinanceRowLike, "type">): boolean {
-  return row.type !== "income" && row.type !== "transfer" && row.type !== "investment";
+export function isSpendingRow(row: Pick<FinanceRowLike, "type" | "parsedMetadata">): boolean {
+  return financialBucket(row) === "expense";
 }
 
 export function aggregateFinanceSummary(
@@ -125,14 +127,15 @@ export function aggregateFinanceSummary(
 
   for (const row of rows) {
     const amount = amountOf(row);
-    if (row.type === "income") {
+    const bucket = financialBucket(row);
+    if (bucket === "income") {
       totalIncome += amount;
       incomeCount++;
-    } else if (row.type === "transfer") {
+    } else if (bucket === "transfer") {
       totalTransfers += amount;
-    } else if (row.type === "investment") {
+    } else if (bucket === "investment") {
       totalInvestments += amount;
-    } else {
+    } else if (bucket === "expense") {
       totalExpense += amount;
       expenseCount++;
     }

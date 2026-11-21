@@ -20,10 +20,12 @@ flowchart LR
     screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
+    http__api_webhooks["HTTP /api/webhooks/… · 2 routes"]
     job_scheduled_notifications["Job · scheduled-notifications"]
     job_seed_default_templates["Job · seed-default-templates"]
     job_smart_activity_notifications["Job · smart-activity-notifications"]
-    router_adminWhatsapp["adminWhatsapp API · 9 procedures"]
+    job_whatsapp_outbox["Job · whatsapp-outbox"]
+    router_adminWhatsapp["adminWhatsapp API · 14 procedures"]
     router_profile["profile API · 4 procedures"]
   end
   subgraph g_modules["Code modules"]
@@ -40,16 +42,21 @@ flowchart LR
     tbl_system_settings[("system_settings")]
     tbl_user_profiles[("user_profiles")]
     tbl_users[("users")]
+    tbl_whatsapp_contacts[("whatsapp_contacts")]
+    tbl_whatsapp_messages[("whatsapp_messages")]
   end
   ext_firebase{{"Firebase"}}
   ext_web_push{{"Web Push"}}
-  ext_whatsapp{{"WhatsApp through Baileys"}}
+  ext_whatsapp{{"WhatsApp (Meta Cloud API)"}}
   sys_accounts[["Accounts, sign-in and security (system)"]]
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
   sys_platform[["Server platform and data (system)"]]
+  http__api_webhooks --> mod_whatsapp
+  http__api_webhooks --> sys_platform
   job_scheduled_notifications --> mod_notifications
   job_seed_default_templates --> mod_notifications
   job_smart_activity_notifications --> mod_notifications
+  job_whatsapp_outbox --> mod_whatsapp
   mod_notifications --> ext_firebase
   mod_notifications --> ext_web_push
   mod_notifications --> sys_money
@@ -63,14 +70,19 @@ flowchart LR
   mod_notifications ==> tbl_notification_templates
   mod_notifications ==> tbl_push_subscriptions
   mod_whatsapp --> ext_whatsapp
-  mod_whatsapp --> sys_accounts
   mod_whatsapp --> sys_platform
+  mod_whatsapp -.-> tbl_local_users
+  mod_whatsapp ==> tbl_whatsapp_contacts
+  mod_whatsapp ==> tbl_whatsapp_messages
   page_NotificationsPage --> router_profile
   router_adminWhatsapp --> mod_whatsapp
+  router_adminWhatsapp --> sys_accounts
   router_adminWhatsapp --> sys_platform
   router_adminWhatsapp -.-> tbl_local_users
   router_adminWhatsapp -.-> tbl_users
+  router_adminWhatsapp -.-> tbl_whatsapp_contacts
   router_adminWhatsapp ==> tbl_system_settings
+  router_adminWhatsapp ==> tbl_whatsapp_messages
   router_profile ==> tbl_in_app_notifications
   router_profile ==> tbl_push_subscriptions
   screens_accounts --> router_profile
@@ -85,21 +97,26 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `notifications` — Notifications | Web push (VAPID) and Firebase Cloud Messaging delivery, scheduled and event-triggered notifications, budget alerts, activity nudges and the default templates. | 2 |
-| `whatsapp` — WhatsApp | Baileys WhatsApp client and the in-process OTP state it verifies against. | 2 |
+| `whatsapp` — WhatsApp | WhatsApp: Meta Cloud API client, signed webhook, the persistent outbox and the template catalogue (api/lib/whatsapp); verification codes are challenges in MySQL (`phone-challenge.ts`). | 4 |
 
 ## API procedures
 
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
-| `adminWhatsapp.broadcastMessage` | mutation | `adminProcedure` | `local_users` | — | `Admin`, `More` |
-| `adminWhatsapp.clearQueue` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
+| `adminWhatsapp.broadcastMessage` | mutation | `adminProcedure` | — | — | — |
+| `adminWhatsapp.broadcastTemplate` | mutation | `adminProcedure` | `local_users`, `whatsapp_contacts` | — | — |
+| `adminWhatsapp.clearQueue` | mutation | `adminProcedure` | — | — | — |
+| `adminWhatsapp.getOutboxLog` | query | `adminProcedure` | `whatsapp_messages` | — | `Admin`, `More` |
 | `adminWhatsapp.getSettings` | query | `adminProcedure` | — | — | `Admin`, `More` |
-| `adminWhatsapp.getStatus` | query | `adminProcedure` | — | — | `Admin`, `More` |
-| `adminWhatsapp.getUsers` | query | `adminProcedure` | `local_users`, `users` | — | `Admin`, `More` |
-| `adminWhatsapp.sendDirectMessage` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
-| `adminWhatsapp.startService` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
-| `adminWhatsapp.stopService` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
-| `adminWhatsapp.toggleOtpVerification` | mutation | `adminProcedure` | — | `system_settings` | `Admin`, `More` |
+| `adminWhatsapp.getStatus` | query | `adminProcedure` | `whatsapp_contacts`, `whatsapp_messages` | — | `Admin`, `More` |
+| `adminWhatsapp.getTemplates` | query | `adminProcedure` | — | — | `Admin`, `More` |
+| `adminWhatsapp.getUsers` | query | `adminProcedure` | `local_users`, `users` | — | — |
+| `adminWhatsapp.sendDirectMessage` | mutation | `adminProcedure` | `local_users`, `whatsapp_contacts` | `whatsapp_messages` | `Admin`, `More` |
+| `adminWhatsapp.startService` | mutation | `adminProcedure` | — | — | — |
+| `adminWhatsapp.stopService` | mutation | `adminProcedure` | — | — | — |
+| `adminWhatsapp.syncTemplates` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
+| `adminWhatsapp.toggleOtpVerification` | mutation | `adminProcedure` | — | `system_settings` | — |
+| `adminWhatsapp.updateSettings` | mutation | `adminProcedure` | — | `system_settings` | `Admin`, `More` |
 | `profile.getInAppNotifications` | query | `authedProcedure` | `in_app_notifications` | — | `App shell`, `NotificationsPage` |
 | `profile.markAllInAppNotificationsRead` | mutation | `authedProcedure` | — | `in_app_notifications` | `App shell`, `NotificationsPage` |
 | `profile.markInAppNotificationRead` | mutation | `authedProcedure` | — | `in_app_notifications` | `App shell`, `NotificationsPage` |
@@ -109,9 +126,12 @@ flowchart LR
 
 | Entry point | Kind | Declared in |
 | --- | --- | --- |
+| `GET /api/webhooks/whatsapp` | webhook | `api/boot.ts` |
+| `POST /api/webhooks/whatsapp` | webhook | `api/boot.ts` |
 | `scheduled-notifications` | job, `* * * * *` | `api/boot.ts` |
 | `seed-default-templates` | job, once at boot | `api/boot.ts` |
 | `smart-activity-notifications` | job, `0 20 * * *` | `api/boot.ts` |
+| `whatsapp-outbox` | job, `* * * * *` | `api/boot.ts` |
 
 ## Data
 
@@ -121,13 +141,15 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | --- | --- | --- | --- |
 | `expense_daily_rollups` | C | — | `notifications` |
 | `in_app_notifications` | D | `notifications`, `profile.markAllInAppNotificationsRead`, `profile.markInAppNotificationRead` | `profile.getInAppNotifications` |
-| `local_users` | A | — | `adminWhatsapp.broadcastMessage`, `adminWhatsapp.getUsers`, `notifications` |
+| `local_users` | A | — | `adminWhatsapp.broadcastTemplate`, `adminWhatsapp.getUsers`, `adminWhatsapp.sendDirectMessage`, `notifications`, `whatsapp` |
 | `notification_logs` | E | `notifications` | `notifications` |
 | `notification_templates` | A | `notifications` | `notifications` |
 | `push_subscriptions` | A | `notifications`, `profile.savePushSubscription` | `notifications`, `profile.savePushSubscription` |
-| `system_settings` | A | `adminWhatsapp.toggleOtpVerification` | — |
+| `system_settings` | A | `adminWhatsapp.toggleOtpVerification`, `adminWhatsapp.updateSettings` | — |
 | `user_profiles` | A | — | `notifications` |
 | `users` | A | — | `adminWhatsapp.getUsers`, `notifications` |
+| `whatsapp_contacts` | A | `whatsapp` | `adminWhatsapp.broadcastTemplate`, `adminWhatsapp.getStatus`, `adminWhatsapp.sendDirectMessage`, `whatsapp` |
+| `whatsapp_messages` | E | `adminWhatsapp.sendDirectMessage`, `whatsapp` | `adminWhatsapp.getOutboxLog`, `adminWhatsapp.getStatus`, `whatsapp` |
 
 ## Outside systems
 
@@ -135,13 +157,13 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | --- | --- | --- |
 | Firebase | push | `notifications` |
 | Web Push | push | `notifications` |
-| WhatsApp through Baileys | messaging | `whatsapp` |
+| WhatsApp (Meta Cloud API) | messaging | `whatsapp` |
 
 ## Other systems
 
 Depends on: [Accounts, sign-in and security](accounts.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md).
 
-Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
@@ -159,12 +181,19 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/notifications.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>14 files and declarations</summary>
+<details><summary>19 files and declarations</summary>
 
 - `api/admin-whatsapp-router.ts`
+- `api/boot.ts#GET /api/webhooks/whatsapp`
+- `api/boot.ts#POST /api/webhooks/whatsapp`
 - `api/boot.ts#job:scheduled-notifications`
 - `api/boot.ts#job:seed-default-templates`
 - `api/boot.ts#job:smart-activity-notifications`
+- `api/boot.ts#job:whatsapp-outbox`
+- `api/lib/whatsapp/client.ts`
+- `api/lib/whatsapp/outbox.ts`
+- `api/lib/whatsapp/templates.ts`
+- `api/lib/whatsapp/webhook.ts`
 - `api/notification-engine.ts`
 - `api/profile-router.ts#profile.getInAppNotifications`
 - `api/profile-router.ts#profile.markAllInAppNotificationsRead`
@@ -172,8 +201,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/profile-router.ts#profile.savePushSubscription`
 - `api/profile-router.ts#rest-of-file`
 - `api/services/firebase.ts`
-- `api/services/otp-cache.ts`
-- `api/services/whatsapp-service.ts`
 - `src/pages/Notifications.tsx`
 
 </details>

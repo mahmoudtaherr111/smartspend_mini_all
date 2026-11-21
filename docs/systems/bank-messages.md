@@ -1,203 +1,210 @@
 # Bank and wallet messages
 
-How a bank or wallet notification on the user's phone becomes a transaction without the user typing anything: the
-Android companion app and the iPhone Shortcut that forward messages, the public ingest route that receives them,
-the rule parser and the model that read them, and the setup screens.
+Automatic capture of bank, wallet and payment messages: the user pays any way (a card, Apple Pay, InstaPay,
+Vodafone Cash, a bank transfer), the phone sends the message, and the ledger shows it as spending or income with its
+details, without the user typing anything. One path since [decision 0049](../decisions/0049-one-capture-path-model-decides.md):
+the phone sends what holds a keyword, the model decides what it means, and the code only keeps the model honest.
+Android captures SMS (the SMS build) and bank and wallet app notifications; iPhone capture is not built.
 
 - Facts generated from the code, with diagrams: [docs/atlas/systems/bank-messages.md](../atlas/systems/bank-messages.md)
 - The same story for readers who do not read code: [docs/ar/systems/bank-messages.md](../ar/systems/bank-messages.md)
-- Folder rules while editing: `api/AGENTS.md`, `api/lib/AGENTS.md`, `src/AGENTS.md`; building the Android app:
-  `android-app/README.md`
+- Folder rules while editing: `api/AGENTS.md`, `api/lib/AGENTS.md`, `src/AGENTS.md`, `mobile/AGENTS.md`
 
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Setup screen | `src/pages/BankSyncPage.tsx#BankSyncPage`, route `/bank-sync` | Picks the iPhone or Android setup from the user agent; once the user has a webhook token it shows the digital wallet view instead |
-| iPhone setup | `src/components/bank-sync/IosSetupFlow.tsx#IosSetupFlow` | Creates or rotates the token, copies the ingest address for the Shortcut, shows recent messages |
-| Android setup | `src/components/bank-sync/AndroidSetupFlow.tsx#AndroidSetupFlow` | Downloads the companion app and hands it the token through a deep link |
-| Android companion | `android-app/app/src/main/java/com/smartspend/sync/SyncService.kt#SyncService` and `DeepLinkActivity` | Reads notifications, keeps the bank and wallet ones, posts them to the ingest route |
-| Ingest route | `POST /api/sms/ingest` in `api/sms-router.ts#smsApp` | Token check, limits, duplicate check, parsing, saving |
-| Parsers | `api/lib/sms-rule-parser.ts#parseSmsByRules`, `api/lib/sms-ai-parser.ts#parseSmsFinancialData` | Provider templates first, a Gemini call when the templates are not sure |
-| Filing | `api/services/sms-ledger.ts` | The category of a parsed message, the ledger write, and the suggestions kept over the monthly limit |
-| Suggestions | `profile.getSmsSuggestions`, `profile.confirmSmsSuggestion`, `profile.dismissSmsSuggestion` in `api/profile-router.ts`; `src/components/bank-sync/SmsSuggestionsCard.tsx#SmsSuggestionsCard` on the Home record tab | Messages kept over the monthly limit, which the user saves or dismisses |
-| Token and log procedures | `profile.getWebhookToken`, `profile.generateWebhookToken`, `profile.getSmsLogs`, `profile.generateMagicCode` in `api/profile-router.ts` | What the setup screens call |
+| The phone's filter | `CaptureGate.kt` in `mobile/packages/bank_capture/android/src/main/kotlin/com/smartspend/bank_capture/`, the list in `gate.keywords` of `/config` | Sends a message whose title or text holds one of the owner's 31 keywords; keeps everything else on the phone |
+| Capture on Android | `BankNotificationListener`, `SmsReceiver.kt` (`SmsReceiver`, `SmsCapture`, `SmsInbox`), `CaptureQueue`, `CaptureWork.kt`, `CaptureNotifier`, `CaptureActionReceiver` | Reads bank and wallet app notifications and, in the SMS build, SMS as they arrive and the last 30 days on request; keeps them encrypted until sent; shows the server's notice with undo |
+| Intake routes | `api/capture-v1-routes.ts` (`/api/capture/v1/signals`, `/config`, `/notices`, `/notices/ack`, `/actions`, `/heartbeat`), shapes in `contracts/capture-intake.ts` | What phones call with a device token |
+| Intake | `api/lib/capture/intake.ts` (`admitSignal`, `ingestSignals`, `placeSignal`, `mayRecordAlone`, `suggestLedgerEntry`, `answerEvent`) | Who is admitted, the sealed signal and its job, placing a reading, where it is filed, and the user's answers |
+| Privacy | `api/lib/capture/privacy.ts` (`prepareCaptureText`, `looksLikeOneTimeCode`), `api/lib/anonymizer.ts`, `api/lib/capture/vault.ts` | Hides phones, cards, accounts, references, codes, e-mails and IBANs before anything is stored or sent; drops one-time codes; seals the private values to the signal |
+| Model worker | `api/lib/capture/ai-queue.ts` (`drainCaptureModel`, `readingFromModel`, `takeCaptureNotices`) | Claims each job with a lease, asks the model outside a transaction, places the reading under the user's lock, leaves the notice |
+| Model contract | `api/lib/capture/model-contract.ts` (`labelAmounts`, `checkCaptureReply`, `proposeCapturePosting`, `CAPTURE_SYSTEM_PROMPT`), prompt `sms-v5` | What the model is asked, what is accepted back, and the posting in pounds ([below](#the-reading-sms-v5)) |
+| Model transport | `api/lib/capture/model-reader.ts` (`readCaptureWithModel`, `captureRoutes`), `api/lib/capture/admission.ts` | The admin's routes for the `sms` purpose or the server's Gemini key, durable reservations and cost caps, the cost ledger |
+| Matching | `api/lib/capture/events.ts#matchSignal`, `api/lib/capture/fees.ts` | One payment, one event: the SMS and the app's notification, a fee sent apart, the two legs of an own transfer |
+| Questions | `api/lib/capture/questions.ts`, `capture.nextQuestion`, `capture.answerQuestion` | "What was this for?" after saving, for a user who turned it on |
+| Memory | `api/lib/capture/memory.ts` | Where the user files a merchant or person, used before the model's category |
+| Devices, consent, care | `api/lib/capture/devices.ts`, `api/lib/capture/consent.ts`, `api/lib/capture/care.ts`, `api/lib/capture/access.ts` | Device tokens, what the user agreed to, phone health, deleting the user's data, who capture is open to |
+| Admin | `api/capture-admin-router.ts`, `api/lib/capture/operations.ts`, the console's رسايل البنوك section and `src/components/admin/settings/AdminCaptureSection.tsx` | The catalog, the numbers, the breaker, the bulk undo, the switches |
+| The app's screens | `mobile/app/lib/src/features/capture/`, `mobile/app/lib/src/features/more/bank_capture_card.dart` | Turning capture on, SMS permission and import, the switches (AI reading, questions, samples), what waits for the user |
+| Admin alerts | `notifyAdmins`, kept under its name in `api/lib/capture/operations.ts` and now in `api/services/admin-alerts.ts` | The breaker and the stalled model queue tell the admins in the app, once an hour |
+| Simulator | `api/lib/capture/simulator.ts#simulateCaptureMessage`, `captureAdmin.simulate`, the console tab «جرّب رسالة» (`admin/src/pages/bank/MessageTest.tsx`) | Sends a message's text (the sender is optional: it only names the bank) through the production path into the signed-in admin's own ledger, with a simulator device and that admin's consents, and shows what the user meets: the phone's notice, then the row as the app lists it, or why nothing was recorded; the steps behind it fold away |
+| Benchmark | `api/qa/capture-benchmark.ts` (`npm run bench:capture`), the frozen set `api/qa/fixtures/capture-heldout-v9.json` | Scores the production reading path with a real model on a case file, printing no message text |
 
-## One message, step by step
+## The path, step by step
+1. **The phone.** A notification of an app the catalog lists, or (SMS build) an SMS, is sent when its folded text holds
+   a keyword (`CaptureGate.keeps`): lower case, ASCII digits, Arabic letter variants and no diacritics, compared as a
+   substring. The list is the server's `gate.keywords`; the build's own copy (`CaptureGate.DEFAULT_KEYWORDS`) is used
+   until a config arrives. Nothing else is judged on the phone. Signals wait encrypted in `CaptureQueue` and are sent
+   in batches of up to 20 with the device token; an SMS imported from the inbox is marked `imported`.
+2. **Admission** (`admitSignal`). An app notification must come from an app the catalog lists; an SMS from a person's
+   number (eight digits or more) is ignored; the server checks the keyword again (`holdsCaptureKeyword`). Which bank
+   sent it is looked up (`sourceForPackage`, `sourceForSender`, which matches registered sender ids and else the
+   source's own names: "CIB", "VF-Cash", "BanqueMisr") for display and the admin's pause; it is never required.
+3. **Privacy** (`prepareCaptureText`). Phones, cards, accounts, references, codes, e-mails, IBANs and any leftover
+   run of ten digits become numbered markers (`[PHONE_1]`); the values stay on the server, sealed to the signal
+   (`sealCaptureText`). Names of shops and people are not masked: the model needs them to tell a shop from a person.
+   A one-time code (`looksLikeOneTimeCode`) is ignored and nothing of it is stored.
+4. **Keeping.** A signal is kept once per phone id (a retry with other text is refused), redacted, with one
+   `capture_ai_jobs` row, and the phone is answered `queued`; the request wakes the worker.
+5. **Reading** (`readCaptureWithModel`). The model reads the labelled message ([below](#the-reading-sms-v5)) through
+   the admin's routes for `sms`, or the server's Gemini key with gemini-3.5-flash-lite then gemini-3.1-flash-lite.
+   A reply that fails its checks is asked of the next route. A provider that is down is retried after 30 s, 1 min, 2 min
+   and so on up to an hour, for a day; nothing is lost while it is down.
+6. **Placing** (`placeSignal`). The reading is matched with the user's recent events; a new payment counts against
+   the month's limit (over it, it is held). A complete reading is recorded on its own (`mayRecordAlone`); a possible
+   duplicate, a source the admin paused, a foreign charge without its pound value or a transfer without a direction
+   waits in the app's list for the user. Declined, on hold, codes, offers, statements and balances record nothing; a
+   balance still moves the one wallet whose last digits it names, when the user said that wallet holds their money.
+7. **The phone again.** The notice ("اتسجلت · …", with undo) is fetched by `NoticeWorker` and acknowledged once shown.
 
-### 1. A phone forwards it
-- **Android**: `SyncService` is a notification listener. It ignores chat and social apps, SMS from personal phone
-  numbers, notifications without digits, and OTP or verification messages. It forwards a notification when it looks
-  transactional: from a known financial app (or a package whose name suggests a bank, wallet or payment app) with a
-  transaction keyword; from an SMS app with a bank sender and a transaction keyword, or with a transaction keyword and
-  a financial marker; from any other app with both. It posts `message`, `sender`, `timestamp` and `source` with
-  `Authorization: Bearer <token>` to the stored ingest address. A send that fails is queued in the app's preferences
-  and retried after the next successful send; a retry the server rejects is dropped.
-- **iPhone**: the user builds a Shortcuts automation on messages that contain a keyword, running a SmartSpend
-  Shortcut that posts the message to the address the setup screen copied (via `src/lib/api-url.ts#getAbsoluteApiUrl`),
-  `<origin>/api/sms/ingest?token=<token>` — using `VITE_API_URL` when configured so a Capacitor shell never copies
-  `capacitor://localhost`.
+## The reading (sms-v5)
+The code labels every amount-shaped number of the redacted message (`labelAmounts`: `{N1:1,250.00}`, with the
+currency written next to it, dates, times, percents, masked cards and markers left alone) and sends the sender id and
+the labelled message. The model answers status (completed, declined, pending, not a transaction), kind, direction,
+the labels of the amount, its pound value, the fee and the balance, whether the fee is included, the other side and
+its type, the method, a category and subcategory id from the taxonomy, and whether it is a subscription. It never
+writes a number. The checks (`checkCaptureReply`) read no words, so they hold for any bank:
+- the reply's shape; a provider that does not enforce the schema may misspell a side field, which then counts as
+  absent; only the status and the amount must be exact;
+- a completed movement names an amount label that exists and is above zero, and not the same label as the balance;
+- a fee equal to the amount, a label that does not exist, a party that is a label or an account marker, and a
+  category that does not fit the direction are dropped, not the reading;
+- the direction comes from the kind when the kind has one (purchase, bill, top-up, withdrawal, fee, card payment,
+  installment are out; salary, refund, cashback, deposit are in); the model gives it for a transfer, interest or a
+  loan; a move between the user's own accounts with no direction is filed as leaving the first one.
 
-### 2. The ingest route accepts or refuses
-`POST /api/sms/ingest`:
-- reads the token from `Authorization: Bearer` or the `token` query parameter; an unknown token gets 403;
-- allows 30 messages an hour per token, counted in Redis so every server process shares the count
-  (`api/sms-router.ts#withinRateLimit`, a sliding window keyed by a hash of the token);
-- needs a `message` of at least five characters;
-- refuses with 409 the same message text from the same user within 24 hours;
-- counts the messages saved automatically (`processed`) since the first of the Cairo month against the plan's limit,
-  `sms_limit_<plan>` (5 on the free plan when the setting is absent). A message past it is kept as a suggestion
-  instead of being saved (step 5);
-- stores the message in `raw_sms_events` with status `pending`.
+`proposeCapturePosting` gives the pounds: a written EGP amount, or the EGP equivalent of a foreign one; a separate fee
+is added on money going out, an included one subtracted; money coming in is recorded as it arrived.
 
-### 3. Rules first, the model second
-- `parseSmsByRules` normalizes digits and letters, recognises the provider from the sender the app posted, or else from the
-  text (wallets such as Vodafone Cash, InstaPay,
-  Etisalat Cash, Orange Money, WE Pay; banks such as CIB, NBE, Banque Misr, QNB, AAIB, Alex Bank, Faisal Bank,
-  Crédit Agricole, HSBC; Apple Pay, valU, Fawry, Meeza), filters OTPs and promotions, reads direction and category
-  from provider templates (`api/lib/sms-rule-parser.ts#parseDirection`: wallet, InstaPay, and English and Arabic
-  bank formats for salary, deposits, transfers, card payments, ATM and bills), and extracts the amount and the
-  balance after the transaction. Its confidence adds up what it found: an amount, a direction, a known provider,
-  how specific the matched template is, a balance.
-- A rule result with an amount and confidence of 0.85 or more is used as it is (`parsed_by: rules`).
-- Otherwise `parseSmsFinancialData` shortens the message to its financial parts
-  (`api/lib/sms-rule-parser.ts#condenseSmsNotification`), looks in a per-user cache kept in memory for 15 minutes (it stores and hands out copies),
-  and asks Gemini for a fixed JSON shape, with `GEMINI_API_KEY` and the model `mapModelName("flash")` resolves to (its
-  cost goes to the [AI cost ledger](ai-platform.md#how-a-call-is-recorded) when the user is known). An
-  answer that found a transaction with an amount at confidence 0.6 or more is used (`ai`); failing that, a rule
-  result with an amount is used (`rules_fallback`).
-- When nothing was found, there is no amount or the confidence is under 0.5, the message is marked `ignored` with
-  its reason (`not_financial` or `low_confidence`) and the route answers 200 with `transaction_detected: false`.
+Measured on the frozen set of 60 invented messages written before the prompt (`api/qa/fixtures/capture-heldout-v9.json`,
+2026-11-05): gemini-3.5-flash-lite 60/60 (p50 1.1 s), qwen3.8-27b on Groq 60/60 (p50 0.6 s), gemini-3.1-flash-lite
+57/60 (two provider errors and one own-account move without a direction, since filed). These are invented messages:
+real messages are the measure (`npm run bench:capture -- --cases <private file>`).
 
-### 4. Saving
-- `api/services/sms-ledger.ts#categorizeSms` files the message.
-  `api/lib/sms-ai-parser.ts#mapSmsToExpenseCategory` turns direction, message category and provider into a
-  category, subcategory and type, always a pair the taxonomy holds: incoming salary becomes `مرتب/مرتب أساسي`;
-  other incoming money is `دخل آخر/عام` (the message does not say where it came from); an outgoing transfer is
-  `تحويل` with its rail (`انستاباي`, `فودافون كاش` or `تحويل بنكي`) as subcategory; a card payment is `تسوق/عام`
-  with a merchant, else `متنوعات/عام`; bills are `فواتير/عام`; an ATM withdrawal is `تحويل/سحب ATM` of type
-  `transfer`, because the cash is still the user's (docs/decisions/0008-money-movements-and-taxonomy.md).
-- A card payment to a merchant the classification engine knows well takes the merchant's category instead
-  (`classifySmsMerchant`): the rule engine reads the merchant's name, normalized and then as written, since bank
-  messages spell merchants in Latin letters, and only a merchant, synonym or dictionary match counts. "UBER *TRIP"
-  is مواصلات/أوبر/كريم and "Talabat" أكل وشرب.
-- In one database transaction the route inserts the expense (source `sms`, the message as raw text, a description
-  from provider, merchant and sender, the message's timestamp as its date when it parses, the parse details as
-  metadata), writes the daily rollup delta
-  (`api/services/expense-rollups.ts#applyExpenseRollupDelta`), and marks the raw message `processed`. It then bumps
-  the finance cache generation.
+## The ledger row
+`recordEventInTx` writes through the ledger writer (decision 0027): source `sms`, `clientRequestId` `cap:e<event>`,
+the date of the message, the card's wallet when one wallet has those digits, no bank text. Everything is spending or
+income (the owner's rule): money sent to anyone is spending, money received is income. The user's own money changing
+pockets (own accounts, ATM, cash deposit, card repayment) keeps its direction and stays out of the totals
+(`contracts/ledger-movement.ts`, decision 0045). The line reads as a person would say it (`ledgerDescription`):
+"إرسال إلى Sara Mostafa · CIB", "استلام من Mona Adel · فودافون كاش", "شراء · TALABAT EGYPT · WE Pay"; a phone shows
+only its last four digits. The details keep the fee, the method, the party and its type, the card or account suffix,
+the balance after it and the original amount. A fee becomes a linked row bundled with its payment.
 
-### 5. Over the monthly limit
-A message past the plan's limit is not lost (docs/decisions/0009-bank-messages-over-the-limit.md):
-- it is read by the rules alone, so no model is paid for; when they find a transaction with an amount, the raw
-  message gets status `suggested` and a suggestion in its metadata (amount, direction, type, category from
-  `categorizeSms`, provider, merchant, description, time); otherwise it is `ignored` with reason
-  `monthly_limit_unread`;
-- the route answers 200 with `saved: false` and `suggested`, so the phone does not retry it;
-- the Home record tab shows the waiting suggestions (`SmsSuggestionsCard`, from `profile.getSmsSuggestions`). The
-  user keeps or changes the category (a list of the categories of the message's kind) and saves it
-  (`profile.confirmSmsSuggestion`), or dismisses it (`profile.dismissSmsSuggestion`, status `dismissed`);
-- saving moves the status from `suggested` to `confirmed` in the same transaction as the expense, the day's rollup
-  delta and the details, and only when it was still `suggested`, so a second tap saves nothing. The finance caches
-  are bumped and budget alerts checked, as after an automatic save. A confirmed message does not count toward the
-  limit.
+Where it is filed: the user's memory of this merchant or person, then the subscription catalog, then the model's
+category and subcategory, then «متنوعات / عام» (or other income). A user who turned on «اسألني اتصرفت في إيه»
+(`purpose_questions`) is asked about payments left at the general category or sent to a person, at most two
+notifications a day; the answer edits the same row and is remembered. A payment recorded from a message is then
+matched to the commitment it pays by the `commitment-match-sweep` job, by the same strict rules as a typed one
+(plans with `commitment_capture_link`; [Money](money.md#commitments-hub-التزاماتي)).
 
-## Setting up a phone
-**Android**
-1. `AndroidSetupFlow` downloads `/downloads/smartspend-sync.apk` (resolved via `src/lib/api-url.ts#getApiUrl`).
-2. "Connect" calls `GET /api/sms/android-connect` (via `getApiUrl`) with the browser's cookies and
-   `src/providers/trpc.ts#getTrpcHeaders` (`Authorization: Bearer` when present), authenticated by the `google_session`
-   cookie, a Bearer header, or the HttpOnly `smartspend_token` cookie of a phone and password account
-   (`api/sms-router.ts#getUserFromSession`). It creates a token when the user has none and returns
-   `smartspend://connect?token=…&url=…`, which the page opens.
-3. `DeepLinkActivity` stores the token and address and leads the user to grant notification access.
-   `POST /api/sms/android-status` lets the app report that it is running.
-
-**iPhone**
-1. `IosSetupFlow` shows the token. Creating a new one (`profile.generateWebhookToken`) deletes the old one, so a
-   phone set up with the old token stops working.
-2. "Connect iPhone" copies the ingest address with the token (via `src/lib/api-url.ts#getAbsoluteApiUrl`, preferring
-   `VITE_API_URL` so Capacitor's `capacitor://localhost` origin never leaks into the Shortcut) and opens a public
-   iCloud Shortcut.
-3. The keyword for the automation is saved in the smart profile as `preferences.smsTriggerKeyword`; only the
-   instructions on the screen use it.
-4. Recent messages come from `profile.getSmsLogs`, refreshed every ten seconds.
-
-With a token in place, `BankSyncPage` shows `src/components/bank-sync/DigitalBankingSuite.tsx#DigitalBankingSuite`,
-which manages cards and wallets through the wallet procedures of [Money](money.md). Its badge says what arrived, not
-that a token exists: `profile.getWebhookToken` also returns `lastReceivedAt`, the latest stored message
-(`raw_sms_events`), and the badge reads "no message yet", the day of the last one (green within three days), or how
-many days ago it was with a prompt to check the phone (amber). A wallet's balance is what the user entered; messages
-are saved as transactions and do not move it.
-
-Also available, with no caller in the web app today: one-time six-character codes (`profile.generateMagicCode`,
-kept five minutes as shared state by `api/sms-router.ts#storeMagicCode`, so any server process can exchange one; a new
-code retires the user's previous one, and the code names the user, not the token, so the token handed out is the
-user's current one) exchanged at `POST /api/sms/exchange` or
-at `GET /api/sms/shortcut-download`, which returns a generated Shortcut file
-(`api/lib/shortcut-generator.ts#generateShortcutFile`) that posts with an Authorization header; and
-`GET /api/sms/token`, `POST /api/sms/token/generate`, `GET /api/sms/logs`, `GET /api/sms/metrics` (parser
-statistics per provider) and `GET /api/sms/unparsed`.
+## Switches and the first start
+- `capture_enabled` is on unless the admin sets it to `false`; the platforms and the beta list narrow it.
+- The user's consent: `capture` and `ai_reading` at text version `2026-11-05` (`CAPTURE_CONSENT_TEXT_VERSION`); older
+  grants stop counting. `purpose_questions` and `message_samples` are the user's own switches.
+- `capture_questions_enabled` (on unless set to `false`) lets users turn questions on.
+- `capture_paused_sources`: those banks' payments are read and wait for the user instead of being recorded; the
+  breaker (`runCaptureBreaker`) adds a bank when too many of its recordings are undone.
+- `capture_financial_version` must be `cashflow-v1` before anything is recorded. The `cashflow-cutover` job
+  (`api/jobs/cashflow-cutover-job.ts`) runs at boot and every ten minutes until it is: it migrates the ledger in
+  batches and turns the flag on when no legacy row is left; with rows it cannot resolve it tells the admins and waits
+  (`npm run ledger:cashflow` then shows them).
+- Costs: `capture_ai_daily_cost_cap_usd`, `capture_ai_tokens_free`, `capture_ai_concurrency`, `sms_ai_enabled`.
 
 ## Data
-- `webhook_tokens`: one token per user, `sms_` followed by random hex.
-- `raw_sms_events`: every message received, with its status (`pending`, `processed`, `ignored`, `suggested`,
-  `confirmed`, `dismissed`) and parse metadata; a suggestion is in `metadata.suggestion`.
-- Account deletion removes both (`api/services/user-purge-service.ts`). An admin procedure in `api/admin-router.ts`
-  lists raw messages across users.
+- `capture_sources` and `subscription_catalog`: the catalog, shared by all users (`0029_capture_sources.sql`). The seed
+  lists the services most people in Egypt pay for (video, music, AI, software and storage, games, learning and books,
+  social, delivery and rides; the memberships talabat pro, Careem Plus and Uber One are matched by their own name
+  only, never the app's, which every order carries). Each has its brand colour, its official Android app
+  (`app_package`) and site (`website`, `0051_catalog_brand_logos.sql`), and the admin's own `logo_url`.
+- **Real logos** (`api/lib/capture/brand-logos.ts`): the `brand-logos` job (at boot after the catalog seed, and daily at
+  04:23) and the console's «جيب اللوجو» / «جيب اللوجوهات الناقصة» fetch each service's icon from its own official
+  listings: its Google Play listing (`og:image` at 256 px), else its Microsoft Store app (`ms_store_id`,
+  `0052_catalog_ms_store.sql`: Apple's iCloud for Windows), else its site's apple-touch-icon or largest raster icon. The
+  first image at least 128 px wide wins (`imageWidth`), else the largest found. Only https requests to public hosts,
+  three checked redirects, a size and time limit, and PNG, JPEG, WebP, GIF or ICO bytes are kept (never SVG). The file
+  is stored through the storage driver as `brand-logos/<slug>-<hash>.<ext>` and served by `GET /api/brand-logos/:file`
+  with a year's immutable cache; `fetched_logo_url` holds its relative address, which the seed never overwrites. A
+  failed try waits a week, a logo is refreshed after 90 days, a stored file that is gone (a redeploy of a server that
+  keeps files on its own disk) is fetched again at the next run, and the admin's `logo_url` wins over a fetched one
+  (`logoOf`). App stores are not offered as subscriptions and get no logo; Jawwy TV, a Saudi service since renamed, is
+  disabled. Every active service has a logo of 128 px or more (48 of them on 2026-11-10). The app resolves the
+  address against the server it talks to and keeps each logo on the phone (`mobile/app/lib/src/features/commitments/logo_cache.dart`:
+  downloaded once, read from the phone on later starts, at most 150 files), so a phone never asks a third party for a
+  logo and does not download it again.
+- `capture_devices`, `capture_consents`, `capture_signals` (a kept signal, deleted after 30 days):
+  `0031_capture_intake.sql`; device health `0039_capture_device_health.sql`.
+- `capture_events` (one payment and the keys signals are matched on): `0032_capture_events.sql`,
+  `0033_capture_signals_drop_review.sql`, `0037_capture_events_source.sql`.
+- `capture_usage` (the month's count, the held ones, the day's signals and questions): `0034_capture_usage.sql`,
+  `0038_capture_markers.sql` (with `capture_markers`, the cards and phrases a user ignores).
+- `capture_memory` and `capture_user_pairs`: `0035_capture_memory.sql`. Pairs are no longer written: everything
+  complete is recorded on its own.
+- `capture_ai_jobs` (one row per signal: status, attempts, lease, outcome, the event and the notice), kept 7 days, a
+  waiting one 30: `0036_capture_ai_jobs.sql`; `capture_ai_days`, `capture_ai_accounts`, `capture_ai_reservations`
+  (cost and token reservations): `0044_fantastic_unus.sql`.
+- `capture_questions`: `0046_sour_valkyrie.sql`. `capture_samples` (redacted text, the facts and the posting, with the
+  admin switch and the user's consent, 365 days): `0047_round_shriek.sql`.
 
 ## Where to change what
 | To change | Edit | Check with |
 | --- | --- | --- |
-| Which notifications the Android app forwards | `android-app/app/src/main/java/com/smartspend/sync/SyncService.kt` | a build of the app (`android-app/README.md`) |
-| The bank and wallet formats the rules read | `api/lib/sms-rule-parser.ts` (provider detection, `parseDirection`, amount and balance extraction) | `tests/adversarial-challenger-2.test.ts`, plus new cases |
-| When the model is asked and what it is asked | `api/lib/sms-ai-parser.ts` (prompt, schema, cache); the thresholds in the ingest route | |
-| How a parsed message becomes a category | `api/lib/sms-ai-parser.ts#mapSmsToExpenseCategory`; merchants in `api/services/sms-ledger.ts#classifySmsMerchant` and the classification dictionaries | `api/lib/sms-ai-parser.test.ts`, `api/services/sms-ledger.test.ts` |
-| Plan limits | the `sms_limit_<plan>` settings | |
-| What happens over the limit, and saving or dismissing a suggestion | the ingest route, `api/services/sms-ledger.ts`, the suggestion procedures, `src/components/bank-sync/SmsSuggestionsCard.tsx` | `api/services/sms-ledger.test.ts` |
-| The setup screens | `src/components/bank-sync/`, `src/pages/BankSyncPage.tsx` | |
-| Building and publishing the APK | `.github/workflows/build-apk.yml`, `android-app/` | |
+| What the phone sends | `CAPTURE_KEYWORDS` in `api/lib/capture/intake.ts`, `CaptureGate.DEFAULT_KEYWORDS`, `contracts/capture-fixtures/phone-gate.json` (all three equal) | `api/lib/capture/phone-gate-fixtures.test.ts`, `CaptureGateTest` |
+| Who is admitted, and what is kept | `admitSignal`, `ingestSignals` in `api/lib/capture/intake.ts`; `api/lib/capture/privacy.ts` | `api/lib/capture/intake.test.ts`, `api/lib/capture/privacy.test.ts`, `tests/capture-intake.test.ts` |
+| What the model is asked and accepted back | `api/lib/capture/model-contract.ts`; change `CAPTURE_PROMPT_VERSION` with the prompt | `api/lib/capture/model-contract.test.ts`, then `npm run bench:capture` on the frozen set and real messages |
+| Which models read, and the costs | the AI providers screen, purpose `sms`; `api/lib/capture/model-reader.ts` | `api/lib/capture/model-reader.test.ts` |
+| Retries, placing, notices | `api/lib/capture/ai-queue.ts` | `tests/capture-intake.test.ts`, `tests/capture-automatic.test.ts` |
+| When signals are one payment | `api/lib/capture/events.ts`, `api/lib/capture/fees.ts` | `api/lib/capture/events.test.ts`, `tests/capture-automatic.test.ts` |
+| What is recorded alone, filing, the line | `mayRecordAlone`, `suggestLedgerEntry`, `ledgerDescription` in `api/lib/capture/intake.ts` | `api/lib/capture/intake.test.ts`, `tests/capture-intake.test.ts` |
+| Questions after saving | `api/lib/capture/questions.ts`, `_QuestionsSwitch` in `bank_capture_card.dart` | `tests/capture-automatic.test.ts`, `mobile/app/test/capture_test.dart` |
+| The ledger cutover | `api/jobs/cashflow-cutover-job.ts`, `api/services/financial-migration.ts` | `tests/cashflow-cutover-job.test.ts`, `tests/financial-migration.test.ts` |
+| Banks, wallets, apps, subscriptions | `api/lib/capture/seed-sources.ts`, `api/lib/capture/seed-subscriptions.ts`, or the console | `api/lib/capture/catalog.test.ts` |
 
 ## Rules for changes here
-1. `/api/sms/ingest` is public and the webhook token is its only credential: every read and write stays scoped to
-   the token's user, and nothing about other users may leave the route.
-2. Keep the rules path first. A model call per message costs money, and the templates are exact for the formats
-   they know.
-3. A saved message is a money-moving write: one transaction with the rollup delta (`api/AGENTS.md`, rule 4).
-4. Never log message text (golden rule 10 in the root `AGENTS.md`): the route and the parser log an event with the
-   user, the type, the provider or the message's length (`sms.ingested`, `sms.parse.cache_hit`), never the text,
-   the amount or the category.
-5. The rate limit and the one-time codes are shared by every server process: Redis, through
-   `executeSlidingWindowRateLimit` and `stateSet` in `api/lib/redis-client.ts` (`api/AGENTS.md`, rule 6). The AI
-   parse cache stays in one process's memory, which is harmless: an identical message is refused as a duplicate.
+1. Never log message text, codes, phones or names (golden rule 10): log an event, ids and outcome codes.
+2. Nothing leaves the server before `prepareCaptureText`, one message of one user per call, and the model is the
+   admin's `sms` route or the server's own key, behind the switch, the budget and the caps.
+3. No check may depend on how one bank words a message. A new rule must hold for a message from a bank nobody has
+   seen: prefer labels, arithmetic and the kind over word lists.
+4. Score a prompt or check change on the frozen set before and after, and never edit that set to fit a result; a new
+   failure shape gets a new invented case in a new file.
+5. Money-moving writes go through the ledger writer in the transaction that marks the event, scoped to the user and
+   user type. The bank's text never enters the ledger or a log.
+6. Messages in tests and fixtures are invented: the repository is public.
 
 ## Tests
-`tests/adversarial-challenger-2.test.ts` checks that condensing messages from several banks keeps their amounts,
-cards, dates and balances. `api/lib/sms-ai-parser.test.ts` checks the category mapping, and
-`api/services/sms-ledger.test.ts` the merchant categories, the suggestions and a confirmation saved once.
-`api/sms-router.pairing.test.ts` exchanges pairing codes once and retires an older code, and
-`api/lib/sms-rule-parser.sender.test.ts` reads the provider from the sender. Nothing tests the ingest route itself or
-the rule templates one by one.
+`api/lib/capture/model-contract.test.ts` checks the labels, the checks, the posting and the prompt.
+`api/lib/capture/intake.test.ts` checks admission, the reading the worker places, filing and what is recorded alone.
+`api/lib/capture/model-reader.test.ts` checks the transport against a fake provider (the labelled message, the
+reservation and the bill, the next route on a bad reply or an outage, the server key without an admin route).
+`api/lib/capture/privacy.test.ts` checks what is hidden, what is kept and the one-time-code drop.
+`api/lib/capture/events.test.ts` checks every merge rule. `tests/capture-intake.test.ts` and
+`tests/capture-automatic.test.ts` (`npm run test:db`) run the routes, the worker and the ledger on MySQL with a stub
+model: any bank recorded on its own, a code stored nowhere, an outage then recording, the SMS and the app's
+notification recorded once, the same words twice asked about, a foreign charge finished by the user once, a deleted
+payment not brought back, a refund in its purchase's category, the wallet and its balance, the limit and the upgrade,
+the memory, undo, the breaker and the bulk undo, access, consent, fees, own transfers, questions and samples.
+`tests/cashflow-cutover-job.test.ts` checks the automatic cutover. `CaptureGateTest` runs the phone's cases in Kotlin;
+`mobile/app/test/capture_test.dart` the app's screens and switches.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Gap.** The APK behind `/downloads/smartspend-sync.apk` is a debug build that `.github/workflows/build-apk.yml` commits
-   when `android-app/` changes; it is signed with the runner's throwaway debug key, so a newer build cannot install
-   over an older one until a release key is configured.
-2. **Gap.** The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY`
-   directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
-3. **Gap.** Only a merchant the engine knows well changes the fixed map (a card payment, or a refund from it, which is
-   saved as a negative expense in that merchant's category): a card payment to any other merchant is
-   `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not
-   classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
-4. **Gap.** Raw messages are deleted 90 days after they arrive (`RETENTION_POLICIES` in
-   `api/jobs/data-retention-job.ts`), a suggestion left unanswered included; until then the full text, with account
-   digits and balances, is stored as received.
-5. **Debt.** `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
+1. **Gap.** iPhone capture is not built: iOS gives apps no SMS. Nothing has run on a real phone: this machine cannot
+   run an Android emulator, so the path was proved from the phone's HTTP calls to the ledger with a real model.
+2. **Gap.** The SMS build (`-Psmartspend.sms=true`, the `smartspend-sms-apk` artifact of `.github/workflows/android-release.yml`) may not
+   go to Google Play before the SMS declaration is approved; the store build has notifications only.
+3. **Gap.** A payment announced by the bank's SMS and its app's notification is joined when both name the same card,
+   account or merchant, or the same balance (`matchSignal`); if neither message names any of them, two rows appear.
+4. **Gap.** No export of `capture_samples` exists yet (`api/lib/capture/samples.ts`).
+5. **Debt.** The phone sends any message with a keyword, so a one-time code that mentions a purchase reaches the server,
+   which drops it before storing (`looksLikeOneTimeCode`); a code the rule misses would reach the model.
+6. **Gap.** Without an admin route for `sms`, only Gemini on the server's key reads; a second provider needs its key
+   and prices in the console.
 
 ## Related systems
-- [Money](money.md): the ledger the messages are saved into, and the wallets the digital wallet view manages.
-- [Recording spending](expense-capture.md): typed, spoken and photographed entries use a different pipeline.
-- [Accounts, sign-in and security](accounts.md): the sessions the setup routes read.
-- [AI providers and usage limits](ai-platform.md): the budgets and providers the SMS model call does not use yet.
-- [Admin console, support and growth tools](admin.md): the raw messages tab.
-- [Server platform and data](platform.md): the retention job and storage classes.
+- [Money](money.md): the ledger, wallets and the totals that leave own moves out.
+- [Recording spending](expense-capture.md): typed, spoken and photographed entries.
+- [AI providers and usage limits](ai-platform.md): the routes, budgets and the cost ledger.
+- [Admin console, support and growth tools](admin.md): the capture section, the catalog and the numbers.
+- [Server platform and data](platform.md): background jobs, retention and storage classes.

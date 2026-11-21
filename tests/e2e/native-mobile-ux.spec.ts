@@ -306,8 +306,12 @@ test.describe("Native Mobile Transformation: Comprehensive 4-Tier UX & Physics S
       // The visible animation frame precedes the focus scope's setup. Wait for
       // keyboard readiness, and keep the safe action as the initial focus.
       await expect(confirmation.getByRole("button", { name: "إلغاء", exact: true })).toBeFocused();
-      await page.keyboard.press("Escape");
-      await expect(confirmation).toBeHidden();
+      // Escape closes the topmost layer first: on a tablet a tooltip of the side menu can sit above the dialog, so
+      // the dialog may need a second Escape, as in any Radix layer stack.
+      await expect(async () => {
+        await page.keyboard.press("Escape");
+        await expect(confirmation).toBeHidden({ timeout: 1_000 });
+      }).toPass({ timeout: 6_000 });
 
       expect(consoleErrors).toHaveLength(0);
     });

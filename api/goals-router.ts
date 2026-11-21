@@ -2,7 +2,7 @@ import { z } from "zod";
 import { router, authedProcedure, goalAnalysisProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
-import { financialGoals, expenses, users, localUsers, userBudgets } from "../db/schema";
+import { financialGoals, expenses, userBudgets } from "../db/schema";
 import { eq, and, desc, gte, lt, sql } from "drizzle-orm";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { env } from "./lib/env";
@@ -11,7 +11,7 @@ import {
   clampOutputTokens,
   estimateTokensFromText,
   loadSystemConfig,
-  recordAiUsageEvent,
+  trackAiTokens,
   asPlan,
   capRequestOutputTokens,
 } from "./lib/ai-usage-policy";
@@ -26,6 +26,7 @@ import { ExpenseInputLimits } from "../contracts/constants";
 import { getSystemSettings } from "./lib/settings-cache";
 import { isPlanFeatureEnabled, planNumber } from "../contracts/plan-features";
 import { recordGeminiCall } from "./lib/ai-ledger";
+import { spendingRowSql } from "./services/ledger-semantics";
 
 const FREE_DESCRIPTION_MAX = 120;
 
@@ -62,25 +63,7 @@ async function trackGoalTokens(
   tokens: number,
   model?: string,
 ) {
-  if (!tokens) return;
-  if (userType === "oauth") {
-    await db
-      .update(users)
-      .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
-      .where(eq(users.id, userId));
-  } else {
-    await db
-      .update(localUsers)
-      .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
-      .where(eq(localUsers.id, userId));
-  }
-  await recordAiUsageEvent({
-    userId,
-    userType,
-    channel: "goal",
-    tokens,
-    model,
-  });
+  await trackAiTokens({ id: userId, type: userType }, tokens, "goal", model);
 }
 
 export const goalsRouter = router({
@@ -204,7 +187,7 @@ export const goalsRouter = router({
           and(
             eq(expenses.userId, ctx.user.id),
             eq(expenses.userType, ctx.user.type),
-            eq(expenses.type, "expense"),
+            spendingRowSql,
             gte(expenses.date, monthRange.start),
             lt(expenses.date, monthRange.endExclusive),
           ),
@@ -268,7 +251,13 @@ export const goalsRouter = router({
           aiPlan,
           lastAnalyzedAt: new Date(),
         })
-        .where(eq(financialGoals.id, goal.id));
+        .where(
+          and(
+            eq(financialGoals.id, goal.id),
+            eq(financialGoals.userId, ctx.user.id),
+            eq(financialGoals.userType, ctx.user.type),
+          ),
+        );
       await invalidateFinanceUserCache(ctx.user.id, ctx.user.type);
 
       return { goalId: goal.id, analysis: aiPlan, tokensUsed: tokens };

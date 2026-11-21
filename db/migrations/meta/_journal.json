@@ -204,6 +204,174 @@
       "when": 1790720565184,
       "tag": "0028_coach_follow_up",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "5",
+      "when": 1792493965493,
+      "tag": "0029_capture_sources",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1793074724782,
+      "tag": "0030_drop_old_bank_messages",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "5",
+      "when": 1793144517122,
+      "tag": "0031_capture_intake",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "5",
+      "when": 1793149104324,
+      "tag": "0032_capture_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1793149106070,
+      "tag": "0033_capture_signals_drop_review",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "5",
+      "when": 1793153718041,
+      "tag": "0034_capture_usage",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "5",
+      "when": 1793154405587,
+      "tag": "0035_capture_memory",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "5",
+      "when": 1793163695918,
+      "tag": "0036_capture_ai_jobs",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "5",
+      "when": 1793190367179,
+      "tag": "0037_capture_events_source",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "5",
+      "when": 1793210211680,
+      "tag": "0038_capture_markers",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "5",
+      "when": 1793211027794,
+      "tag": "0039_capture_device_health",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1793241199380,
+      "tag": "0040_whatsapp_cloud",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "5",
+      "when": 1793328464091,
+      "tag": "0041_whatsapp_otp_drop_plain_code",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "5",
+      "when": 1793328466311,
+      "tag": "0042_whatsapp_otp_hashed_code",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "5",
+      "when": 1793621598368,
+      "tag": "0043_production_foundations",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "5",
+      "when": 1793750605501,
+      "tag": "0044_fantastic_unus",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "5",
+      "when": 1793751417257,
+      "tag": "0045_gigantic_bastion",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "5",
+      "when": 1793770262592,
+      "tag": "0046_sour_valkyrie",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "5",
+      "when": 1793813077482,
+      "tag": "0047_round_shriek",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "5",
+      "when": 1793881775171,
+      "tag": "0048_peaceful_thunderbolt",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "5",
+      "when": 1793905918416,
+      "tag": "0049_chilly_mister_sinister",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "5",
+      "when": 1794227689825,
+      "tag": "0050_commitments_ecosystem",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "5",
+      "when": 1794268633061,
+      "tag": "0051_catalog_brand_logos",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "5",
+      "when": 1794271308539,
+      "tag": "0052_catalog_ms_store",
+      "breakpoints": true
     }
   ]
 }
