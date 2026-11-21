@@ -20,6 +20,9 @@ const { mockCapacitor, mockLiquidGlass, mockSmartSpendNative, registerPluginSpy 
       getCapabilities: vi.fn(),
       authenticateBiometric: vi.fn(),
       triggerHaptic: vi.fn(),
+      setSessionToken: vi.fn(),
+      getAuthHeaders: vi.fn(),
+      clearSessionToken: vi.fn(),
     };
     const registerPluginSpy = vi.fn((name: string) => {
       if (name === "LiquidGlassTabBar") return mockLiquidGlass;
@@ -42,11 +45,14 @@ vi.mock("@capacitor/core", () => ({
 import {
   NATIVE_TABBAR_HEIGHT_CSS_VAR,
   authenticateNativeIosBiometric,
+  clearNativeSessionToken,
   configureNativeTabBar,
   getNativeIosCapabilities,
+  getNativeRequestHeaders,
   getNativeTabBarMetrics,
   isNativeIosCapacitor,
   setNativeActiveTab,
+  setNativeSessionToken,
   setNativeTabBarBadge,
   setNativeTabBarTheme,
   setNativeTabBarVisible,
@@ -243,5 +249,52 @@ describe("native-ios-bridge", () => {
     const notEnrolled = await authenticateLocalBiometrics();
     expect(notEnrolled.success).toBe(false);
     expect(notEnrolled.reason).toBe("not_supported");
+  });
+
+  it("keeps web requests cookie-only and delegates auth headers + ngrok skip header on Capacitor iOS", async () => {
+    mockCapacitor.isNativePlatform.mockReturnValue(false);
+    mockCapacitor.getPlatform.mockReturnValue("web");
+
+    expect(
+      await getNativeRequestHeaders(
+        "https://nutty-husband-customary.ngrok-free.dev/api/trpc",
+      ),
+    ).toEqual({});
+    await setNativeSessionToken("ignored-on-web");
+    await clearNativeSessionToken();
+    expect(mockSmartSpendNative.getAuthHeaders).not.toHaveBeenCalled();
+    expect(mockSmartSpendNative.setSessionToken).not.toHaveBeenCalled();
+    expect(mockSmartSpendNative.clearSessionToken).not.toHaveBeenCalled();
+
+    mockCapacitor.isNativePlatform.mockReturnValue(true);
+    mockCapacitor.getPlatform.mockReturnValue("ios");
+    mockSmartSpendNative.getAuthHeaders.mockResolvedValue({
+      headers: { Authorization: "Bearer ios-keychain-jwt" },
+    });
+    mockSmartSpendNative.setSessionToken.mockResolvedValue({ saved: true });
+    mockSmartSpendNative.clearSessionToken.mockResolvedValue({ cleared: true });
+
+    expect(
+      await getNativeRequestHeaders(
+        "https://nutty-husband-customary.ngrok-free.dev/api/trpc",
+      ),
+    ).toEqual({
+      Authorization: "Bearer ios-keychain-jwt",
+      "ngrok-skip-browser-warning": "true",
+    });
+    expect(
+      await getNativeRequestHeaders("https://api.smartspend.app/api/trpc"),
+    ).toEqual({
+      Authorization: "Bearer ios-keychain-jwt",
+    });
+    expect(mockSmartSpendNative.getAuthHeaders).toHaveBeenCalledTimes(2);
+
+    await setNativeSessionToken("new-ios-jwt");
+    expect(mockSmartSpendNative.setSessionToken).toHaveBeenCalledWith({
+      token: "new-ios-jwt",
+    });
+
+    await clearNativeSessionToken();
+    expect(mockSmartSpendNative.clearSessionToken).toHaveBeenCalledTimes(1);
   });
 });

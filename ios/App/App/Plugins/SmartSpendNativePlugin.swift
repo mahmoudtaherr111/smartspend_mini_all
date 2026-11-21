@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import LocalAuthentication
+import Security
 import Capacitor
 
 @objc(SmartSpendNativePlugin)
@@ -10,8 +11,17 @@ public class SmartSpendNativePlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "getCapabilities", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "authenticateBiometric", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "triggerHaptic", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "triggerHaptic", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setSessionToken", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getAuthHeaders", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "clearSessionToken", returnType: CAPPluginReturnPromise)
     ]
+
+    private static let keychainService = "com.smartspend.app.auth"
+    private static let keychainAccount = "session_token"
+    private let keychainQueue = DispatchQueue(label: "com.smartspend.app.keychain")
+    private var cachedSessionToken: String?
+    private var hasLoadedSessionToken = false
 
     @objc public func getCapabilities(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
@@ -135,6 +145,87 @@ public class SmartSpendNativePlugin: CAPPlugin, CAPBridgedPlugin {
             }
 
             call.resolve(["triggered": true])
+        }
+    }
+
+    @objc public func setSessionToken(_ call: CAPPluginCall) {
+        let token = call.getString("token")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        keychainQueue.async { [weak self] in
+            guard let self = self else {
+                call.resolve(["saved": false])
+                return
+            }
+            let baseQuery: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: Self.keychainService,
+                kSecAttrAccount as String: Self.keychainAccount
+            ]
+            SecItemDelete(baseQuery as CFDictionary)
+
+            if token.isEmpty {
+                self.cachedSessionToken = nil
+                self.hasLoadedSessionToken = true
+                call.resolve(["saved": false])
+                return
+            }
+
+            var addQuery = baseQuery
+            addQuery[kSecValueData as String] = Data(token.utf8)
+            addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            let status = SecItemAdd(addQuery as CFDictionary, nil)
+            let saved = status == errSecSuccess
+            self.cachedSessionToken = saved ? token : nil
+            self.hasLoadedSessionToken = true
+            call.resolve(["saved": saved])
+        }
+    }
+
+    @objc public func getAuthHeaders(_ call: CAPPluginCall) {
+        keychainQueue.async { [weak self] in
+            guard let self = self else {
+                call.resolve(["headers": [String: String]()])
+                return
+            }
+            if !self.hasLoadedSessionToken {
+                let query: [String: Any] = [
+                    kSecClass as String: kSecClassGenericPassword,
+                    kSecAttrService as String: Self.keychainService,
+                    kSecAttrAccount as String: Self.keychainAccount,
+                    kSecReturnData as String: true,
+                    kSecMatchLimit as String: kSecMatchLimitOne
+                ]
+                var item: CFTypeRef?
+                let status = SecItemCopyMatching(query as CFDictionary, &item)
+                if status == errSecSuccess,
+                   let data = item as? Data,
+                   let token = String(data: data, encoding: .utf8),
+                   !token.isEmpty {
+                    self.cachedSessionToken = token
+                } else {
+                    self.cachedSessionToken = nil
+                }
+                self.hasLoadedSessionToken = true
+            }
+
+            if let token = self.cachedSessionToken, !token.isEmpty {
+                call.resolve(["headers": ["Authorization": "Bearer \(token)"]])
+            } else {
+                call.resolve(["headers": [String: String]()])
+            }
+        }
+    }
+
+    @objc public func clearSessionToken(_ call: CAPPluginCall) {
+        keychainQueue.async { [weak self] in
+            let query: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: Self.keychainService,
+                kSecAttrAccount as String: Self.keychainAccount
+            ]
+            SecItemDelete(query as CFDictionary)
+            self?.cachedSessionToken = nil
+            self?.hasLoadedSessionToken = true
+            call.resolve(["cleared": true])
         }
     }
 

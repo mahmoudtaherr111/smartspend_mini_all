@@ -91,8 +91,11 @@ away: the identity snapshot replayed from the device carries a name, avatar and 
     so `.pb-nav-safe` clears it. Tapping the quick-record button switches to `/dashboard?tab=record`, emits
     `smartspend:quick-action`, and focuses `#expense-input`.
   - `SmartSpendNative` (`ios/App/App/Plugins/SmartSpendNativePlugin.swift`) exposes device capabilities, native
-    `LAContext` Face ID / Touch ID (used by `src/lib/biometricAuth.ts` instead of WebAuthn on Capacitor iOS), and
-    native UIKit haptics (preferred by `src/hooks/useHaptics.ts` on iOS).
+    `LAContext` Face ID / Touch ID (used by `src/lib/biometricAuth.ts` instead of WebAuthn on Capacitor iOS),
+    native UIKit haptics (preferred by `src/hooks/useHaptics.ts` on iOS), and iOS Keychain session storage
+    (`setSessionToken`, `getAuthHeaders`, `clearSessionToken`) used by `src/providers/trpc.ts` when Capacitor iOS
+    calls a remote HTTPS backend (with `isNgrokUrl` in `src/lib/api-url.ts` adding ngrok's warning-skip header for
+    ngrok tunnels, while web/PWA sessions stay strictly HttpOnly-cookie-only per [decision 0037](../decisions/0037-website-session-cookie-only.md)).
   - Service worker registration (`src/pwa/register-sw.ts`) and the PWA install prompt (`src/components/pwa/PwaInstallPrompt.tsx`)
     are skipped inside any native Capacitor shell (`Capacitor.isNativePlatform()`).
   - `scripts/sync-capacitor-assets.ts` syncs the built web bundle into the Android and iOS Capacitor shells and
@@ -154,9 +157,11 @@ Checked against the code; each one names where it lives.
 1. **Gap.** `/ultra` sends anyone not on Ultra to the plans page itself, while the page tells the reader it is
    protected by `UltraFeatureRoute`. Both gates in
    gate components are unused, so the plan is checked on the server only.
-2. **Gap.** The Capacitor shells (`android/`, `ios/`) serve the build from `https://localhost` and call the API on another
-   site, where a `SameSite=Lax` cookie is not sent, so they cannot keep a session since the website stopped holding the
-   token. The Flutter app replaces them (decision 0022); until they are retired they only reach the sign-in screen.
+2. **Gap.** The Android Capacitor shell (`android/`) still serves the build from `https://localhost` without a
+   native Keystore session bridge and calls the API on another site, where a `SameSite=Lax` cookie is not sent, so
+   it cannot keep a session since the website stopped holding the token (Capacitor iOS keeps its session in Swift
+   Keychain via `SmartSpendNative`). The Flutter app replaces Capacitor (decision 0022); until Android Capacitor is
+   retired or bridged it only reaches the sign-in screen.
 4. **Debt.** The list of routes that show the tab bar lives in `BOTTOM_NAV_ROUTES` next to the route table, so a new
    screen has to be added in both places or it loses its navigation.
 5. **Gap.** The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten
