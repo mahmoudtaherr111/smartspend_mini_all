@@ -103,7 +103,7 @@ import {
   validateNumbersAgainstFacts,
 } from "./services/ai-cost-policy";
 import { buildParserTrace } from "./services/parser-trace";
-import { recordingEngineOf } from "./services/recording/engine-switch";
+import { currentRecordingEngine, recordingEngineOf } from "./services/recording/engine-switch";
 import { assertSentenceAllowed, readSentence } from "./services/recording/read-sentence";
 import { planNumber } from "../contracts/plan-features";
 import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
@@ -564,8 +564,8 @@ export const aiRouter = router({
     .mutation(async ({ ctx, input }) => {
       const startTime = Date.now();
       // Setting `recording_engine`: the understanding engine reads the sentence through one service; otherwise the
-      // classification pipeline below runs as it always has. A settings outage keeps the pipeline, whose reads fail alike.
-      if (recordingEngineOf(await getSystemSettings().catch(() => null)) === "understanding") {
+      // classification pipeline below runs as it always has.
+      if ((await currentRecordingEngine()) === "understanding") {
         return readSentence({
           user: ctx.user,
           text: input.text,

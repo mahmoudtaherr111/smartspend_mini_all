@@ -22,7 +22,7 @@ flowchart LR
   end
   subgraph g_api["API, routes and jobs"]
     http__admin["GET /admin"]
-    router_adminConsole["adminConsole API · 14 procedures"]
+    router_adminConsole["adminConsole API · 15 procedures"]
     router_admin["admin API · 57 procedures"]
     router_ads["ads API · 8 procedures"]
     router_aiSetup["aiSetup API · 6 procedures"]
@@ -222,6 +222,7 @@ flowchart LR
 | `adminConsole.status` | query | `adminProcedure` | — | — | — |
 | `adminConsole.supportTeam` | query | `moderatorProcedure` | `local_users`, `support_assignments`, `users` | — | — |
 | `adminConsole.today` | query | `adminProcedure` | `ai_token_ledgers`, `api_key_errors`, `expenses`, `local_users`, `store_purchases`, `support_tickets`, `users` | — | — |
+| `adminConsole.understandingQuality` | query | `adminProcedure` | `classification_logs` | — | — |
 | `ads.click` | mutation | `authedProcedure` | — | `ad_clicks`, `ads` | `App shell` |
 | `ads.create` | mutation | `adminProcedure` | — | `ads` | `Admin`, `More` |
 | `ads.delete` | mutation | `adminProcedure` | — | `ad_clicks`, `ad_impressions`, `ads` | `Admin`, `More` |
@@ -274,7 +275,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ai_token_ledgers` | E | — | `admin.getAiTelemetryOverview`, `admin.getAiTokenLedger`, `admin.getUserAiQuota`, `adminConsole.aiCalls`, `adminConsole.person`, `adminConsole.today` |
 | `api_key_errors` | E | — | `adminConsole.today` |
 | `capture_devices` | A | — | `adminConsole.person` |
-| `classification_logs` | E | — | `admin.getAIClassificationStats`, `admin.getClassificationLogs`, `admin.getClassificationQuality`, `admin.getPipelineVersionStats`, `adminConsole.classifications` |
+| `classification_logs` | E | — | `admin.getAIClassificationStats`, `admin.getClassificationLogs`, `admin.getClassificationQuality`, `admin.getPipelineVersionStats`, `adminConsole.classifications`, `adminConsole.understandingQuality` |
 | `expense_daily_rollups` | C | — | `admin.getDashboardStats` |
 | `expenses` | B | — | `admin.getFounderMetrics`, `admin.listAllUsers`, `adminConsole.growth`, `adminConsole.person`, `adminConsole.today`, `analytics.getAllUserStats`, `analytics.getDashboardStats` |
 | `in_app_notifications` | D | `support.respond` | — |

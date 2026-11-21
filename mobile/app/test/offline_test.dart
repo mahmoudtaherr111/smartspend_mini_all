@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:smartspend_app/src/features/ledger/offline/ledger_store.dart';
 import 'package:smartspend_app/src/features/ledger/offline/offline_rules.dart';
 import 'package:smartspend_app/src/features/ledger/offline/outbox.dart';
@@ -100,6 +101,91 @@ void main() {
   });
 
   group('recording without internet', () {
+    testWidgets('keeps a sentence when a provider is unavailable', (
+      tester,
+    ) async {
+      var unavailable = true;
+      final api = FakeApi()
+        ..answer('ai.parseExpense', (_) {
+          if (unavailable) {
+            throw const TrpcFailure('SERVICE_UNAVAILABLE', 503, 'جرّب تاني');
+          }
+          return _parsed('auto_save', [_item(50, 'أكل وشرب')]);
+        })
+        ..answer('expense.create', (_) => {'id': 77});
+      final app = await _signedIn(tester, api);
+      await _send(tester, 'قهوة 50');
+
+      final waiting = app.ledgerStore.ledger.outbox.single;
+      expect(waiting.text, 'قهوة 50');
+      expect(waiting.state, OutboxState.failed);
+      expect(
+        find.byType(TextField).evaluate().single.widget,
+        isA<TextField>().having(
+          (field) => field.controller?.text,
+          'text',
+          isEmpty,
+        ),
+      );
+      expect(api.paths, isNot(contains('expense.create')));
+
+      unavailable = false;
+      final retry = app.container.read(outboxProvider.notifier).retry(waiting);
+      await tester.pumpAndSettle();
+      await retry;
+      expect(
+        api.lastInput('expense.create'),
+        containsPair('clientRequestId', waiting.id),
+      );
+      expect(app.ledgerStore.ledger.outbox, isEmpty);
+    });
+
+    testWidgets(
+      'keeps the same reading and request ids after a lost save reply',
+      (tester) async {
+        final api = FakeApi();
+        var writeCount = 0;
+        api.answer(
+          'ai.parseExpense',
+          (_) => _parsed('auto_save', [
+            _item(50, 'أكل وشرب'),
+            _item(20, 'مواصلات'),
+          ]),
+        );
+        api.answer('expense.batchCreate', (_) {
+          if (++writeCount == 1) throw http.ClientException('Lost reply');
+          return {
+            'ids': [77, 78],
+          };
+        });
+        final app = await _signedIn(tester, api);
+        await _send(tester, 'قهوة 50 ومواصلات 20');
+
+        final waiting = app.ledgerStore.ledger.outbox.single;
+        expect(waiting.state, OutboxState.queued);
+        expect(waiting.parse?.classificationLogId, 901);
+
+        app.connection.add(true);
+        await tester.pumpAndSettle();
+        expect(app.ledgerStore.ledger.outbox, isEmpty);
+        expect(
+          api.paths.where((path) => path == 'ai.parseExpense'),
+          hasLength(1),
+        );
+        final writes = api.calls
+            .where((call) => call.path == 'expense.batchCreate')
+            .map((call) => call.input)
+            .toList();
+        expect(writes, hasLength(2));
+        expect(writes.first, writes.last);
+        final inputs = writes.first! as List;
+        expect(inputs.map((input) => (input as Map)['clientRequestId']), [
+          '${waiting.id}:0',
+          '${waiting.id}:1',
+        ]);
+      },
+    );
+
     testWidgets(
       'a sentence is kept, shown at once, and saved when the internet returns',
       (tester) async {

@@ -31,7 +31,9 @@ export async function classifyText(
 ): Promise<ChannelClassification | null> {
   const trimmed = String(text || "").trim();
   if (!trimmed) return null;
-  if ((await currentRecordingEngine()) === "understanding") return null;
+  // Other channels already have a proposed category. If settings are unavailable, let
+  // the caller keep its proposal for confirmation without running the keyword classifier.
+  if ((await currentRecordingEngine().catch(() => null)) !== "rules") return null;
   const withAmount = /[0-9٠-٩]/.test(trimmed) || !options.amount ? trimmed : `${trimmed} ${options.amount}`;
   const result = await runRuleEngine(normalizeV2(withAmount).forRules, options.userDict ?? []);
   const item = result.items[0];

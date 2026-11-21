@@ -13,6 +13,7 @@ import { foldForMatch } from "../../lib/understanding/numbers";
 import { resolveGoldDate, type EvalCase, type EvalSet, type Expectation, type GoldEvent } from "./set";
 
 export type Outcome = "save" | "show" | "ask";
+export type PromptDetail = "full" | "compact";
 
 /** One event as the harness records it from the engine's answer. */
 export interface PredictedEvent {
@@ -67,6 +68,8 @@ export interface CaseResult {
   engineLatencyMs: number;
   problems: string[];
   versions: Record<string, string>;
+  /** Effective prompt profile requested for this case. Older result rows omit it. */
+  promptDetail?: PromptDetail;
   /** Rate-limit retries this case needed before it finished. */
   retries: number;
 }
@@ -97,6 +100,8 @@ export interface CaseScore {
   matched: MatchedPair[];
   /** Saved on its own and something G1 counts is wrong, or saved when it must not be. */
   unsafeSave: boolean;
+  /** Saved when it must not be, or an event disagrees with any labelled field. */
+  allLabelledFieldsSaveError: boolean;
   /** Saved on its own, `clear`, and every field right except perhaps the sub. */
   correctSave: boolean;
   /** Saved on its own, nothing G1 counts is wrong, but a person or a date is: neither unsafe nor correct. */
@@ -192,6 +197,26 @@ export function matchEvents(gold: readonly GoldEvent[], predicted: readonly Pred
   };
 }
 
+/** Equal-valued events may arrive in any order, including distinct subs or people in one category. */
+function allLabelsMatch(gold: readonly GoldEvent[], predicted: readonly PredictedEvent[], today: string): boolean {
+  if (gold.length !== predicted.length) return false;
+  const candidates = gold.map((label) => predicted.flatMap((event, index) => {
+    if (cents(label.amount) !== cents(event.amount)) return [];
+    const fields = markFields(label, event, today);
+    return Object.values(fields).every((mark) => mark !== false) ? [index] : [];
+  }));
+  const owner = new Map<number, number>();
+  const pair = (label: number, visited: Set<number>): boolean => candidates[label].some((event) => {
+    if (visited.has(event)) return false;
+    visited.add(event);
+    const previous = owner.get(event);
+    if (previous !== undefined && !pair(previous, visited)) return false;
+    owner.set(event, label);
+    return true;
+  });
+  return candidates.every((_, label) => pair(label, new Set()));
+}
+
 export function scoreCase(item: EvalCase, result: Pick<CaseResult, "outcome" | "events" | "today">): CaseScore {
   const { pairs, missing, extra } = matchEvents(item.events, result.events);
   const matched = pairs.map(([g, p]): MatchedPair => ({
@@ -217,6 +242,7 @@ export function scoreCase(item: EvalCase, result: Pick<CaseResult, "outcome" | "
     extra: extra.map((index) => result.events[index]),
     matched,
     unsafeSave,
+    allLabelledFieldsSaveError: saved && (item.expect !== "clear" || !allLabelsMatch(item.events, result.events, result.today)),
     correctSave,
     slipSave: saved && !unsafeSave && !correctSave,
     needlessQuestion: result.outcome === "ask" && (item.expect === "clear" || item.expect === "doubt"),
@@ -255,6 +281,8 @@ export interface Aggregate {
   byExpect: Record<Expectation, Record<Outcome, number>>;
   /** G1: unsafe saves over every case the engine saved on its own. */
   wrongAutoSave: Rate;
+  /** Over auto-saves, including subcategory, date and any gold person. */
+  allLabelledFieldsAutoSaveError: Rate;
   correctSave: Rate;
   slipSave: Rate;
   /** correctSave over all cases (G2). */
@@ -356,6 +384,7 @@ export function aggregate(set: EvalSet, results: readonly CaseResult[]): { score
       outcomes,
       byExpect,
       wrongAutoSave: rate(count((s) => s.unsafeSave), saves),
+      allLabelledFieldsAutoSaveError: rate(count((s) => s.allLabelledFieldsSaveError), saves),
       correctSave: rate(count((s) => s.correctSave), saves),
       slipSave: rate(count((s) => s.slipSave), saves),
       noExtraTap: rate(count((s) => s.correctSave), n),

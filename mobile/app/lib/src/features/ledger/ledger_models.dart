@@ -15,6 +15,46 @@ enum ParseDecision {
   clarify,
 }
 
+/// The localized purpose the classifier read, alongside the category the ledger currently stores.
+final class ParsedPurposeLabels {
+  const ParsedPurposeLabels({
+    this.categoryAr = '',
+    this.subAr = '',
+    this.categoryEn = '',
+    this.subEn = '',
+  });
+
+  factory ParsedPurposeLabels.fromJson(Map<String, Object?> json) =>
+      ParsedPurposeLabels(
+        categoryAr: json['categoryAr'] as String? ?? '',
+        subAr: json['subAr'] as String? ?? '',
+        categoryEn: json['categoryEn'] as String? ?? '',
+        subEn: json['subEn'] as String? ?? '',
+      );
+
+  final String categoryAr;
+  final String subAr;
+  final String categoryEn;
+  final String subEn;
+
+  String? label({required bool arabic}) {
+    final useArabic = arabic || categoryEn.isEmpty;
+    final category = useArabic ? categoryAr : categoryEn;
+    final sub = useArabic ? subAr : subEn;
+    if (category.isEmpty) return null;
+    return sub.isEmpty || sub == 'عام' || sub == 'General'
+        ? category
+        : '$category/$sub';
+  }
+
+  Map<String, Object?> toJson() => {
+    'categoryAr': categoryAr,
+    'subAr': subAr,
+    'categoryEn': categoryEn,
+    'subEn': subEn,
+  };
+}
+
 /// One transaction read from a sentence (`api/lib/rule-engine.ts#ParsedTransaction`), as `expense.create` takes it.
 final class ParsedItem {
   const ParsedItem({
@@ -29,6 +69,8 @@ final class ParsedItem {
     this.personRelationship,
     this.walletId,
     this.source,
+    this.reviewReasons = const [],
+    this.purposeLabels,
   });
 
   factory ParsedItem.fromJson(Map<String, Object?> json) => ParsedItem(
@@ -43,6 +85,14 @@ final class ParsedItem {
     personRelationship: json['person_relationship'] as String?,
     walletId: (json['walletId'] as num?)?.toInt(),
     source: json['source'] as String?,
+    reviewReasons: switch (json['reviewReasons']) {
+      final List<Object?> reasons => reasons.whereType<String>().toList(),
+      _ => const [],
+    },
+    purposeLabels: switch (json['purposeLabels']) {
+      final Map<String, Object?> labels => ParsedPurposeLabels.fromJson(labels),
+      _ => null,
+    },
   );
 
   final num amount;
@@ -60,6 +110,8 @@ final class ParsedItem {
   final String? personRelationship;
   final int? walletId;
   final String? source;
+  final List<String> reviewReasons;
+  final ParsedPurposeLabels? purposeLabels;
 
   /// The same keys [ParsedItem.fromJson] reads, so an item can wait in the outbox.
   Map<String, Object?> toJson() => {
@@ -74,15 +126,16 @@ final class ParsedItem {
     'person_relationship': personRelationship,
     'walletId': walletId,
     'source': source,
+    if (reviewReasons.isNotEmpty) 'reviewReasons': reviewReasons,
+    if (purposeLabels != null) 'purposeLabels': purposeLabels!.toJson(),
   };
 
   /// Whether `expense.create` would accept it (`api/expense-router.ts`: a positive amount and a category).
   bool get isSavable => amount > 0 && category.trim().isNotEmpty;
 
-  /// The direction saved with it: a transfer's when known, and `incoming` for an expense whose money came back
-  /// (`contracts/expense-save.ts#directionToSave`).
+  /// The direction saved with it: transfers and investments when known, and `incoming` for refunds.
   String? get directionToSave {
-    if (type == 'transfer') {
+    if (type == 'transfer' || type == 'investment') {
       return direction == 'incoming' || direction == 'outgoing'
           ? direction
           : null;

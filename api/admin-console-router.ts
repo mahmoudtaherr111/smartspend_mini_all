@@ -18,7 +18,7 @@ import {
 import { ledgerTotalCostUsdSince } from "./lib/ai-ledger";
 import { readClient } from "./lib/client-platform";
 import { dailyAiCapUsd } from "./lib/feature-switches";
-import { businessMonthRange, startOfBusinessDay } from "./lib/app-time";
+import { businessDayRange, businessMonthRange, startOfBusinessDay } from "./lib/app-time";
 import { getCacheRuntimeStatus } from "./lib/redis-client";
 import { getSystemSettings } from "./lib/settings-cache";
 import { SETTINGS } from "./lib/system-settings-registry";
@@ -43,6 +43,12 @@ async function countOrNull(run: () => Promise<{ count?: number | string | null }
 }
 
 const distinctRecorders = sql<number>`COUNT(DISTINCT CONCAT(${expenses.userType}, ':', ${expenses.userId}))`;
+
+function classificationWindow(days: number) {
+  const { start: today, endExclusive } = businessDayRange();
+  const from = startOfBusinessDay(new Date(today.getTime() + DAY_MS / 2 - (days - 1) * DAY_MS));
+  return and(gte(classificationLogs.createdAt, from), lt(classificationLogs.createdAt, endExclusive));
+}
 
 // The admin console (admin/): what its pages need that no other router answers, each shaped for one screen.
 export const adminConsoleRouter = router({
@@ -402,6 +408,64 @@ export const adminConsoleRouter = router({
       };
     }),
 
+  // Aggregate understanding decisions without returning sentences, amounts, or people.
+  understandingQuality: adminProcedure
+    .input(z.object({ days: z.number().int().min(1).max(90).default(7) }))
+    .query(async ({ input }) => {
+      const version = classificationLogs.classificationVersion;
+      const trace = classificationLogs.reasoningTraceLight;
+      const model = sql<string | null>`NULLIF(JSON_UNQUOTE(JSON_EXTRACT(${trace}, '$.route.model')), 'null')`;
+      const decision = classificationLogs.decision;
+      const ledgerLink = sql`${expenses.classificationLogId} = ${classificationLogs.id}
+        AND ${expenses.userId} = ${classificationLogs.userId}
+        AND ${expenses.userType} = ${classificationLogs.userType}`;
+      const correction = classificationLogs.correction;
+      const correctedLink = sql`${ledgerLink} AND (
+        JSON_UNQUOTE(JSON_EXTRACT(${correction}, '$.on')) = 'review'
+        OR ${expenses.id} = CAST(JSON_UNQUOTE(JSON_EXTRACT(${correction}, '$.expenseId')) AS UNSIGNED)
+      )`;
+      const rows = await db.select({
+        version,
+        model,
+        total: count(),
+        autoSave: sql<number>`SUM(CASE WHEN ${decision} = 'auto_save' THEN 1 ELSE 0 END)`,
+        review: sql<number>`SUM(CASE WHEN ${decision} = 'review' THEN 1 ELSE 0 END)`,
+        clarify: sql<number>`SUM(CASE WHEN ${decision} = 'clarify' THEN 1 ELSE 0 END)`,
+        linked: sql<number>`SUM(CASE WHEN EXISTS (SELECT 1 FROM ${expenses} WHERE ${ledgerLink}) THEN 1 ELSE 0 END)`,
+        corrected: sql<number>`SUM(CASE WHEN ${classificationLogs.wasCorrected} = true
+          AND EXISTS (SELECT 1 FROM ${expenses} WHERE ${correctedLink}) THEN 1 ELSE 0 END)`,
+      }).from(classificationLogs)
+        .where(and(
+          classificationWindow(input.days),
+          sql`${version} REGEXP '^u[0-9]+-p[0-9]+-t[0-9]+([.][0-9]+)*$'`,
+          sql`COALESCE(JSON_UNQUOTE(JSON_EXTRACT(${trace}, '$.clarificationSuppressed')), 'false') <> 'true'`,
+        ))
+        .groupBy(version, model)
+        .orderBy(desc(count()), version, model);
+
+      const groups = rows.map((row) => ({
+        version: row.version,
+        model: row.model,
+        total: Number(row.total),
+        autoSave: Number(row.autoSave),
+        review: Number(row.review),
+        clarify: Number(row.clarify),
+        linked: Number(row.linked),
+        corrected: Number(row.corrected),
+      }));
+      return {
+        groups,
+        totals: groups.reduce((totals, row) => ({
+          total: totals.total + row.total,
+          autoSave: totals.autoSave + row.autoSave,
+          review: totals.review + row.review,
+          clarify: totals.clarify + row.clarify,
+          linked: totals.linked + row.linked,
+          corrected: totals.corrected + row.corrected,
+        }), { total: 0, autoSave: 0, review: 0, clarify: 0, linked: 0, corrected: 0 }),
+      };
+    }),
+
   // The sentences people recorded and how each was read: the items, whether a rule or the model decided, the
   // confidence, what matched, and whether the person corrected it afterwards.
   classifications: adminProcedure
@@ -413,7 +477,6 @@ export const adminConsoleRouter = router({
       }),
     )
     .query(async ({ input }) => {
-      const since = new Date(startOfBusinessDay().getTime() - (input.days - 1) * DAY_MS);
       const filter =
         input.by === "rules"
           ? eq(classificationLogs.parsedBy, "rule_engine")
@@ -444,7 +507,7 @@ export const adminConsoleRouter = router({
           items: classificationLogs.finalResult,
         })
         .from(classificationLogs)
-        .where(and(gte(classificationLogs.createdAt, since), filter))
+        .where(and(classificationWindow(input.days), filter))
         .orderBy(desc(classificationLogs.createdAt))
         .limit(pageSize + 1)
         .offset((input.page - 1) * pageSize);

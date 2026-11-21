@@ -81,12 +81,12 @@ describe("matchEvents", () => {
 describe("scoreCase", () => {
   it("a right save of a clear case is a correct save", () => {
     const score = scoreCase(kase("clear", [gold()]), result("save", [predicted()]));
-    expect(score).toMatchObject({ correctSave: true, unsafeSave: false, slipSave: false, eventsMatched: 1 });
+    expect(score).toMatchObject({ correctSave: true, unsafeSave: false, allLabelledFieldsSaveError: false, slipSave: false, eventsMatched: 1 });
   });
 
   it("a wrong sub does not make a save unsafe or incorrect, and is reported", () => {
     const score = scoreCase(kase("clear", [gold()]), result("save", [predicted({ sub: "restaurant" })]));
-    expect(score).toMatchObject({ correctSave: true, unsafeSave: false });
+    expect(score).toMatchObject({ correctSave: true, unsafeSave: false, allLabelledFieldsSaveError: true });
     expect(score.matched[0].fields.sub).toBe(false);
   });
 
@@ -100,6 +100,7 @@ describe("scoreCase", () => {
   ])("a save with %s is unsafe", (_name, events) => {
     const score = scoreCase(kase("clear", [gold()]), result("save", events));
     expect(score.unsafeSave).toBe(true);
+    expect(score.allLabelledFieldsSaveError).toBe(true);
     expect(score.correctSave).toBe(false);
   });
 
@@ -107,14 +108,23 @@ describe("scoreCase", () => {
     const events = expectation === "doubt" ? [gold()] : [];
     const score = scoreCase(kase(expectation, events), result("save", [predicted()]));
     expect(score.unsafeSave).toBe(true);
+    expect(score.allLabelledFieldsSaveError).toBe(true);
     expect(score.missedQuestion).toBe(expectation !== "doubt");
   });
 
   it("a save that is right on G1 fields but wrong on person or date is a slip, not correct and not unsafe", () => {
     const score = scoreCase(kase("clear", [gold({ person: "محمد" })]), result("save", [predicted({ person: "احمد" })]));
-    expect(score).toMatchObject({ slipSave: true, correctSave: false, unsafeSave: false });
+    expect(score).toMatchObject({ slipSave: true, correctSave: false, unsafeSave: false, allLabelledFieldsSaveError: true });
     const dated = scoreCase(kase("clear", [gold({ date: "offset:-1" })]), result("save", [predicted()]));
-    expect(dated).toMatchObject({ slipSave: true, correctSave: false });
+    expect(dated).toMatchObject({ slipSave: true, correctSave: false, allLabelledFieldsSaveError: true });
+  });
+
+  it("matches every labelled field across reordered same-amount events", () => {
+    const item = kase("clear", [gold({ person: "محمد" }), gold({ person: "سارة", sub: "restaurant" })]);
+    const score = scoreCase(item, result("save", [predicted({ person: "سارة", sub: "restaurant" }), predicted({ person: "محمد" })]));
+    expect(score.allLabelledFieldsSaveError).toBe(false);
+    const missingPerson = scoreCase(item, result("save", [predicted({ person: "سارة", sub: "restaurant" }), predicted()]));
+    expect(missingPerson.allLabelledFieldsSaveError).toBe(true);
   });
 
   it("accepts an alternative pair for category and sub", () => {
@@ -207,6 +217,16 @@ describe("aggregate", () => {
     expect(a.fields.category).toEqual({ count: 2, of: 3, rate: 2 / 3 });
     expect(a.fields.person.of).toBe(0);
     expect(a.missing).toBe(1);
+  });
+
+  it("uses auto-saves as the strict error denominator and preserves the historical G1 rate", () => {
+    const strict = aggregate(set, [
+      result("save", [predicted({ sub: "restaurant" })], { id: "A" }),
+      result("show", [predicted()], { id: "C" }),
+    ]).aggregate;
+    expect(strict.wrongAutoSave).toEqual({ count: 0, of: 1, rate: 0 });
+    expect(strict.allLabelledFieldsAutoSaveError).toEqual({ count: 1, of: 1, rate: 1 });
+    expect(aggregate(set, [results[2]]).aggregate.allLabelledFieldsAutoSaveError.rate).toBeNull();
   });
 
   it("latency, tokens, flags, reasons and confusion", () => {

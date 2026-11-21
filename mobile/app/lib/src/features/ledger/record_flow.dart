@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -76,7 +77,7 @@ Future<void> _undo(BuildContext context, WidgetRef ref, List<int> ids) async {
 }
 
 /// Shows what the server read from [item] and saves it when the person agrees. Returns false when they chose to
-/// edit the sentence instead, true when it was saved, and null when the sheet was closed.
+/// edit or discard the sentence, true when it was saved, and null when it still needs review.
 Future<bool?> reviewAndSave(
   BuildContext context,
   WidgetRef ref,
@@ -96,14 +97,23 @@ Future<bool?> reviewAndSave(
         alert: parse.alertMessage,
         title: l10n.reviewTitle,
         saveLabel: l10n.reviewSave,
-        editLabel: l10n.reviewEdit,
+        editLabel: item.isVoice ? l10n.discardChangesConfirm : l10n.reviewEdit,
       ),
     ),
   );
   if (choice != true || !context.mounted) return choice;
-  final ids = await ref.read(outboxProvider.notifier).confirm(item);
-  if (context.mounted) announceSaved(context, ref, items, ids);
-  return true;
+  try {
+    final ids = await ref.read(outboxProvider.notifier).confirm(item);
+    if (context.mounted) announceSaved(context, ref, items, ids);
+    return true;
+  } on ApiException catch (error) {
+    if (context.mounted) showSmartSpendNotice(context, error.message);
+  } on ApiNetworkException {
+    if (context.mounted) {
+      showSmartSpendNotice(context, l10n.monWeCouldnTSaveIt);
+    }
+  }
+  return null;
 }
 
 /// Asks the server's question about [item] until it is saved or the person leaves it for later, when it stays in
@@ -117,10 +127,12 @@ Future<void> answerAndSave(
   var current = item;
   // «دفعت نتفليكس» with no amount: one button pays the commitment the sentence names, for what is due.
   SentenceCommitment? named;
-  try {
-    named = await ref.read(commitmentApiProvider).forSentence(item.text);
-  } on Object {
-    named = null;
+  if (!item.isVoice && item.parse?.clarificationId != null) {
+    try {
+      named = await ref.read(commitmentApiProvider).forSentence(item.text);
+    } on Object {
+      named = null;
+    }
   }
   while (true) {
     if (!context.mounted) return;
@@ -129,7 +141,9 @@ Future<void> answerAndSave(
     if (current.parse?.clarificationId == null) {
       // A question the server could not store cannot be answered here: the person rephrases the sentence.
       await ref.read(outboxProvider.notifier).discard(current);
-      ref.read(composerDraftProvider.notifier).put(current.text);
+      if (!current.isVoice && context.mounted) {
+        ref.read(composerDraftProvider.notifier).put(current.text);
+      }
       if (context.mounted) showSmartSpendNotice(context, question);
       return;
     }
@@ -152,9 +166,20 @@ Future<void> answerAndSave(
     }
     final answer = choice is String ? choice : null;
     if (answer == null || answer.trim().isEmpty || !context.mounted) return;
-    final result = await ref
-        .read(outboxProvider.notifier)
-        .answer(current, answer.trim());
+    final ClarificationResult result;
+    try {
+      result = await ref
+          .read(outboxProvider.notifier)
+          .answer(current, answer.trim());
+    } on ApiException catch (error) {
+      if (context.mounted) showSmartSpendNotice(context, error.message);
+      return;
+    } on ApiNetworkException {
+      if (context.mounted) {
+        showSmartSpendNotice(context, l10n.monWeCouldnTSaveIt);
+      }
+      return;
+    }
     if (result.nextQuestion == null) {
       if (result.savedIds.isNotEmpty && context.mounted) {
         announceSaved(context, ref, result.savedItems, result.savedIds);
@@ -230,7 +255,14 @@ class _ReviewSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final l10n = AppLocalizations.of(context);
+    final notes = {
+      if (alert case final String note when note.isNotEmpty) note,
+      for (final item in items)
+        for (final reason in item.reviewReasons) _reviewReason(l10n, reason),
+    };
+
+    return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
         SmartSpendSpacing.screen,
         0,
@@ -243,21 +275,11 @@ class _ReviewSheet extends StatelessWidget {
         children: [
           Text(title, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: SmartSpendSpacing.sm),
-          if (alert case final String note when note.isNotEmpty) ...[
-            InlineMessage(note, tone: MessageTone.warning),
+          if (notes.isNotEmpty) ...[
+            InlineMessage(notes.join('\n'), tone: MessageTone.warning),
             const SizedBox(height: SmartSpendSpacing.sm),
           ],
-          for (final item in items)
-            TransactionRow(
-              icon: categoryIcon(item.category),
-              iconColor: categoryColor(context, item.category),
-              title: item.description?.trim().isNotEmpty == true
-                  ? item.description!
-                  : item.categoryLabel,
-              subtitle: item.categoryLabel,
-              amount: item.amount,
-              kind: itemKind(item),
-            ),
+          for (final item in items) _ReviewRow(item: item),
           const SizedBox(height: SmartSpendSpacing.lg),
           SmartSpendButton(
             label: saveLabel,
@@ -273,6 +295,99 @@ class _ReviewSheet extends StatelessWidget {
     );
   }
 }
+
+class _ReviewRow extends StatelessWidget {
+  const _ReviewRow({required this.item});
+
+  final ParsedItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final direction = switch (item.directionToSave ?? item.type) {
+      'incoming' || 'income' => l10n.cfMoneyIn,
+      'outgoing' || 'expense' => l10n.cfMoneyOut,
+      _ => l10n.reviewDirectionUnknown,
+    };
+    // Keep the calendar day the server sent, whatever time zone this phone is in.
+    final dayKey = item.date?.split('T').first;
+    final date = dayKey == null ? null : DateTime.tryParse(dayKey);
+    final purpose = item.purposeLabels?.label(
+      arabic: Localizations.localeOf(context).languageCode == 'ar',
+    );
+    final arabicPurpose = item.purposeLabels?.label(arabic: true);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TransactionRow(
+          icon: categoryIcon(item.category),
+          iconColor: categoryColor(context, item.category),
+          title: item.description?.trim().isNotEmpty == true
+              ? item.description!
+              : purpose ?? item.categoryLabel,
+          subtitle: purpose ?? item.categoryLabel,
+          amount: item.amount,
+          kind: itemKind(item),
+        ),
+        Padding(
+          padding: const EdgeInsetsDirectional.only(
+            start: SmartSpendSpacing.sm,
+            bottom: SmartSpendSpacing.sm,
+          ),
+          child: Text(
+            [
+              if (purpose != null && arabicPurpose != item.categoryLabel)
+                l10n.reviewFilesAs(item.categoryLabel),
+              '$direction · ${date == null ? l10n.reviewDateAtSave : DateWords.of(context).date(date)}',
+            ].join('\n'),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+String _reviewReason(AppLocalizations l10n, String reason) => switch (reason) {
+  'amount_missing' ||
+  'amount_not_in_text' ||
+  'amount_outside_quote' ||
+  'amount_has_non_money_role' ||
+  'amount_derived' ||
+  'amount_out_of_range' ||
+  'number_unaccounted' ||
+  'number_role_unverified' ||
+  'total_mismatch' ||
+  'model_doubt:amount' ||
+  'model_doubt:split' => l10n.reviewReasonAmount,
+  'dated' ||
+  'date_invalid' ||
+  'date_unverified' ||
+  'model_doubt:date' => l10n.reviewReasonDate,
+  'flow_impossible' || 'model_doubt:flow' => l10n.reviewReasonDirection,
+  'taxonomy_invalid' ||
+  'sub_repaired' ||
+  'kind_category_mismatch' ||
+  'model_doubt:category' ||
+  'model_doubt:purpose' ||
+  'model_doubt:kind' => l10n.reviewReasonCategory,
+  'person_needed' || 'model_doubt:person' => l10n.reviewReasonPerson,
+  'commitment_unknown' ||
+  'model_doubt:commitment' => l10n.reviewReasonCommitment,
+  'wallet_unknown' => l10n.reviewReasonWallet,
+  'duplicate_event' => l10n.reviewReasonDuplicate,
+  'quote_not_in_text' ||
+  'local_negation_disagrees' ||
+  'ignored_quote_unverified' ||
+  'events_dropped' ||
+  'action_unaccounted' ||
+  'many_events' => l10n.reviewReasonTransactions,
+  'large_first_time' => l10n.reviewReasonLarge,
+  'auto_save_off' => l10n.reviewReasonAutoOff,
+  'context_incomplete' => l10n.reviewReasonContext,
+  _ => l10n.reviewReasonGeneral,
+};
 
 class _ClarifySheet extends StatefulWidget {
   const _ClarifySheet({

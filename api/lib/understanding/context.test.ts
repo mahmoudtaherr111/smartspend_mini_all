@@ -143,6 +143,8 @@ describe("assembling a context", () => {
         { category: "فواتير", subCategory: "إنترنت" },
         { category: "متنوعات", subCategory: null },
         { category: "متنوعات", subCategory: "عام" },
+        { category: "أقساط وفوايد", subCategory: "أقساط" },
+        { category: "أقساط وفوايد", subCategory: "أقساط" },
       ],
     });
     const facts = toPolicyFacts(ctx);
@@ -150,7 +152,9 @@ describe("assembling a context", () => {
     expect(facts.isFamiliar("health", "doctor")).toBe(false);
     // A null subcategory is stored as «عام».
     expect(facts.isFamiliar("misc", "other")).toBe(true);
-    // Two v2 answers that store the same pair are equally familiar.
+    // The same legacy pair could be either car payments or instalment fees.
+    expect(facts.isFamiliar("car", "car_purchase")).toBe(false);
+    expect(facts.isFamiliar("financial_fees", "installment")).toBe(false);
     expect(facts.isFamiliar("groceries", "supermarket")).toBe(false);
   });
 });

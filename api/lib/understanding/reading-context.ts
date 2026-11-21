@@ -10,7 +10,7 @@
  * The bounds are the scale contract (SPEC section 9): a reading's context never grows with a
  * user's history, whatever the user has stored.
  */
-import { storedFiling, v2OfStored } from "./bridge";
+import { isUnambiguousFiling, storedFiling, v2OfStored } from "./bridge";
 import type { GuardContext } from "./guard";
 import { foldForMatch } from "./numbers";
 import type { PolicyFacts } from "./policy";
@@ -274,7 +274,7 @@ export function assembleContext(parts: ContextParts): ReadingContext {
     vocabulary: vocabularyOf(parts.vocabulary ?? []),
     isFamiliar: (category, sub) => {
       const stored = storedFiling(category, sub);
-      return familiar.has(storedKey(stored.category, stored.subCategory));
+      return isUnambiguousFiling(stored) && familiar.has(storedKey(stored.category, stored.subCategory));
     },
     isKnownPerson: personMatcher(contacts),
     businessMode,

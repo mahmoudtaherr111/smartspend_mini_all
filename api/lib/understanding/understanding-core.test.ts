@@ -208,6 +208,70 @@ describe("the guard", () => {
     expect(guarded.flags).toEqual([]);
   });
 
+  it("cannot borrow an amount from another clause or one the model ignored", () => {
+    const first = "دفعت 100 مواصلات";
+    const second = "دفعت 150 للأكل";
+    const swapped = flagsOf(`${first} و${second}`, [event({ quote: first, amount: 150 }), event({ quote: second, amount: 100 })]);
+    expect(swapped.events.map((row) => row.flags)).toEqual([["amount_outside_quote"], ["amount_outside_quote"]]);
+    const ignored = "ماشتريتش جزمة ب 150";
+    const borrowed = flagsOf(`${first} و${ignored}`, [event({ quote: `${first} و${ignored}`, amount: 150 })],
+      { ignored: [{ quote: ignored, why: "negated" }] });
+    expect(borrowed.events[0].flags).toContain("amount_has_non_money_role");
+    expect(decide(borrowed, facts).outcome).toBe("show");
+  });
+
+  it("requires role and ignored claims to account for a particular occurrence", () => {
+    const sentence = "دفعت 100 مواصلات ودفعت 150 أكل";
+    const bogus = flagsOf(sentence, [event({ quote: "دفعت 100 مواصلات", amount: 100 })], {
+      ignored: [{ quote: "ماشتريتش عربية ب 150", why: "negated" }],
+      numbers: [{ text: "150", role: "label" }],
+    });
+    expect(bogus.flags).toEqual(expect.arrayContaining(["ignored_quote_unverified", "number_role_unverified", "number_unaccounted"]));
+    expect(bogus.unaccounted).toEqual([150]);
+
+    const repeated = flagsOf("ماشتريتش جزمة ب 150 ودفعت 150 اكل", [event({ quote: "دفعت 150 اكل", amount: 150 })], {
+      ignored: [{ quote: "ماشتريتش جزمة ب 150", why: "negated" }],
+    });
+    expect(decide(repeated, facts).outcome).toBe("save");
+  });
+
+  it("shows an omitted action even when it has no amount", () => {
+    const guarded = flagsOf("دفعت 100 مواصلات واشتريت شاحن", [event({ quote: "دفعت 100 مواصلات", amount: 100 })]);
+    expect(guarded.flags).toContain("action_unaccounted");
+    expect(decide(guarded, facts).outcome).toBe("show");
+  });
+
+  it("checks an explicit total against the items and never treats it as an extra item", () => {
+    const parts = [event({ quote: "450 لحمة", amount: 450 }), event({ quote: "250 فاكهة", amount: 250 })];
+    expect(decide(flagsOf("450 لحمة و250 فاكهة والإجمالي 700", parts), facts).outcome).toBe("save");
+
+    const mismatched = flagsOf("450 لحمة و250 فاكهة والإجمالي 800", parts);
+    expect(mismatched.flags).toContain("total_mismatch");
+    const extra = flagsOf("450 لحمة و250 فاكهة والإجمالي 700", [...parts, event({ quote: "الإجمالي 700", amount: 700 })]);
+    expect(extra.events[2].flags).toContain("amount_has_non_money_role");
+    expect(decide(extra, facts).outcome).toBe("show");
+    expect(decide(flagsOf("الإجمالي 700 لحمة", [event({ quote: "الإجمالي 700 لحمة", amount: 700 })]), facts).outcome).toBe("save");
+  });
+
+  it("shows a per-unit price recorded as the amount, even if the model forgot to label it", () => {
+    const sentence = "اشتريت 3 كيلو تفاح الكيلو ب 40";
+    const guarded = flagsOf(sentence, [event({ quote: sentence, amount: 40 })]);
+    expect(guarded.events[0].flags).toContain("amount_has_non_money_role");
+    expect(decide(guarded, facts).outcome).toBe("show");
+    const derived = flagsOf(sentence, [event({ quote: sentence, amount: 120 })]);
+    expect(derived.events[0].flags).toContain("amount_derived");
+  });
+
+  it("does not let a bus line or phone model stand in for a different stated price", () => {
+    for (const [sentence, label, price] of [
+      ["ركبت اتوبيس 15 ودفعت 10", 15, 10],
+      ["اشتريت آيفون 15 ب 18000", 15, 18000],
+    ] as const) {
+      expect(decide(flagsOf(sentence, [event({ quote: sentence, amount: label })]), facts).outcome).toBe("show");
+      expect(decide(flagsOf(sentence, [event({ quote: sentence, amount: price })]), facts).outcome).toBe("save");
+    }
+  });
+
   it("flags a derived amount so it is shown, not saved alone", () => {
     const guarded = flagsOf("الحساب 900 وقسمناه على 3", [event({ quote: "الحساب 900 وقسمناه على 3", amount: 300, category: "dining", sub: "restaurant" })]);
     expect(guarded.events[0].flags).toContain("amount_derived");
@@ -244,6 +308,25 @@ describe("the guard", () => {
     expect(guarded.events[0].flags).toEqual(expect.arrayContaining(["date_invalid", "model_doubt:category"]));
   });
 
+  it("flags omitted, invented and mismatched days independently of dated-entry review", () => {
+    const policy = { ...DEFAULT_POLICY, reviewDated: false };
+    const item = event({ quote: "دفعت 300 نت", amount: 300 });
+    const cases = [
+      flagsOf("امبارح دفعت 300 نت", [item]),
+      flagsOf("دفعت 300 نت", [{ ...item, date: "2026-11-10" }]),
+      flagsOf("أول امبارح دفعت 300 نت", [{ ...item, date: "2026-11-10" }]),
+      flagsOf("دفعت 300 نت الأسبوع اللي فات", [item]),
+      flagsOf("دفعت 300 نت الأسبوع اللي فات", [{ ...item, date: "2026-11-05" }]),
+      flagsOf("دفعت 300 نت ٢٠٢٦-١١-٠٨", [{ ...item, date: "2026-11-05" }]),
+    ];
+    for (const guarded of cases) {
+      expect(guarded.events[0].flags).toContain("date_unverified");
+      expect(decide(guarded, facts, policy).outcome).toBe("show");
+    }
+    expect(decide(flagsOf("أول امبارح دفعت 300 نت", [{ ...item, date: "2026-11-09" }]), facts, policy).outcome).toBe("save");
+    expect(decide(flagsOf("دفعت 300 نت ٢٠٢٦-١١-٠٨", [{ ...item, date: "2026-11-08" }]), facts, policy).outcome).toBe("save");
+  });
+
   it("raises its hand when the local negation reading disagrees with a recorded event", () => {
     const guarded = flagsOf("ماشتريتش جزمة ب 500", [event({ quote: "ماشتريتش جزمة ب 500", amount: 500, category: "shopping", sub: "shoes_bags" })]);
     expect(guarded.events[0].flags).toContain("local_negation_disagrees");
@@ -264,12 +347,18 @@ describe("save, show or ask", () => {
     expect(verdict.reasons).toContain("number_unaccounted");
   });
 
-  it("shows a large amount in a category the user never saved, and saves it once familiar or tied to a commitment", () => {
+  it("shows a large amount in an unfamiliar category, even when the model selected a commitment", () => {
     const sentence = "دفعت مقدم العربية 50000";
     const item = event({ quote: sentence, amount: 50000, category: "car", sub: "car_purchase" });
     expect(decide(clean(sentence, [item]), { ...facts, isFamiliar: () => false }).outcome).toBe("show");
     expect(decide(clean(sentence, [item]), facts).outcome).toBe("save");
-    expect(decide(clean(sentence, [{ ...item, commitment: "c1", installments: 1 }]), { ...facts, isFamiliar: () => false }).outcome).toBe("save");
+    expect(decide(clean(sentence, [{ ...item, commitment: "c1", installments: 1 }]), { ...facts, isFamiliar: () => false }).outcome).toBe("show");
+  });
+
+  it("requires review when the model's subcategory had to be repaired", () => {
+    const sentence = "دفعت 50 نت";
+    const guarded = clean(sentence, [event({ quote: sentence, amount: 50, category: "bills", sub: "unknown" })]);
+    expect(decide(guarded, facts)).toMatchObject({ outcome: "show", events: [{ reasons: ["sub_repaired"] }] });
   });
 
   it("shows a loan to someone the user has not named before", () => {
@@ -296,9 +385,10 @@ describe("save, show or ask", () => {
     const sentence = "دفعت 300 نت";
     const item = event({ quote: sentence, amount: 300, category: "bills", sub: "internet_landline" });
     expect(decide(clean(sentence, [item]), facts, { ...DEFAULT_POLICY, autoSave: false }).outcome).toBe("show");
-    const dated = { ...item, date: "2026-11-10" };
-    expect(decide(clean(sentence, [dated]), facts).outcome).toBe("show");
-    expect(decide(clean(sentence, [dated]), facts, { ...DEFAULT_POLICY, reviewDated: false }).outcome).toBe("save");
+    const datedSentence = `امبارح ${sentence}`;
+    const dated = { ...item, quote: datedSentence, date: "2026-11-10" };
+    expect(decide(clean(datedSentence, [dated]), facts).outcome).toBe("show");
+    expect(decide(clean(datedSentence, [dated]), facts, { ...DEFAULT_POLICY, reviewDated: false }).outcome).toBe("save");
   });
 });
 

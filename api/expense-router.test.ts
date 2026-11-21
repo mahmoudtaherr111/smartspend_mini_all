@@ -156,7 +156,7 @@ describe("learning from the review card", () => {
       clause: "اشتريت كريم للوش 150",
     });
     // The item kept as it was teaches nothing.
-    expect(reviewCorrection(parsed, { ...saved, category: "أكل وشرب", amount: 60 })).toBeNull();
+    expect(reviewCorrection(parsed, { ...saved, category: "أكل وشرب", subCategory: "قهوة وكافيه", amount: 60 })).toBeNull();
   });
 
   it("does not guess which item was changed when two share the amount or the clause is unknown", () => {
@@ -165,7 +165,7 @@ describe("learning from the review card", () => {
       { category: "أكل وشرب", amount: 150, clause: "غدا 150" },
     ];
     expect(reviewCorrection(twins, saved)).toBeNull();
-    expect(reviewCorrection([{ category: "مواصلات", amount: 150 }, { category: "أكل وشرب", amount: 60 }], saved)).toBeNull();
+    expect(reviewCorrection([{ category: "مواصلات", amount: 150 }, { category: "أكل وشرب", subCategory: "قهوة وكافيه", amount: 60 }], saved)).toBeNull();
   });
 });
 

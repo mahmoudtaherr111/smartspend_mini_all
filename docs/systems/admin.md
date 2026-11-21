@@ -263,3 +263,5 @@ The voice settings expose per-model input TPM and the per-call reservation, in a
 
 
 Financial analytics now uses the shared financial bucket for income/spending. Export labeling follows that bucket; internal movements are named as transfers/investments even when physically stored as income or expense.
+
+The classifications page reports understanding decisions by model and reading version over a selectable Cairo-day window. Linked readings and confirmed category corrections are measured from surviving ledger links. A missing link does not establish a deletion or an incorrect reading.

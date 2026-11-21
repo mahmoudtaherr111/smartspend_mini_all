@@ -161,3 +161,5 @@ The automatic-capture card on Home shows bounded activity with foreground pollin
 undo. It never renders the legacy record-confirmation button for automatic activity. The Flutter implementation
 uses the same semantics and server-generated procedure names, honors amount privacy, refreshes on resume and is
 covered at 200% text scale/offline. A summary income row wraps at that scale rather than overflowing.
+
+The Flutter recording outbox keeps parsed voice questions and reviews across restarts. A review can show the recorded direction, date and localized reason before saving.

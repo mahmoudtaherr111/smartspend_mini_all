@@ -214,12 +214,17 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
           unawaited(SmartSpendHaptics.success());
           Navigator.of(context).pop(true);
           showSmartSpendNotice(context, l10n.manualRecordQueuedNotice);
-        case SubmitFailed(:final message):
+        case SubmitFailed(:final message, :final kept):
           unawaited(SmartSpendHaptics.warning());
-          setState(() {
-            _saving = false;
-            _error = message;
-          });
+          if (kept) {
+            Navigator.of(context).pop(true);
+            showSmartSpendNotice(context, message);
+          } else {
+            setState(() {
+              _saving = false;
+              _error = message;
+            });
+          }
         default:
           unawaited(SmartSpendHaptics.success());
           Navigator.of(context).pop(true);

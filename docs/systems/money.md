@@ -515,3 +515,5 @@ lock before updating ledger links. These rules are exercised against the disposa
 
 Edits/deletion of a captured entry also clear a still-undelivered obsolete model-job notice in the same transaction.
 This is cancellation, not a fabricated delivery timestamp; already delivered notices retain their historical receipt.
+
+A category or subcategory edit marks the classification log linked to the original expense. In a multi-item reading, correction learning uses the uniquely matched clause.

@@ -7,6 +7,7 @@
  * (docs/decisions/0052-understanding-engine.md).
  */
 import { getSystemSettings } from "../../lib/settings-cache";
+import { TRPCError } from "@trpc/server";
 
 export type RecordingEngine = "rules" | "understanding";
 
@@ -14,11 +15,11 @@ export function recordingEngineOf(settings: Record<string, string> | null | unde
   return settings?.recording_engine === "understanding" ? "understanding" : "rules";
 }
 
-/** The engine now in force. A settings outage answers `rules`, whose own reads then fail as they always did. */
+/** A temporary settings outage cannot silently switch the classifier of a live account. */
 export async function currentRecordingEngine(): Promise<RecordingEngine> {
   try {
     return recordingEngineOf(await getSystemSettings());
   } catch {
-    return "rules";
+    throw new TRPCError({ code: "SERVICE_UNAVAILABLE", message: "مش قادرين نحمّل إعدادات التسجيل دلوقتي. جرّب كمان شوية." });
   }
 }

@@ -84,6 +84,8 @@ export interface ParsedReply {
   reading: Reading;
   /** Repairs and drops, for the trace. Never shown to the user. */
   problems: string[];
+  /** A partially usable reply may be reviewed, but may not be saved automatically. */
+  hasDroppedEvents: boolean;
 }
 
 /** A reply with more events than this is not a sentence a person dictated; the rest is dropped and reported. */
@@ -177,8 +179,9 @@ function isoDate(value: unknown): { value: string; repaired: boolean } {
 
 /** The event's quote, or the whole sentence when the reply left it out or wrote "*". */
 function quoteOf(value: unknown, sentence: string): string {
-  const quote = text(value);
-  return quote && quote !== "*" ? quote : text(sentence);
+  const limit = Math.max(TEXT_LIMIT, sentence.length);
+  const quote = text(value, limit);
+  return quote && quote !== "*" ? quote : text(sentence, limit);
 }
 
 function field(row: Record<string, unknown>, ...names: string[]): unknown {
@@ -228,17 +231,23 @@ export function parseReply(raw: unknown, sentence = ""): ParsedReply | null {
   const problems: string[] = [];
   const events: ReadEvent[] = [];
   const rawEvents = rows(eventRows);
+  if (Array.isArray(eventRows) && eventRows.length > rawEvents.length) {
+    problems.push(`dropped ${eventRows.length - rawEvents.length} malformed event rows`);
+  }
+  if (eventRows !== undefined && !Array.isArray(eventRows)) problems.push("dropped malformed events field");
   if (rawEvents.length > MAX_EVENTS) problems.push(`dropped ${rawEvents.length - MAX_EVENTS} events over the limit`);
 
   rawEvents.slice(0, MAX_EVENTS).forEach((row, index) => {
     const at = `event ${index + 1}`;
-    const kind = oneOf<MovementKind>(field(row, "k", "kind"), MOVEMENT_KINDS, "spending");
-    if (kind.repaired) {
+    const rawKind = field(row, "k", "kind");
+    const kind = oneOf<MovementKind>(rawKind, MOVEMENT_KINDS, "spending");
+    if (kind.repaired || !text(rawKind)) {
       problems.push(`${at}: dropped, unknown kind`);
       return;
     }
-    const flow = oneOf<Flow>(field(row, "f", "flow"), FLOWS, "out");
-    if (flow.repaired || field(row, "f", "flow") === undefined) {
+    const rawFlow = field(row, "f", "flow");
+    const flow = oneOf<Flow>(rawFlow, FLOWS, "out");
+    if (flow.repaired || !text(rawFlow)) {
       problems.push(`${at}: dropped, unknown flow`);
       return;
     }
@@ -282,6 +291,8 @@ export function parseReply(raw: unknown, sentence = ""): ParsedReply | null {
 
   const ask = text(body.ask, 200);
   const askAbout = oneOf<AskAbout>(field(body, "about", "ask_about", "askAbout"), ASK_ABOUT, "none");
+  const hasDroppedEvents = eventRows !== undefined && (!Array.isArray(eventRows) || eventRows.length !== events.length);
+  if (hasDroppedEvents && !events.length && !ask) return null;
 
   return {
     reading: {
@@ -292,5 +303,6 @@ export function parseReply(raw: unknown, sentence = ""): ParsedReply | null {
       askAbout: ask ? (askAbout.value === "none" ? "purpose" : askAbout.value) : "none",
     },
     problems,
+    hasDroppedEvents,
   };
 }

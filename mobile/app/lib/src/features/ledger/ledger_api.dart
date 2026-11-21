@@ -86,6 +86,7 @@ class LedgerApi {
     required String rawText,
     int? classificationLogId,
     String? requestId,
+    String defaultSource = 'ai_parsed',
   }) async {
     final baseId = requestId ?? newRequestId();
     Map<String, Object?> payload(ParsedItem item, String id) => {
@@ -95,7 +96,7 @@ class LedgerApi {
       'subCategory': ?item.subCategory,
       'description': ?item.description,
       'rawText': rawText,
-      'source': item.source ?? 'ai_parsed',
+      'source': item.source ?? defaultSource,
       'date': ?item.date,
       'walletId': ?item.walletId,
       'classificationLogId': ?classificationLogId,

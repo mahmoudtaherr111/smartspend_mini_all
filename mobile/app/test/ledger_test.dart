@@ -302,6 +302,90 @@ void main() {
       );
     });
 
+    testWidgets('review shows the date, direction and reasons from the API', (
+      tester,
+    ) async {
+      final api = FakeApi()
+        ..answer(
+          'ai.parseExpense',
+          (_) => _parsed('review', [
+            {
+              ..._item(900, 'تحويل'),
+              'type': 'investment',
+              'direction': 'incoming',
+              'date': '2026-11-08T12:00:00.000Z',
+              'purposeLabels': {
+                'categoryAr': 'استثمارات',
+                'subAr': 'أسهم',
+                'categoryEn': 'Investments',
+                'subEn': 'Shares',
+              },
+              'reviewReasons': [
+                'dated',
+                'total_mismatch',
+                'context_incomplete',
+                'future_reason',
+              ],
+            },
+            {
+              ..._item(20, 'مواصلات'),
+              'reviewReasons': ['total_mismatch', 'context_incomplete'],
+            },
+          ]),
+        )
+        ..answer(
+          'expense.batchCreate',
+          (_) => {
+            'ids': [77, 78],
+          },
+        );
+      final app = await _signedIn(tester, api);
+
+      await _send(tester, 'استرديت 900 من الاستثمار يوم 8 ودفعت 20 مواصلات');
+
+      expect(find.text('استثمارات/أسهم'), findsOneWidget);
+      expect(find.textContaining('هتتسجّل في تحويل'), findsOneWidget);
+      expect(
+        find.textContaining('فلوس داخلالي · 8 نوفمبر 2026'),
+        findsOneWidget,
+      );
+      expect(find.text('فلوس طالعة مني · بتاريخ يوم الحفظ'), findsOneWidget);
+      expect(find.textContaining('اتأكد من تاريخ العملية.'), findsOneWidget);
+      expect(
+        find.textContaining('راجع المبالغ اللي اتقرَت من الجملة.'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('بعض بيانات الحساب ما وصلتناش.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('future_reason'), findsNothing);
+      expect(api.paths, isNot(contains('expense.batchCreate')));
+
+      final parse = app.ledgerStore.ledger.outbox.single.parse!;
+      final restored = ParseResult.fromJson(parse.toJson());
+      expect(
+        restored.items.first.purposeLabels?.label(arabic: false),
+        'Investments/Shares',
+      );
+      expect(restored.items.last.purposeLabels, isNull);
+      expect(restored.items.first.reviewReasons, [
+        'dated',
+        'total_mismatch',
+        'context_incomplete',
+        'future_reason',
+      ]);
+
+      await tester.ensureVisible(find.text('احفظ'));
+      await tester.tap(find.text('احفظ'));
+      await tester.pumpAndSettle();
+      final saved = api.lastInput('expense.batchCreate')! as List;
+      expect(saved.first, containsPair('direction', 'incoming'));
+      expect(saved.first, containsPair('date', '2026-11-08T12:00:00.000Z'));
+      expect(saved.first, containsPair('category', 'تحويل'));
+      expect(saved.last, containsPair('category', 'مواصلات'));
+    });
+
     testWidgets('a question is answered and the sentence saved', (
       tester,
     ) async {

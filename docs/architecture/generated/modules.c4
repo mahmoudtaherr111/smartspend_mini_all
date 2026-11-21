@@ -62,7 +62,7 @@ model {
     api-routers = module 'tRPC routers and HTTP sub-apps' {
       description 'One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts.'
       metadata {
-        files '29'
+        files '30'
         paths 'api/*-router.ts'
       }
     }
@@ -202,7 +202,7 @@ model {
     understanding = module 'Sentence understanding engine' {
       description 'Reads a typed or spoken sentence into money events with a model and verifies the reading in code: the reply contract and its parser, the numbers and quotes the code reads on its own, the guard’s exact checks, the save, show or ask policy, the prompt built from taxonomy v2, the user’s context for a reading, route resolution, the bridge from taxonomy v2 to the names the ledger stores, and the recording service that puts a reading behind the entry points.'
       metadata {
-        files '16'
+        files '17'
         paths 'api/lib/understanding/**, api/services/recording/**'
       }
     }

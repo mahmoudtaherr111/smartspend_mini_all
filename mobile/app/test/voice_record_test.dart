@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smartspend_app/src/features/ledger/offline/ledger_store.dart';
 import 'package:smartspend_app/src/features/ledger/record_composer.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
@@ -99,12 +100,124 @@ void main() {
       // Verifies parseVoiceExpense was called
       expect(fakeApi.paths, contains('ai.parseVoiceExpense'));
       expect(fakeApi.paths, contains('expense.create'));
+      expect(
+        fakeApi.lastInput('expense.create'),
+        containsPair('source', 'voice'),
+      );
 
       // Verifies undo toast was announced
       expect(find.textContaining('150'), findsOneWidget);
       expect(find.text('تراجع'), findsOneWidget);
     },
   );
+
+  testWidgets('a voice question with no items can be answered after restart', (
+    tester,
+  ) async {
+    final fakeApi = FakeApi()
+      ..answer('localAuth.me', (_) => phoneUser())
+      ..answer(
+        'ai.parseVoiceExpense',
+        (_) => {
+          'text': 'دفعت الكهربا',
+          'decision': 'clarify',
+          'items': <Object?>[],
+          'clarificationQuestion': 'دفعت كام؟',
+          'clarificationId': 32,
+        },
+      )
+      ..answer(
+        'expense.answerClarification',
+        (_) => {
+          'success': true,
+          'saved': [
+            {'id': 88, 'amount': 500, 'category': 'فواتير', 'type': 'expense'},
+          ],
+        },
+      );
+    answerSampleMonth(fakeApi);
+    final app = TestApp(token: 'stored-token', api: fakeApi);
+    await app.pump(tester);
+    await _recordVoice(tester);
+
+    expect(find.text('دفعت كام؟'), findsOneWidget);
+    await tester.tap(find.text('بعدين'));
+    await tester.pumpAndSettle();
+    final saved = app.ledgerStore.ledger.toJson();
+    expect(saved.toString(), isNot(contains('دفعت الكهربا')));
+    expect(app.ledgerStore.ledger.outbox.single.state, OutboxState.needsYou);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    final restarted = TestApp(token: 'stored-token', api: fakeApi);
+    restarted.ledgerStore.ledger = StoredLedger.fromJson(saved);
+    await restarted.pump(tester);
+    await tester.tap(find.text('محتاجة رد منك'));
+    await tester.pumpAndSettle();
+    expect(find.text('دفعت كام؟'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, '500');
+    await tester.tap(find.text('ابعت الرد'));
+    await tester.pumpAndSettle();
+
+    expect(fakeApi.lastInput('expense.answerClarification'), {
+      'clarificationId': 32,
+      'answer': '500',
+    });
+    expect(restarted.ledgerStore.ledger.outbox, isEmpty);
+  });
+
+  testWidgets('voice review survives a failed save with the same request id', (
+    tester,
+  ) async {
+    var unavailable = true;
+    final fakeApi = FakeApi()
+      ..answer('localAuth.me', (_) => phoneUser())
+      ..answer(
+        'ai.parseVoiceExpense',
+        (_) => {
+          'decision': 'review',
+          'classificationLogId': 789,
+          'items': [
+            {'amount': 150, 'type': 'expense', 'category': 'أكل وشرب'},
+          ],
+        },
+      )
+      ..answer('expense.create', (_) {
+        if (unavailable) {
+          throw const TrpcFailure('SERVICE_UNAVAILABLE', 503, 'جرّب تاني');
+        }
+        return {'id': 101};
+      });
+    answerSampleMonth(fakeApi);
+    final app = TestApp(token: 'stored-token', api: fakeApi);
+    await app.pump(tester);
+    await _recordVoice(tester);
+    await tester.tap(find.text('احفظ'));
+    await tester.pumpAndSettle();
+
+    final pending = app.ledgerStore.ledger.outbox.single;
+    expect(pending.state, OutboxState.needsYou);
+    expect(
+      fakeApi.lastInput('expense.create'),
+      containsPair('clientRequestId', pending.id),
+    );
+    expect(find.text('جرّب تاني'), findsOneWidget);
+
+    unavailable = false;
+    await tester.tap(find.text('محتاجة مراجعة منك'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('احفظ'));
+    await tester.pumpAndSettle();
+
+    expect(
+      fakeApi.lastInput('expense.create'),
+      containsPair('clientRequestId', pending.id),
+    );
+    expect(
+      fakeApi.paths.where((path) => path == 'ai.parseVoiceExpense'),
+      hasLength(1),
+    );
+    expect(app.ledgerStore.ledger.outbox, isEmpty);
+  });
 
   testWidgets(
     'tap-to-record accessibility mode allows single tap recording (Rule 12.2)',
@@ -170,4 +283,15 @@ void main() {
     expect(find.text('تسجيل صوتي بلا حدود مع برو'), findsOneWidget);
     expect(find.textContaining('استهلكت كل ثواني الصوت'), findsOneWidget);
   });
+}
+
+Future<void> _recordVoice(WidgetTester tester) async {
+  final gesture = await tester.startGesture(
+    tester.getCenter(find.byKey(const Key('voice-mic-button'))),
+  );
+  await tester.pump(const Duration(milliseconds: 600));
+  await tester.pump(const Duration(seconds: 2));
+  await gesture.up();
+  await tester.pump();
+  await tester.pumpAndSettle();
 }

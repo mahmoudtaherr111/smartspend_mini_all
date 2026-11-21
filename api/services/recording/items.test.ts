@@ -86,7 +86,8 @@ describe("toParsedItem", () => {
 
 describe("toParsedItems", () => {
   it("leaves out events without an amount", () => {
-    const items = toParsedItems({ events: [event(), event({ amount: 0, reasons: ["amount_missing"] })] }, ctx);
+    const items = toParsedItems({ events: [event(), event({ amount: 0, reasons: ["amount_missing"] })], reasons: ["amount_missing"] }, ctx);
+    expect(items[0]).toMatchObject({ needsReview: true, reviewReasons: ["amount_missing"] });
     expect(items).toHaveLength(1);
   });
 });

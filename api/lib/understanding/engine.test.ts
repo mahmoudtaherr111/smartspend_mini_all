@@ -54,7 +54,7 @@ const baseParts: ContextParts = {
 };
 
 function input(text: string, over: Partial<UnderstandInput> = {}, parts: Partial<ContextParts> = {}): UnderstandInput {
-  return { text, context: assembleContext({ ...baseParts, ...parts }), settings: {}, routes: [A, B, C], ...over };
+  return { text, context: assembleContext({ ...baseParts, ...parts }), routes: [A, B, C], ...over, settings: { understanding_auto_save: "true", ...over.settings } };
 }
 
 /** A fake `executeLlmChain` that answers each call with the next script entry. */
@@ -68,6 +68,14 @@ function scripted(...steps: Array<(routes: LlmRoute[], req: LlmRequest) => LlmRe
 }
 
 describe("understand", () => {
+  it.each(["دفعت 20 دولار اشتراك", "دفعت 20USD ومعاهم 15 جنيه توصيل", "دفعت £٤٠ للاشتراك", "دفعت ١٠ جنيه إسترليني"])(
+    "asks for an EGP restatement before offering a ledger amount for %s", async (text) => {
+      const execute = scripted(() => response(A, replyOf([ev({ amount: 20, category: "bills", sub: "other" })])));
+      expect(await understand(input(text), { execute })).toMatchObject({
+        outcome: "ask", askAbout: "amount", reasons: ["foreign_currency"], events: [],
+      });
+    },
+  );
   it("saves a clean ordinary reading and asks the model the way the contract says", async () => {
     const execute = scripted(() => response(A, replyOf([
       ev({ quote: "دفعت 300 نت", amount: 300, category: "bills", sub: "internet_landline", what: "نت" }),
@@ -86,7 +94,7 @@ describe("understand", () => {
 
     const [routes, req] = execute.mock.calls[0];
     expect(routes).toEqual([A, B, C]);
-    expect(req).toMatchObject({ schema: READING_SCHEMA, lowThinking: true, temperature: 0, timeoutMs: 8000, deadlineMs: 15000, maxOutputTokens: 350 });
+    expect(req).toMatchObject({ schema: READING_SCHEMA, lowThinking: "minimal", temperature: 0, timeoutMs: 8000, deadlineMs: 15000, maxOutputTokens: 350 });
     expect(req.systemPrompt).toBe(buildSystemPrompt());
     expect(req.userPrompt.split("\n").at(-1)).toBe("SENTENCE: «دفعت 300 نت»");
   });
@@ -98,6 +106,18 @@ describe("understand", () => {
     const result = await understand(input("دفعت 100 مواصلات و 150 اكل"), { execute });
     expect(result.outcome).toBe("show");
     expect(result.reasons).toContain("number_unaccounted");
+  });
+
+  it("requires review for partially dropped model replies even if no number is missing", async () => {
+    const execute = scripted(() => response(A, replyOf([
+      ev({ quote: "دفعت 300 نت", amount: 300, category: "bills", sub: "internet_landline" }),
+      null,
+      { quote: "دفعت 300 نت", amount: 300, category: "bills", sub: "internet_landline", flow: "out" },
+    ])));
+    const result = await understand(input("دفعت 300 نت"), { execute });
+    expect(result.outcome).toBe("show");
+    expect(result.events).toHaveLength(1);
+    expect(result.reasons).toContain("events_dropped");
   });
 
   it("passes on the model's one question when nothing can be recorded", async () => {
@@ -243,8 +263,8 @@ describe("the engine's helpers", () => {
   });
 
   it("falls back to the default policy for missing or unreadable settings", () => {
-    expect(policyFromSettings({})).toEqual(DEFAULT_POLICY);
-    expect(policyFromSettings({ understanding_review_amount: "abc", understanding_auto_max_events: "-2" })).toEqual(DEFAULT_POLICY);
+    expect(policyFromSettings({})).toEqual({ ...DEFAULT_POLICY, autoSave: false });
+    expect(policyFromSettings({ understanding_review_amount: "abc", understanding_auto_max_events: "-2" })).toEqual({ ...DEFAULT_POLICY, autoSave: false });
     expect(policyFromSettings({ understanding_auto_save: "false", understanding_review_dated: "false", understanding_auto_max_events: "3" }))
       .toEqual({ ...DEFAULT_POLICY, autoSave: false, reviewDated: false, autoMaxEvents: 3 });
   });

@@ -157,7 +157,7 @@ type ExpenseReferenceResult = {
  * Marks a clarification resolved inside the transaction that saves its items, only when it
  * was still pending. Two answers to one question used to save its items twice.
  */
-async function claimClarification(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], id: number, userId: number, userType: string): Promise<void> {
+async function claimClarification(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], id: number, userId: number, userType: string, previous?: { originalText: string; question: string }): Promise<void> {
   const [result] = await tx
     .update(pendingClarifications)
     .set({ status: "resolved" })
@@ -167,6 +167,8 @@ async function claimClarification(tx: Parameters<Parameters<typeof db.transactio
         eq(pendingClarifications.userId, userId),
         eq(pendingClarifications.userType, userType),
         eq(pendingClarifications.status, "pending"),
+        previous && eq(pendingClarifications.originalText, previous.originalText),
+        previous && eq(pendingClarifications.question, previous.question),
       ),
     );
   if (Number((result as { affectedRows?: number })?.affectedRows ?? 0) !== 1) {
@@ -317,7 +319,7 @@ export function reviewCorrection(
     if (sameAmount.length !== 1 || typeof sameAmount[0].clause !== "string" || !sameAmount[0].clause.trim()) return null;
     proposed = sameAmount[0];
   }
-  if (!proposed?.category || proposed.category === saved.category) return null;
+  if (!proposed?.category || (proposed.category === saved.category && (proposed.subCategory || "عام") === (saved.subCategory || "عام"))) return null;
   return {
     previousCategory: proposed.category,
     previousSubCategory: proposed.subCategory ?? null,
@@ -357,7 +359,7 @@ async function learnFromReview(
           on: "review",
         },
       })
-      .where(eq(classificationLogs.id, log.id));
+      .where(and(eq(classificationLogs.id, log.id), eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)));
     await recordCorrection({
       userId,
       userType,
@@ -728,8 +730,8 @@ const NOT_ENOUGH_ANSWER = "التوضيح لسه مش كافي لتسجيل ال
 /**
  * `expense.answerClarification` under the understanding engine: one mode. The answer is added to the sentence and
  * the sentence is read again through the recording service, which writes its own log row and opens no second
- * question. Whatever it can record is saved, shown or not, since the person has just answered; a reading that asks
- * again updates this question, keeping its log id, source and count, up to `MAX_FOLLOW_UPS` times.
+ * question. A clean reading can be saved. A reading that needs review becomes an explicit confirmation of the
+ * displayed entries, which uses the stored proposal without a second model call.
  */
 async function answerByReading(
   user: { id: number; type: "oauth" | "local"; plan?: string },
@@ -756,8 +758,11 @@ async function answerByReading(
     }
   }
 
-  const text = `${clarification.originalText} (${input.answer})`;
-  const read = await readSentence({
+  const awaitingReview = ctxData.awaitingReadingReview === true;
+  const confirmed = awaitingReview && answer === "احفظ";
+  const text = confirmed ? clarification.originalText
+    : awaitingReview || ctxData.restateSentence === true ? answer : `${clarification.originalText} (${answer})`;
+  const read = confirmed ? null : await readSentence({
     user,
     text,
     channel: source === "voice" ? "voice" : "text",
@@ -765,18 +770,32 @@ async function answerByReading(
     skipClarification: false,
     openClarification: false,
   });
-  const classificationLogId = read.classificationLogId ?? (typeof ctxData.classificationLogId === "number" ? ctxData.classificationLogId : undefined);
-  const savable = read.items.filter((item) => item.amount > 0);
+  const classificationLogId = confirmed
+    ? (typeof ctxData.classificationLogId === "number" ? ctxData.classificationLogId : undefined)
+    : read?.classificationLogId;
+  const items: ClarifiedItem[] = read?.items ?? (confirmed && Array.isArray(ctxData.items) ? ctxData.items : []);
+  const savable = items.filter(item => item.amount > 0);
 
-  if (read.decision === "clarify" && (followUps < MAX_FOLLOW_UPS || savable.length === 0)) {
-    const question = read.clarificationQuestion || "ممكن توضح أكتر؟";
-    await getDb()
+  if (read && read.decision !== "auto_save") {
+    const review = read.decision === "review" && savable.length > 0;
+    const question = review
+      ? `${savable.map(item => {
+        const incoming = item.type === "income" || item.direction === "incoming";
+        const purpose = [item.category, item.subCategory].filter(Boolean).join("/");
+        const day = item.date ? `، ${businessDateKey(new Date(item.date))}` : "";
+        return `${incoming ? "داخل" : "خارج"} ${item.amount} جنيه، ${purpose}${day}`;
+      }).join("\n")}\nلو التفاصيل صح اكتب «احفظ»، أو اكتب العملية كاملة بعد التعديل.`
+      : read.clarificationQuestion || "ممكن تكتب العملية تاني بالغرض والمبلغ؟";
+    const [updated] = await getDb()
       .update(pendingClarifications)
       .set({
         originalText: text,
         question,
         contextData: {
-          items: read.items,
+          recordingEngine: "understanding",
+          ...(review ? { awaitingReadingReview: true } : {}),
+          ...(read.restateSentence ? { restateSentence: true } : {}),
+          items,
           classificationLogId,
           source,
           followUps: Math.min(followUps + 1, MAX_FOLLOW_UPS),
@@ -788,7 +807,10 @@ async function answerByReading(
         eq(pendingClarifications.userId, user.id),
         eq(pendingClarifications.userType, user.type),
         eq(pendingClarifications.status, "pending"),
+        eq(pendingClarifications.originalText, clarification.originalText),
+        eq(pendingClarifications.question, clarification.question),
       ));
+    if (updated.affectedRows !== 1) throw new TRPCError({ code: "CONFLICT", message: "السؤال اتغيّر. افتحه تاني." });
     return {
       success: false,
       savedCount: 0,
@@ -806,7 +828,7 @@ async function answerByReading(
   let saved: SavedEntry[] = [];
   await getDb().transaction(async (tx) => {
     // The answer is taken once: a second tap, or a retry, finds it resolved and saves nothing.
-    await claimClarification(tx, input.clarificationId, user.id, user.type);
+    await claimClarification(tx, input.clarificationId, user.id, user.type, clarification);
     saved = await saveClarifiedItems(tx, savable, {
       userId: user.id,
       userType: user.type,
@@ -1312,31 +1334,28 @@ export const expenseRouter = router({
       // ── Strategy 6: Auto-Learning Muscle Memory ──
       // When user corrects a category, extract keywords from rawText
       // and auto-save them to user_dictionaries for instant future matching.
-      const categoryChanged =
-        category &&
-        originalExpense &&
-        originalExpense.category !== category;
-      if (categoryChanged && originalExpense?.rawText) {
+      const filingChanged = originalExpense && (
+        (category !== undefined && originalExpense.category !== category) ||
+        (subCategory !== undefined && originalExpense.subCategory !== subCategory)
+      );
+      if (filingChanged && originalExpense.rawText) {
         try {
-          const newCategory = category!;
-          const newSubCategory =
-            subCategory || originalExpense.subCategory || "عام";
-          const rawText = originalExpense.rawText;
-
-          const [latestClassificationLog] = await db
-            .select({ id: classificationLogs.id })
+          const newCategory = category ?? originalExpense.category;
+          const newSubCategory = subCategory ?? originalExpense.subCategory ?? "عام";
+          const [linkedLog] = originalExpense.classificationLogId ? await db
+            .select({ id: classificationLogs.id, finalResult: classificationLogs.finalResult })
             .from(classificationLogs)
-            .where(
-              and(
-                eq(classificationLogs.userId, userId),
-                eq(classificationLogs.userType, userType),
-                eq(classificationLogs.originalText, rawText),
-              ),
-            )
-            .orderBy(desc(classificationLogs.createdAt))
-            .limit(1);
+            .where(and(
+              eq(classificationLogs.id, originalExpense.classificationLogId),
+              eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType),
+            )).limit(1) : [];
+          const parsed = linkedLog?.finalResult;
+          const multiItem = Array.isArray(parsed) && parsed.length > 1;
+          const change = reviewCorrection(parsed, {
+            category: newCategory, subCategory: newSubCategory, amount: Math.abs(Number(originalExpense.amount)), type: originalExpense.type,
+          });
 
-          if (latestClassificationLog) {
+          if (linkedLog) {
             await db
               .update(classificationLogs)
               .set({
@@ -1350,7 +1369,7 @@ export const expenseRouter = router({
                   correctedAt: new Date().toISOString(),
                 },
               })
-              .where(eq(classificationLogs.id, latestClassificationLog.id));
+              .where(and(eq(classificationLogs.id, linkedLog.id), eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)));
           }
 
           // Store what the user told us as an explicit correction rule.
@@ -1361,18 +1380,19 @@ export const expenseRouter = router({
           // guaranteed to miss, so every correction made here vanished on write — which,
           // together with muscle memory skipping corrected rows outright, is why
           // correcting a category never changed anything.
+          if (multiItem && !change?.clause) return { success: true, newlyAddedContact };
           await recordCorrection({
             userId,
             userType,
-            originalText: rawText,
+            originalText: change?.clause ?? originalExpense.rawText,
             category: newCategory,
             subCategory: newSubCategory,
             type: input.type ?? originalExpense.type,
             amount: Math.abs(Number(input.amount ?? originalExpense.amount)) || 0,
-            sourceLogId: latestClassificationLog?.id ?? null,
+            sourceLogId: linkedLog?.id ?? null,
           });
         } catch (learnErr) {
-          console.warn("Auto-learning failed (non-fatal):", learnErr);
+          reviewLog.warn({ err: learnErr, event: "expense.correction_failed", userId }, "Expense correction could not be learned");
         }
       }
 
@@ -2529,7 +2549,7 @@ export const expenseRouter = router({
         ctxData = clarification.contextData as Record<string, any>;
       }
 
-      if ((await currentRecordingEngine()) === "understanding") {
+      if (ctxData.recordingEngine === "understanding" || (await currentRecordingEngine()) === "understanding") {
         return answerByReading({ id: userId, type: userType as "oauth" | "local", plan: ctx.user!.plan ?? undefined }, input, clarification, ctxData);
       }
 

@@ -43,7 +43,9 @@ class _OutboxRow extends ConsumerWidget {
       final saved = await reviewAndSave(context, ref, item);
       if (saved == false) {
         await ref.read(outboxProvider.notifier).discard(item);
-        ref.read(composerDraftProvider.notifier).put(item.text);
+        if (!item.isVoice && context.mounted) {
+          ref.read(composerDraftProvider.notifier).put(item.text);
+        }
       }
       return;
     }

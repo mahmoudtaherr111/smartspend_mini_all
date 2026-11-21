@@ -565,6 +565,65 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reviewEdit => 'Edit the text';
 
   @override
+  String get reviewDateAtSave => 'Dated when you save';
+
+  @override
+  String get reviewDirectionUnknown => 'Money direction unclear';
+
+  @override
+  String reviewFilesAs(String category) {
+    return 'Saved under $category';
+  }
+
+  @override
+  String get reviewReasonAmount =>
+      'Check the amounts we read from the sentence.';
+
+  @override
+  String get reviewReasonDate => 'Check the transaction date.';
+
+  @override
+  String get reviewReasonDirection =>
+      'Check whether the money came in or went out.';
+
+  @override
+  String get reviewReasonCategory =>
+      'Check that the category fits the transaction.';
+
+  @override
+  String get reviewReasonPerson => 'Check who the transaction was with.';
+
+  @override
+  String get reviewReasonCommitment =>
+      'Check which commitment this transaction was for.';
+
+  @override
+  String get reviewReasonWallet =>
+      'Check which wallet this transaction was for.';
+
+  @override
+  String get reviewReasonDuplicate =>
+      'Two transactions look alike. Check that both happened.';
+
+  @override
+  String get reviewReasonTransactions =>
+      'Check that the list includes every transaction that happened.';
+
+  @override
+  String get reviewReasonLarge =>
+      'This is a large amount in a category you rarely use. Check it before saving.';
+
+  @override
+  String get reviewReasonAutoOff => 'Automatic saving is off.';
+
+  @override
+  String get reviewReasonContext =>
+      'Some account details were unavailable. Check the details before saving.';
+
+  @override
+  String get reviewReasonGeneral => 'Check the details before saving.';
+
+  @override
   String get clarifyDefault => 'Could you say a bit more?';
 
   @override

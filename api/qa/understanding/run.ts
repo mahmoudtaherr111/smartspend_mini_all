@@ -23,7 +23,7 @@ import { BUILTIN_BASE_URLS, looksLikeReasoningModel } from "../../lib/llm-provid
 import { defaultFireworksModelForPlan, defaultGeminiModelForPlan, defaultGroqModelForPlan, defaultNvidiaModelForPlan, mapModelName } from "../../lib/model-mapper";
 import type { ReadingContext } from "../../lib/understanding/reading-context";
 import { DEFAULT_RETRY, RateLimiter, realSleep, runWithRetries, type RetryPolicy, type Sleep, type TryResult } from "./limiter";
-import { FAILURES_FILE, finishedIds, META_FILE, readMeta, RESULTS_FILE, writeReport, type FailureRecord, type RunMeta } from "./report";
+import { eligibleCaseIds, FAILURES_FILE, finishedIds, META_FILE, promptDetailOf, readJsonl, readMeta, RESULTS_FILE, selectEvaluationCases, writeReport, type FailureRecord, type RunMeta } from "./report";
 import type { CaseResult, Outcome, PredictedEvent } from "./score";
 import { InvalidSetError, loadSet, type EvalCase } from "./set";
 
@@ -59,6 +59,7 @@ export const USAGE = `Usage: npm run eval:understand -- --set <set.json> [option
                         run folder of this set and route)
   --strict-policy       isFamiliar and isKnownPerson false, as for a new user
   --setting name=value  a system setting the engine reads (repeatable), e.g. llm_timeout_ms=20000
+                        understanding_prompt_detail=compact selects the compact profile (default full)
   --help                this text
 
 Keys are read from the environment (or .env): GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY,
@@ -451,15 +452,21 @@ export async function runCases(deps: LoopDeps): Promise<LoopSummary> {
 
 /** The ids a run covers, in set order: `--ids` first, then the first `--limit`. Unknown ids are a usage error. */
 export function selectCases(cases: readonly EvalCase[], ids: string[] | null, limit: number | null): EvalCase[] {
-  let picked = [...cases];
   if (ids) {
     const known = new Set(cases.map((item) => item.id));
     const unknown = ids.filter((id) => !known.has(id));
     if (unknown.length) throw new UsageError(`ids not in the set: ${unknown.join(", ")}`);
-    const wanted = new Set(ids);
-    picked = picked.filter((item) => wanted.has(item.id));
   }
-  return limit ? picked.slice(0, limit) : picked;
+  return selectEvaluationCases(cases, ids, limit);
+}
+
+export function changedResumeSettings(meta: RunMeta, options: Pick<Options, "settings" | "strictPolicy">): boolean {
+  if (options.strictPolicy && !meta.strictPolicy) return true;
+  const settings = meta.settings ?? {};
+  return Object.entries(options.settings).some(([key, value]) => {
+    if (key === "understanding_prompt_detail") return promptDetailOf({ [key]: value }) !== promptDetailOf(settings);
+    return settings[key] !== value;
+  });
 }
 
 /** Appends one JSON line, starting a new line first when a stopped run left the last one unfinished. */
@@ -543,23 +550,35 @@ async function main(argv: string[]): Promise<number> {
   if (existing && (existing.route.slug !== route.slug || existing.route.model !== route.model || existing.setName !== set.name)) {
     return refuse(`${outDir} is a run of ${existing.setName} on ${existing.route.slug}:${existing.route.model}; a folder measures one set on one model`);
   }
-  if (options.resume && existing && !options.ids && !options.limit) {
-    // A resumed run covers what the run it continues covered, unless told otherwise.
-    cases = selectCases(set.cases, existing.ids, existing.limit);
+  if (options.resume && existing && changedResumeSettings(existing, options)) {
+    return refuse("--resume uses the original engine settings and policy; pass another --out to compare a different configuration");
   }
+  const previousIds = existing ? eligibleCaseIds(set, existing, [
+    ...[...done].map((id) => ({ id })),
+    ...readJsonl<FailureRecord>(join(outDir, FAILURES_FILE)).rows,
+  ]) : new Set<string>();
+  if (options.resume && existing && !options.ids && !options.limit) {
+    cases = selectCases(set.cases, [...previousIds], null);
+  }
+  const selectedIds = [...new Set([...previousIds, ...cases.map((item) => item.id)])];
+  // The evaluation measures which readings *would* be safe to save, including during a review-only rollout.
+  const settings = { understanding_auto_save: "true", ...(existing?.settings ?? options.settings) };
+  const promptDetail = promptDetailOf(settings);
 
   mkdirSync(outDir, { recursive: true });
   const meta: RunMeta = existing
-    ? { ...existing, rpm: options.rpm, resumedAt: [...existing.resumedAt, new Date().toISOString()] }
+    ? { ...existing, rpm: options.rpm, promptDetail, selectedIds, resumedAt: [...existing.resumedAt, new Date().toISOString()] }
     : {
         setName: set.name,
         setPath: relative(REPO_ROOT, resolve(options.set)),
         route: { slug: route.slug, model: route.model, protocol: route.protocol },
         rpm: options.rpm,
         strictPolicy: options.strictPolicy,
-        settings: options.settings,
+        settings,
         limit: options.limit,
         ids: options.ids,
+        selectedIds,
+        promptDetail,
         startedAt: new Date().toISOString(),
         resumedAt: [],
       };
@@ -567,6 +586,7 @@ async function main(argv: string[]): Promise<number> {
 
   const todo = cases.filter((item) => !done.has(item.id)).length;
   say(`Route: ${route.slug}:${route.model} (key from ${PROVIDERS.find((p) => p.slug === route.slug)!.envKey})`);
+  say(`Prompt detail: ${promptDetail}`);
   say(`Set: ${set.name}, ${cases.length} cases selected, ${cases.length - todo} already done, ${todo} to run at ${options.rpm} rpm (about ${Math.ceil(todo / options.rpm)} min)`);
   say(`Out: ${outDir}`);
 
@@ -578,7 +598,6 @@ async function main(argv: string[]): Promise<number> {
   });
 
   const limiter = new RateLimiter(options.rpm);
-  const settings = { ...meta.settings, ...options.settings };
   const summary = await runCases({
     cases,
     done,
@@ -598,7 +617,7 @@ async function main(argv: string[]): Promise<number> {
           settings,
           routes: [route],
         });
-        return { ok: true, value: toCaseResult(item, answer, today.day, Date.now() - startedAt, tries) };
+        return { ok: true, value: { ...toCaseResult(item, answer, today.day, Date.now() - startedAt, tries), promptDetail } };
       } catch (error) {
         return classifyFailure(error);
       }
@@ -612,9 +631,10 @@ async function main(argv: string[]): Promise<number> {
 
   const { path, aggregate } = writeReport(outDir);
   const g1 = aggregate.wrongAutoSave;
+  const allLabelled = aggregate.allLabelledFieldsAutoSaveError;
   say(
     `Done: ${summary.finished} finished, ${summary.failed} failed, ${summary.skipped} skipped${summary.stopped ? `, stopped (${summary.stopped})` : ""}. ` +
-      `G1 ${g1.count}/${g1.of} unsafe saves · no extra tap ${aggregate.noExtraTap.count}/${aggregate.noExtraTap.of} · questions ${aggregate.question.count}/${aggregate.question.of}`,
+      `G1 ${g1.count}/${g1.of} unsafe saves · all-labelled errors ${allLabelled.count}/${allLabelled.of} · no extra tap ${aggregate.noExtraTap.count}/${aggregate.noExtraTap.of} · questions ${aggregate.question.count}/${aggregate.question.of}`,
   );
   say(`Report: ${path}`);
   return summary.stopped && summary.stopped !== "interrupted" ? 1 : 0;

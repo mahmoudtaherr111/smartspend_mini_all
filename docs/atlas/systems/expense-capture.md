@@ -22,6 +22,7 @@ flowchart LR
     router_ai["ai API · 4 procedures"]
     router_expense["expense API · 7 procedures"]
     router_image["image API · 1 procedure"]
+    router_taxonomy["taxonomy API · 1 procedure"]
   end
   subgraph g_modules["Code modules"]
     mod_arabic_nlp["Arabic and Egyptian text processing"]
@@ -122,6 +123,7 @@ flowchart LR
   router_image --> sys_platform
   router_image -.-> tbl_expenses
   router_image -.-> tbl_user_dictionaries
+  router_taxonomy --> sys_platform
   screens_admin --> router_ai
   screens_money --> router_ai
   screens_money --> router_expense
@@ -176,7 +178,7 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | `classification` — Expense classification pipeline | smart-pipeline.ts and the modules it composes: financial events, the role of each number and of each word in a clause, admissibility, rules, muscle memory, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance. | 40 |
 | `classification-qa` — Classification benchmark helpers | Helpers used only by the classification benchmark and QA scripts: taxonomy assertions and simulated users. | 2 |
 | `receipt-parsing` — Receipt parsing | Receipt parsing with a vision model. | 1 |
-| `understanding` — Sentence understanding engine | Reads a typed or spoken sentence into money events with a model and verifies the reading in code: the reply contract and its parser, the numbers and quotes the code reads on its own, the guard's exact checks, the save, show or ask policy, the prompt built from taxonomy v2, the user's context for a reading, route resolution, the bridge from taxonomy v2 to the names the ledger stores, and the recording service that puts a reading behind the entry points. | 16 |
+| `understanding` — Sentence understanding engine | Reads a typed or spoken sentence into money events with a model and verifies the reading in code: the reply contract and its parser, the numbers and quotes the code reads on its own, the guard's exact checks, the save, show or ask policy, the prompt built from taxonomy v2, the user's context for a reading, route resolution, the bridge from taxonomy v2 to the names the ledger stores, and the recording service that puts a reading behind the entry points. | 17 |
 | `web-capture` — Expense entry UI | The expense form on the home screen: typed, spoken and photographed entries, the review and clarification steps, the offline text queue, local suggestions and offline input checks, and image compression before a receipt is uploaded. | 3 |
 
 ## API procedures
@@ -195,6 +197,7 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | `expense.getCategoryList` | query | `authedProcedure` | `expense_categories` | — | — |
 | `expense.getPendingClarifications` | query | `authedProcedure` | `pending_clarifications` | — | `Home` |
 | `image.parseReceipt` | mutation | `receiptsProcedure` | `expenses`, `user_dictionaries` | — | `Home` |
+| `taxonomy.get` | query | `authedProcedure` | — | — | — |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
@@ -248,7 +251,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/expense-capture.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>87 files and declarations</summary>
+<details><summary>89 files and declarations</summary>
 
 - `api/ai-router.ts#ai.learnWord`
 - `api/ai-router.ts#ai.parseExpense`
@@ -318,6 +321,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/understanding/bridge.ts`
 - `api/lib/understanding/context.ts`
 - `api/lib/understanding/contract.ts`
+- `api/lib/understanding/currency.ts`
 - `api/lib/understanding/engine.ts`
 - `api/lib/understanding/guard.ts`
 - `api/lib/understanding/numbers.ts`
@@ -334,6 +338,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/recording/reading-log.ts`
 - `api/services/recording/saved-reading.ts`
 - `api/services/recording/types.ts`
+- `api/taxonomy-router.ts`
 - `src/components/expenses/ExpenseForm.tsx`
 - `src/lib/clientRulesEngine.ts`
 - `src/lib/compress-image.ts`

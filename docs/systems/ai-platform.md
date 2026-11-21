@@ -231,3 +231,5 @@ Checked against the code; each one names where it lives.
 
 ### Cost log privacy
 `recordAICostMetric` logs through `createLogger`, with an explicit list of account identifiers, channel and numeric usage counters. Arbitrary routing or trace metadata is never forwarded to server logs, because it can contain raw expense clauses nested beyond redaction depth. The analytics row stores only scoped counters and whitelisted routing codes, never arbitrary nested traces or clauses; `api/services/ai-cost-policy.logging.test.ts` verifies that nested private text does not enter the log.
+
+The understanding reader budgets the system prompt, context, reply schema and output separately from the user sentence limit. Its short structured Gemini 3.1 Flash-Lite calls request minimal thinking. Recorded completion usage includes reported thinking tokens.

@@ -29,6 +29,7 @@ final class OutboxItem {
     this.state = OutboxState.queued,
     this.message,
     this.parse,
+    this.isVoice = false,
   });
 
   factory OutboxItem.fromJson(Map<String, Object?> json) => OutboxItem(
@@ -46,6 +47,7 @@ final class OutboxItem {
       final Map<String, Object?> parse => ParseResult.fromJson(parse),
       _ => null,
     },
+    isVoice: json['isVoice'] == true,
   );
 
   /// The request id its save carries, so a save retried after a lost answer is not saved twice.
@@ -60,6 +62,9 @@ final class OutboxItem {
   /// What the server read, while it waits for the person's review or answer.
   final ParseResult? parse;
 
+  /// For voice, [text] is a display label. The outbox does not store the audio or transcript.
+  final bool isVoice;
+
   OutboxItem copyWith({
     OutboxState? state,
     String? message,
@@ -71,6 +76,7 @@ final class OutboxItem {
     state: state ?? this.state,
     message: message,
     parse: parse ?? this.parse,
+    isVoice: isVoice,
   );
 
   Map<String, Object?> toJson() => {
@@ -80,6 +86,7 @@ final class OutboxItem {
     'state': state.name,
     'message': message,
     'parse': parse?.toJson(),
+    if (isVoice) 'isVoice': true,
   };
 }
 

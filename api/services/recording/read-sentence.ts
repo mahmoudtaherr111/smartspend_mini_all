@@ -20,19 +20,22 @@ import { classificationLogs, pendingClarifications, userBusinesses } from "../..
 import { recordModelCalls } from "../../lib/ai-ledger";
 import {
   assertAiBudget,
-  clampOutputTokens,
+  assertAiBudgetRemaining,
   countDailyAiRequests,
   estimateTokensFromText,
   trackAiTokens,
+  type AiBudget,
   type AiUsageUser,
 } from "../../lib/ai-usage-policy";
+import { maxTokensFor } from "../../lib/anthropic-client";
 import { createLogger } from "../../lib/log";
 import { getSystemSettings } from "../../lib/settings-cache";
 import { loadReadingContext } from "../../lib/understanding/context";
-import { READING_CONTRACT_VERSION } from "../../lib/understanding/contract";
-import { understand, UnderstandingUnavailableError, type Understanding, type UnderstandingUsage } from "../../lib/understanding/engine";
-import type { LlmAttempt } from "../../lib/llm-router";
-import { promptFingerprint } from "../../lib/understanding/prompt";
+import { READING_CONTRACT_VERSION, READING_SCHEMA } from "../../lib/understanding/contract";
+import { outputTokensFor, understand, UnderstandingUnavailableError, type Understanding, type UnderstandingUsage } from "../../lib/understanding/engine";
+import type { LlmAttempt, LlmRoute } from "../../lib/llm-router";
+import { buildSystemPrompt, buildUserPrompt, MAX_SENTENCE_CHARS, promptFingerprint } from "../../lib/understanding/prompt";
+import { toPromptContext, type ReadingContext } from "../../lib/understanding/reading-context";
 import { resolveUnderstandingRoutes } from "../../lib/understanding/routes";
 import { getDb } from "../../queries/connection";
 import { recordAICostMetric } from "../ai-cost-policy";
@@ -43,8 +46,8 @@ const log = createLogger("recording.read-sentence");
 
 export const UNAVAILABLE_MESSAGE = "مش قادرين نقرا الجملة دلوقتي. جرّب كمان شوية.";
 const PARSE_OFF_MESSAGE = "تحليل الرسائل بالذكاء الاصطناعي غير متاح في خطتك الحالية.";
-/** What the pipeline's budget estimate adds to the sentence for the prompts around it. */
-const PROMPT_OVERHEAD_TOKENS = 420;
+const SCHEMA_AND_FRAMING_TOKENS = estimateTokensFromText(JSON.stringify(READING_SCHEMA)) + 128;
+const MIN_REPLY_TOKENS = 64;
 const MODEL_USED_MAX = 100;
 
 export interface SentenceUser {
@@ -80,6 +83,41 @@ export interface ReadSentenceDeps {
 export const READING_LOG_VERSION = `u${READING_CONTRACT_VERSION}-${promptFingerprint()}`;
 
 const planOf = (user: SentenceUser) => user.plan || "free";
+
+function providerReplyHeadroom(route: LlmRoute): number {
+  if (route.protocol === "anthropic") return maxTokensFor(route.model, 1) - 1;
+  // The Groq adapter can raise the provider cap to make room for gpt-oss reasoning.
+  return route.suppressReasoning && /gpt-oss/i.test(route.model) ? 1_024 : 0;
+}
+
+function budgetReading(text: string, context: ReadingContext, settings: Record<string, string>, routes: LlmRoute[], budget: AiBudget) {
+  const sentence = text.trim();
+  const ordered = routes.filter((route) => route.apiKey && route.model).sort((a, b) => a.priority - b.priority);
+  if (!sentence || sentence.length > MAX_SENTENCE_CHARS || !ordered.length) {
+    return { routes: ordered, maxOutputTokens: budget.perRequestMax };
+  }
+
+  const detail = settings.understanding_prompt_detail === "compact" ? "compact" : "full";
+  const system = buildSystemPrompt(detail);
+  const prompt = buildUserPrompt(toPromptContext(context), sentence, detail);
+  // The user cap applies to the sentence. The monthly balance pays for the full call, including cached input.
+  const promptTokens = Math.ceil((estimateTokensFromText(system) + estimateTokensFromText(prompt)) * 1.1) + SCHEMA_AND_FRAMING_TOKENS;
+  const firstRouteInput = promptTokens + providerReplyHeadroom(ordered[0]);
+  assertAiBudgetRemaining(budget, firstRouteInput + Math.min(MIN_REPLY_TOKENS, budget.perRequestMax));
+  const maxOutputTokens = Math.min(budget.perRequestMax, budget.remaining - firstRouteInput);
+  const perRoute = promptTokens + outputTokensFor(sentence, maxOutputTokens);
+
+  // An unusable reply can be billable. Only offer fallback routes that fit in the same monthly balance.
+  let left = budget.remaining;
+  const affordable: LlmRoute[] = [];
+  for (const route of ordered) {
+    const tokens = perRoute + providerReplyHeadroom(route);
+    if (left < tokens) break;
+    left -= tokens;
+    affordable.push(route);
+  }
+  return { routes: affordable, maxOutputTokens };
+}
 
 function dailyLimitOf(settings: Record<string, string>, plan: string): number {
   const defaults: Record<string, number> = { free: 10, pro: 100, ultra: 500 };
@@ -239,12 +277,11 @@ export async function readSentence(input: ReadSentenceInput, deps: ReadSentenceD
 
   const settings = await settingsLoad;
   if (!input.gateChecked) await assertSentenceAllowed(user, settings);
-  const estimatedInputTokens = estimateTokensFromText(text) + PROMPT_OVERHEAD_TOKENS;
-  const budget = await assertAiBudget(user as AiUsageUser, "parse", estimatedInputTokens);
-  const maxOutputTokens = clampOutputTokens(budget.perRequestMax, budget.remaining, estimatedInputTokens);
+  const budget = await assertAiBudget(user as AiUsageUser, "parse", estimateTokensFromText(text), settings);
 
   const [context, businessId] = await Promise.all([contextLoad, businessLoad]);
-  const routes = await resolveRoutes(planOf(user), settings);
+  const resolvedRoutes = await resolveRoutes(planOf(user), settings);
+  const { routes, maxOutputTokens } = budgetReading(text, context, settings, resolvedRoutes, budget);
 
   let understanding: Understanding;
   try {
@@ -272,6 +309,7 @@ export async function readSentence(input: ReadSentenceInput, deps: ReadSentenceD
   const decision = decisionOf(understanding.outcome, input.skipClarification);
   const overallConfidence = overallConfidenceOf(decision, items);
   const question = decision === "clarify" ? understanding.question || "ممكن توضح أكتر؟" : undefined;
+  const restateSentence = understanding.reasons.includes("foreign_currency");
   const processingTimeMs = Date.now() - startedAt;
 
   await recordSpend(user, input, spendOf(understanding.usage), { decision, itemCount: items.length, source: understanding.source });
@@ -293,6 +331,7 @@ export async function readSentence(input: ReadSentenceInput, deps: ReadSentenceD
         classificationVersion: READING_LOG_VERSION,
         reasoningTraceLight: {
           outcome: understanding.outcome,
+          ...(input.skipClarification ? { clarificationSuppressed: true } : {}),
           reasons: understanding.reasons,
           flags,
           route: { servedBy: understanding.usage.servedBy, model: understanding.usage.model, degradedSchema: understanding.usage.degradedSchema, attempts: slimAttempts(understanding.usage.attempts) },
@@ -316,8 +355,11 @@ export async function readSentence(input: ReadSentenceInput, deps: ReadSentenceD
       });
     classificationLogId = insertIdOf(result);
   } catch (err) {
-    // A trace-storage outage must not keep the person from reviewing what was read.
     log.warn({ err, event: "recording.log_write_failed", userId: user.id, userType: user.type }, "The reading log row could not be written");
+  }
+  // A save uses this server-side row to recover the event's kind and linked wallet.
+  if (!classificationLogId && items.length > 0) {
+    throw new TRPCError({ code: "SERVICE_UNAVAILABLE", message: UNAVAILABLE_MESSAGE });
   }
 
   let clarificationId: number | undefined;
@@ -332,6 +374,8 @@ export async function readSentence(input: ReadSentenceInput, deps: ReadSentenceD
           originalText: text,
           status: "pending",
           contextData: {
+            recordingEngine: "understanding",
+            ...(restateSentence ? { restateSentence: true } : {}),
             items,
             classificationLogId,
             source: input.channel === "voice" ? "voice" : "ai_parsed",
@@ -359,6 +403,7 @@ export async function readSentence(input: ReadSentenceInput, deps: ReadSentenceD
     decision,
     overallConfidence,
     ...(question !== undefined ? { clarificationQuestion: question } : {}),
+    ...(restateSentence ? { restateSentence: true } : {}),
     ...(clarificationId !== undefined ? { clarificationId } : {}),
     processingTimeMs,
     trace: traceOf(input, understanding, decision, overallConfidence, items.length, processingTimeMs),

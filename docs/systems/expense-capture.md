@@ -484,8 +484,7 @@ the same shapes through `api/services/recording/`, so both apps need no change:
 - Commitments: `matchSavedExpenses` passes the reading's commitment to `decideMatch` as `namedCashflowId`, which
   names that commitment as strongly as its title does. Every other rule of decision 0051 holds: the commitment must
   be payable, the amount exact, no rival named, the date open, and an instalment kind still needs its cue word.
-- `expense.answerClarification`: the answer is added to the sentence, the sentence is read again, and whatever can
-  be recorded is saved; a reading that asks again updates the same question, at most twice.
+- `expense.answerClarification`: a missing detail is added to the sentence. An EGP restatement or a corrected proposal replaces the sentence. A clean reading saves once. A flagged reading lists the proposed entries and waits for an explicit «احفظ» before writing them. Confirmation reuses the stored proposal.
 - `expense.previewCategory` and `api/lib/classify-text.ts#classifyText` answer null: no model is called per
   keystroke, the AI Center keeps the category its own model chose and capture questions use their default.
 
@@ -499,7 +498,7 @@ Tests: `api/lib/understanding/understanding-core.test.ts`, `api/lib/understandin
 `api/services/coach/matcher.test.ts`, and on MySQL `tests/recording-reading.test.ts`. The labelled development sentences are
 `api/qa/understanding/dev-set.json`; `npm run eval:understand` reads them through one named model at a
 requests-per-minute limit and writes a report (the share of automatic saves that are wrong, questions, field
-accuracy, tokens and time). It has not been run against a real model yet.
+accuracy, tokens and time). The harness also runs on the locked set. Reports separate provider coverage, wrong automatic saves, errors across all labelled fields, and latency.
 
 ## Known issues
 Checked against the code; each one names where it lives.
@@ -530,3 +529,5 @@ The classifier keeps its semantic transfer/investment output for compatibility. 
 Saved capture-purpose feedback edits the already stored row through the shared writer and does not run the entry
 parse/save flow again. Lists can opt into fee grouping; existing clients retain ungrouped rows. This does not change
 text/voice classification decisions or the explicit review of manually entered drafts.
+
+On a fresh configuration, switching to the understanding reader starts in review mode. Automated saving requires an explicit understanding_auto_save=true. The evaluation harness enables that policy for measurement. Under the understanding engine, amount evidence belongs to the quoted event. Unit prices, totals, contradicted dates, dropped events, repaired subcategories and incomplete personal context can require review. An explicitly foreign-currency reading asks for a restatement in Egyptian pounds before producing ledger items. The authenticated taxonomy.get query returns the versioned purpose labels. Flutter review receives these labels alongside the filing used by the ledger, the direction, date and reasons for review. Typed retries and transcribed voice drafts use the outbox.

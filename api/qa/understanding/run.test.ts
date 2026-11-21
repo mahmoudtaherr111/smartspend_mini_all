@@ -4,10 +4,11 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { assembleContext } from "../../lib/understanding/reading-context";
 import { RateLimiter, type TryResult } from "./limiter";
-import { finishedIds, readJsonl, RESULTS_FILE } from "./report";
+import { FAILURES_FILE, finishedIds, META_FILE, readJsonl, RESULTS_FILE, writeProfileComparison, writeReport, type RunMeta } from "./report";
 import {
   appendLine,
   caseContext,
+  changedResumeSettings,
   classifyFailure,
   latestRunDir,
   parseArgs,
@@ -19,7 +20,7 @@ import {
   UsageError,
   type EngineAnswer,
 } from "./run";
-import type { CaseResult } from "./score";
+import type { CaseResult, PromptDetail } from "./score";
 import type { EvalCase } from "./set";
 
 const KEY = "k".repeat(39);
@@ -60,6 +61,29 @@ const finished = (id: string): CaseResult => ({
   versions: {},
   retries: 0,
 });
+
+function evaluationRun(path: string, promptDetail: PromptDetail, selectedIds: string[]): RunMeta {
+  const setPath = join(path, "set.json");
+  writeFileSync(setPath, JSON.stringify({ name: "test-set", cases }));
+  const meta: RunMeta = {
+    setName: "test-set", setPath, route: { slug: "gemini", model: "m", protocol: "gemini" }, rpm: 8,
+    strictPolicy: false, settings: { understanding_prompt_detail: promptDetail }, limit: null, ids: null,
+    selectedIds, promptDetail, startedAt: "2026-11-11T00:00:00Z", resumedAt: [],
+  };
+  writeFileSync(join(path, META_FILE), JSON.stringify(meta));
+  return meta;
+}
+
+function resultWithSub(id: string, promptDetail: PromptDetail, sub = "cafe"): CaseResult {
+  return {
+    ...finished(id),
+    promptDetail,
+    events: [{
+      ...cases.find((item) => item.id === id)!.events[0], sub, quote: "", what: "", person: "", personRole: "none",
+      commitment: "", installments: 0, wallet: "", date: "", doubt: "none", flags: [], reasons: [],
+    }],
+  };
+}
 
 describe("parseArgs", () => {
   it("reads the documented options in both spellings", () => {
@@ -198,6 +222,14 @@ describe("runCases", () => {
 });
 
 describe("resume", () => {
+  it("keeps the original profile, settings and policy when resuming", () => {
+    const meta = evaluationRun(tempDir(), "compact", ["C-1"]);
+    expect(changedResumeSettings(meta, parseArgs(["--resume"]))).toBe(false);
+    expect(changedResumeSettings(meta, parseArgs(["--resume", "--setting", "understanding_prompt_detail=compact"]))).toBe(false);
+    expect(changedResumeSettings(meta, parseArgs(["--resume", "--setting", "understanding_prompt_detail=full"]))).toBe(true);
+    expect(changedResumeSettings(meta, parseArgs(["--resume", "--strict-policy"]))).toBe(true);
+  });
+
   it("reads finished ids, skipping a line a stopped run cut short, and appends on a fresh line", () => {
     const dir = tempDir();
     const file = join(dir, RESULTS_FILE);
@@ -221,6 +253,41 @@ describe("resume", () => {
     expect(selectCases(cases, ["C-4", "C-2"], null).map((c) => c.id)).toEqual(["C-2", "C-4"]);
     expect(selectCases(cases, null, 3).map((c) => c.id)).toEqual(["C-1", "C-2", "C-3"]);
     expect(() => selectCases(cases, ["X"], null)).toThrow(/not in the set/);
+  });
+});
+
+describe("evaluation reports", () => {
+  it("counts eligible, resolved, failed, unrun and excluded separately", () => {
+    const dir = tempDir();
+    evaluationRun(dir, "compact", ["C-1", "C-2", "C-3"]);
+    appendLine(join(dir, RESULTS_FILE), resultWithSub("C-1", "compact", "restaurant"));
+    for (const id of ["C-1", "C-2", "C-4"]) appendLine(join(dir, FAILURES_FILE), { id, detail: "quota", rateLimited: true, retries: 1 });
+    const { path } = writeReport(dir);
+    const json = JSON.parse(readFileSync(join(dir, "score.json"), "utf8"));
+    expect(json.coverage).toEqual({ eligible: 3, attempted: 2, completed: 1, failed: 1, unrun: 1, excluded: 5 });
+    expect(json.prompt).toEqual({ configured: "compact", rows: { full: 0, compact: 1, unknown: 0 } });
+    expect(json.aggregate.wrongAutoSave.count).toBe(0);
+    expect(json.aggregate.allLabelledFieldsAutoSaveError.count).toBe(1);
+    expect(readFileSync(path, "utf8")).toContain("1 failed, 1 eligible cases unrun, 5 excluded by selection");
+  });
+
+  it("compares common completions and identifies failed or mixed-profile runs", () => {
+    const full = tempDir();
+    const compact = tempDir();
+    evaluationRun(full, "full", ["C-1", "C-2", "C-3"]);
+    evaluationRun(compact, "compact", ["C-1", "C-2"]);
+    appendLine(join(full, RESULTS_FILE), { ...resultWithSub("C-1", "full"), promptDetail: undefined });
+    appendLine(join(full, RESULTS_FILE), resultWithSub("C-3", "full", "restaurant"));
+    appendLine(join(full, FAILURES_FILE), { id: "C-2", detail: "quota", rateLimited: true, retries: 1 });
+    appendLine(join(compact, RESULTS_FILE), resultWithSub("C-1", "compact", "restaurant"));
+    appendLine(join(compact, RESULTS_FILE), resultWithSub("C-2", "compact"));
+    const text = readFileSync(writeProfileComparison(full, compact), "utf8");
+    expect(text).toContain("1 cases finished by both profiles");
+    expect(text).toContain("| failed | 1 | 0 |");
+    expect(text).toContain("| Rows without case-level prompt provenance | 1 | 0 |");
+    expect(text).toContain("| All-labelled-fields auto-save error rate | 0.0% (0/1) | 100.0% (1/1) |");
+    appendLine(join(compact, RESULTS_FILE), resultWithSub("C-2", "full"));
+    expect(() => writeProfileComparison(full, compact)).toThrow(/consistent prompt provenance/);
   });
 });
 

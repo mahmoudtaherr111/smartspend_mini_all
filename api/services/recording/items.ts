@@ -7,6 +7,7 @@
  * can be enriched from the server's own copy of it later (`saved-reading.ts`). Pure.
  */
 import type { Understanding, UnderstoodEvent } from "../../lib/understanding/engine";
+import { taxonomyCategory, taxonomySub } from "../../../contracts/taxonomy";
 import { personMatcher } from "../../lib/understanding/reading-context";
 import type { PromptPerson } from "../../lib/understanding/prompt";
 import type { ParseDecision, ReadingSummary, RecordedItem } from "./types";
@@ -45,8 +46,9 @@ export function readingSummaryOf(event: UnderstoodEvent): ReadingSummary {
 }
 
 /** One event as one item. Events without an amount have no item: the question or the review covers them. */
-export function toParsedItem(event: UnderstoodEvent, ctx: ItemContext): RecordedItem {
-  const clean = event.reasons.length === 0;
+export function toParsedItem(event: UnderstoodEvent, ctx: ItemContext, sentenceReasons: readonly string[] = []): RecordedItem {
+  const reasons = [...new Set([...sentenceReasons, ...event.reasons])];
+  const clean = reasons.length === 0;
   const item: RecordedItem = {
     amount: event.amount,
     category: event.stored.category,
@@ -61,7 +63,12 @@ export function toParsedItem(event: UnderstoodEvent, ctx: ItemContext): Recorded
     reading: readingSummaryOf(event),
   };
   if (event.stored.direction) item.direction = event.stored.direction;
-  if (!clean) item.reviewReasons = [...event.reasons];
+  const category = taxonomyCategory(event.category);
+  const sub = taxonomySub(event.category, event.sub);
+  if (category && sub) {
+    item.purposeLabels = { categoryAr: category.nameAr, subAr: sub.nameAr, categoryEn: category.nameEn, subEn: sub.nameEn };
+  }
+  if (!clean) item.reviewReasons = reasons;
   // The day the sentence named, at noon UTC of that Cairo day, as the manual sheet sends a date.
   if (event.date) item.date = `${event.date}T12:00:00.000Z`;
 
@@ -78,8 +85,8 @@ export function toParsedItem(event: UnderstoodEvent, ctx: ItemContext): Recorded
   return item;
 }
 
-export function toParsedItems(understanding: Pick<Understanding, "events">, ctx: ItemContext): RecordedItem[] {
-  return understanding.events.filter((event) => event.amount > 0).map((event) => toParsedItem(event, ctx));
+export function toParsedItems(understanding: Pick<Understanding, "events" | "reasons">, ctx: ItemContext): RecordedItem[] {
+  return understanding.events.filter((event) => event.amount > 0).map((event) => toParsedItem(event, ctx, understanding.reasons));
 }
 
 /**

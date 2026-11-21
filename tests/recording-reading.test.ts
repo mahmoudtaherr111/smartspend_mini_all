@@ -1,16 +1,23 @@
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { db } from "../api/queries/connection";
 import {
   cashflowSettlements, classificationLogs, commitmentHints, commitmentOverrides, commitmentQuestions, commitmentReminders,
-  commitmentScheduleItems, expenseDailyRollups, expenses, inAppNotifications, installmentPlans, localUsers, scheduledCashflows,
+  commitmentScheduleItems, expenseDailyRollups, expenses, inAppNotifications, installmentPlans, localUsers, pendingClarifications, scheduledCashflows,
   systemSettings, userContacts,
 } from "../db/schema";
 import { commitmentsRouter } from "../api/commitments-router";
+import { adminConsoleRouter } from "../api/admin-console-router";
 import { expenseRouter } from "../api/expense-router";
 import { addDays } from "../api/services/coach/schedule";
 import { businessDateKey } from "../api/lib/app-time";
 import { invalidateSettingsCache } from "../api/lib/settings-cache";
+import { readSentence } from "../api/services/recording/read-sentence";
+
+vi.mock("../api/services/recording/read-sentence", async (importOriginal) => ({
+  ...await importOriginal<typeof import("../api/services/recording/read-sentence")>(),
+  readSentence: vi.fn(),
+}));
 
 // Needs a migrated MySQL database: npm run test:db (docs/guides/testing.md).
 const itWithDatabase = it.runIf(process.env.RUN_DB_INTEGRATION === "1");
@@ -31,7 +38,7 @@ async function clean() {
   const scope = <T extends { userId: typeof expenses.userId; userType: typeof expenses.userType }>(table: T) =>
     and(eq(table.userId, user.userId), eq(table.userType, user.userType));
   for (const table of [cashflowSettlements, commitmentHints, commitmentOverrides, commitmentQuestions, commitmentReminders, commitmentScheduleItems,
-    scheduledCashflows, installmentPlans, inAppNotifications, expenses, userContacts, expenseDailyRollups, classificationLogs] as const) {
+    scheduledCashflows, installmentPlans, inAppNotifications, expenses, userContacts, expenseDailyRollups, classificationLogs, pendingClarifications] as const) {
     await db.delete(table).where(scope(table as never));
   }
   await db.delete(localUsers).where(eq(localUsers.id, user.userId));
@@ -64,6 +71,49 @@ const school = () => commitments.create({ shape: "fixed", kind: "school", title:
 const savedRow = async (id: number) => (await db.select().from(expenses).where(and(eq(expenses.id, id), eq(expenses.userId, user.userId), eq(expenses.userType, user.userType))))[0];
 
 describe("saving what a reading read (docs/decisions/0052-understanding-engine.md)", () => {
+  itWithDatabase("attributes a subcategory edit to the saved reading when the same sentence was read twice", async () => {
+    await setEngine("understanding");
+    const text = "مصاريف المدرسة 5000";
+    const item = schoolReading(null);
+    const logId = await readingLog(text, [item]);
+    const repeatId = await readingLog(text, [item]);
+    const saved = await ledger.create({ ...item, rawText: text, type: "expense", source: "ai_parsed", classificationLogId: logId });
+    await ledger.update({ id: saved.id, category: "تعليم", subCategory: "دروس خصوصية" });
+    const log = async (id: number) => (await db.select().from(classificationLogs).where(eq(classificationLogs.id, id)))[0];
+    expect((await log(logId)).wasCorrected).toBeTruthy();
+    expect((await log(repeatId)).wasCorrected).toBeFalsy();
+    await db.update(classificationLogs).set({ classificationVersion: "u2-p6-t2.0" }).where(eq(classificationLogs.id, logId));
+    const admin = adminConsoleRouter.createCaller({ user: { id: 1, type: "local", role: "admin" }, req: new Request("http://localhost/") } as never);
+    expect((await admin.understandingQuality({ days: 1 })).groups).toEqual(expect.arrayContaining([
+      expect.objectContaining({ version: "u2-p6-t2.0", linked: 1, corrected: 1 }),
+    ]));
+  });
+  itWithDatabase("reviews a clarified reading before writing, and accepts its confirmation only once", async () => {
+    // A pending understanding question keeps its engine across an admin switch.
+    await setEngine("rules");
+    const [question] = await db.insert(pendingClarifications).values({
+      ...user, originalText: "دفعت اشتراك بالدولار", question: "اكتب العملية بالمصري", status: "pending",
+      contextData: { recordingEngine: "understanding", restateSentence: true, source: "ai_parsed" },
+    });
+    const item = schoolReading(null);
+    const text = "دفعت مصاريف المدرسة 5000 جنيه";
+    const logId = await readingLog(text, [item]);
+    const reader = vi.mocked(readSentence);
+    reader.mockResolvedValueOnce({
+      text, decision: "review", classificationLogId: logId, items: [item],
+    } as Awaited<ReturnType<typeof readSentence>>);
+    const clarificationId = Number(question.insertId);
+    const review = await ledger.answerClarification({ clarificationId, answer: text });
+    expect(reader).toHaveBeenCalledWith(expect.objectContaining({ text }));
+    expect(review).toMatchObject({ savedCount: 0, needsClarification: true, clarificationId });
+    expect(review.clarificationQuestion).toContain("5000");
+    const rows = () => db.select().from(expenses).where(and(eq(expenses.userId, user.userId), eq(expenses.userType, user.userType)));
+    expect(await rows()).toHaveLength(0);
+    const replies = await Promise.allSettled([1, 2].map(() => ledger.answerClarification({ clarificationId, answer: "احفظ" })));
+    expect(replies.filter(reply => reply.status === "fulfilled")).toHaveLength(1);
+    expect(reader).toHaveBeenCalledTimes(1);
+    expect(await rows()).toMatchObject([{ classificationLogId: logId, category: item.category }]);
+  });
   itWithDatabase("links a payment to the commitment its reading named, though the words name none, and keeps the v2 answer on the row", async () => {
     await setEngine("understanding");
     const { id: cashflowId } = await school();

@@ -35,6 +35,7 @@ const h = vi.hoisted(() => {
     settings: {} as Record<string, string>,
     dailyCount: 0,
     budgetError: null as Error | null,
+    budget: { limit: 50_000, used: 0, remaining: 50_000, plan: "free" as "free" | "pro", perRequestMax: 384 },
   };
 });
 
@@ -50,7 +51,7 @@ vi.mock("../../lib/ai-usage-policy", async (importOriginal) => {
     assertAiBudget: vi.fn(async () => {
       h.order.push("budget");
       if (h.budgetError) throw h.budgetError;
-      return { limit: 50_000, used: 0, remaining: 50_000, plan: "free", perRequestMax: 1024 };
+      return h.budget;
     }),
     trackAiTokens: vi.fn(async () => undefined),
   };
@@ -59,7 +60,7 @@ vi.mock("../../lib/ai-ledger", () => ({ recordModelCalls: vi.fn() }));
 vi.mock("../ai-cost-policy", () => ({ recordAICostMetric: vi.fn(async () => undefined) }));
 
 import { recordModelCalls } from "../../lib/ai-ledger";
-import { trackAiTokens } from "../../lib/ai-usage-policy";
+import { assertAiBudget, estimateTokensFromText, trackAiTokens } from "../../lib/ai-usage-policy";
 import { readSentence, READING_LOG_VERSION, UNAVAILABLE_MESSAGE, type ReadSentenceDeps } from "./read-sentence";
 
 const user = { id: 31, type: "local" as const, plan: "free" };
@@ -111,6 +112,8 @@ beforeEach(() => {
   h.settings = {};
   h.dailyCount = 0;
   h.budgetError = null;
+  h.budget = { limit: 50_000, used: 0, remaining: 50_000, plan: "free", perRequestMax: 384 };
+  vi.mocked(assertAiBudget).mockClear();
   vi.mocked(recordModelCalls).mockClear();
   vi.mocked(trackAiTokens).mockClear();
 });
@@ -120,7 +123,7 @@ describe("admission", () => {
     const d = deps(understanding());
     await readSentence({ user, text: "دفعت مصاريف المدرسة 6500", channel: "text" }, d);
     expect(h.order).toEqual(["settings", "daily", "budget", "understand"]);
-    expect(d.seen[0]).toMatchObject({ text: "دفعت مصاريف المدرسة 6500", settings: h.settings, maxOutputTokens: 1024 });
+    expect(d.seen[0]).toMatchObject({ text: "دفعت مصاريف المدرسة 6500", settings: h.settings, maxOutputTokens: 384 });
     expect(d.seen[0].context).toBe(context);
   });
 
@@ -147,9 +150,50 @@ describe("admission", () => {
     expect(h.order).toEqual(["settings", "budget"]);
     expect(d.understand).not.toHaveBeenCalled();
   });
+
+  it.each(["free", "pro"] as const)("requires %s monthly headroom for the actual prompt before calling a provider", async (plan) => {
+    const planUser = { ...user, plan };
+    const text = "دفعت 65 قهوة";
+    const d = deps(understanding());
+    h.budget = { ...h.budget, plan, remaining: 5_000, perRequestMax: plan === "free" ? 384 : 1_024 };
+    await expect(readSentence({ user: planUser, text, channel: "voice", gateChecked: true }, d)).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(assertAiBudget).toHaveBeenCalledWith(planUser, "parse", estimateTokensFromText(text), h.settings);
+    expect(d.understand).not.toHaveBeenCalled();
+    expect(h.inserts).toEqual([]);
+
+    h.budget.remaining = 20_000;
+    await readSentence({ user: planUser, text, channel: "text" }, d);
+    expect(d.seen[0].maxOutputTokens).toBe(h.budget.perRequestMax);
+  });
+
+  it("budgets the selected prompt detail and only sends fallback routes that fit", async () => {
+    h.budget.remaining = 10_500;
+    const text = "دفعت 65 قهوة";
+    const d = deps(understanding());
+    const first = (await d.resolveRoutes!("free", {}))[0];
+    const second = { ...first, slug: "beta", priority: 1 };
+    vi.mocked(d.resolveRoutes!).mockResolvedValue([second, first]);
+
+    await expect(readSentence({ user, text, channel: "text" }, d)).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(d.seen).toEqual([]);
+
+    h.settings.understanding_prompt_detail = "compact";
+    await readSentence({ user, text, channel: "text" }, d);
+    expect(d.seen[0].routes).toEqual([first]);
+    h.budget.remaining = 20_000;
+    await readSentence({ user, text, channel: "text" }, d);
+    expect(d.seen[1].routes).toEqual([first, second]);
+  });
 });
 
 describe("each outcome", () => {
+  it("withholds the proposed ledger entries when their server reading cannot be stored", async () => {
+    h.db.insert.mockImplementationOnce(() => { throw new Error("storage unavailable"); });
+    await expect(readSentence({ user, text: "نت 300", channel: "text" }, deps(understanding()))).rejects.toMatchObject({
+      code: "SERVICE_UNAVAILABLE",
+    });
+    expect(trackAiTokens).toHaveBeenCalledTimes(1);
+  });
   it("saves a clean reading: auto_save, its items, one slim log row, no question", async () => {
     const result = await readSentence({ user, text: "دفعت مصاريف المدرسة 6500", channel: "text" }, deps(understanding()));
     expect(result).toMatchObject({
@@ -179,7 +223,7 @@ describe("each outcome", () => {
     const result = await readSentence({ user, text: "t", channel: "text" }, deps(understanding({
       outcome: "show", reasons: ["number_unaccounted"], events: [ev({ flags: ["model_doubt:category"], reasons: ["model_doubt:category"] })],
     })));
-    expect(result).toMatchObject({ decision: "review", overallConfidence: 60, items: [{ needsReview: true, reviewReasons: ["model_doubt:category"] }] });
+    expect(result).toMatchObject({ decision: "review", overallConfidence: 60, items: [{ needsReview: true, reviewReasons: ["number_unaccounted", "model_doubt:category"] }] });
     expect(logRow()).toMatchObject({ decision: "review", needsFollowup: true, ambiguityFlags: ["model_doubt:category"] });
   });
 
@@ -201,6 +245,7 @@ describe("each outcome", () => {
     const sandbox = await readSentence({ user, text: "t", channel: "text", skipClarification: true }, deps(ask));
     expect(sandbox).toMatchObject({ decision: "review", items: [] });
     expect(sandbox.clarificationQuestion).toBeUndefined();
+    expect(logRow()).toMatchObject({ reasoningTraceLight: { clarificationSuppressed: true } });
     h.reset();
     const followUp = await readSentence({ user, text: "t", channel: "text", openClarification: false }, deps(ask));
     expect(followUp).toMatchObject({ decision: "clarify", clarificationQuestion: "؟" });

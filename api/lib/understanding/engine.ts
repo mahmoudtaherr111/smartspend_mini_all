@@ -20,6 +20,7 @@ import { storedShape, type StoredShape } from "./bridge";
 import { parseReply, READING_CONTRACT_VERSION, READING_SCHEMA, type AskAbout, type Reading } from "./contract";
 import { guardReading, type GuardedEvent } from "./guard";
 import { foldForMatch, numberMentions } from "./numbers";
+import { mentionsForeignCurrency, EGP_RESTATEMENT } from "./currency";
 import { decide, DEFAULT_POLICY, type PolicySettings } from "./policy";
 import { buildSystemPrompt, buildUserPrompt, MAX_SENTENCE_CHARS, PROMPT_VERSION } from "./prompt";
 import { numberSetting, toGuardContext, toPolicyFacts, toPromptContext, type ReadingContext } from "./reading-context";
@@ -110,7 +111,7 @@ export function policyFromSettings(settings: Record<string, string> = {}): Polic
   const flag = (name: string, fallback: boolean) =>
     settings[name] === "false" ? false : settings[name] === "true" ? true : fallback;
   return {
-    autoSave: settings.understanding_auto_save !== "false" && DEFAULT_POLICY.autoSave,
+    autoSave: settings.understanding_auto_save === "true",
     reviewAmount: numberSetting(settings, "understanding_review_amount", DEFAULT_POLICY.reviewAmount),
     autoMaxEvents: Math.floor(numberSetting(settings, "understanding_auto_max_events", DEFAULT_POLICY.autoMaxEvents)),
     reviewDated: flag("understanding_review_dated", DEFAULT_POLICY.reviewDated),
@@ -192,7 +193,7 @@ export async function understand(input: UnderstandInput, deps: { execute?: typeo
       systemPrompt: buildSystemPrompt(detail),
       userPrompt: buildUserPrompt(toPromptContext(ctx), text, detail),
       schema: READING_SCHEMA,
-      lowThinking: true,
+      lowThinking: "minimal",
       temperature: 0,
       timeoutMs: numberSetting(settings, "llm_timeout_ms", DEFAULT_TIMEOUT_MS),
       deadlineMs,
@@ -244,8 +245,22 @@ export async function understand(input: UnderstandInput, deps: { execute?: typeo
     usage.degradedSchema = res.degradedSchema;
     problems.push(...parsed.problems);
 
-    const guarded = guardReading(parsed.reading, text, toGuardContext(ctx, settings));
+    const guarded = guardReading(parsed.reading, text, toGuardContext(ctx, settings), parsed.hasDroppedEvents);
     const verdict = decide(guarded, toPolicyFacts(ctx), policyFromSettings(settings));
+    if (ctx.degraded.length && verdict.outcome !== "ask") {
+      verdict.outcome = "show";
+      verdict.reasons.push("context_incomplete");
+    }
+
+    // The ledger stores pounds only. A review card would still label a foreign amount EGP.
+    // Keep the entire sentence together so a mixed-currency purchase cannot be partly saved.
+    if (guarded.events.some(event => event.amount > 0) && mentionsForeignCurrency(text)) {
+      return {
+        outcome: "ask", question: EGP_RESTATEMENT, askAbout: "amount",
+        events: [], ignored: guarded.ignored, numbers: guarded.numbers, reasons: ["foreign_currency"],
+        source: "model", usage, versions: { ...VERSIONS }, problems,
+      };
+    }
 
     const events = guarded.events.map((event, index): UnderstoodEvent => {
       const commitment = event.commitment ? ctx.commitmentRefs.get(event.commitment) : undefined;

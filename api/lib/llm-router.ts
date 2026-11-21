@@ -78,7 +78,7 @@ export interface LlmRequest {
    * `maxOutputTokens`, so a small cap ends in MAX_TOKENS. A model that refuses the setting is
    * asked once more without it.
    */
-  lowThinking?: boolean;
+  lowThinking?: boolean | "minimal";
   temperature?: number;
   /** Asked for, never assumed: `degradedSchema` reports whether it survived. */
   schema?: StructuredSchema;
@@ -616,6 +616,7 @@ async function callGemini(
   withSchema: boolean,
 ): Promise<AdapterResult> {
   const genAI = new GoogleGenerativeAI(route.apiKey);
+  const thinkingLevel = req.lowThinking === "minimal" && /^gemini-3\.1-flash-lite(?:-|$)/.test(route.model) ? "MINIMAL" : "LOW";
   const modelFor = (lowThinking: boolean) =>
     genAI.getGenerativeModel({
       model: route.model,
@@ -628,7 +629,7 @@ async function callGemini(
         maxOutputTokens: req.maxOutputTokens,
         responseMimeType: "application/json",
         ...(withSchema && req.schema ? { responseSchema: toGeminiSchema(req.schema) as never } : {}),
-        ...(lowThinking ? ({ thinkingConfig: { thinkingLevel: "LOW" } } as Record<string, unknown>) : {}),
+        ...(lowThinking ? ({ thinkingConfig: { thinkingLevel } } as Record<string, unknown>) : {}),
       },
     });
   const wantsLowThinking = Boolean(req.lowThinking) && /^gemini-3/.test(route.model);
@@ -656,7 +657,7 @@ async function callGemini(
   const meta = result.response.usageMetadata;
   const usage: Usage = {
     promptTokens: meta?.promptTokenCount || 0,
-    completionTokens: meta?.candidatesTokenCount || 0,
+    completionTokens: (meta?.candidatesTokenCount ?? 0) + ((meta as { thoughtsTokenCount?: number } | undefined)?.thoughtsTokenCount ?? 0),
     cachedTokens: (meta as { cachedContentTokenCount?: number })?.cachedContentTokenCount || 0,
     totalTokens: meta?.totalTokenCount || 0,
   };

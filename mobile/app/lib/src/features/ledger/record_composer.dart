@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_api/smartspend_api.dart';
@@ -11,7 +10,6 @@ import '../infrastructure/remote_config.dart';
 import 'category_style.dart';
 import 'ledger_models.dart';
 import 'ledger_providers.dart';
-import 'offline/ledger_store.dart';
 import 'offline/offline_rules.dart';
 import 'offline/outbox.dart';
 import 'receipts/receipt_flow.dart';
@@ -138,7 +136,6 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
   }
 
   Future<void> _stopAndProcessVoice() async {
-    // ignore: avoid_print
     if (!_isRecording) return;
     _recordTimer?.cancel();
     final duration = _recordingSeconds;
@@ -149,45 +146,45 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
     });
     unawaited(_amplitudeSub?.cancel());
 
+    final l10n = _l10n;
     final recorder = ref.read(audioRecorderServiceProvider);
-    final result = await recorder.stopRecording();
-    if (result == null || result.audioBase64.trim().isEmpty) return;
-
-    final effectiveDuration = duration > 0 ? duration : result.durationSeconds;
-
+    final api = ref.read(ledgerApiProvider);
+    final outbox = ref.read(outboxProvider.notifier);
+    final outboxReady = ref.read(outboxProvider.future);
     UpgradeLimitReason? upgradeReason;
     String? errorMessage;
-    ParseResult? parse;
 
-    await _working(() async {
+    final outcome = await _working(() async {
+      final ParseResult parse;
       try {
-        final api = ref.read(ledgerApiProvider);
+        final result = await recorder.stopRecording();
+        if (result == null || result.audioBase64.trim().isEmpty) {
+          return const SubmitEmpty();
+        }
         parse = await api.parseVoice(
           audioBase64: result.audioBase64,
           mimeType: result.mimeType,
-          durationSeconds: effectiveDuration,
+          durationSeconds: duration > 0 ? duration : result.durationSeconds,
         );
       } on ApiException catch (e) {
         final msg = e.message.toLowerCase();
         if (e.code == 'FORBIDDEN' ||
             msg.contains('voice') ||
-            msg.contains(_l10n.monBalance) ||
-            msg.contains(_l10n.monSeconds) ||
-            msg.contains(_l10n.monPlan)) {
+            msg.contains(l10n.monBalance) ||
+            msg.contains(l10n.monSeconds) ||
+            msg.contains(l10n.monPlan)) {
           upgradeReason = UpgradeLimitReason.voiceSeconds;
         } else {
           errorMessage = e.message;
         }
-      } catch (e) {
-        final msg = e.toString().toLowerCase();
-        if (msg.contains('voice') ||
-            msg.contains(_l10n.monBalance) ||
-            msg.contains(_l10n.monSeconds)) {
-          upgradeReason = UpgradeLimitReason.voiceSeconds;
-        } else {
-          errorMessage = _l10n.monWeCouldnTProcessThe;
-        }
+        return null;
+      } on Object {
+        errorMessage = l10n.monWeCouldnTProcessThe;
+        return null;
       }
+      await outboxReady;
+      if (!mounted) return null;
+      return outbox.submitVoice(l10n.monVoiceRecording, parse);
     });
 
     if (!mounted) return;
@@ -202,39 +199,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
       return;
     }
 
-    if (parse == null || parse!.items.isEmpty) {
-      _tell(_l10n.monWeCouldnTHearAny);
-      return;
-    }
-
-    final p = parse!;
-    if (p.decision == ParseDecision.autoSave) {
-      final api = ref.read(ledgerApiProvider);
-      final ids = await api.save(
-        p.items,
-        rawText: _l10n.monVoiceRecording,
-        classificationLogId: p.classificationLogId,
-      );
-      if (!mounted) return;
-      announceSaved(context, ref, p.items, ids, automatic: true);
-      refreshLedger(ref);
-    } else {
-      final api = ref.read(ledgerApiProvider);
-      final outboxItem = OutboxItem(
-        id: api.newRequestId(),
-        text: _l10n.monVoiceRecording,
-        createdAt: clock.now(),
-        parse: p,
-      );
-      if (p.decision == ParseDecision.review) {
-        final saved = await reviewAndSave(context, ref, outboxItem);
-        if (saved == true && mounted) {
-          refreshLedger(ref);
-        }
-      } else if (p.decision == ParseDecision.clarify) {
-        await answerAndSave(context, ref, outboxItem);
-      }
-    }
+    if (outcome != null) await _finish(outcome, isVoice: true);
   }
 
   Future<void> _submit() async {
@@ -244,29 +209,34 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
     }
     final sentence = _text.text.trim();
     if (sentence.isEmpty || _busy) return;
-    final l10n = AppLocalizations.of(context);
     final outbox = ref.read(outboxProvider.notifier);
     final outcome = await _working(() async {
       await ref.read(outboxProvider.future);
       return outbox.submit(sentence);
     });
     if (!mounted) return;
+    await _finish(outcome);
+  }
+
+  Future<void> _finish(SubmitOutcome outcome, {bool isVoice = false}) async {
+    final l10n = _l10n;
+    final outbox = ref.read(outboxProvider.notifier);
     switch (outcome) {
       case SubmitSaved(:final items, :final ids, :final automatic):
-        _text.clear();
+        if (!isVoice) _text.clear();
         announceSaved(context, ref, items, ids, automatic: automatic);
       case SubmitNeedsReview(:final item):
         final saved = await reviewAndSave(context, ref, item);
-        if (saved == true) {
-          _text.clear();
-        } else {
+        if (saved == false) {
           await outbox.discard(item);
+        } else if (mounted && !isVoice) {
+          _text.clear();
         }
       case SubmitNeedsAnswer(:final item):
-        _text.clear();
+        if (!isVoice) _text.clear();
         await answerAndSave(context, ref, item);
       case SubmitQueued():
-        _text.clear();
+        if (!isVoice) _text.clear();
         _tell(l10n.queuedOffline);
       case SubmitRefused(:final reason, :final fullAt):
         _tell(switch ((reason, fullAt)) {
@@ -276,10 +246,11 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
           (_, final int limit) => l10n.offlineFull(limit),
           _ => l10n.offlineNoAmount,
         });
-      case SubmitFailed(:final message):
+      case SubmitFailed(:final message, :final kept):
+        if (kept && !isVoice) _text.clear();
         _tell(message);
       case SubmitEmpty():
-        _tell(l10n.nothingToSave);
+        _tell(isVoice ? l10n.monWeCouldnTHearAny : l10n.nothingToSave);
     }
   }
 

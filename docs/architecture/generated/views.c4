@@ -132,6 +132,11 @@ views {
     include *
   }
 
+  view router_taxonomy of smartspend.api.trpc.taxonomy {
+    title 'tRPC router · taxonomy'
+    include *
+  }
+
   view router_voice of smartspend.api.trpc.voice {
     title 'tRPC router · voice'
     include *

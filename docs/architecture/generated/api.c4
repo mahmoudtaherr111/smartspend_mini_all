@@ -580,7 +580,7 @@ model {
       }
     }
     adminConsole = router 'adminConsole' {
-      description 'api/admin-console-router.ts — 14 procedures.'
+      description 'api/admin-console-router.ts — 15 procedures.'
       metadata {
         file 'api/admin-console-router.ts'
       }
@@ -715,6 +715,16 @@ model {
         }
       }
       today = procedure 'adminConsole.today' {
+        #query #admin #uncalled
+        technology 'adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/admin-console-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
+      }
+      understandingQuality = procedure 'adminConsole.understandingQuality' {
         #query #admin #uncalled
         technology 'adminProcedure'
         description 'query · adminProcedure · no caller in src/'
@@ -3086,6 +3096,22 @@ model {
           file 'api/support-router.ts'
           builder 'moderatorProcedure'
           procedureKind 'mutation'
+        }
+      }
+    }
+    taxonomy = router 'taxonomy' {
+      description 'api/taxonomy-router.ts — 1 procedures.'
+      metadata {
+        file 'api/taxonomy-router.ts'
+      }
+      get = procedure 'taxonomy.get' {
+        #query #authed #uncalled
+        technology 'authedProcedure'
+        description 'query · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/taxonomy-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
         }
       }
     }

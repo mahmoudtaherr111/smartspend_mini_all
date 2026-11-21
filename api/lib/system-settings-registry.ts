@@ -203,7 +203,7 @@ export const SETTINGS: SettingDef[] = [
   // (api/services/recording/read-sentence.ts).
   { key: "recording_engine", default: "rules" },
   // The understanding engine's policy (api/lib/understanding/policy.ts). "false" shows every reading before saving.
-  { key: "understanding_auto_save", default: "true" },
+  { key: "understanding_auto_save", default: "false" },
   // At or above this amount (EGP), a category the user never saved before is shown first.
   { key: "understanding_review_amount", default: "5000" },
   // More events than this in one sentence are shown first.

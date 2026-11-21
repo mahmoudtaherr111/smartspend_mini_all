@@ -14,6 +14,7 @@
  * on the saved row's metadata.
  */
 import type { MovementKind } from "../../../contracts/ledger-movement";
+import { TAXONOMY } from "../../../contracts/taxonomy";
 import type { Flow } from "./contract";
 import { foldForMatch } from "./numbers";
 
@@ -212,6 +213,20 @@ export function storedFiling(category: string, sub: string): StoredFiling {
 }
 
 const pairKey = (category: string, subCategory: string) => `${foldForMatch(category)}|${foldForMatch(subCategory)}`;
+
+const filingCounts = new Map<string, number>();
+for (const category of TAXONOMY) {
+  for (const sub of category.subs) {
+    const stored = storedFiling(category.id, sub.id);
+    const key = pairKey(stored.category, stored.subCategory);
+    filingCounts.set(key, (filingCounts.get(key) ?? 0) + 1);
+  }
+}
+
+/** A legacy filing proves familiarity only when it represents exactly one v2 pair. */
+export function isUnambiguousFiling(stored: StoredFiling): boolean {
+  return filingCounts.get(pairKey(stored.category, stored.subCategory)) === 1;
+}
 
 /**
  * Stored pair → the v2 answer it most likely was, built from `FILING` itself so the two

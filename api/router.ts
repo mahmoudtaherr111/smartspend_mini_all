@@ -5,6 +5,7 @@ import { appConfigRouter } from "./app-config-router";
 import { authRouter } from "./auth-router";
 import { localAuthRouter } from "./local-auth-router";
 import { expenseRouter } from "./expense-router";
+import { taxonomyRouter } from "./taxonomy-router";
 import { aiRouter } from "./ai-router";
 import { analyticsRouter } from "./analytics-router";
 import { adminRouter } from "./admin-router";
@@ -36,6 +37,7 @@ export const appRouter = router({
   auth: authRouter,
   localAuth: localAuthRouter,
   expense: expenseRouter,
+  taxonomy: taxonomyRouter,
   ai: aiRouter,
   analytics: analyticsRouter,
   admin: adminRouter,

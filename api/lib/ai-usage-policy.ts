@@ -261,6 +261,16 @@ export function clampOutputTokens(
   return Math.max(64, Math.min(perRequestMax, safeRemaining));
 }
 
+/** A request's required tokens, including any system context and output it must pay for. */
+export function assertAiBudgetRemaining(budget: AiBudget, requiredTokens: number): void {
+  if (budget.remaining > 0 && requiredTokens <= budget.remaining) return;
+  const upgradeTo = budget.plan === "free" ? "Pro" : "Ultra";
+  throw new TRPCError({
+    code: "FORBIDDEN",
+    message: `استهلكت حد الذكاء الاصطناعي المتاح (${budget.limit.toLocaleString()} توكن). الترقية إلى ${upgradeTo} تفتح حدًا أعلى.`,
+  });
+}
+
 export async function assertAiBudget(
   user: AiUsageUser,
   channel: AiUsageChannel,
@@ -288,13 +298,7 @@ export async function assertAiBudget(
     });
   }
 
-  if (budget.remaining <= 0 || estimatedInputTokens > budget.remaining) {
-    const upgradeTo = budget.plan === "free" ? "Pro" : "Ultra";
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: `استهلكت حد الذكاء الاصطناعي المتاح (${budget.limit.toLocaleString()} توكن). الترقية إلى ${upgradeTo} تفتح حدًا أعلى.`,
-    });
-  }
+  assertAiBudgetRemaining(budget, estimatedInputTokens);
   return budget;
 }
 

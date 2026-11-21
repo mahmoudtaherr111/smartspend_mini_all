@@ -18,7 +18,7 @@ import { TAXONOMY, TAXONOMY_VERSION, type TaxonomyCategory } from "../../../cont
 import { foldForMatch } from "./numbers";
 
 /** Bump on any change to the instructions or examples; stored with every reading. */
-export const PROMPT_VERSION = "5";
+export const PROMPT_VERSION = "6";
 
 export interface PromptPerson {
   name: string;
@@ -294,7 +294,7 @@ ask and about: a question is the last resort. Ask ONLY when the sentence gives n
 3. Food to eat now is dining; food and supplies taken home are groceries. A supermarket or grocer's bill is groceries/supermarket.
 4. Money given to a family member with no purpose said is family_support. Money to anyone else with no purpose said is people_transfer with db "purpose".
 5. Every number in the sentence is either an event's amount or listed in n. A price said and then corrected («ب 45 لا 55») is one event with the corrected amount; the old price goes in n as label. A total said next to its parts is not an event (role total).
-6. One amount for several things bought together is ONE event, filed under the main thing. Never split an amount the person did not split, and never add up amounts they did not add.
+6. One amount for several things bought together is ONE event, filed under the main thing. If a quantity and price per item are stated, use the quantity times the unit price, with db "amount"; list the quantity and unit_price in n. Cash handed over and change received describe one purchase, not a second income. Never invent a split or an exchange rate.
 7. Something bought on instalments («بالتقسيط على 3 شهور», «قسّطتها») where the sentence gives the full price and not what was paid today: return the event with db "amount". Money partly returned or partly paid («دفعت 200 ورجعولي 50», «دفعت نص المبلغ») where it is not clear what the final amount is: db "amount".
 8. Selling something the person owned («بعت العربية», «بعت الموبايل القديم») is income, other_income/sold_item. It is investment only for things bought as an investment (gold, shares, certificates, land).
 9. One amount shared by several people («اديت العيال كل واحد 50», «قسمنا الحساب») needs arithmetic: return what the person actually paid and set db to "split".

@@ -173,6 +173,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/understanding/bridge.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/understanding/context.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/understanding/contract.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/understanding/currency.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/understanding/engine.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/understanding/guard.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/understanding/numbers.ts` | [expense-capture](expense-capture.md) |
@@ -327,6 +328,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/wallet-balance-policy.ts` | [money](money.md) |
 | `api/session-router.ts` | [accounts](accounts.md) |
 | `api/support-router.ts` | [admin](admin.md) |
+| `api/taxonomy-router.ts` | [expense-capture](expense-capture.md) |
 | `api/voice-router.ts` | [voice-calls](voice-calls.md) |
 | `api/wallet-router.ts` | [money](money.md) |
 | `api/webauthn-router.ts` | [accounts](accounts.md) |

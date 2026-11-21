@@ -83,10 +83,11 @@ final class SubmitRefused extends SubmitOutcome {
   final int? fullAt;
 }
 
-/// The server refused it; the sentence stays in the composer.
+/// The server refused it; the sentence stays in the outbox if [kept], otherwise in the composer.
 final class SubmitFailed extends SubmitOutcome {
-  const SubmitFailed(this.message);
+  const SubmitFailed(this.message, {this.kept = false});
   final String message;
+  final bool kept;
 }
 
 /// The read was fine but held nothing to save.
@@ -173,9 +174,28 @@ class Outbox extends AsyncNotifier<OutboxView> {
       return _keepOffline(item);
     }
     final outcome = await _process(item, interactive: true);
-    // The network failed on this very sentence: the offline rules decide whether it may wait.
-    return outcome is SubmitQueued ? _keepOffline(item) : outcome;
+    if (outcome is! SubmitQueued) return outcome;
+    final waiting = (await _local.snapshot()).outbox
+        .where((entry) => entry.id == item.id)
+        .firstOrNull;
+    // The offline input rules apply only to sentences that have not been read yet.
+    return waiting == null || waiting.parse != null
+        ? outcome
+        : _keepOffline(waiting);
   }
+
+  /// Keeps only the returned transactions or question from a voice recording.
+  Future<SubmitOutcome> submitVoice(String label, ParseResult parse) =>
+      _submitParsed(
+        OutboxItem(
+          id: ref.read(ledgerApiProvider).newRequestId(),
+          text: label,
+          createdAt: clock.now(),
+          state: OutboxState.sending,
+          parse: parse,
+          isVoice: true,
+        ),
+      );
 
   /// Records a manual transaction directly with known values (REC-12).
   /// Saves immediately when online, or queues into the outbox when offline.
@@ -216,18 +236,18 @@ class Outbox extends AsyncNotifier<OutboxView> {
         ],
       ),
     );
+    return _submitParsed(item);
+  }
+
+  Future<SubmitOutcome> _submitParsed(OutboxItem item) async {
     await _change((items) => [...items, item]);
     await flush();
-    if (_offline || ref.read(connectivityProvider).value == false) {
+    if (item.parse?.decision == ParseDecision.autoSave &&
+        (_offline || ref.read(connectivityProvider).value == false)) {
       await _replace(item.copyWith(state: OutboxState.queued));
       return const SubmitQueued();
     }
-    final outcome = await _process(item, interactive: true);
-    if (outcome is SubmitQueued) {
-      await _replace(item.copyWith(state: OutboxState.queued));
-      return const SubmitQueued();
-    }
-    return outcome;
+    return _process(item, interactive: true);
   }
 
   /// Sends what waits in the outbox, oldest first, until the network fails. A call while a send is in progress
@@ -261,6 +281,7 @@ class Outbox extends AsyncNotifier<OutboxView> {
           rawText: item.text,
           classificationLogId: parse?.classificationLogId,
           requestId: item.id,
+          defaultSource: item.isVoice ? 'voice' : 'ai_parsed',
         );
     await _remove(item.id);
     _refreshLedger();
@@ -274,9 +295,19 @@ class Outbox extends AsyncNotifier<OutboxView> {
     if (clarificationId == null) {
       throw StateError('No question to answer for ${item.id}');
     }
-    final result = await ref
-        .read(ledgerApiProvider)
-        .answer(clarificationId, answer);
+    final ClarificationResult result;
+    try {
+      result = await ref
+          .read(ledgerApiProvider)
+          .answer(clarificationId, answer);
+    } on ApiException catch (error) {
+      if (error.code == 'NOT_FOUND') {
+        // An answer may already have been applied even if its response never arrived.
+        await _remove(item.id);
+        _refreshLedger();
+      }
+      rethrow;
+    }
     if (result.nextQuestion == null) {
       await _remove(item.id);
       _refreshLedger();
@@ -313,9 +344,10 @@ class Outbox extends AsyncNotifier<OutboxView> {
   }) async {
     final api = ref.read(ledgerApiProvider);
     await _replace(item.copyWith(state: OutboxState.sending));
+    var pending = item;
     try {
       final parse = item.parse ?? await api.parse(item.text);
-      _online();
+      if (item.parse == null) _online();
       switch (parse.decision) {
         case ParseDecision.autoSave:
           final items = parse.items.where((entry) => entry.isSavable).toList();
@@ -323,12 +355,19 @@ class Outbox extends AsyncNotifier<OutboxView> {
             await _remove(item.id);
             return const SubmitEmpty();
           }
+          // Once the reading succeeds, repeat the same write if its response is lost.
+          if (item.parse == null) {
+            pending = item.copyWith(state: OutboxState.sending, parse: parse);
+            await _replace(pending);
+          }
           final ids = await api.save(
             items,
             rawText: item.text,
             classificationLogId: parse.classificationLogId,
             requestId: item.id,
+            defaultSource: item.isVoice ? 'voice' : 'ai_parsed',
           );
+          _online();
           await _remove(item.id);
           _refreshLedger();
           return SubmitSaved(items, ids, automatic: true);
@@ -352,19 +391,20 @@ class Outbox extends AsyncNotifier<OutboxView> {
           return SubmitNeedsAnswer(waiting);
       }
     } on ApiNetworkException {
-      await _replace(item.copyWith(state: OutboxState.queued));
+      await _replace(pending.copyWith(state: OutboxState.queued));
       _wentOffline();
       return const SubmitQueued();
     } on ApiException catch (error) {
-      if (interactive) {
-        // The person is looking: the sentence goes back to the composer with the server's words.
+      final kept = !interactive || item.isVoice || error.httpStatus >= 500;
+      if (!kept) {
+        // The person can fix a refusal while the sentence is still in the composer.
         await _remove(item.id);
       } else {
         await _replace(
-          item.copyWith(state: OutboxState.failed, message: error.message),
+          pending.copyWith(state: OutboxState.failed, message: error.message),
         );
       }
-      return SubmitFailed(error.message);
+      return SubmitFailed(error.message, kept: kept);
     }
   }
 
@@ -427,12 +467,7 @@ class Outbox extends AsyncNotifier<OutboxView> {
     }
   }
 
-  void _refreshLedger() {
-    ref
-      ..invalidate(monthSummaryProvider)
-      ..invalidate(recentEntriesProvider)
-      ..invalidate(allEntriesProvider);
-  }
+  void _refreshLedger() => invalidateLedgerContainer(ref.container);
 
   Future<void> _change(
     List<OutboxItem> Function(List<OutboxItem> items) change,

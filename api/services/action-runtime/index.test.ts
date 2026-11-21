@@ -1,6 +1,7 @@
 import { confirmAction, createPendingGoalAction, createPendingRuntimeAction, expiresAt } from "./index";
 import { invalidateMemoryUserCache } from "../ai-memory";
 import { createLedgerEntry } from "../ledger-writer";
+vi.mock("../recording/engine-switch", () => ({ currentRecordingEngine: async () => "rules" }));
 
 const { dbMock, insertedRows, updatedRows, state } = vi.hoisted(() => {
   const insertedRows: Array<Record<string, unknown>> = [];

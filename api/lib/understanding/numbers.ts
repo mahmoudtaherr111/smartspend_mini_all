@@ -7,15 +7,37 @@
  * two agree the amount is the user's; when the model's amount is nowhere in the sentence, it
  * invented it.
  */
-import { parseArabicNumbers } from "../arabic-number-parser";
+import { arabicIndicToAscii, multiplierMap, parseArabicNumbers, parseNumericLiteral } from "../arabic-number-parser";
+
+// Keep an entire decimal together. A rejected Latin token like "3.5kg" must not
+// be retried at its last digit or read from just the part before the decimal.
+const NUMBER_START = String.raw`(?<![\p{Script=Latin}\d_.]|\d[,٫٬])`;
+const NUMBER_BODY = String.raw`(\d+(?:[.,٫٬]\d+)*)`;
+const NUMBER_END = String.raw`(?![\p{Script=Latin}\d_]|[.,٫٬]\d)`;
+const NUMBER_TOKEN = new RegExp(`${NUMBER_START}${NUMBER_BODY}${NUMBER_END}`, "gu");
+const WRITTEN_AMOUNT = new RegExp(String.raw`${NUMBER_START}${NUMBER_BODY}(?:\s*([kK]))?${NUMBER_END}`, "gu");
+
+/** Spelled and written numbers in one form for scanning the sentence and its quotes. */
+export function normalizeNumbersForMatching(text: string): string {
+  const digits = arabicIndicToAscii(text)
+    .replace(/(?<![\d.,٫٬])\d{1,3}(?:،\d{3})+(?!\d)/g, (groups) => groups.replace(/،/g, ","));
+  const written = digits.replace(WRITTEN_AMOUNT, (whole, literal: string, kilo: string | undefined, offset: number) => {
+    const value = parseNumericLiteral(literal);
+    if (!Number.isFinite(value)) return whole;
+    if (kilo) return String(Math.round(value * 100_000) / 100);
+    // Let the spoken parser compose an attached scale like "٢٫٥ألف" as it would "٢٫٥ ألف".
+    const suffix = /^[\u0621-\u064A]+/.exec(digits.slice(offset + whole.length))?.[0];
+    return suffix && Object.hasOwn(multiplierMap, suffix) ? `${value} ` : String(value);
+  });
+  return parseArabicNumbers(written);
+}
 
 /** Letters folded, marks removed, punctuation dropped, digits Latin: for comparing spans, never for display. */
 export function foldForMatch(text: string): string {
   return String(text ?? "")
     .normalize("NFKC")
     .replace(/[ً-ٰٟـ]/g, "")
-    .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
-    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+    .replace(/[٠-٩۰-۹]/g, arabicIndicToAscii)
     .replace(/[إأآٱ]/g, "ا")
     .replace(/ى/g, "ي")
     .replace(/ة/g, "ه")
@@ -38,7 +60,7 @@ export function quoteIsFromText(quote: string, sentence: string): boolean {
   if (!needle) return false;
   const haystack = foldForMatch(sentence);
   if (haystack.includes(needle)) return true;
-  const spoken = foldForMatch(parseArabicNumbers(sentence));
+  const spoken = foldForMatch(normalizeNumbersForMatching(sentence));
   if (spoken.includes(needle)) return true;
 
   const words = needle.split(" ").filter((word) => word.length > 1);
@@ -62,20 +84,17 @@ export function quoteIsFromText(quote: string, sentence: string): boolean {
  * A digit glued to Latin letters is Franco spelling («7awelt», «a7med»), not a number.
  */
 export function numberMentions(sentence: string): number[] {
-  const digits = parseArabicNumbers(foldDigits(sentence));
-  const values: number[] = [];
-  for (const match of digits.matchAll(/(?<![A-Za-z\d.])\d+(?:\.\d+)?(?![A-Za-z\d]|\.\d)/g)) {
-    const value = Number(match[0]);
-    if (Number.isFinite(value)) values.push(value);
-  }
-  return values;
+  return numberMentionSpans(normalizeNumbersForMatching(sentence)).map((mention) => mention.value);
 }
 
-function foldDigits(text: string): string {
-  return String(text ?? "")
-    .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
-    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
-    .replace(/(\d)[,،٬](?=\d{3}(?:\D|$))/g, "$1");
+/** Start and end are offsets into the output of normalizeNumbersForMatching. */
+export function numberMentionSpans(normalizedText: string): Array<{ value: number; start: number; end: number }> {
+  const mentions: Array<{ value: number; start: number; end: number }> = [];
+  for (const match of normalizedText.matchAll(NUMBER_TOKEN)) {
+    const value = parseNumericLiteral(match[0]);
+    if (Number.isFinite(value)) mentions.push({ value, start: match.index, end: match.index + match[0].length });
+  }
+  return mentions;
 }
 
 const CENTS = (value: number) => Math.round(value * 100);

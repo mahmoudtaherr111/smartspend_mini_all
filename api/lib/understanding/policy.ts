@@ -12,7 +12,7 @@
  * Why: docs/decisions/0052-understanding-engine.md.
  */
 import type { AskAbout, IgnoredReason } from "./contract";
-import { eventNeedsEyes, type GuardedEvent, type GuardedReading } from "./guard";
+import type { GuardedEvent, GuardedReading } from "./guard";
 
 export type Outcome = "save" | "show" | "ask";
 
@@ -69,8 +69,8 @@ const NOTHING_TO_RECORD: Record<IgnoredReason | "empty", string> = {
 };
 
 function eventReasons(event: GuardedEvent, facts: PolicyFacts, settings: PolicySettings): string[] {
-  const reasons: string[] = event.flags.filter((flag) => flag !== "sub_repaired");
-  if (event.amount >= settings.reviewAmount && !event.commitment && !facts.isFamiliar(event.category, event.sub)) {
+  const reasons: string[] = [...event.flags];
+  if (event.amount >= settings.reviewAmount && !facts.isFamiliar(event.category, event.sub)) {
     reasons.push("large_first_time");
   }
   if (event.date && settings.reviewDated) reasons.push("dated");
@@ -110,6 +110,6 @@ export function decide(reading: GuardedReading, facts: PolicyFacts, settings: Po
   if (reading.events.length > settings.autoMaxEvents) reasons.push("many_events");
   if (!settings.autoSave) reasons.push("auto_save_off");
 
-  const clean = reasons.length === 0 && events.every((event) => event.reasons.length === 0) && !reading.events.some(eventNeedsEyes);
+  const clean = reasons.length === 0 && events.every((event) => event.reasons.length === 0);
   return { outcome: clean ? "save" : "show", events, reasons };
 }

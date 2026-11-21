@@ -31,6 +31,7 @@ abstract final class Procedures {
   static const seo = SeoProcedures._();
   static const session = SessionProcedures._();
   static const support = SupportProcedures._();
+  static const taxonomy = TaxonomyProcedures._();
   static const voice = VoiceProcedures._();
   static const wallet = WalletProcedures._();
   static const webauthn = WebauthnProcedures._();
@@ -329,6 +330,13 @@ final class SupportProcedures {
   ApiMutation get create => const ApiMutation('support.create', builder: 'authedProcedure', hasInput: true);
   ApiQuery get getById => const ApiQuery('support.getById', builder: 'authedProcedure', hasInput: true);
   ApiQuery get listMine => const ApiQuery('support.listMine', builder: 'authedProcedure');
+}
+
+/// The `taxonomy` router, `api/taxonomy-router.ts`.
+final class TaxonomyProcedures {
+  const TaxonomyProcedures._();
+
+  ApiQuery get get => const ApiQuery('taxonomy.get', builder: 'authedProcedure');
 }
 
 /// The `voice` router, `api/voice-router.ts`.

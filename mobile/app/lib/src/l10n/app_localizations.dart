@@ -986,6 +986,102 @@ abstract class AppLocalizations {
   /// **'عدّل الجملة'**
   String get reviewEdit;
 
+  /// No description provided for @reviewDateAtSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتاريخ يوم الحفظ'**
+  String get reviewDateAtSave;
+
+  /// No description provided for @reviewDirectionUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتجاه الفلوس مش واضح'**
+  String get reviewDirectionUnknown;
+
+  /// No description provided for @reviewFilesAs.
+  ///
+  /// In ar, this message translates to:
+  /// **'هتتسجّل في {category}'**
+  String reviewFilesAs(String category);
+
+  /// No description provided for @reviewReasonAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع المبالغ اللي اتقرَت من الجملة.'**
+  String get reviewReasonAmount;
+
+  /// No description provided for @reviewReasonDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد من تاريخ العملية.'**
+  String get reviewReasonDate;
+
+  /// No description provided for @reviewReasonDirection.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد الفلوس داخلة ولا طالعة.'**
+  String get reviewReasonDirection;
+
+  /// No description provided for @reviewReasonCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد إن التصنيف مناسب للعملية.'**
+  String get reviewReasonCategory;
+
+  /// No description provided for @reviewReasonPerson.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد العملية كانت مع مين.'**
+  String get reviewReasonPerson;
+
+  /// No description provided for @reviewReasonCommitment.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد العملية تخص أنهي التزام.'**
+  String get reviewReasonCommitment;
+
+  /// No description provided for @reviewReasonWallet.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد العملية تخص أنهي محفظة.'**
+  String get reviewReasonWallet;
+
+  /// No description provided for @reviewReasonDuplicate.
+  ///
+  /// In ar, this message translates to:
+  /// **'فيه عمليتين شبه بعض. اتأكد إن الاتنين حصلوا.'**
+  String get reviewReasonDuplicate;
+
+  /// No description provided for @reviewReasonTransactions.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد إن القايمة فيها كل العمليات اللي حصلت.'**
+  String get reviewReasonTransactions;
+
+  /// No description provided for @reviewReasonLarge.
+  ///
+  /// In ar, this message translates to:
+  /// **'ده مبلغ كبير في تصنيف مش متعود تسجّل فيه. اتأكد منه.'**
+  String get reviewReasonLarge;
+
+  /// No description provided for @reviewReasonAutoOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحفظ التلقائي مقفول دلوقتي.'**
+  String get reviewReasonAutoOff;
+
+  /// No description provided for @reviewReasonContext.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعض بيانات الحساب ما وصلتناش. اتأكد من التفاصيل.'**
+  String get reviewReasonContext;
+
+  /// No description provided for @reviewReasonGeneral.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع التفاصيل قبل الحفظ.'**
+  String get reviewReasonGeneral;
+
   /// No description provided for @clarifyDefault.
   ///
   /// In ar, this message translates to:

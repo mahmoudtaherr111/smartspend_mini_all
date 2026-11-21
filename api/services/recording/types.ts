@@ -26,7 +26,10 @@ export interface ReadingSummary {
   flags: string[];
 }
 
-export type RecordedItem = ParsedTransaction & { reading?: ReadingSummary };
+export type RecordedItem = ParsedTransaction & {
+  reading?: ReadingSummary;
+  purposeLabels?: { categoryAr: string; subAr: string; categoryEn: string; subEn: string };
+};
 
 export type ParseDecision = "auto_save" | "review" | "clarify";
 
@@ -69,6 +72,8 @@ export interface ParseResponse {
   decision: ParseDecision;
   overallConfidence: number;
   clarificationQuestion?: string;
+  /** The next reply replaces the sentence (an EGP restatement), instead of supplying a missing detail. */
+  restateSentence?: boolean;
   clarificationId?: number;
   processingTimeMs: number;
   trace: UnderstandingTrace;

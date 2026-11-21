@@ -573,6 +573,60 @@ class AppLocalizationsAr extends AppLocalizations {
   String get reviewEdit => 'عدّل الجملة';
 
   @override
+  String get reviewDateAtSave => 'بتاريخ يوم الحفظ';
+
+  @override
+  String get reviewDirectionUnknown => 'اتجاه الفلوس مش واضح';
+
+  @override
+  String reviewFilesAs(String category) {
+    return 'هتتسجّل في $category';
+  }
+
+  @override
+  String get reviewReasonAmount => 'راجع المبالغ اللي اتقرَت من الجملة.';
+
+  @override
+  String get reviewReasonDate => 'اتأكد من تاريخ العملية.';
+
+  @override
+  String get reviewReasonDirection => 'اتأكد الفلوس داخلة ولا طالعة.';
+
+  @override
+  String get reviewReasonCategory => 'اتأكد إن التصنيف مناسب للعملية.';
+
+  @override
+  String get reviewReasonPerson => 'اتأكد العملية كانت مع مين.';
+
+  @override
+  String get reviewReasonCommitment => 'اتأكد العملية تخص أنهي التزام.';
+
+  @override
+  String get reviewReasonWallet => 'اتأكد العملية تخص أنهي محفظة.';
+
+  @override
+  String get reviewReasonDuplicate =>
+      'فيه عمليتين شبه بعض. اتأكد إن الاتنين حصلوا.';
+
+  @override
+  String get reviewReasonTransactions =>
+      'اتأكد إن القايمة فيها كل العمليات اللي حصلت.';
+
+  @override
+  String get reviewReasonLarge =>
+      'ده مبلغ كبير في تصنيف مش متعود تسجّل فيه. اتأكد منه.';
+
+  @override
+  String get reviewReasonAutoOff => 'الحفظ التلقائي مقفول دلوقتي.';
+
+  @override
+  String get reviewReasonContext =>
+      'بعض بيانات الحساب ما وصلتناش. اتأكد من التفاصيل.';
+
+  @override
+  String get reviewReasonGeneral => 'راجع التفاصيل قبل الحفظ.';
+
+  @override
   String get clarifyDefault => 'ممكن توضح أكتر؟';
 
   @override

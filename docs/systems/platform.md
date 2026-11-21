@@ -219,3 +219,5 @@ relations in application code and storage class E. Optional-table checks in the 
 new questions/resource counters before additive migrations are installed. The question flag remains false by
 default; only a disposable local MySQL was migrated. Question display/answers and contact alias changes share the
 identity lock with ledger writes. No network/model call is made while that transaction is held.
+
+Authenticated clients can read the purpose catalog through taxonomy.get, including stable ids, Arabic and English labels, icons and group. Shared save inputs retain the stated direction of investment movements.

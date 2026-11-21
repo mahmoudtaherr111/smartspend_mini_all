@@ -76,7 +76,7 @@ export const multiplierMap: Record<string, number> = {
   ارنب: 1000000, أرنب: 1000000,
 };
 
-/** Fraction words, applied to the unit that precedes them. */
+/** Fraction words, applied to a stated or implied unit. */
 const FRACTION_MAP: Record<string, number> = {
   نص: 0.5, نصف: 0.5,
   ربع: 0.25,
@@ -98,16 +98,6 @@ const RUN_TOGETHER: Record<string, number> = {
   تسعتلاف: 9000, تسعلاف: 9000,
   عشرتلاف: 10000, عشرلاف: 10000,
 };
-
-/** Compound street-unit phrases resolved before tokenizing. */
-const UNIT_PHRASES: Array<[RegExp, string]> = [
-  [/(^|\s)باكو\s+ونص(?=\s|$)/g, "$11500"],
-  [/(^|\s)(?:أرنب|ارنب)\s+ونص(?=\s|$)/g, "$11500000"],
-  [/(^|\s)نص\s+باكو(?=\s|$)/g, "$1500"],
-  [/(^|\s)نص\s+(?:أرنب|ارنب)(?=\s|$)/g, "$1500000"],
-  [/(^|\s)ربع\s+باكو(?=\s|$)/g, "$1250"],
-  [/(^|\s)ربع\s+(?:أرنب|ارنب)(?=\s|$)/g, "$1250000"],
-];
 
 /**
  * Context that makes "مية"/"ميه" the number 100 rather than water. Egyptians say
@@ -310,7 +300,8 @@ class NumberAccumulator {
   }
 
   addMultiplier(value: number): void {
-    this.segment = this.segment === 0 ? value : this.segment * value;
+    const hasCoefficient = this.segment !== 0 || this.lastWasDigitLiteral;
+    this.segment = hasCoefficient ? this.segment * value : value;
     this.total += this.segment;
     this.segment = 0;
     this.active = true;
@@ -364,10 +355,6 @@ export function parseArabicNumbers(text: string): string {
   // and "500." are read while "50.75" keeps its decimal point.
   processed = processed.replace(/(?<!\d)\.|\.(?!\d)/g, " . ");
 
-  for (const [pattern, replacement] of UNIT_PHRASES) {
-    processed = processed.replace(pattern, replacement);
-  }
-
   // Multi-word lexicon entries ("خمسة عشر") must resolve before tokenizing.
   for (const [key, value] of Object.entries(numMap)) {
     if (key.includes(" ")) {
@@ -389,27 +376,44 @@ export function parseArabicNumbers(text: string): string {
     if (!word) continue;
 
     const { core, hadClitic } = stripClitic(word);
+    const fraction = lookupNumberWord(FRACTION_MAP, FOLDED_FRACTION, core);
+    const joinedFraction = hadClitic ? word.startsWith("و") : words[i - 1] === "و";
+
+    // A fraction can name its scale explicitly: "نص مليون", "اتنين ونص ألف".
+    if (fraction !== undefined && words[i + 1]) {
+      const next = words[i + 1];
+      const scale = lookupNumberWord(multiplierMap, FOLDED_MULTIPLIER, next);
+      if (scale !== undefined) {
+        if (!joinedFraction) flushInto();
+        // Egyptian "تلت تلاف" counts three thousands, while "تلت ألف" is a third.
+        const countsThree = normalizeArabic(core) === "تلت" && /^(?:الاف|تلاف|ملايين)$/.test(normalizeArabic(next));
+        acc.addWord(countsThree ? 3 : fraction);
+        acc.addMultiplier(scale);
+        i++;
+        continue;
+      }
+    }
 
     // A fraction joined by waw continues the number: "ألفين ونص" is 2,500.
-    if (hadClitic && word.startsWith("و") && FRACTION_MAP[core] !== undefined) {
+    if (joinedFraction && fraction !== undefined) {
       if (acc.isActive) {
-        acc.addFraction(FRACTION_MAP[core]);
+        acc.addFraction(fraction);
         continue;
       }
       // "بجنيه ونص" — no number yet, but the preceding currency word is the unit.
       const prev = words[i - 1];
       if (prev && CURRENCY_UNIT.test(stripClitic(prev).core)) {
         out.pop();
-        acc.addWord(1 + FRACTION_MAP[core]);
+        acc.addWord(1 + fraction);
         continue;
       }
     }
 
     // A fraction standing before the currency is the amount itself: "بنص جنيه" is 0.5.
-    if (FRACTION_MAP[core] !== undefined && !acc.isActive) {
+    if (fraction !== undefined && !acc.isActive) {
       const next = words[i + 1];
       if (next && CURRENCY_UNIT.test(stripClitic(next).core)) {
-        acc.addWord(FRACTION_MAP[core]);
+        acc.addWord(fraction);
         continue;
       }
     }

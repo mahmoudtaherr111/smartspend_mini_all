@@ -6,7 +6,8 @@ import { Switch } from "@admin/kit/switch";
 import { trpc } from "@admin/lib/trpc";
 import { DECISION, PARSED_BY } from "../ui/ai-words";
 import { SettingsEditor } from "../ui/SettingsEditor";
-import { word } from "../ui/words";
+import { LoadError, Loading } from "../ui/states";
+import { count, word } from "../ui/words";
 
 const categoryName = (categoryId?: string, subId?: string) => {
   const category = CATEGORIES.find((item) => item.id === categoryId);
@@ -14,22 +15,78 @@ const categoryName = (categoryId?: string, subId?: string) => {
   return [category?.name_ar ?? categoryId, sub?.name_ar ?? subId].filter(Boolean).join(" / ");
 };
 
+const UNDERSTANDING_COUNTS = [
+  ["total", "القراءات"],
+  ["autoSave", "قرار حفظ تلقائي"],
+  ["review", "قرار مراجعة"],
+  ["clarify", "طلب توضيح"],
+  ["linked", "ليها عملية في الدفتر"],
+  ["corrected", "اتعدلت فئتها"],
+] as const;
+
+export function UnderstandingQuality({ days }: { days: number }) {
+  const quality = trpc.adminConsole.understandingQuality.useQuery({ days });
+  const data = quality.data;
+  return (
+    <section className="mb-4 rounded-xl border p-4" aria-labelledby="understanding-quality">
+      <h2 id="understanding-quality" className="font-bold">نتائج محرك الفهم الجديد</h2>
+      {quality.isLoading ? <Loading /> : !data ? (
+        <LoadError message="ماقدرناش نجيب نتائج محرك الفهم." onRetry={() => quality.refetch()} />
+      ) : data.groups.length === 0 ? (
+        <p className="mt-2 text-sm text-muted-foreground">مفيش قراءات للمحرك الجديد في الفترة دي.</p>
+      ) : (
+        <>
+          <dl className="my-3 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+            {UNDERSTANDING_COUNTS.map(([key, label]) => (
+              <div key={key} className="rounded-lg bg-muted/40 p-3">
+                <dt className="text-xs text-muted-foreground">{label}</dt>
+                <dd className="num mt-1 text-lg font-bold">{count(data.totals[key])}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mb-3 text-xs text-muted-foreground">الربط والتعديلات محسوبين على القراءات اللي ليها عمليات لسه موجودة في الدفتر.</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-start text-sm" aria-label="نتائج الفهم حسب الإصدار والموديل">
+              <thead className="border-b text-muted-foreground">
+                <tr>
+                  <th className="px-2 py-2 text-start" scope="col">الإصدار</th>
+                  <th className="px-2 py-2 text-start" scope="col">موديل الفهم</th>
+                  {UNDERSTANDING_COUNTS.map(([key, label]) => <th key={key} className="px-2 py-2 text-start" scope="col">{label}</th>)}
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {data.groups.map((row) => (
+                  <tr key={JSON.stringify([row.version, row.model])}>
+                    <th className="px-2 py-2 text-start font-medium" scope="row"><bdi>{row.version}</bdi></th>
+                    <td className="px-2 py-2"><bdi>{row.model ?? "من غير موديل مسجل"}</bdi></td>
+                    {UNDERSTANDING_COUNTS.map(([key]) => <td key={key} className="num px-2 py-2">{count(row[key])}</td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 /** How classification is doing against the period before: what saved itself, what the person had to fix, what asked. */
 export function Quality({ days }: { days: number }) {
   const quality = trpc.admin.getClassificationQuality.useQuery({ days: Math.max(1, days) });
   if (!quality.data) return null;
   const { current, previous } = quality.data;
   const rows: { label: string; hint: string; now: number; before: number; goodWhenUp: boolean; unit: string }[] = [
-    { label: "اتحفظت لوحدها", hint: "من غير ما الشخص يراجع", now: current.autoSaveRate, before: previous.autoSaveRate, goodWhenUp: true, unit: "%" },
-    { label: "الغلط الساكت", hint: "اتحفظت لوحدها والشخص رجع غيّرها", now: current.silentMistakeRate, before: previous.silentMistakeRate, goodWhenUp: false, unit: "%" },
-    { label: "محتاجة مراجعة", hint: "الشخص أكّدها قبل الحفظ", now: current.reviewRate, before: previous.reviewRate, goodWhenUp: false, unit: "%" },
+    { label: "قرار حفظ تلقائي", hint: "التطبيق اختار الحفظ من غير مراجعة", now: current.autoSaveRate, before: previous.autoSaveRate, goodWhenUp: true, unit: "%" },
+    { label: "فئة اتغيرت", hint: "النسبة من قرارات الحفظ التلقائي", now: current.silentMistakeRate, before: previous.silentMistakeRate, goodWhenUp: false, unit: "%" },
+    { label: "محتاجة مراجعة", hint: "التطبيق اختار يعرض القراءة للمستخدم", now: current.reviewRate, before: previous.reviewRate, goodWhenUp: false, unit: "%" },
     { label: "سألت سؤال", hint: "مين أو فئة إيه", now: current.clarifyRate, before: previous.clarifyRate, goodWhenUp: false, unit: "%" },
     { label: "رجعت للذكاء الاصطناعي", hint: "القاموس والقواعد ماكفوش", now: current.modelShare, before: previous.modelShare, goodWhenUp: false, unit: "%" },
     { label: "الوقت", hint: "متوسط الجملة", now: current.avgTimeMs, before: previous.avgTimeMs, goodWhenUp: false, unit: " مللي" },
   ];
   return (
     <section className="mb-4 rounded-xl border p-4">
-      <h2 className="font-bold">الجودة في آخر {days} يوم ({current.total.toLocaleString("ar-EG")} جملة) مقارنة باللي قبلها</h2>
+      <h2 className="font-bold">كل طرق التصنيف في آخر {days} يوم ({current.total.toLocaleString("ar-EG")} جملة) مقارنة باللي قبلها</h2>
       <dl className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         {rows.map((row) => {
           const delta = row.now - row.before;

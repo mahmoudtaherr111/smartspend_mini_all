@@ -101,5 +101,5 @@ Bank messages went through the same journey and ended in decision
   parser, the number and quote readers, the guard, the policy, the prompt, the bridge, the user's context for a
   reading, route resolution and the engine that runs one reading end to end.
 - The evaluation harness is built and tested with a fake model (`api/qa/understanding/`, `npm run eval:understand`).
-- Not serving any channel yet: `ai.parseExpense` and the other entry points still run the rule engine.
-- Not measured against a model yet: no provider key was available where this was built.
+- Typed text, transcribed recordings and clarification answers can use the reader through the recording_engine setting. The default remains rules. Receipts and bank notifications have their own paths.
+- The evaluation harness has also run against live providers. Read the model, prompt profile, sample size, coverage and error denominators together when assessing a release.

@@ -321,6 +321,27 @@
   "reviewTitle": "راجع قبل ما نحفظ",
   "reviewSave": "احفظ",
   "reviewEdit": "عدّل الجملة",
+  "reviewDateAtSave": "بتاريخ يوم الحفظ",
+  "reviewDirectionUnknown": "اتجاه الفلوس مش واضح",
+  "reviewFilesAs": "هتتسجّل في {category}",
+  "@reviewFilesAs": {
+    "placeholders": {
+      "category": { "type": "String" }
+    }
+  },
+  "reviewReasonAmount": "راجع المبالغ اللي اتقرَت من الجملة.",
+  "reviewReasonDate": "اتأكد من تاريخ العملية.",
+  "reviewReasonDirection": "اتأكد الفلوس داخلة ولا طالعة.",
+  "reviewReasonCategory": "اتأكد إن التصنيف مناسب للعملية.",
+  "reviewReasonPerson": "اتأكد العملية كانت مع مين.",
+  "reviewReasonCommitment": "اتأكد العملية تخص أنهي التزام.",
+  "reviewReasonWallet": "اتأكد العملية تخص أنهي محفظة.",
+  "reviewReasonDuplicate": "فيه عمليتين شبه بعض. اتأكد إن الاتنين حصلوا.",
+  "reviewReasonTransactions": "اتأكد إن القايمة فيها كل العمليات اللي حصلت.",
+  "reviewReasonLarge": "ده مبلغ كبير في تصنيف مش متعود تسجّل فيه. اتأكد منه.",
+  "reviewReasonAutoOff": "الحفظ التلقائي مقفول دلوقتي.",
+  "reviewReasonContext": "بعض بيانات الحساب ما وصلتناش. اتأكد من التفاصيل.",
+  "reviewReasonGeneral": "راجع التفاصيل قبل الحفظ.",
   "clarifyDefault": "ممكن توضح أكتر؟",
   "clarifyAnswerLabel": "ردّك",
   "clarifySend": "ابعت الرد",
