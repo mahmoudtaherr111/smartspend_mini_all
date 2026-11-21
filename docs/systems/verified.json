@@ -51,12 +51,12 @@
         "src/components/settings/LanguageSettings.tsx": "2e84329609e6",
         "src/components/settings/PeopleSettingsView.tsx": "fe994df04b34",
         "src/pages/AuthCallback.tsx": "6ca3f9321f43",
-        "src/pages/Login.tsx": "1e99a0a9b841",
+        "src/pages/Login.tsx": "d4a1781dfcd3",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-11-21 873da7f4",
+      "checked": "2026-11-21 e7b84e27",
       "arabic": "7b61006e0af9",
-      "arabicChecked": "2026-11-21 873da7f4"
+      "arabicChecked": "2026-11-21 e7b84e27"
     },
     "admin": {
       "files": {
@@ -706,7 +706,7 @@
         "src/hooks/useAdmin.ts": "15baa7e78ff1",
         "src/hooks/useAds.ts": "b08bb3b71bf5",
         "src/hooks/useAppResume.ts": "b626940d2e71",
-        "src/hooks/useAuth.ts": "c5cb2da2da66",
+        "src/hooks/useAuth.ts": "66948e88082a",
         "src/hooks/useBiometricOnboarding.ts": "8f122a8e13d0",
         "src/hooks/useHaptics.ts": "2421963bba36",
         "src/hooks/useHistoryBound.ts": "ceffbe90aeae",
@@ -728,12 +728,12 @@
         "src/i18n/en.ts": "9b850c436c96",
         "src/i18n/format.ts": "dcabd0402133",
         "src/i18n/language.ts": "398827de4cd9",
-        "src/lib/api-url.ts": "18ecb9feb4c8",
+        "src/lib/api-url.ts": "420621df5c5f",
         "src/lib/back-button-manager.ts": "8f9f1a1d70ca",
         "src/lib/biometricAuth.ts": "1f4941edc3a3",
         "src/lib/financial-taxonomy.ts": "8d5316f3e67b",
         "src/lib/ledger-refresh.ts": "0db704f2a63e",
-        "src/lib/native-ios-bridge.ts": "f796cc7355c7",
+        "src/lib/native-ios-bridge.ts": "d1145428fa45",
         "src/lib/offline-queue-count.ts": "99cb920afb03",
         "src/lib/queryPersister.ts": "078724e324de",
         "src/lib/saved-toast.ts": "84f65651ad19",
@@ -747,15 +747,15 @@
         "src/pages/Privacy.tsx": "d888313990ad",
         "src/pages/Terms.tsx": "4ff361a45f01",
         "src/providers/BiometricLockProvider.tsx": "c4258fcc8f5b",
-        "src/providers/trpc.ts": "a5189624d456",
+        "src/providers/trpc.ts": "6d8f7cdc25e3",
         "src/pwa/firebase.ts": "3543ebd77700",
         "src/pwa/install-platform.ts": "fb566145f9a7",
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "04cff3e23190"
       },
-      "checked": "2026-11-21 873da7f4",
-      "arabic": "d29e834201f2",
-      "arabicChecked": "2026-11-21 873da7f4"
+      "checked": "2026-11-21 e7b84e27",
+      "arabic": "f00cf97b4da3",
+      "arabicChecked": "2026-11-21 e7b84e27"
     }
   }
 }

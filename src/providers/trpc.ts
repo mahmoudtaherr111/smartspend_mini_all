@@ -1,6 +1,10 @@
 import { createTRPCReact } from "@trpc/react-query";
 import { httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "../../api/router";
+import {
+  clearNativeSessionToken,
+  getNativeRequestHeaders,
+} from "../lib/native-ios-bridge";
 
 export const trpc = createTRPCReact<AppRouter>();
 
@@ -206,6 +210,7 @@ export function handleUnauthenticatedSession(
   options?: SessionExpiredOptions,
 ): void {
   const now = Date.now();
+  void clearNativeSessionToken();
 
   // 1. Preserve drafts immediately
   preserveActiveFormDrafts();
@@ -311,6 +316,7 @@ export const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
       url: API_BASE_URL,
+      headers: () => getNativeRequestHeaders(API_BASE_URL),
       fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
         // Normalize any appended procedure paths back to the base `/api/trpc`
         let requestUrl: string =

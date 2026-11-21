@@ -7,6 +7,7 @@ import {
   saveOfflineIdentity,
 } from "@/lib/queryPersister";
 import { clearScrollCache } from "@/hooks/useScrollRestoration";
+import { clearNativeSessionToken } from "@/lib/native-ios-bridge";
 
 export interface AuthUser {
   id: number;
@@ -330,6 +331,7 @@ export function useAuth() {
     } catch {
       // Even if server-side logout fails, proceed to login
     }
+    await clearNativeSessionToken();
     // Do this after the mutations finish: the persistence subscription reacts
     // to mutation-cache events and could otherwise write the old cache back.
     if (user) {

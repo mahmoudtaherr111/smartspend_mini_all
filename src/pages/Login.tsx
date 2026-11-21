@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/providers/trpc";
 import { getApiUrl } from "@/lib/api-url";
+import { setNativeSessionToken } from "@/lib/native-ios-bridge";
 import { broadcastLogin } from "@/hooks/useAuth";
 import { SIGN_UP_SESSION_KEY } from "@/lib/biometricAuth";
 import { Button } from "@/components/ui/button";
@@ -89,7 +90,11 @@ export default function Login() {
   const [turnstileReset, setTurnstileReset] = useState(0);
 
   const loginMutation = trpc.localAuth.login.useMutation({
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      const token = (data as { token?: unknown } | undefined)?.token;
+      if (typeof token === "string") {
+        await setNativeSessionToken(token);
+      }
       broadcastLogin();
       toast.success("تم تسجيل الدخول بنجاح! 🎉");
       window.location.href = "/dashboard";
@@ -116,7 +121,11 @@ export default function Login() {
   }, [loginRetrySeconds]);
 
   const registerMutation = trpc.localAuth.register.useMutation({
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      const token = (data as { token?: unknown } | undefined)?.token;
+      if (typeof token === "string") {
+        await setNativeSessionToken(token);
+      }
       broadcastLogin();
       try {
         // The first visit after creating an account is never interrupted by the fingerprint suggestion.
@@ -135,7 +144,11 @@ export default function Login() {
   const authOptionsMutation =
     trpc.webauthn.generateAuthenticationOptions.useMutation();
   const verifyAuthMutation = trpc.webauthn.verifyAuthentication.useMutation({
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      const token = (data as { token?: unknown } | undefined)?.token;
+      if (typeof token === "string") {
+        await setNativeSessionToken(token);
+      }
       broadcastLogin();
       try {
         localStorage.setItem("smartspend_has_passkey", "1");

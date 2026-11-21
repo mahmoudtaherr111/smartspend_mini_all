@@ -87,7 +87,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `Admin` — `src/pages/Admin.tsx`
 
-33 files in its import closure (not counting `src/components/ui/`).
+35 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -233,7 +233,7 @@ _None._
 
 ### `Landing` — `src/pages/Landing.tsx`
 
-3 files in its import closure (not counting `src/components/ui/`).
+5 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -260,7 +260,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-64 files in its import closure (not counting `src/components/ui/`).
+65 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -404,7 +404,7 @@ _None._
 
 ### `NotificationsPage` — `src/pages/Notifications.tsx`
 
-7 files in its import closure (not counting `src/components/ui/`).
+9 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -414,7 +414,7 @@ _None._
 
 ### `PlanPage` — `src/pages/PlanPage.tsx`
 
-3 files in its import closure (not counting `src/components/ui/`).
+5 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -432,7 +432,7 @@ _None._
 
 ### `Privacy` — `src/pages/Privacy.tsx`
 
-3 files in its import closure (not counting `src/components/ui/`).
+5 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -440,7 +440,7 @@ _None._
 
 ### `Pro` — `src/pages/Pro.tsx`
 
-4 files in its import closure (not counting `src/components/ui/`).
+6 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -453,7 +453,7 @@ _None._
 
 ### `Settings` — `src/pages/Settings.tsx`
 
-28 files in its import closure (not counting `src/components/ui/`).
+29 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -491,7 +491,7 @@ _None._
 
 ### `Support` — `src/pages/Support.tsx`
 
-6 files in its import closure (not counting `src/components/ui/`).
+8 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -505,7 +505,7 @@ _None._
 
 ### `Terms` — `src/pages/Terms.tsx`
 
-3 files in its import closure (not counting `src/components/ui/`).
+5 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -513,7 +513,7 @@ _None._
 
 ### `UltraLounge` — `src/pages/UltraLounge.tsx`
 
-6 files in its import closure (not counting `src/components/ui/`).
+8 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -525,7 +525,7 @@ _None._
 
 ### `WalletsPage` — `src/pages/WalletsPage.tsx`
 
-5 files in its import closure (not counting `src/components/ui/`).
+7 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |

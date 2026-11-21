@@ -6,6 +6,7 @@ import {
   getApiUrl,
   getPublicOrigin,
   getWsUrl,
+  isNgrokUrl,
   normalizeApiBaseUrl,
 } from "./api-url";
 
@@ -111,5 +112,20 @@ describe("api-url resolver", () => {
     expect(getWsUrl("wss://voice.smartspend.app/api/voice/v2", "")).toBe(
       "wss://voice.smartspend.app/api/voice/v2",
     );
+  });
+
+  it("identifies ngrok tunnel domains safely without false positives", () => {
+    expect(isNgrokUrl("https://nutty-husband-customary.ngrok-free.dev")).toBe(
+      true,
+    );
+    expect(isNgrokUrl("https://foo.ngrok-free.app/api/trpc")).toBe(true);
+    expect(isNgrokUrl("https://foo.ngrok.app/api/trpc")).toBe(true);
+    expect(isNgrokUrl("https://foo.ngrok.io")).toBe(true);
+
+    expect(isNgrokUrl("https://api.smartspend.app")).toBe(false);
+    expect(isNgrokUrl("https://ngrok-free.dev.evil.com")).toBe(false);
+    expect(isNgrokUrl("/api/trpc")).toBe(false);
+    expect(isNgrokUrl("")).toBe(false);
+    expect(isNgrokUrl(null)).toBe(false);
   });
 });

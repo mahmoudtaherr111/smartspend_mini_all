@@ -10,6 +10,28 @@
 
 const ABSOLUTE_HTTP_RE = /^https?:\/\//i;
 const ABSOLUTE_WS_RE = /^wss?:\/\//i;
+const NGROK_HOST_SUFFIXES = [
+  ".ngrok-free.dev",
+  ".ngrok-free.app",
+  ".ngrok.app",
+  ".ngrok.io",
+];
+
+/**
+ * True when `url` is an absolute HTTP(S)/WS(S) URL pointing at an ngrok tunnel host.
+ * Relative paths and lookalike suffixes (e.g. `ngrok-free.dev.evil.com`) return false.
+ */
+export function isNgrokUrl(url?: string | null): boolean {
+  const trimmed = url?.trim();
+  if (!trimmed) return false;
+  try {
+    const parsed = new URL(trimmed);
+    const hostname = parsed.hostname.toLowerCase();
+    return NGROK_HOST_SUFFIXES.some((suffix) => hostname.endsWith(suffix));
+  } catch {
+    return false;
+  }
+}
 
 export function normalizeApiBaseUrl(raw?: string | null): string {
   if (!raw) return "";

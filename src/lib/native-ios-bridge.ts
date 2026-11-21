@@ -5,11 +5,9 @@
  *
  * Safe no-op / graceful fallback on Web, PWA, and Android so non-iOS platforms keep working identically.
  */
-import {
-  Capacitor,
-  registerPlugin,
-  type PluginListenerHandle,
-} from "@capacitor/core";
+import * as CapacitorCore from "@capacitor/core";
+import type { PluginListenerHandle } from "@capacitor/core";
+import { getApiBaseUrl, isNgrokUrl } from "./api-url";
 
 export type LiquidGlassTheme = "dark" | "light";
 
@@ -143,6 +141,11 @@ export interface SmartSpendNativePlugin {
   triggerHaptic(options: {
     style: NativeHapticStyle;
   }): Promise<{ triggered: boolean }>;
+  setSessionToken(options: {
+    token: string;
+  }): Promise<{ saved: boolean }>;
+  getAuthHeaders(): Promise<{ headers: Record<string, string> }>;
+  clearSessionToken(): Promise<{ cleared: boolean }>;
 }
 
 const NOOP_LISTENER_HANDLE: PluginListenerHandle = {
@@ -186,10 +189,18 @@ function createLiquidGlassWebFallback(): LiquidGlassTabBarPlugin {
   };
 }
 
+function getCapacitorPlatformSafe(): string {
+  try {
+    return CapacitorCore.Capacitor?.getPlatform?.() ?? "web";
+  } catch {
+    return "web";
+  }
+}
+
 function createSmartSpendNativeWebFallback(): SmartSpendNativePlugin {
   return {
     async getCapabilities() {
-      const platform = Capacitor.getPlatform();
+      const platform = getCapacitorPlatformSafe();
       return {
         platform:
           platform === "ios" || platform === "android" ? platform : "web",
@@ -210,21 +221,45 @@ function createSmartSpendNativeWebFallback(): SmartSpendNativePlugin {
     async triggerHaptic() {
       return { triggered: false };
     },
+    async setSessionToken() {
+      return { saved: false };
+    },
+    async getAuthHeaders() {
+      return { headers: {} };
+    },
+    async clearSessionToken() {
+      return { cleared: true };
+    },
   };
 }
 
-export const LiquidGlassTabBar = registerPlugin<LiquidGlassTabBarPlugin>(
+function safeRegisterPlugin<T>(name: string, fallbackFactory: () => T): T {
+  try {
+    const reg = (
+      CapacitorCore as unknown as {
+        registerPlugin?: <P>(
+          pluginName: string,
+          options?: { web?: () => P },
+        ) => P;
+      }
+    ).registerPlugin;
+    if (typeof reg === "function") {
+      return reg<T>(name, { web: fallbackFactory });
+    }
+  } catch {
+    // Partial test mocks of @capacitor/core may omit registerPlugin
+  }
+  return fallbackFactory();
+}
+
+export const LiquidGlassTabBar = safeRegisterPlugin<LiquidGlassTabBarPlugin>(
   "LiquidGlassTabBar",
-  {
-    web: createLiquidGlassWebFallback,
-  },
+  createLiquidGlassWebFallback,
 );
 
-export const SmartSpendNative = registerPlugin<SmartSpendNativePlugin>(
+export const SmartSpendNative = safeRegisterPlugin<SmartSpendNativePlugin>(
   "SmartSpendNative",
-  {
-    web: createSmartSpendNativeWebFallback,
-  },
+  createSmartSpendNativeWebFallback,
 );
 
 /**
@@ -233,7 +268,10 @@ export const SmartSpendNative = registerPlugin<SmartSpendNativePlugin>(
  */
 export function isNativeIosCapacitor(): boolean {
   try {
-    return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
+    return (
+      Boolean(CapacitorCore.Capacitor?.isNativePlatform?.()) &&
+      getCapacitorPlatformSafe() === "ios"
+    );
   } catch {
     return false;
   }
@@ -382,4 +420,67 @@ export function syncNativeTabBarHeightCssVar(totalHeight: number | null): void {
     root.style.removeProperty(NATIVE_TABBAR_HEIGHT_CSS_VAR);
     root.classList.remove("native-ios-tabbar");
   }
+}
+
+/**
+ * Stores the session token in the native iOS Keychain (never localStorage or JS memory).
+ * No-ops on Web, PWA, and Android.
+ */
+export async function setNativeSessionToken(
+  token: string | null | undefined,
+): Promise<void> {
+  if (!isNativeIosCapacitor()) return;
+  const trimmed = token?.trim() ?? "";
+  try {
+    if (!trimmed) {
+      await SmartSpendNative.clearSessionToken();
+    } else {
+      await SmartSpendNative.setSessionToken({ token: trimmed });
+    }
+  } catch {
+    // Graceful degradation if native plugin is unavailable
+  }
+}
+
+/**
+ * Clears the native iOS Keychain session token.
+ * No-ops on Web, PWA, and Android.
+ */
+export async function clearNativeSessionToken(): Promise<void> {
+  if (!isNativeIosCapacitor()) return;
+  try {
+    await SmartSpendNative.clearSessionToken();
+  } catch {
+    // Graceful degradation if native plugin is unavailable
+  }
+}
+
+/**
+ * Per-request headers for Capacitor iOS calling a remote HTTPS backend:
+ * - Reads native auth headers constructed directly from the iOS Keychain in Swift.
+ * - Adds ngrok's warning-skip header only when targeting an ngrok tunnel URL.
+ * Always returns `{}` on Web, PWA, and Android so browser sessions remain HttpOnly-cookie-only.
+ */
+export async function getNativeRequestHeaders(
+  apiBaseUrl?: string | null,
+): Promise<Record<string, string>> {
+  if (!isNativeIosCapacitor()) return {};
+  const headers: Record<string, string> = {};
+  try {
+    const result = await SmartSpendNative.getAuthHeaders();
+    const nativeHeaders = result?.headers;
+    if (nativeHeaders && typeof nativeHeaders === "object") {
+      for (const [key, value] of Object.entries(nativeHeaders)) {
+        if (typeof value === "string" && value.length > 0) {
+          headers[key] = value;
+        }
+      }
+    }
+  } catch {
+    // Graceful degradation if native plugin is unavailable
+  }
+  if (isNgrokUrl(apiBaseUrl ?? getApiBaseUrl())) {
+    headers["ngrok-skip-browser-warning"] = "true";
+  }
+  return headers;
 }
