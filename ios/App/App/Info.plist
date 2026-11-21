@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CAPACITOR_DEBUG</key>
+	<string>$(CAPACITOR_DEBUG)</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>ar</string>
+	<key>CFBundleDisplayName</key>
+	<string>SmartSpend AI</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>ar</string>
+		<string>en</string>
+	</array>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.smartspend.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>smartspend</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>whatsapp</string>
+		<string>shortcuts</string>
+		<string>mailto</string>
+	</array>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>يحتاج SmartSpend AI إلى الكاميرا لتصوير الفواتير واستخراج المصاريف تلقائياً. (SmartSpend AI uses the camera to scan receipts and extract expenses automatically.)</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>يستخدم SmartSpend AI بصمة الوجه لحماية بياناتك المالية وفتح التطبيق بسرعة وأمان. (SmartSpend AI uses Face ID to protect your financial data and unlock the app securely.)</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>يحتاج SmartSpend AI إلى الميكروفون لتسجيل المصاريف بالصوت والمكالمات الصوتية مع المساعد الذكي. (SmartSpend AI uses the microphone for voice expense recording and live AI voice calls.)</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>يحتاج SmartSpend AI إلى حفظ التقارير والفواتير المُصدّرة في مكتبة الصور. (SmartSpend AI saves exported reports and receipts to your photo library.)</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>يحتاج SmartSpend AI إلى مكتبة الصور لاختيار صور الفواتير وتحليلها تلقائياً. (SmartSpend AI accesses your photo library to import receipt photos and screenshots.)</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>يحتاج SmartSpend AI إلى التعرف على الصوت لتحويل كلامك إلى مصاريف وملاحظات تلقائياً. (SmartSpend AI uses speech recognition to convert your voice into categorized expenses.)</string>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleLightContent</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+</dict>
+</plist>

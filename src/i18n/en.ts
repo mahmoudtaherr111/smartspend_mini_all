@@ -15,6 +15,8 @@ export const en: Dictionary = {
   "nav.more": "More",
   "nav.home": "Home",
   "nav.support": "Support",
+  "nav.quickRecord": "Quick",
+  "nav.quickRecordAria": "Quick expense capture",
 
   // Settings
   "settings.appearance.title": "Appearance",

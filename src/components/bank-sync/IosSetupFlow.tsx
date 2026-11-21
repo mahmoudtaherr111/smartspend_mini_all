@@ -22,6 +22,7 @@ import {
   Apple,
 } from "lucide-react";
 import { trpc } from "@/providers/trpc";
+import { getAbsoluteApiUrl } from "@/lib/api-url";
 import { format } from "date-fns";
 import { arEG } from "date-fns/locale";
 
@@ -79,7 +80,7 @@ export function IosSetupFlow({ onBack }: Props) {
         currentToken = res.token;
         await tokenQuery.refetch();
       }
-      const configString = `${window.location.origin}/api/sms/ingest?token=${currentToken}`;
+      const configString = getAbsoluteApiUrl(`/api/sms/ingest?token=${currentToken}`);
       await navigator.clipboard.writeText(configString);
       toast.success("✅ تم نسخ الإعدادات!", {
         description:

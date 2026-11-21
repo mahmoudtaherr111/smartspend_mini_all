@@ -28,3 +28,4 @@ A record explains why the code looks the way it does. What the code does today i
 | [0018](0018-voice-production-boundaries.md) | Durable consent, distributed call ownership, recovery, memory forgetting and measured capacity |
 | [0019](0019-verify-consent-speech-before-playback.md) | Complete draft previews and write receipts are verified before audio or captions are released |
 | [0020](0020-optional-english-interface.md) | Optional English UI mode with Arabic source of truth and data stability |
+| [0021](0021-native-viewport-no-zoom.md) | The installed app never zooms, like a native app: zoom locked in the viewport, 16px fields on phones |

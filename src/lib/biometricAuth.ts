@@ -1,8 +1,14 @@
 /**
  * Biometric Authentication & Local App Lock Utilities
- * Supports WebAuthn Platform Authenticator (Face ID / Touch ID / Windows Hello / Android Biometrics)
+ * Supports WebAuthn Platform Authenticator (Face ID / Touch ID / Windows Hello / Android Biometrics),
+ * native iOS LAContext Face ID / Touch ID inside Capacitor iOS,
  * and local offline app lock with zero network latency.
  */
+import {
+  authenticateNativeIosBiometric,
+  getNativeIosCapabilities,
+  isNativeIosCapacitor,
+} from "@/lib/native-ios-bridge";
 
 export interface BiometricAuthResult {
   success: boolean;
@@ -31,6 +37,12 @@ export function getUserStorageKey(user?: { id?: number | string; type?: string }
  */
 export async function isPlatformAuthenticatorAvailable(): Promise<boolean> {
   if (typeof window === "undefined") return false;
+  if (isNativeIosCapacitor()) {
+    const capabilities = await getNativeIosCapabilities();
+    if (capabilities) {
+      return Boolean(capabilities.hasBiometrics);
+    }
+  }
   if (
     typeof window.PublicKeyCredential !== "undefined" &&
     typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function"
@@ -393,13 +405,98 @@ export function shouldShowBiometricPrompt({
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Authenticates user locally with hardware biometrics (WebAuthn Platform Authenticator).
+ * Authenticates user locally with hardware biometrics.
+ * - On Capacitor iOS: uses native LAContext Face ID / Touch ID via `SmartSpendNative`.
+ * - On Web / PWA / Android: uses WebAuthn Platform Authenticator.
  * Operates completely offline with 0 network latency and a strict safety timeout.
  */
 export async function authenticateLocalBiometrics(options?: {
   timeoutMs?: number;
+  reason?: string;
 }): Promise<BiometricAuthResult> {
   const timeoutMs = options?.timeoutMs || BIOMETRIC_CONSTANTS.SAFETY_TIMEOUT_MS;
+
+  if (isNativeIosCapacitor()) {
+    let timedOut = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const nativeResult = await Promise.race([
+        authenticateNativeIosBiometric({
+          reason: options?.reason || "افتح SmartSpend بالبصمة أو الوجه",
+          fallbackTitle: "ادخل برمز PIN",
+          allowDevicePasscode: false,
+        }),
+        new Promise<null>((resolve) => {
+          timer = setTimeout(() => {
+            timedOut = true;
+            resolve(null);
+          }, timeoutMs);
+        }),
+      ]);
+      if (timer) clearTimeout(timer);
+
+      if (timedOut) {
+        return {
+          success: false,
+          reason: "timeout",
+          message:
+            "التحقق بالبصمة أخد وقت طويل. جرّب تاني أو ادخل برمز PIN.",
+        };
+      }
+
+      if (nativeResult?.success) {
+        return {
+          success: true,
+          message: "تم التحقق بنجاح",
+        };
+      }
+
+      switch (nativeResult?.errorCode) {
+        case "cancelled":
+        case "user_fallback":
+        case "system_cancel":
+          return {
+            success: false,
+            reason: "cancelled",
+            message: "تم إلغاء التحقق بالبصمة",
+          };
+        case "biometry_not_available":
+        case "biometry_not_enrolled":
+        case "passcode_not_set":
+          return {
+            success: false,
+            reason: "not_supported",
+            message: "البصمة أو الوجه مش مفعّلين على الجهاز ده",
+          };
+        case "biometry_lockout":
+          return {
+            success: false,
+            reason: "not_allowed",
+            message: "البصمة مقفولة مؤقتاً. ادخل برمز PIN.",
+          };
+        case "failed":
+          return {
+            success: false,
+            reason: "not_allowed",
+            message: "ماتعرّفناش على البصمة. جرّب تاني أو ادخل برمز PIN.",
+          };
+        default:
+          return {
+            success: false,
+            reason: "error",
+            message: "ماقدرناش نكمّل التحقق بالبصمة. جرّب تاني أو ادخل برمز PIN.",
+          };
+      }
+    } catch (err) {
+      if (timer) clearTimeout(timer);
+      return {
+        success: false,
+        reason: "error",
+        message: "ماقدرناش نكمّل التحقق بالبصمة. جرّب تاني أو ادخل برمز PIN.",
+        error: err,
+      };
+    }
+  }
 
   if (typeof window === "undefined" || !navigator.credentials) {
     return {

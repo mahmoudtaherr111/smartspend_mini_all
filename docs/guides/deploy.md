@@ -22,8 +22,8 @@ starts `dist/boot.js` and `dist/server/server.js` and asks each for /health.
 
 ## Docker
 The image starts from node:22-alpine, matching CI's Node 22 line, runs `npm run build`, and starts `node dist/boot.js`
-on port 3000 with `NODE_ENV=production` (not `npm start`, which goes through the development tool `cross-env`). Node 20
-has reached end of life ([Node.js release schedule](https://nodejs.org/en/about/previous-releases)). It contains `dist`,
+on port 3000 with `NODE_ENV=production`; a host that runs `npm start` instead works too (`cross-env` is a runtime
+dependency). Node 20 has reached end of life ([Node.js release schedule](https://nodejs.org/en/about/previous-releases)). It contains `dist`,
 `package.json` and a `node_modules` installed with `npm ci --omit=dev` — the bundle reads only Sentry, node-cron and
 native binaries from it — so it cannot run migrations (see Database) and no development package reaches it.
 The build context excludes environment files, `.agents`, Playwright reports and test results, nested `node_modules`,
@@ -82,7 +82,7 @@ template. Decide these explicitly in production:
 | `BILLING_SIMULATE` | Accepts demo transaction ids in upgrades. Never true in production. |
 | `ENABLE_WHATSAPP` | Connects the WhatsApp client for OTP login. Its session lives in the whatsapp_auth_info folder under the working directory: give that folder a volume and run the client in one instance only. |
 | `TURNSTILE_SECRET_KEY`, `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile in front of the WhatsApp verification code. In production the code request is refused without the secret, and Cloudflare's test values are not accepted; the site key is built into the web app and shows the widget on the sign-up form. |
-| `JWT_SECRET` | Signs sessions. While `AI_GATEWAY_SECRET` is unset it also seals the provider keys saved in the admin console, and rotating it then loses them. Any non-empty value passes validation, so generate a long random one. |
+| `JWT_SECRET` | Signs sessions. While `AI_GATEWAY_SECRET` is unset it also seals the provider keys saved in the admin console, and rotating it then loses them. In production the server refuses to start when it is under 32 characters (and so for `AI_GATEWAY_SECRET` and `RATE_LIMIT_KEY_SECRET` when set): check the value before deploying a version that has this rule. |
 | `AI_GATEWAY_SECRET`, `AI_GATEWAY_SECRET_PREVIOUS` | Seal the provider keys saved in the admin console. Set `AI_GATEWAY_SECRET` before rotating `JWT_SECRET`: at the next boot every stored key moves to it, and the providers tab shows which secret each key is on. To rotate it, put the old value in `AI_GATEWAY_SECRET_PREVIOUS` and the new one in `AI_GATEWAY_SECRET`, deploy, and remove the old value once no key shows it. |
 | `SENTRY_DSN` | Optional error reporting. |
 

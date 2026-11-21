@@ -13,14 +13,14 @@ public pages (landing, privacy, terms and the not-found page).
 | --- | --- | --- |
 | Entry | `src/main.tsx` | Mounts React, registers the service worker, consumes a launch event before the first render, and marks a standalone PWA |
 | Shell | `src/App.tsx` | The providers, the route table and its guards, the layout, the error boundary, the per-account query cache, and, for signed-in users, the host of the live [voice call](voice-calls.md) (`src/components/voice/VoiceCallHost.tsx`), so a call keeps going, shrunk to a bar, on every page |
-| API client | `src/providers/trpc.ts` | The typed tRPC client, the Bearer header, cookies, form-draft preservation and what happens on a 401 |
+| API client | `src/providers/trpc.ts`, `src/lib/api-url.ts` | The typed tRPC client, central API and WebSocket URL resolution (`VITE_API_URL` for Capacitor / split deploys, relative paths on same-origin web), the Bearer header, cookies, form-draft preservation and what happens on a 401 |
 | Identity | `src/hooks/useAuth.ts` | The device's identity snapshot, the verified session, the role and plan helpers, and logout |
 | Offline cache | `src/lib/queryPersister.ts` | The answers kept in IndexedDB per account, and the identity snapshot |
-| Navigation | `src/components/Sidebar.tsx`, `src/components/layout/MobileBottomNav.tsx`, `src/components/layout/PageTransition.tsx` | The desktop sidebar, the phone tab bar (it carries a month only when the user picked one) and the transition between screens |
+| Navigation | `src/components/Sidebar.tsx`, `src/components/layout/MobileBottomNav.tsx`, `src/components/layout/PageTransition.tsx` | The desktop sidebar, the phone tab bar (it carries a month only when the user picked one; on Capacitor iOS it drives the native `LiquidGlassTabBar` instead of rendering a second DOM bar) and the transition between screens |
 | Shell widgets | `src/components/NotificationBell.tsx`, `src/components/ads/AdBanner.tsx`, `src/components/OnboardingCard.tsx` | The bell and its notification center ([notifications](notifications.md)), the ad banner and the inline profile questions on Home ([insights](insights.md)) |
-| PWA | `src/pwa/`, `src/components/pwa/` | Service worker updates, install prompts, the launch handler, Firebase messaging, the offline queue dialog and the network toast |
-| Native | `src/hooks/useNativeThemeSync.ts`, `src/hooks/useHaptics.ts`, `src/lib/back-button-manager.ts`, `src/components/layout/mobile-nav-platform.ts` | The Capacitor side: splash screen, theme, haptics, the Android back button and platform-specific navigation |
-| Lock | `src/providers/BiometricLockProvider.tsx`, `src/lib/biometricAuth.ts`, `src/hooks/useBiometricOnboarding.ts`, `src/hooks/usePasskeyEnrolment.ts` | The app lock, and the fingerprint / Face ID sign-in suggestion with its rules ([accounts](accounts.md)) |
+| PWA | `src/pwa/`, `src/components/pwa/` | Service worker updates, install prompts (skipped inside native Capacitor shells), the launch handler, Firebase messaging, the offline queue dialog and the network toast |
+| Native | `src/lib/native-ios-bridge.ts`, `src/hooks/useNativeThemeSync.ts`, `src/hooks/useHaptics.ts`, `src/lib/back-button-manager.ts`, `src/components/layout/mobile-nav-platform.ts`, `ios/App/App/MainViewController.swift`, `ios/App/App/Plugins/LiquidGlassTabBarPlugin.swift`, `ios/App/App/Plugins/LiquidGlassTabBarView.swift`, `ios/App/App/Plugins/SmartSpendNativePlugin.swift` | The Capacitor side: splash screen, theme, native iOS Liquid Glass tab bar + quick-record action, native iOS `LAContext` biometrics and haptics, the Android back button and platform-specific navigation |
+| Lock | `src/providers/BiometricLockProvider.tsx`, `src/lib/biometricAuth.ts`, `src/hooks/useBiometricOnboarding.ts`, `src/hooks/usePasskeyEnrolment.ts` | The app lock (using native `LAContext` Face ID / Touch ID on Capacitor iOS, and WebAuthn elsewhere), and the fingerprint / Face ID sign-in suggestion with its rules ([accounts](accounts.md)) |
 | Robot check | `src/lib/turnstile-config.ts`, `src/components/auth/TurnstileWidget.tsx` | The Cloudflare Turnstile widget on the sign-up form, built in only when `VITE_TURNSTILE_SITE_KEY` is set ([accounts](accounts.md)) |
 | Behaviour hooks | `src/hooks/useAppResume.ts`, `src/hooks/useScrollRestoration.ts`, `src/hooks/useVirtualKeyboard.ts`, `src/hooks/useSwipeNavigation.ts` | Returning to the app, scroll position, the on-screen keyboard and swipe gestures |
 | Utilities | `src/lib/transactionDisplay.ts`, `src/lib/financial-taxonomy.ts`, `src/lib/utils.ts` | How a transaction is presented; the category pickers, icons and colours, read from the server's taxonomy in `contracts/categories.ts` rather than a copy; the class-name helper |
@@ -59,8 +59,11 @@ away: the identity snapshot replayed from the device carries a name, avatar and 
 - The service worker takes over on update and then reloads, so the user does not stay on the old shell.
 
 ## Talking to the API
-- One `httpBatchLink` to `/api/trpc`, or to `VITE_API_URL` when the API is deployed separately, always with
-  cookies. A token in `localStorage` is also sent as a Bearer header.
+- One `httpBatchLink` via `getApiUrl("/api/trpc")` (`src/lib/api-url.ts`): relative `/api/trpc` on same-origin web,
+  or `VITE_API_URL` when the API is deployed separately or wrapped in Capacitor (`capacitor://localhost`), always with
+  cookies. `getAbsoluteApiUrl` and `getPublicOrigin` ensure external webhook URLs use `VITE_API_URL` so
+  `capacitor://localhost` never leaks out, and `getWsUrl` resolves `/api/voice/v2` to `wss:` / `ws:`. A token in
+  `localStorage` is also sent as a Bearer header.
 - A 401 — as a status or inside a batched answer — on a device that was signed in (`deviceHadSession`: a phone token or
   the offline identity in `localStorage`) preserves every registered form draft in `sessionStorage`, tells the other
   tabs through a `BroadcastChannel`, and shows one Arabic message instead of dropping the user's typing. Without a
@@ -70,20 +73,38 @@ away: the identity snapshot replayed from the device carries a name, avatar and 
   previous user.
 
 ## Phone and PWA
-- The viewport (`index.html`) fills the screen edge to edge and lets the keyboard resize only the visual viewport, and
-  never locks zoom: people can pinch to enlarge text. Fields are 16px on phones (`src/index.css`), so iOS and Android do
-  not zoom into a focused field.
-- Installed as a PWA or wrapped by Capacitor, the same build gets: a splash screen dismissed when React
-  mounts, theme colour and status bar synced to the theme, the Android back button routed through one manager,
+- The app must feel exactly like a native one ([decision 0021](../decisions/0021-native-viewport-no-zoom.md)): the
+  viewport (`index.html`) fills the screen edge to edge, locks zoom (`maximum-scale=1.0, user-scalable=no`) and lets the
+  keyboard resize the content; fields are 16px on phones (`src/index.css`), so the browser never zooms into a focused one.
+- Installed as a PWA or wrapped by Capacitor (`capacitor.config.ts`), the same build gets: a splash screen dismissed when
+  React mounts, theme colour and status bar synced to the theme, the Android back button routed through one manager,
   haptics, a tab bar that respects the safe area and the on-screen keyboard, pull to refresh outside the chat,
   and scroll positions restored per screen.
+- Inside the Capacitor iOS shell (`isNativeIosCapacitor` in `src/lib/native-ios-bridge.ts`):
+  - `MobileBottomNav` (`src/components/layout/MobileBottomNav.tsx`) hides the DOM tab bar and drives the native UIKit
+    `LiquidGlassTabBar` (`ios/App/App/Plugins/LiquidGlassTabBarPlugin.swift`, `ios/App/App/Plugins/LiquidGlassTabBarView.swift`): a floating
+    capsule bar paired with a detached quick-record button (`nav.quickRecord`), using iOS 26 `UIGlassEffect` when built
+    with Swift 6.2+ on iOS 26+ and falling back to `UIBlurEffect` glass on iOS 15–18. Touches outside the capsule and
+    button pass straight through to the `WKWebView`. The bar hides automatically on non-tab routes (`/settings/*`),
+    desktop viewports (`min-width: 1024px`), an open virtual keyboard, the app-lock or privacy mask overlay
+    (`useBiometricLock({ optional: true })`), or a fullscreen voice call, and sets `--native-tabbar-height` (`src/index.css`)
+    so `.pb-nav-safe` clears it. Tapping the quick-record button switches to `/dashboard?tab=record`, emits
+    `smartspend:quick-action`, and focuses `#expense-input`.
+  - `SmartSpendNative` (`ios/App/App/Plugins/SmartSpendNativePlugin.swift`) exposes device capabilities, native
+    `LAContext` Face ID / Touch ID (used by `src/lib/biometricAuth.ts` instead of WebAuthn on Capacitor iOS), and
+    native UIKit haptics (preferred by `src/hooks/useHaptics.ts` on iOS).
+  - Service worker registration (`src/pwa/register-sw.ts`) and the PWA install prompt (`src/components/pwa/PwaInstallPrompt.tsx`)
+    are skipped inside any native Capacitor shell (`Capacitor.isNativePlatform()`).
+  - `scripts/sync-capacitor-assets.ts` syncs the built web bundle into the Android and iOS Capacitor shells and
+    normalizes Windows backslash paths in `ios/App/CapApp-SPM/Package.swift` for macOS Swift Package Manager builds
+    (`.github/workflows/build-ios-ipa.yml`, `docs/guides/ios-build-and-install.md`).
 - Items recorded while offline wait in `localStorage` and a dialog offers to send them when the connection
   returns ([recording spending](expense-capture.md)). Signing out deletes them, since they belong to the account, so every
   way out — More and the profile (`SignOutDialog`), the sidebar, and the app lock, which asks inline — first says how
   many are unsent (`countUnsentOffline` in `src/lib/offline-queue-count.ts`).
 - Push permission and Firebase messaging are set up here and used by [notifications](notifications.md). Without
   Firebase's web configuration the app uses Web Push only with `VITE_VAPID_PUBLIC_KEY`; with neither it does not offer
-  push.
+  push: Settings shows it as unavailable and the permission prompt never appears.
 - The install card (`src/components/pwa/PwaInstallPrompt.tsx`) floats above the tab bar on `/dashboard` and `/more`
   for a browser that has not installed the app. While it shows it sets `--install-card-space` on the root element and
   `.pb-nav-safe` (`src/index.css`) adds that height to the bottom padding of `<main>`, so the last controls of a page
@@ -99,8 +120,9 @@ away: the identity snapshot replayed from the device carries a name, avatar and 
 ## Where to change what
 | To change | Edit | Check with |
 | --- | --- | --- |
-| A route or its guard | `src/App.tsx` (and `BOTTOM_NAV_ROUTES` when it should show the tab bar) | `tests/e2e/`, `tests/knowledge/architecture.test.ts` |
-| The tab bar or the sidebar | `src/components/layout/MobileBottomNav.tsx`, `src/components/Sidebar.tsx` | `src/components/layout/MobileBottomNav.test.ts` |
+| A route or its guard | `src/App.tsx` (and `BOTTOM_NAV_ROUTES` plus `VISIBLE_ROUTES` in `src/components/layout/MobileBottomNav.tsx` when it should show the tab bar) | `tests/e2e/`, `tests/knowledge/architecture.test.ts` |
+| The tab bar or the sidebar | `src/components/layout/MobileBottomNav.tsx`, `src/lib/native-ios-bridge.ts`, `ios/App/App/Plugins/LiquidGlassTabBarPlugin.swift`, `ios/App/App/Plugins/LiquidGlassTabBarView.swift`, `src/components/Sidebar.tsx` | `src/components/layout/MobileBottomNav.test.ts`, `src/components/layout/MobileBottomNav.native.test.tsx`, `src/lib/native-ios-bridge.test.ts` |
+| API & WebSocket URL resolution | `src/lib/api-url.ts` | `src/lib/api-url.test.ts` |
 | What happens on a 401 | `src/providers/trpc.ts` | |
 | What is cached offline | `src/lib/queryPersister.ts` | `tests/query-persister.test.ts` |
 | Service worker and install | `src/pwa/register-sw.ts`, `src/components/pwa/PwaInstallPrompt.tsx` | `tests/pwa-instant-resume.test.ts` |
@@ -118,12 +140,13 @@ away: the identity snapshot replayed from the device carries a name, avatar and 
 5. Text users read follows `docs/guides/writing-app-messages.md` (polite Egyptian Arabic, no blame, no English
    jargon); `tests/knowledge/user-copy.test.ts` rejects يرجى، تعذر، لقد، لديك، عفواً outside the admin console and in
    the server's error messages.
-5. Limits and plan features shown to users come from `contracts/constants.ts` and `contracts/plans.ts`.
+6. Limits and plan features shown to users come from `contracts/constants.ts` and `contracts/plans.ts`.
 
 ## Tests
 `tests/e2e/` (Playwright), `tests/query-persister.test.ts`, `tests/pwa-instant-resume.test.ts`,
 `tests/back-button-manager-adversarial.test.ts`, `tests/native-mobile-ux-adversarial.test.ts`,
-`tests/capacitor-manifest-sync.test.ts`, `tests/static-compression.test.ts`, `tests/fonts-self-hosted.test.ts`
+`tests/capacitor-manifest-sync.test.ts`, `tests/static-compression.test.ts`, `tests/fonts-self-hosted.test.ts`,
+`src/components/layout/MobileBottomNav.native.test.tsx`, `src/lib/native-ios-bridge.test.ts`, `src/lib/api-url.test.ts`
 and the component tests beside their files.
 
 ## Known issues

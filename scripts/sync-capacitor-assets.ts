@@ -25,6 +25,39 @@ const DESTINATIONS = [
   path.join(ROOT_DIR, "android", "app", "src", "main", "assets", "public"),
 ];
 
+const IOS_SPM_PACKAGE_SWIFT = path.join(
+  ROOT_DIR,
+  "ios",
+  "App",
+  "CapApp-SPM",
+  "Package.swift",
+);
+
+/**
+ * Capacitor CLI on Windows emits backslash relative paths in CapApp-SPM/Package.swift
+ * (e.g. `..\..\..\node_modules\@capacitor\app`), which break Swift string parsing on macOS.
+ * Normalize all `.package(..., path: "...")` entries to POSIX forward slashes.
+ */
+function normalizeIosSpmPackageSwift() {
+  if (!fs.existsSync(IOS_SPM_PACKAGE_SWIFT)) {
+    return;
+  }
+
+  const original = fs.readFileSync(IOS_SPM_PACKAGE_SWIFT, "utf-8");
+  const normalized = original.replace(
+    /(\.package\([^)]*path:\s*")([^"]+)(")/g,
+    (_match, prefix: string, rawPath: string, suffix: string) =>
+      `${prefix}${rawPath.replace(/\\/g, "/")}${suffix}`,
+  );
+
+  if (normalized !== original) {
+    fs.writeFileSync(IOS_SPM_PACKAGE_SWIFT, normalized, "utf-8");
+    console.log(
+      `[CapSync] Normalized POSIX paths in ${IOS_SPM_PACKAGE_SWIFT}`,
+    );
+  }
+}
+
 function copyDirRecursive(src: string, dest: string) {
   if (!fs.existsSync(dest)) {
     fs.mkdirSync(dest, { recursive: true });
@@ -87,6 +120,8 @@ export function syncCapacitorAssets() {
   for (const dest of DESTINATIONS) {
     cleanAndSyncDestination(dest);
   }
+
+  normalizeIosSpmPackageSwift();
 
   console.log(`[CapSync] Capacitor assets & manifest are now 100% in sync with web!`);
 }

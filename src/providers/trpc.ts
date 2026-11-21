@@ -1,6 +1,7 @@
 import { createTRPCReact } from "@trpc/react-query";
 import { httpBatchLink } from "@trpc/client";
 import type { AppRouter } from "../../api/router";
+import { getApiUrl } from "@/lib/api-url";
 
 export const trpc = createTRPCReact<AppRouter>();
 
@@ -266,12 +267,7 @@ export function handleUnauthenticatedSession(
 
 // VITE_API_URL → backend deployed separately (e.g. https://api.smartspend.app)
 // Falls back to relative /api/trpc for monorepo dev mode (Vite dev server proxies to Hono)
-// Using `as any` cast to stay compatible with both tsconfig.app (vite/client) and tsconfig.server (node)
-const _viteMeta = (import.meta as any)?.env as
-  | Record<string, string>
-  | undefined;
-const _viteApiUrl = _viteMeta?.["VITE_API_URL"];
-const API_BASE_URL = _viteApiUrl ? `${_viteApiUrl}/api/trpc` : "/api/trpc";
+const API_BASE_URL = getApiUrl("/api/trpc");
 
 export function getTrpcHeaders(): Record<string, string> {
   const token =

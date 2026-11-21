@@ -27,6 +27,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { trpc } from "@/providers/trpc";
+import { getAbsoluteApiUrl } from "@/lib/api-url";
 import { format } from "date-fns";
 import { arEG } from "date-fns/locale";
 
@@ -104,7 +105,7 @@ export function SmsWebhookSettings() {
 
       // 2. Prepare the config string: just the full URL!
       // This solves both the token problem AND the dynamic Cloudflare URL problem!
-      const configString = `${window.location.origin}/api/sms/ingest?token=${currentToken}`;
+      const configString = getAbsoluteApiUrl(`/api/sms/ingest?token=${currentToken}`);
 
       // 3. Copy to clipboard
       await navigator.clipboard.writeText(configString);

@@ -14,6 +14,7 @@ import {
   Share2,
 } from "lucide-react";
 import { useHaptics } from "@/hooks/useHaptics";
+import { getPublicOrigin } from "@/lib/api-url";
 
 interface AIInsightsProps {
   month: string;
@@ -99,11 +100,12 @@ export function AIInsights({ month }: AIInsightsProps) {
       }
       text += "\n\nتتبع مصاريفك بالذكاء الاصطناعي مع SmartSpend AI!";
 
+      const publicOrigin = getPublicOrigin();
       navigator
         .share({
           title: "تحليل المصاريف الذكي",
           text: text,
-          url: window.location.origin,
+          ...(publicOrigin.startsWith("http") ? { url: publicOrigin } : {}),
         })
         .catch(() => {});
     } catch (err) {

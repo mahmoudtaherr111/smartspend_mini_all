@@ -1,4 +1,5 @@
 import { db } from "../queries/connection";
+import { previousBusinessMonth } from "../lib/app-time";
 import { sql } from "drizzle-orm";
 import { refreshMonthlyInferences } from "../profile-router";
 
@@ -21,11 +22,9 @@ export async function runMonthlyBehaviorJob(options: {
 
   let targetMonth = options.month;
   if (!targetMonth) {
-    const now = new Date();
-    const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const y = prevDate.getFullYear();
-    const m = String(prevDate.getMonth() + 1).padStart(2, "0");
-    targetMonth = `${y}-${m}`;
+    // The Cairo month that ended: the job runs at 01:00 Cairo on the 1st, which on a UTC server is still the last day
+    // of that month, so the server's own month would point one month too far back.
+    targetMonth = previousBusinessMonth();
   }
 
   console.log(

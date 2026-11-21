@@ -1196,6 +1196,7 @@ model {
   smartspend.web.modules.web-hooks -[uses]-> capacitor
   smartspend.web.modules.web-hooks -[uses]-> firebase
   smartspend.web.modules.web-insights -[imports]-> smartspend.web.modules.web-hooks
+  smartspend.web.modules.web-insights -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-insights -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-insights -[imports]-> smartspend.web.modules.web-ui-kit
   smartspend.web.modules.web-lib -[imports]-> smartspend.shared.contracts

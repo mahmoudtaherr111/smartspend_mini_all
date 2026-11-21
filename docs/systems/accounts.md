@@ -16,7 +16,7 @@ account of the same person.
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Login screen | `src/pages/Login.tsx#Login` | Phone login, phone sign-up with optional WhatsApp verification, Google and passkey sign-in |
+| Login screen | `src/pages/Login.tsx#Login`, `src/lib/api-url.ts` | Phone login, phone sign-up with optional WhatsApp verification, Google and passkey sign-in (resolving OAuth and OTP SSE URLs against `VITE_API_URL` for Capacitor shells and split deploys) |
 | Settings | `src/pages/Settings.tsx#Settings`, `src/components/auth/PasskeySettings.tsx#PasskeySettings`, `src/components/settings/LanguageSettings.tsx` | Passkeys, app lock PIN, appearance and interface language |
 | Profile | `src/components/profile/ProfileScreen.tsx#ProfileScreen`, `src/components/profile/UserAvatar.tsx`, `src/components/auth/SignOutDialog.tsx` | Photo or initials, name (editable), phone or email and plan; the onboarding answers (`contracts/profile-fields.ts`) with the same control as the Home card; call minutes left; sign out and account deletion (`profile.deleteMyAccount`) |
 | Sign-in suggestion | `src/hooks/useBiometricOnboarding.ts`, `src/components/auth/BiometricOnboardingModal.tsx`, `src/hooks/usePasskeyEnrolment.ts` | The sheet that offers fingerprint / Face ID sign-in and registers the passkey in place |
@@ -34,7 +34,8 @@ account of the same person.
 ## Signing in
 
 ### Google
-1. The Login screen asks `auth.googleUrl`, which points at `/api/auth/google/start` when Google is configured.
+1. The Login screen asks `auth.googleUrl`, which points at `/api/auth/google/start` when Google is configured, and
+   navigates to `getApiUrl(googleUrl)` (`src/lib/api-url.ts`) so Capacitor shells also reach the API host.
 2. The start route builds the redirect address from the request's origin, which must be an allowed web origin, sets a
    random `oauth_state` cookie and the redirect address for ten minutes, and redirects to Google
    (`api/auth-router.ts#buildGoogleAuthorizationUrl`).
@@ -64,7 +65,10 @@ and the code only a label (`api/services/phone-challenge.ts`).
    `whatsapp_otp_codes`, valid for ten minutes, and returns its code (`SS-` and six digits), a `ticket` and a `watch`
    token, both HMACs of the row under a key derived from `JWT_SECRET`.
 2. The Login screen shows the code with a WhatsApp link that sends it to the bot, and follows the challenge on
-   `/api/sse/otp?challenge=<watch>`. The form shows the Turnstile widget when the build has `VITE_TURNSTILE_SITE_KEY`.
+   `getApiUrl("/api/sse/otp?challenge=...")` (`/api/sse/otp?challenge=<watch>`). The form shows the Turnstile widget
+   when the build has `VITE_TURNSTILE_SITE_KEY`. Note that `src/components/notifications/PushNotificationPrompt.tsx`
+   only appears once push support (`isSupported`, i.e. Firebase or `VITE_VAPID_PUBLIC_KEY`) is present, so a build
+   without push keys never offers an unusable permission prompt after sign-in.
 3. The bot (`receiveVerificationCode` in `api/services/whatsapp-service.ts`) finds the open challenge with that code
    and marks it verified only when the sender is the challenge's own number or its WhatsApp LID. A code from any
    other number is refused and counted, and three block the sender for 15 minutes. The page hears `verified`,
@@ -109,7 +113,9 @@ and the code only a label (`api/services/phone-challenge.ts`).
   keeps the name and plan visible without a network; logins and logouts are shared between tabs; logout clears the
   token, the offline queues and both server sessions.
 - **App lock.** Settings can turn on a lock screen for this device (`src/providers/BiometricLockProvider.tsx`,
-  `src/lib/biometricAuth.ts`): biometrics, or a four-digit PIN whose hash is kept in `localStorage`, with a short
+  `src/lib/biometricAuth.ts`): biometrics (using native `LAContext` Face ID / Touch ID via
+  `src/lib/native-ios-bridge.ts` and `ios/App/App/Plugins/SmartSpendNativePlugin.swift` on Capacitor iOS, and WebAuthn
+  on Web / PWA / Android), or a four-digit PIN whose hash is kept in `localStorage`, with a short
   lockout after repeated wrong PINs. It hides the app on the device; the server session stays valid. Only the user
   turns it on: a passkey on the device no longer does (it used to, with no PIN to fall back on).
 

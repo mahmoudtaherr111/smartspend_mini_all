@@ -58,7 +58,8 @@ spending, and the people they deal with. Classification prompts read the same pr
    `ai_summaries`.
 
 The screen shows the text, alerts, the personalised cards and the personality (the technical trace — route, tools,
-tokens, model — only in a development build), with a share button and, for Pro,
+tokens, model — only in a development build), with a share button (sharing the text and, when `getPublicOrigin()` in
+`src/lib/api-url.ts` is an HTTP(S) origin, the app URL so Capacitor shells never share `capacitor://localhost`) and, for Pro,
 Ultra and admins, "export Pro report": `export.monthlyReportHtml` wraps the report the screen holds in an escaped,
 printable HTML file that the browser downloads.
 
@@ -111,8 +112,8 @@ printable HTML file that the browser downloads.
   none yet). The work question offers its quick answers in both forms (مهندس / مهندسة …), since the form is how the call
   knows how to address the user. The profile screen
   (`src/components/profile/ProfileScreen.tsx`) shows and edits the same fields with the same control.
-- **Inferences.** On the 1st at 01:00, `monthly-behavior-snapshots` runs `refreshMonthlyInferences` for the previous
-  month for every user with spending that month or a profile: it builds the behaviour snapshot, saves the inferred
+- **Inferences.** On the 1st at 01:00 Cairo time, `monthly-behavior-snapshots` runs `refreshMonthlyInferences` for the
+  Cairo month that ended (`previousBusinessMonth` in `api/lib/app-time.ts`, also behind `reportMonthFor`) for every user with spending that month or a profile: it builds the behaviour snapshot, saves the inferred
   attributes (stability, spending behaviour, top categories and days, spikes, change, income ratio) into the profile,
   upserts `monthly_behavior_snapshots` and records a learning event.
 - **Contacts.** `addDynamicContact` cleans a name and relationship taken from a message and adds or updates the
@@ -149,7 +150,7 @@ printable HTML file that the browser downloads.
    to the contact, never its name.
 
 ## Tests
-`api/ai-router.monthly-report-guard.test.ts`, `api/jobs/monthly-report-job.test.ts`,
+`api/ai-router.monthly-report-guard.test.ts`, `api/jobs/monthly-report-job.test.ts`, `api/jobs/report-month.test.ts`,
 `api/services/adaptive-question-engine.test.ts`, `api/services/lifestyle-inference-engine.test.ts`,
 `api/services/user-profile-service.test.ts`, `api/lib/report-wait.test.ts` and `api/profile-router.schema.test.ts`.
 

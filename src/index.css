@@ -121,16 +121,7 @@
     -webkit-touch-callout: default;
   }
 
-  /* iOS WebKit and Android Chrome zoom into a focused field whose text is under 16px. This keeps them from it
-     without locking zoom in the viewport, so people who need larger text can still pinch. */
-  input,
-  textarea,
-  select {
-    font-size: 16px;
-    touch-action: manipulation;
-  }
-
-  /* Tailwind's text-sm and text-xs utilities come later and would shrink fields again on phones. */
+  /* Mobile input zoom prevention: iOS WebKit and Android Chrome auto-zoom if input font-size < 16px */
   @media (max-width: 1024px), (pointer: coarse) {
     input,
     textarea,
@@ -145,6 +136,11 @@
     }
   }
 
+  input,
+  textarea,
+  select {
+    touch-action: manipulation;
+  }
   img {
     -webkit-user-drag: none;
     user-drag: none;
@@ -176,7 +172,11 @@
   }
   .pb-nav-safe {
     /* --install-card-space: set by PwaInstallPrompt while its card floats above the nav. */
-    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom) + var(--install-card-space, 0px));
+    /* --native-tabbar-height: set on Capacitor iOS from LiquidGlassTabBar metrics. */
+    padding-bottom: calc(
+      var(--native-tabbar-height, calc(5.5rem + env(safe-area-inset-bottom))) +
+        var(--install-card-space, 0px)
+    );
   }
   .top-safe {
     top: env(safe-area-inset-top);

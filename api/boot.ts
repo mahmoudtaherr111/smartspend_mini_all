@@ -236,7 +236,15 @@ app.use("*", logger());
 app.use("*", compress());
 
 // The built page's inline scripts are allowed by hash, read once: a deploy starts a new process.
-app.use("*", securityHeaders(isProduction, isProduction ? builtIndexScriptHashes() : []));
+const indexScriptHashes = isProduction ? builtIndexScriptHashes() : [];
+if (isProduction && indexScriptHashes.length === 0) {
+  // Right for the API deployed alone; for the full app it means the theme script before first paint is blocked.
+  createLogger("boot").warn(
+    { event: "csp.no_inline_scripts" },
+    "No inline scripts found in dist/public/index.html: the content security policy allows none. Expected only when the web app is hosted elsewhere.",
+  );
+}
+app.use("*", securityHeaders(isProduction, indexScriptHashes));
 
 let warnedAboutUntrustedProxy = false;
 if (env.NODE_ENV === "production" && env.TRUST_PROXY !== "true") {

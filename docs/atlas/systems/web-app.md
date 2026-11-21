@@ -87,7 +87,7 @@ flowchart LR
 | --- | --- | --- |
 | `web-growth` — Ads and SEO UI | The ad banner and SEO meta tags. | 2 |
 | `web-hooks` — Web hooks | React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics. | 21 |
-| `web-lib` — Web utilities | Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/. | 11 |
+| `web-lib` — Web utilities | Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/. | 13 |
 | `web-pages` — Web pages | Route-level page components lazy-loaded by src/App.tsx. | 17 |
 | `web-shared` — Shared web components | Shell components at the root of src/components: sidebar, notification bell, onboarding card, product tour and loading skeleton. | 5 |
 | `web-shell` — Web app shell | Entry point, providers, layout, route guards and PWA or native integration. | 24 |
@@ -126,7 +126,6 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | --- | --- | --- |
 | `DEV` | frontend | `src/main.tsx` |
 | `PROD` | frontend | `src/pwa/register-sw.ts` |
-| `VITE_API_URL` | frontend | `src/providers/trpc.ts` |
 | `VITE_FIREBASE_API_KEY` | frontend | `src/pwa/firebase.ts` |
 | `VITE_FIREBASE_APP_ID` | frontend | `src/pwa/firebase.ts` |
 | `VITE_FIREBASE_AUTH_DOMAIN` | frontend | `src/pwa/firebase.ts` |
@@ -141,7 +140,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/web-app.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>123 files and declarations</summary>
+<details><summary>125 files and declarations</summary>
 
 - `src/App.tsx`
 - `src/components/NotificationBell.tsx`
@@ -243,11 +242,13 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/i18n/en.ts`
 - `src/i18n/format.ts`
 - `src/i18n/language.ts`
+- `src/lib/api-url.ts`
 - `src/lib/back-button-manager.ts`
 - `src/lib/backButtonManager.ts`
 - `src/lib/biometricAuth.ts`
 - `src/lib/financial-taxonomy.ts`
 - `src/lib/ledger-refresh.ts`
+- `src/lib/native-ios-bridge.ts`
 - `src/lib/offline-queue-count.ts`
 - `src/lib/queryPersister.ts`
 - `src/lib/saved-toast.ts`

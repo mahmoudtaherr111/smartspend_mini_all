@@ -33,7 +33,9 @@ the rule parser and the model that read them, and the setup screens.
   `Authorization: Bearer <token>` to the stored ingest address. A send that fails is queued in the app's preferences
   and retried after the next successful send; a retry the server rejects is dropped.
 - **iPhone**: the user builds a Shortcuts automation on messages that contain a keyword, running a SmartSpend
-  Shortcut that posts the message to the address the setup screen copied, `<origin>/api/sms/ingest?token=<token>`.
+  Shortcut that posts the message to the address the setup screen copied (via `src/lib/api-url.ts#getAbsoluteApiUrl`),
+  `<origin>/api/sms/ingest?token=<token>` — using `VITE_API_URL` when configured so a Capacitor shell never copies
+  `capacitor://localhost`.
 
 ### 2. The ingest route accepts or refuses
 `POST /api/sms/ingest`:
@@ -101,8 +103,9 @@ A message past the plan's limit is not lost (docs/decisions/0009-bank-messages-o
 
 ## Setting up a phone
 **Android**
-1. `AndroidSetupFlow` downloads `/downloads/smartspend-sync.apk`.
-2. "Connect" calls `GET /api/sms/android-connect` with the browser's cookies, authenticated by the `google_session`
+1. `AndroidSetupFlow` downloads `/downloads/smartspend-sync.apk` (resolved via `src/lib/api-url.ts#getApiUrl`).
+2. "Connect" calls `GET /api/sms/android-connect` (via `getApiUrl`) with the browser's cookies and
+   `src/providers/trpc.ts#getTrpcHeaders` (`Authorization: Bearer` when present), authenticated by the `google_session`
    cookie, a Bearer header, or the HttpOnly `smartspend_token` cookie of a phone and password account
    (`api/sms-router.ts#getUserFromSession`). It creates a token when the user has none and returns
    `smartspend://connect?token=…&url=…`, which the page opens.
@@ -112,7 +115,9 @@ A message past the plan's limit is not lost (docs/decisions/0009-bank-messages-o
 **iPhone**
 1. `IosSetupFlow` shows the token. Creating a new one (`profile.generateWebhookToken`) deletes the old one, so a
    phone set up with the old token stops working.
-2. "Connect iPhone" copies the ingest address with the token and opens a public iCloud Shortcut.
+2. "Connect iPhone" copies the ingest address with the token (via `src/lib/api-url.ts#getAbsoluteApiUrl`, preferring
+   `VITE_API_URL` so Capacitor's `capacitor://localhost` origin never leaks into the Shortcut) and opens a public
+   iCloud Shortcut.
 3. The keyword for the automation is saved in the smart profile as `preferences.smsTriggerKeyword`; only the
    instructions on the screen use it.
 4. Recent messages come from `profile.getSmsLogs`, refreshed every ten seconds.

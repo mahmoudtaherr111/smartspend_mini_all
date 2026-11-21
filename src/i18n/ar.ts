@@ -17,6 +17,8 @@ export const ar = {
   "nav.more": "المزيد",
   "nav.home": "الرئيسية",
   "nav.support": "الدعم",
+  "nav.quickRecord": "سجّل",
+  "nav.quickRecordAria": "سجّل مصروف سريع",
 
   // Settings
   "settings.appearance.title": "مظهر التطبيق",

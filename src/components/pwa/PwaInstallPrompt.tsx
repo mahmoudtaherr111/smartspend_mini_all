@@ -17,6 +17,7 @@ import {
   AdaptiveDialogHeader,
   AdaptiveDialogTitle,
 } from "@/components/ui/adaptive-dialog";
+import { Capacitor } from "@capacitor/core";
 import {
   getDeferredInstallPrompt,
   isStandalonePwa,
@@ -108,7 +109,7 @@ export function PwaInstallPrompt() {
   });
 
   useEffect(() => {
-    if (isStandalonePwa()) return;
+    if (Capacitor.isNativePlatform() || isStandalonePwa()) return;
 
     const syncInstallAvailability = () =>
       setCanInstall(Boolean(getDeferredInstallPrompt()));
@@ -172,7 +173,13 @@ export function PwaInstallPrompt() {
 
   if (!isEligibleSurface) return null;
 
-  if (!isReadyToShow || dismissed || isStandalonePwa() || showGuide) {
+  if (
+    !isReadyToShow ||
+    dismissed ||
+    Capacitor.isNativePlatform() ||
+    isStandalonePwa() ||
+    showGuide
+  ) {
     return showGuide ? (
       <InstallGuide
         platform={platform}

@@ -2,6 +2,10 @@ import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { Capacitor } from "@capacitor/core";
+import {
+  isNativeIosCapacitor,
+  setNativeTabBarTheme,
+} from "@/lib/native-ios-bridge";
 
 export function useNativeThemeSync() {
   const { resolvedTheme } = useTheme();
@@ -37,6 +41,10 @@ export function useNativeThemeSync() {
       if (Capacitor.getPlatform() === "android") {
         StatusBar.setBackgroundColor({ color: bgHex }).catch(() => {});
         StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+      }
+
+      if (isNativeIosCapacitor()) {
+        void setNativeTabBarTheme(isDark ? "dark" : "light");
       }
     }
   }, [resolvedTheme]);

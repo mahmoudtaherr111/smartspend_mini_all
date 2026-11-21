@@ -44,20 +44,20 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `web-voice-call` | Live voice call UI | 13 | `contracts`, `web-ai`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | `capacitor` |
 | `web-ai` | AI Center UI | 3 | `web-hooks`, `web-insights`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-voice-call` | — |
 | `web-capture` | Expense entry UI | 4 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
-| `web-insights` | Insights UI | 1 | `web-hooks`, `web-shell`, `web-ui-kit` | `web-ai` | — |
+| `web-insights` | Insights UI | 1 | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-ai` | — |
 | `web-finance` | Finance UI | 20 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
 | `web-bank-sync` | Bank sync UI | 5 | `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
 | `web-account` | Account UI | 14 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shared`, `web-shell` | `turnstile` |
 | `web-growth` | Ads and SEO UI | 2 | `web-hooks`, `web-shell` | `web-pages`, `web-shell` | — |
 | `web-shared` | Shared web components | 5 | `contracts`, `web-account`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | — |
 | `web-hooks` | Web hooks | 21 | `web-lib`, `web-shell` | `web-account`, `web-ai`, `web-capture`, `web-finance`, `web-growth`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor`, `firebase` |
-| `web-lib` | Web utilities | 11 | `contracts` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-hooks`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor` |
+| `web-lib` | Web utilities | 13 | `contracts` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-hooks`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor` |
 
 ## External systems
 
 | System | Title | Kind | Clusters | Files |
 | --- | --- | --- | --- | --- |
-| `capacitor` | Capacitor native shell | native-runtime | `web-hooks`, `web-lib`, `web-shell`, `web-voice-call` | `src/hooks/useHaptics.ts`, `src/hooks/useNativeThemeSync.ts`, `src/hooks/useVirtualKeyboard.ts`, `src/lib/back-button-manager.ts`, `src/lib/voice/call-controller.ts`, `src/pwa/register-sw.ts` |
+| `capacitor` | Capacitor native shell | native-runtime | `web-hooks`, `web-lib`, `web-shell`, `web-voice-call` | `src/components/pwa/PwaInstallPrompt.tsx`, `src/hooks/useHaptics.ts`, `src/hooks/useNativeThemeSync.ts`, `src/hooks/useVirtualKeyboard.ts`, `src/lib/back-button-manager.ts`, `src/lib/native-ios-bridge.ts`, `src/lib/voice/call-controller.ts`, `src/pwa/register-sw.ts` |
 | `deepseek` | DeepSeek API | ai-provider | `ai-providers` | `api/lib/llm-provider-chain.ts` |
 | `firebase` | Firebase | push | `notifications`, `web-hooks`, `web-shell` | `api/services/firebase.ts`, `src/hooks/usePushNotifications.ts`, `src/pwa/firebase.ts` |
 | `fireworks` | Fireworks AI | ai-provider | `ai-providers`, `api-routers`, `jobs`, `web-admin` | `api/chat-router.ts`, `api/jobs/monthly-report-job.ts`, `api/lib/fireworks-client.ts`, `api/lib/llm-provider-chain.ts`, `src/components/admin/settings/AdminPlansTab.tsx` |
@@ -250,7 +250,7 @@ Job implementations scheduled from api/boot.ts.
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `api/jobs/data-retention-job.ts` | `database` | — | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `raw_sms_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage` |
-| `api/jobs/monthly-behavior-job.ts` | `api-routers`, `database` | — | `expenses`, `user_profiles` | — |
+| `api/jobs/monthly-behavior-job.ts` | `api-routers`, `database`, `platform` | — | `expenses`, `user_profiles` | — |
 | `api/jobs/monthly-report-job.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `whatsapp` | `fireworks` | `local_users`, `monthly_reports`, `users` | `monthly_reports` |
 | `api/jobs/rollup-reconciliation-job.ts` | `database`, `ledger`, `platform` | — | `expense_daily_rollups`, `expenses` | — |
 | `api/jobs/subscription-expiry-job.ts` | `auth`, `database`, `notifications`, `platform` | — | `pro_subscriptions` | `pro_subscriptions` |
@@ -558,13 +558,13 @@ Entry point, providers, layout, route guards and PWA or native integration.
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `src/App.tsx` | `web-account`, `web-growth`, `web-hooks`, `web-lib`, `web-pages`, `web-shared`, `web-ui-kit`, `web-voice-call` | — | — | — |
-| `src/components/layout/MobileBottomNav.tsx` | `web-hooks`, `web-lib` | — | — | — |
+| `src/components/layout/MobileBottomNav.tsx` | `web-hooks`, `web-lib`, `web-voice-call` | — | — | — |
 | `src/components/layout/PageTransition.tsx` | — | — | — | — |
 | `src/components/layout/mobile-nav-platform.ts` | — | — | — | — |
 | `src/components/pwa/NetworkStatusToast.tsx` | `web-lib` | — | — | — |
 | `src/components/pwa/PullToRefreshWrapper.tsx` | `web-hooks`, `web-lib` | — | — | — |
 | `src/components/pwa/PwaEnhancements.tsx` | `web-hooks` | — | — | — |
-| `src/components/pwa/PwaInstallPrompt.tsx` | `web-hooks`, `web-ui-kit` | — | — | — |
+| `src/components/pwa/PwaInstallPrompt.tsx` | `web-hooks`, `web-ui-kit` | `capacitor` | — | — |
 | `src/components/pwa/PwaOfflineSyncDialog.tsx` | `web-lib`, `web-ui-kit` | — | — | — |
 | `src/components/routing/PlanGates.tsx` | `web-hooks`, `web-shared` | — | — | — |
 | `src/i18n/LanguagePreferenceSync.tsx` | — | — | — | — |
@@ -576,7 +576,7 @@ Entry point, providers, layout, route guards and PWA or native integration.
 | `src/i18n/language.ts` | — | — | — | — |
 | `src/main.tsx` | — | — | — | — |
 | `src/providers/BiometricLockProvider.tsx` | `web-hooks`, `web-lib` | — | — | — |
-| `src/providers/trpc.ts` | — | — | — | — |
+| `src/providers/trpc.ts` | `web-lib` | — | — | — |
 | `src/pwa/firebase.ts` | — | `firebase` | — | — |
 | `src/pwa/install-platform.ts` | — | — | — | — |
 | `src/pwa/launch-handler.ts` | — | — | — | — |
@@ -711,7 +711,7 @@ The live voice call in the app. The rebuilt call: a store any screen can start t
 | `src/hooks/useVoiceCallEntry.ts` | `web-shell` | — | — | — |
 | `src/lib/voice/audio-io.ts` | — | — | — | — |
 | `src/lib/voice/call-connection.ts` | `contracts` | — | — | — |
-| `src/lib/voice/call-controller.ts` | `contracts` | `capacitor` | — | — |
+| `src/lib/voice/call-controller.ts` | `contracts`, `web-lib` | `capacitor` | — | — |
 | `src/lib/voice/call-store.ts` | — | — | — | — |
 | `src/lib/voice/downsampler.ts` | `contracts` | — | — | — |
 | `src/lib/voice/pcm-player.ts` | `contracts` | — | — | — |
@@ -744,7 +744,7 @@ The monthly AI insights view shown in the AI Center's analysis tab.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `src/components/insights/AIInsights.tsx` | `web-hooks`, `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/insights/AIInsights.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 
 ### `web-finance` — Finance UI
 
@@ -779,11 +779,11 @@ The bank sync screens: iPhone Shortcut and Android companion setup, the digital 
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `src/components/bank-sync/AndroidSetupFlow.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/bank-sync/AndroidSetupFlow.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/bank-sync/DigitalBankingSuite.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/bank-sync/IosSetupFlow.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/bank-sync/IosSetupFlow.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/bank-sync/SmsSuggestionsCard.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/settings/SmsWebhookSettings.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/settings/SmsWebhookSettings.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 
 ### `web-account` — Account UI
 
@@ -839,12 +839,12 @@ React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycl
 | `src/hooks/useAppResume.ts` | — | — | — | — |
 | `src/hooks/useAuth.ts` | `web-lib`, `web-shell` | — | — | — |
 | `src/hooks/useBiometricOnboarding.ts` | `web-lib`, `web-shell` | — | — | — |
-| `src/hooks/useHaptics.ts` | — | `capacitor` | — | — |
+| `src/hooks/useHaptics.ts` | `web-lib` | `capacitor` | — | — |
 | `src/hooks/useHistoryBound.ts` | — | — | — | — |
 | `src/hooks/useKeyboardNav.ts` | — | — | — | — |
 | `src/hooks/useLaunchNavigation.ts` | `web-shell` | — | — | — |
 | `src/hooks/useMediaQuery.ts` | — | — | — | — |
-| `src/hooks/useNativeThemeSync.ts` | — | `capacitor` | — | — |
+| `src/hooks/useNativeThemeSync.ts` | `web-lib` | `capacitor` | — | — |
 | `src/hooks/usePasskeyEnrolment.ts` | `web-lib`, `web-shell` | — | — | — |
 | `src/hooks/usePro.ts` | `web-shell` | — | — | — |
 | `src/hooks/usePushNotifications.ts` | `web-shell` | `firebase` | — | — |
@@ -861,11 +861,13 @@ Client utilities (back-button handling, biometric auth, client rules engine, ima
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
+| `src/lib/api-url.ts` | — | — | — | — |
 | `src/lib/back-button-manager.ts` | — | `capacitor` | — | — |
 | `src/lib/backButtonManager.ts` | — | — | — | — |
 | `src/lib/biometricAuth.ts` | — | — | — | — |
 | `src/lib/financial-taxonomy.ts` | `contracts` | — | — | — |
 | `src/lib/ledger-refresh.ts` | — | — | — | — |
+| `src/lib/native-ios-bridge.ts` | — | `capacitor` | — | — |
 | `src/lib/offline-queue-count.ts` | — | — | — | — |
 | `src/lib/queryPersister.ts` | — | — | — | — |
 | `src/lib/saved-toast.ts` | — | — | — | — |

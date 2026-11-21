@@ -42,7 +42,7 @@
         "src/components/auth/TurnstileWidget.tsx": "9a0df28a6e7b",
         "src/components/notifications/NotificationList.tsx": "f4618380ebee",
         "src/components/notifications/NotificationSettings.tsx": "2fa4ec7ab23e",
-        "src/components/notifications/PushNotificationPrompt.tsx": "4db7262c73a0",
+        "src/components/notifications/PushNotificationPrompt.tsx": "1e171273c6fa",
         "src/components/profile/ProfileFieldInput.tsx": "1254997bba32",
         "src/components/profile/ProfileScreen.tsx": "b036bd03fb96",
         "src/components/profile/UserAvatar.tsx": "a6445444d011",
@@ -50,12 +50,12 @@
         "src/components/settings/LanguageSettings.tsx": "2e84329609e6",
         "src/components/settings/PeopleSettingsView.tsx": "fe994df04b34",
         "src/pages/AuthCallback.tsx": "6ca3f9321f43",
-        "src/pages/Login.tsx": "59d76ce265d9",
+        "src/pages/Login.tsx": "ce38c7bebcda",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "68858629f3ab",
-      "arabicChecked": "2026-10-18 2bbf17c"
+      "checked": "2026-11-21 0abf2ed4",
+      "arabic": "54f2a9fe4191",
+      "arabicChecked": "2026-11-21 0abf2ed4"
     },
     "admin": {
       "files": {
@@ -200,16 +200,16 @@
         "api/profile-router.ts#rest-of-file": "01857da89415",
         "api/services/sms-ledger.ts": "079eab469b7d",
         "api/sms-router.ts": "e0b8578ae4b4",
-        "src/components/bank-sync/AndroidSetupFlow.tsx": "a46afb8f98d0",
+        "src/components/bank-sync/AndroidSetupFlow.tsx": "c46057e98049",
         "src/components/bank-sync/DigitalBankingSuite.tsx": "0fa4b6d4f7e6",
-        "src/components/bank-sync/IosSetupFlow.tsx": "d9df23b4367c",
+        "src/components/bank-sync/IosSetupFlow.tsx": "e6b258d9e978",
         "src/components/bank-sync/SmsSuggestionsCard.tsx": "23336674d769",
-        "src/components/settings/SmsWebhookSettings.tsx": "c540d4df52db",
+        "src/components/settings/SmsWebhookSettings.tsx": "88ccd3431d97",
         "src/pages/BankSyncPage.tsx": "b6052297414a"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "e95177442fa9",
-      "arabicChecked": "2026-09-29 fa056d1"
+      "checked": "2026-11-21 0abf2ed4",
+      "arabic": "63ff63565a08",
+      "arabicChecked": "2026-11-21 0abf2ed4"
     },
     "billing": {
       "files": {
@@ -318,8 +318,8 @@
         "api/boot.ts#job:monthly-report-generation": "60a67c71d204",
         "api/export-router.ts#export.monthlyReportHtml": "335e0925b0ca",
         "api/export-router.ts#rest-of-file": "264f56b1884e",
-        "api/jobs/monthly-behavior-job.ts": "41da3de3a5f6",
-        "api/jobs/monthly-report-job.ts": "e70535766a73",
+        "api/jobs/monthly-behavior-job.ts": "3f86a30f12eb",
+        "api/jobs/monthly-report-job.ts": "35b6222e452d",
         "api/lib/report-wait.ts": "67ab20e868a4",
         "api/profile-router.ts#profile.dismissOnboarding": "4c7744ab992d",
         "api/profile-router.ts#profile.getNextOnboardingQuestion": "45b300c9691a",
@@ -336,11 +336,11 @@
         "api/services/pro-report-engine.ts": "dddbf8f0da83",
         "api/services/report-personalization-engine.ts": "003d11c89295",
         "api/services/user-profile-service.ts": "19237538c3b4",
-        "src/components/insights/AIInsights.tsx": "3be01c23f12c"
+        "src/components/insights/AIInsights.tsx": "56cda5d89124"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "8c0f59af05db",
-      "arabicChecked": "2026-10-18 2bbf17c"
+      "checked": "2026-11-21 0abf2ed4",
+      "arabic": "a4b113c5ee3a",
+      "arabicChecked": "2026-11-21 0abf2ed4"
     },
     "money": {
       "files": {
@@ -419,7 +419,7 @@
         "api/boot.ts#job:scheduled-notifications": "6ea4c4d1ef31",
         "api/boot.ts#job:seed-default-templates": "d552cda74417",
         "api/boot.ts#job:smart-activity-notifications": "f8e2642a5b89",
-        "api/notification-engine.ts": "bacf9829cd91",
+        "api/notification-engine.ts": "05ee6ffd292a",
         "api/profile-router.ts#profile.getInAppNotifications": "ff2aee79554d",
         "api/profile-router.ts#profile.markAllInAppNotificationsRead": "6a3d324697cb",
         "api/profile-router.ts#profile.markInAppNotificationRead": "3ece83e41efc",
@@ -430,19 +430,19 @@
         "api/services/whatsapp-service.ts": "1177804a1f23",
         "src/pages/Notifications.tsx": "57d9f2b4b95f"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "6ee5bb5ec0dd",
-      "arabicChecked": "2026-10-18 2bbf17c"
+      "checked": "2026-11-21 0abf2ed4",
+      "arabic": "328536e3c484",
+      "arabicChecked": "2026-11-21 0abf2ed4"
     },
     "platform": {
       "files": {
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "581f74534916",
+        "api/boot.ts#rest-of-file": "51c5f6d1cea3",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "d43acf75679a",
-        "api/lib/app-time.ts": "f53d4623a239",
+        "api/lib/app-time.ts": "70a15830f672",
         "api/lib/cache-keys.ts": "e4adb63af12d",
         "api/lib/env.ts": "33dce14765ca",
         "api/lib/error-logger.ts": "9cb0f25fe459",
@@ -480,9 +480,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "e05665bec173"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "177558109d3b",
-      "arabicChecked": "2026-10-18 2bbf17c"
+      "checked": "2026-11-21 0abf2ed4",
+      "arabic": "b8b100bdc91a",
+      "arabicChecked": "2026-11-21 0abf2ed4"
     },
     "voice-calls": {
       "files": {
@@ -538,15 +538,15 @@
         "src/hooks/useVoiceCallEntry.ts": "453f2aa5a60c",
         "src/lib/voice/audio-io.ts": "be2cca8a9cbc",
         "src/lib/voice/call-connection.ts": "08b452c4a3b3",
-        "src/lib/voice/call-controller.ts": "51b4cee7b9d8",
+        "src/lib/voice/call-controller.ts": "c806e39dfc77",
         "src/lib/voice/call-store.ts": "ad8581741c71",
         "src/lib/voice/downsampler.ts": "6a008987a406",
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "69cc55d954de"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "4702285ecec4",
-      "arabicChecked": "2026-10-18 2bbf17c"
+      "checked": "2026-11-21 0abf2ed4",
+      "arabic": "5f6ee41fdea3",
+      "arabicChecked": "2026-11-21 0abf2ed4"
     },
     "web-app": {
       "files": {
@@ -557,13 +557,13 @@
         "src/components/ProductTour.tsx": "c9145b3fe557",
         "src/components/Sidebar.tsx": "3c20036460eb",
         "src/components/ads/AdBanner.tsx": "a64b7fe711e6",
-        "src/components/layout/MobileBottomNav.tsx": "321dbe1b5bf2",
+        "src/components/layout/MobileBottomNav.tsx": "af17b1e57cd8",
         "src/components/layout/PageTransition.tsx": "500656dd741d",
         "src/components/layout/mobile-nav-platform.ts": "be85b5893eb0",
         "src/components/pwa/NetworkStatusToast.tsx": "ef9a09045e3c",
         "src/components/pwa/PullToRefreshWrapper.tsx": "d46aea97fa6d",
         "src/components/pwa/PwaEnhancements.tsx": "4c57fbea51db",
-        "src/components/pwa/PwaInstallPrompt.tsx": "e929cfa71153",
+        "src/components/pwa/PwaInstallPrompt.tsx": "73bf2e5d3326",
         "src/components/pwa/PwaOfflineSyncDialog.tsx": "503aacea636f",
         "src/components/routing/PlanGates.tsx": "0ce4ccef1e39",
         "src/components/seo/SEOMeta.tsx": "03bceb61485e",
@@ -628,12 +628,12 @@
         "src/hooks/useAppResume.ts": "b626940d2e71",
         "src/hooks/useAuth.ts": "d4dfa51fd4da",
         "src/hooks/useBiometricOnboarding.ts": "8f122a8e13d0",
-        "src/hooks/useHaptics.ts": "ab20cb714dfe",
+        "src/hooks/useHaptics.ts": "2421963bba36",
         "src/hooks/useHistoryBound.ts": "ceffbe90aeae",
         "src/hooks/useKeyboardNav.ts": "05ef375be3b2",
         "src/hooks/useLaunchNavigation.ts": "8b4668cef154",
         "src/hooks/useMediaQuery.ts": "dd7eefcc46fa",
-        "src/hooks/useNativeThemeSync.ts": "dfe198093b0d",
+        "src/hooks/useNativeThemeSync.ts": "ad5c546ea0e1",
         "src/hooks/usePasskeyEnrolment.ts": "ed973e933d7d",
         "src/hooks/usePro.ts": "8e848e3f4bf9",
         "src/hooks/usePushNotifications.ts": "1ba741b7516b",
@@ -645,16 +645,18 @@
         "src/hooks/useVirtualKeyboard.ts": "cd9133e4472c",
         "src/i18n/LanguagePreferenceSync.tsx": "f1a533c6da56",
         "src/i18n/LanguageProvider.tsx": "10f3c6a09aa8",
-        "src/i18n/ar.ts": "c1305bb5bf2b",
+        "src/i18n/ar.ts": "4fbf1d621e13",
         "src/i18n/context.ts": "862082f8b940",
-        "src/i18n/en.ts": "7a138c89080d",
+        "src/i18n/en.ts": "a04e990639b0",
         "src/i18n/format.ts": "99c743113c52",
         "src/i18n/language.ts": "398827de4cd9",
+        "src/lib/api-url.ts": "18ecb9feb4c8",
         "src/lib/back-button-manager.ts": "8f9f1a1d70ca",
         "src/lib/backButtonManager.ts": "20a39bae7640",
-        "src/lib/biometricAuth.ts": "3cd22bda6332",
+        "src/lib/biometricAuth.ts": "f00b2d283f96",
         "src/lib/financial-taxonomy.ts": "8d5316f3e67b",
         "src/lib/ledger-refresh.ts": "50107fa5e42e",
+        "src/lib/native-ios-bridge.ts": "f796cc7355c7",
         "src/lib/offline-queue-count.ts": "99cb920afb03",
         "src/lib/queryPersister.ts": "078724e324de",
         "src/lib/saved-toast.ts": "84f65651ad19",
@@ -667,16 +669,16 @@
         "src/pages/NotFound.tsx": "8c62f9d22119",
         "src/pages/Privacy.tsx": "d888313990ad",
         "src/pages/Terms.tsx": "4ff361a45f01",
-        "src/providers/BiometricLockProvider.tsx": "07ec0e555ded",
-        "src/providers/trpc.ts": "c92d5a8cea8f",
+        "src/providers/BiometricLockProvider.tsx": "c4258fcc8f5b",
+        "src/providers/trpc.ts": "e890a85a705c",
         "src/pwa/firebase.ts": "3543ebd77700",
         "src/pwa/install-platform.ts": "fb566145f9a7",
         "src/pwa/launch-handler.ts": "d67a8f34d738",
-        "src/pwa/register-sw.ts": "1da8e20514f5"
+        "src/pwa/register-sw.ts": "04cff3e23190"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "b083c36be8ca",
-      "arabicChecked": "2026-10-18 2bbf17c"
+      "checked": "2026-11-21 0abf2ed4",
+      "arabic": "74611b0f0f1c",
+      "arabicChecked": "2026-11-21 0abf2ed4"
     }
   }
 }

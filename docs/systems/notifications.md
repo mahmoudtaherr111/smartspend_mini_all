@@ -65,8 +65,8 @@ runs; a stored template still holding the previous default title and body is upd
   what is sent (budget alerts, the logging reminder, plan ending); Settings has the same button.
 - With the web Firebase configuration (`VITE_FIREBASE_*`), the browser gets a Firebase token; otherwise it subscribes to
   Web Push with `VITE_VAPID_PUBLIC_KEY`, the server's public key built into the app. With neither, the app does not offer
-  push (the prompt and Settings read `isSupported` from `src/hooks/usePushNotifications.ts`), and no key is written in the
-  code. `profile.savePushSubscription` stores the token or subscription with the
+  push (the permission prompt stays hidden and Settings shows it unavailable, both from `isSupported` in
+  `src/hooks/usePushNotifications.ts`), and no key is written in the code. `profile.savePushSubscription` stores the token or subscription with the
   device type, and moves an existing one to the user who is signed in.
 - The service worker (`src/sw.js`) reads both payload shapes, shows the notification with its tag and direction, and
   tells an open app to refresh the bell; a tap focuses the app (or opens it) at the resolved destination. The
@@ -135,7 +135,7 @@ Checked against the code; each one names where it lives.
 6. **Gap.** Push cannot be turned off from the app, a device cannot be removed, the bell has no clearing, and nothing prunes
    `in_app_notifications` or `notification_logs` apart from account deletion. Bell items keep no type, so the icon is read
    from the destination; the Capacitor shells have no native push (no channels or small icon of their own).
-7. **Bug.** The activity checks take at most 1000 users per account table a day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
+7. **Bug.** The activity checks (`checkAndTriggerSmartActivityNotifications` in `api/notification-engine.ts`) page through users in batches of 1,000 per account table until none remain un-logged, but users with `preferences.alertsEnabled === false` are skipped without writing `notification_logs`, so a batch filled with them is matched again on every pass; and a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): phone verification and the passkey suggestion.

@@ -64,6 +64,8 @@ function applyWaitingUpdate(registration: ServiceWorkerRegistration) {
 }
 
 export function registerAppServiceWorker(): void {
+  if (Capacitor.isNativePlatform()) return;
+
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredInstall = e as BeforeInstallPromptEvent;

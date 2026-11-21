@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/providers/trpc";
+import { getApiUrl } from "@/lib/api-url";
 import { SIGN_UP_SESSION_KEY } from "@/lib/biometricAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -187,7 +188,7 @@ export default function Login() {
 
     // The stream follows this tab's challenge, not a phone number; EventSource reconnects on its own.
     const eventSource = new EventSource(
-      `/api/sse/otp?challenge=${encodeURIComponent(challenge.watch)}`,
+      getApiUrl(`/api/sse/otp?challenge=${encodeURIComponent(challenge.watch)}`),
     );
 
     eventSource.onmessage = (event) => {
@@ -469,7 +470,7 @@ export default function Login() {
                   <Button
                     type="button"
                     onClick={() =>
-                      googleUrl && (window.location.href = googleUrl)
+                      googleUrl && (window.location.href = getApiUrl(googleUrl))
                     }
                     variant="outline"
                     className="w-full h-11 rounded-xl border border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-800/50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm shadow-xs hover:shadow-sm transition-all duration-200 gap-2.5"
@@ -564,7 +565,7 @@ export default function Login() {
                       <Button
                         type="button"
                         onClick={() =>
-                          googleUrl && (window.location.href = googleUrl)
+                          googleUrl && (window.location.href = getApiUrl(googleUrl))
                         }
                         className="w-full h-12 rounded-xl border border-slate-200/90 dark:border-slate-700/80 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-white font-bold text-xs sm:text-sm shadow-xs hover:shadow-sm transition-all duration-200 gap-2.5 group"
                       >

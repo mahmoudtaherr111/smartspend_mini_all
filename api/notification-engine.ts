@@ -666,56 +666,60 @@ export async function checkAndTriggerSmartActivityNotifications() {
       const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
       const thirtySixHoursAgo = new Date(now.getTime() - 36 * 60 * 60 * 1000);
 
-      const matchingOauth = await db.select({
-        id: users.id,
-        name: users.name,
-        plan: users.plan,
-        currentStreak: users.currentStreak
-      })
-      .from(users)
-      .leftJoin(notificationLogs, and(
-        eq(notificationLogs.userId, users.id),
-        eq(notificationLogs.userType, "oauth"),
-        eq(notificationLogs.templateId, template.id),
-        gte(notificationLogs.sentAt, startOfToday)
-      ))
-      .where(and(
-        gte(users.currentStreak, minStreak),
-        gte(users.lastStreakAt, thirtySixHoursAgo),
-        lte(users.lastStreakAt, twelveHoursAgo),
-        isNull(notificationLogs.id)
-      )).limit(1000);
+      while (true) {
+        const matchingOauth = await db.select({
+          id: users.id,
+          name: users.name,
+          plan: users.plan,
+          currentStreak: users.currentStreak
+        })
+        .from(users)
+        .leftJoin(notificationLogs, and(
+          eq(notificationLogs.userId, users.id),
+          eq(notificationLogs.userType, "oauth"),
+          eq(notificationLogs.templateId, template.id),
+          gte(notificationLogs.sentAt, startOfToday)
+        ))
+        .where(and(
+          gte(users.currentStreak, minStreak),
+          gte(users.lastStreakAt, thirtySixHoursAgo),
+          lte(users.lastStreakAt, twelveHoursAgo),
+          isNull(notificationLogs.id)
+        )).limit(1000);
 
-      const matchingLocal = await db.select({
-        id: localUsers.id,
-        name: localUsers.name,
-        plan: localUsers.plan,
-        currentStreak: localUsers.currentStreak
-      })
-      .from(localUsers)
-      .leftJoin(notificationLogs, and(
-        eq(notificationLogs.userId, localUsers.id),
-        eq(notificationLogs.userType, "local"),
-        eq(notificationLogs.templateId, template.id),
-        gte(notificationLogs.sentAt, startOfToday)
-      ))
-      .where(and(
-        gte(localUsers.currentStreak, minStreak),
-        gte(localUsers.lastStreakAt, thirtySixHoursAgo),
-        lte(localUsers.lastStreakAt, twelveHoursAgo),
-        isNull(notificationLogs.id)
-      )).limit(1000);
+        const matchingLocal = await db.select({
+          id: localUsers.id,
+          name: localUsers.name,
+          plan: localUsers.plan,
+          currentStreak: localUsers.currentStreak
+        })
+        .from(localUsers)
+        .leftJoin(notificationLogs, and(
+          eq(notificationLogs.userId, localUsers.id),
+          eq(notificationLogs.userType, "local"),
+          eq(notificationLogs.templateId, template.id),
+          gte(notificationLogs.sentAt, startOfToday)
+        ))
+        .where(and(
+          gte(localUsers.currentStreak, minStreak),
+          gte(localUsers.lastStreakAt, thirtySixHoursAgo),
+          lte(localUsers.lastStreakAt, twelveHoursAgo),
+          isNull(notificationLogs.id)
+        )).limit(1000);
 
-      const targets = [
-        ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
-        ...matchingLocal.map(u => ({ ...u, type: "local" }))
-      ];
+        if (matchingOauth.length === 0 && matchingLocal.length === 0) break;
 
-      await triggerTemplateNotificationsBatch(
-        template,
-        targets,
-        (user) => ({ name: user.name || "المستخدم" }),
-      );
+        const targets = [
+          ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
+          ...matchingLocal.map(u => ({ ...u, type: "local" }))
+        ];
+
+        await triggerTemplateNotificationsBatch(
+          template,
+          targets,
+          (user) => ({ name: user.name || "المستخدم" }),
+        );
+      }
     }
 
     // 2. pro_conversion_streak: user is free, currentStreak >= minStreak, last log was today/yesterday (diffHours < 36)
@@ -733,56 +737,60 @@ export async function checkAndTriggerSmartActivityNotifications() {
 
       const thirtySixHoursAgo = new Date(now.getTime() - 36 * 60 * 60 * 1000);
 
-      const matchingOauth = await db.select({
-        id: users.id,
-        name: users.name,
-        plan: users.plan,
-        currentStreak: users.currentStreak
-      })
-      .from(users)
-      .leftJoin(notificationLogs, and(
-        eq(notificationLogs.userId, users.id),
-        eq(notificationLogs.userType, "oauth"),
-        eq(notificationLogs.templateId, template.id),
-        gte(notificationLogs.sentAt, sevenDaysAgo)
-      ))
-      .where(and(
-        eq(users.plan, "free"),
-        gte(users.currentStreak, minStreak),
-        gte(users.lastStreakAt, thirtySixHoursAgo),
-        isNull(notificationLogs.id)
-      )).limit(1000);
+      while (true) {
+        const matchingOauth = await db.select({
+          id: users.id,
+          name: users.name,
+          plan: users.plan,
+          currentStreak: users.currentStreak
+        })
+        .from(users)
+        .leftJoin(notificationLogs, and(
+          eq(notificationLogs.userId, users.id),
+          eq(notificationLogs.userType, "oauth"),
+          eq(notificationLogs.templateId, template.id),
+          gte(notificationLogs.sentAt, sevenDaysAgo)
+        ))
+        .where(and(
+          eq(users.plan, "free"),
+          gte(users.currentStreak, minStreak),
+          gte(users.lastStreakAt, thirtySixHoursAgo),
+          isNull(notificationLogs.id)
+        )).limit(1000);
 
-      const matchingLocal = await db.select({
-        id: localUsers.id,
-        name: localUsers.name,
-        plan: localUsers.plan,
-        currentStreak: localUsers.currentStreak
-      })
-      .from(localUsers)
-      .leftJoin(notificationLogs, and(
-        eq(notificationLogs.userId, localUsers.id),
-        eq(notificationLogs.userType, "local"),
-        eq(notificationLogs.templateId, template.id),
-        gte(notificationLogs.sentAt, sevenDaysAgo)
-      ))
-      .where(and(
-        eq(localUsers.plan, "free"),
-        gte(localUsers.currentStreak, minStreak),
-        gte(localUsers.lastStreakAt, thirtySixHoursAgo),
-        isNull(notificationLogs.id)
-      )).limit(1000);
+        const matchingLocal = await db.select({
+          id: localUsers.id,
+          name: localUsers.name,
+          plan: localUsers.plan,
+          currentStreak: localUsers.currentStreak
+        })
+        .from(localUsers)
+        .leftJoin(notificationLogs, and(
+          eq(notificationLogs.userId, localUsers.id),
+          eq(notificationLogs.userType, "local"),
+          eq(notificationLogs.templateId, template.id),
+          gte(notificationLogs.sentAt, sevenDaysAgo)
+        ))
+        .where(and(
+          eq(localUsers.plan, "free"),
+          gte(localUsers.currentStreak, minStreak),
+          gte(localUsers.lastStreakAt, thirtySixHoursAgo),
+          isNull(notificationLogs.id)
+        )).limit(1000);
 
-      const targets = [
-        ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
-        ...matchingLocal.map(u => ({ ...u, type: "local" }))
-      ];
+        if (matchingOauth.length === 0 && matchingLocal.length === 0) break;
 
-      await triggerTemplateNotificationsBatch(
-        template,
-        targets,
-        (user) => ({ currentStreak: String(user.currentStreak || 0) }),
-      );
+        const targets = [
+          ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
+          ...matchingLocal.map(u => ({ ...u, type: "local" }))
+        ];
+
+        await triggerTemplateNotificationsBatch(
+          template,
+          targets,
+          (user) => ({ currentStreak: String(user.currentStreak || 0) }),
+        );
+      }
     }
 
     // 3. dormant_reactivation: completely inactive for inactivityDays (diffDays between inactivityDays and inactivityDays+1)
@@ -803,54 +811,58 @@ export async function checkAndTriggerSmartActivityNotifications() {
       const startRange = new Date(now.getTime() - inactivityMsEnd);
       const endRange = new Date(now.getTime() - inactivityMsStart);
 
-      const matchingOauth = await db.select({
-        id: users.id,
-        name: users.name,
-        plan: users.plan,
-        currentStreak: users.currentStreak
-      })
-      .from(users)
-      .leftJoin(notificationLogs, and(
-        eq(notificationLogs.userId, users.id),
-        eq(notificationLogs.userType, "oauth"),
-        eq(notificationLogs.templateId, template.id),
-        gte(notificationLogs.sentAt, sevenDaysAgo)
-      ))
-      .where(and(
-        gte(users.lastStreakAt, startRange),
-        lte(users.lastStreakAt, endRange),
-        isNull(notificationLogs.id)
-      )).limit(1000);
+      while (true) {
+        const matchingOauth = await db.select({
+          id: users.id,
+          name: users.name,
+          plan: users.plan,
+          currentStreak: users.currentStreak
+        })
+        .from(users)
+        .leftJoin(notificationLogs, and(
+          eq(notificationLogs.userId, users.id),
+          eq(notificationLogs.userType, "oauth"),
+          eq(notificationLogs.templateId, template.id),
+          gte(notificationLogs.sentAt, sevenDaysAgo)
+        ))
+        .where(and(
+          gte(users.lastStreakAt, startRange),
+          lte(users.lastStreakAt, endRange),
+          isNull(notificationLogs.id)
+        )).limit(1000);
 
-      const matchingLocal = await db.select({
-        id: localUsers.id,
-        name: localUsers.name,
-        plan: localUsers.plan,
-        currentStreak: localUsers.currentStreak
-      })
-      .from(localUsers)
-      .leftJoin(notificationLogs, and(
-        eq(notificationLogs.userId, localUsers.id),
-        eq(notificationLogs.userType, "local"),
-        eq(notificationLogs.templateId, template.id),
-        gte(notificationLogs.sentAt, sevenDaysAgo)
-      ))
-      .where(and(
-        gte(localUsers.lastStreakAt, startRange),
-        lte(localUsers.lastStreakAt, endRange),
-        isNull(notificationLogs.id)
-      )).limit(1000);
+        const matchingLocal = await db.select({
+          id: localUsers.id,
+          name: localUsers.name,
+          plan: localUsers.plan,
+          currentStreak: localUsers.currentStreak
+        })
+        .from(localUsers)
+        .leftJoin(notificationLogs, and(
+          eq(notificationLogs.userId, localUsers.id),
+          eq(notificationLogs.userType, "local"),
+          eq(notificationLogs.templateId, template.id),
+          gte(notificationLogs.sentAt, sevenDaysAgo)
+        ))
+        .where(and(
+          gte(localUsers.lastStreakAt, startRange),
+          lte(localUsers.lastStreakAt, endRange),
+          isNull(notificationLogs.id)
+        )).limit(1000);
 
-      const targets = [
-        ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
-        ...matchingLocal.map(u => ({ ...u, type: "local" }))
-      ];
+        if (matchingOauth.length === 0 && matchingLocal.length === 0) break;
 
-      await triggerTemplateNotificationsBatch(
-        template,
-        targets,
-        (user) => ({ name: user.name || "المستخدم" }),
-      );
+        const targets = [
+          ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
+          ...matchingLocal.map(u => ({ ...u, type: "local" }))
+        ];
+
+        await triggerTemplateNotificationsBatch(
+          template,
+          targets,
+          (user) => ({ name: user.name || "المستخدم" }),
+        );
+      }
     }
   } catch (error) {
     console.error("Error running smart activity notifications:", error);

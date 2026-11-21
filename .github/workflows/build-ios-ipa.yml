@@ -1,0 +1,570 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_mode:
+        description: "Build mode: unsigned-sideload (free, no Apple Dev account) or app-store-testflight (signed release)"
+        required: true
+        type: choice
+        default: unsigned-sideload
+        options:
+          - unsigned-sideload
+          - app-store-testflight
+      api_url:
+        description: "Production HTTPS backend URL for VITE_API_URL (leave empty to use repo variable VITE_API_URL)"
+        required: false
+        type: string
+        default: ""
+      marketing_version:
+        description: "App version override (e.g. 2.1.0; leave empty to use package.json version)"
+        required: false
+        type: string
+        default: ""
+      build_number:
+        description: "CFBundleVersion build number (leave empty to use GitHub run number)"
+        required: false
+        type: string
+        default: ""
+      upload_to_testflight:
+        description: "Upload signed IPA to TestFlight (app-store-testflight mode only, requires App Store Connect API secrets)"
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-ios-ipa-${{ github.ref }}-${{ inputs.build_mode || 'unsigned-sideload' }}
+  cancel-in-progress: false
+
+jobs:
+  build-ios:
+    name: Build iOS IPA (${{ inputs.build_mode || 'unsigned-sideload' }})
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select newest installed Xcode
+        id: xcode
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pick_newest() {
+            local allow_beta="$1"
+            local best_app=""
+            local best_ver=""
+            for app in /Applications/Xcode*.app; do
+              [ -d "$app" ] || continue
+              local base_name
+              base_name="$(basename "$app")"
+              if [ "$allow_beta" = "no" ]; then
+                case "$base_name" in
+                  *[Bb][Ee][Tt][Aa]*) continue ;;
+                esac
+              fi
+              local ver
+              ver=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$app/Contents/Info.plist" 2>/dev/null || echo "0")
+              echo "Detected: $app (version $ver)" >&2
+              if [ -z "$best_app" ]; then
+                best_app="$app"
+                best_ver="$ver"
+              else
+                local higher
+                higher=$(printf '%s\n%s\n' "$best_ver" "$ver" | sort -V | tail -n1)
+                if [ "$higher" = "$ver" ] && [ "$ver" != "$best_ver" ]; then
+                  best_app="$app"
+                  best_ver="$ver"
+                fi
+              fi
+            done
+            echo "$best_app"
+          }
+
+          SELECTED_XCODE="$(pick_newest no)"
+          if [ -z "$SELECTED_XCODE" ]; then
+            SELECTED_XCODE="$(pick_newest yes)"
+          fi
+
+          if [ -n "$SELECTED_XCODE" ]; then
+            echo "Switching active Xcode to: $SELECTED_XCODE"
+            sudo xcode-select -s "$SELECTED_XCODE/Contents/Developer"
+          else
+            echo "Using default runner Xcode: $(xcode-select -p)"
+          fi
+
+          echo "=== Active Xcode ==="
+          xcodebuild -version
+          echo "=== Available SDKs ==="
+          xcodebuild -showsdks
+
+          XCODE_VERSION_LINE=$(xcodebuild -version | sed -n '1p')
+          IOS_SDK_LINE=$(xcodebuild -showsdks | grep -E "iphoneos[0-9.]+" | tail -n1 | sed 's/^[[:space:]]*//' || echo "iphoneos")
+          echo "xcode_version=${XCODE_VERSION_LINE}" >> "$GITHUB_OUTPUT"
+          echo "ios_sdk=${IOS_SDK_LINE}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Resolve & validate build configuration
+        id: config
+        shell: bash
+        env:
+          INPUT_API_URL: ${{ inputs.api_url }}
+          VAR_API_URL: ${{ vars.VITE_API_URL }}
+          INPUT_MARKETING_VERSION: ${{ inputs.marketing_version }}
+          INPUT_BUILD_NUMBER: ${{ inputs.build_number }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+
+          RAW_API_URL="${INPUT_API_URL:-$VAR_API_URL}"
+          API_URL="${RAW_API_URL%/}"
+
+          if [ -z "$API_URL" ]; then
+            echo "::error::VITE_API_URL is required for iOS builds. Pass the 'api_url' workflow input or configure the repository variable VITE_API_URL."
+            exit 1
+          fi
+
+          if [[ "$API_URL" != https://* ]]; then
+            if [[ "$API_URL" == http://* ]]; then
+              echo "::warning::VITE_API_URL ($API_URL) is not HTTPS. iOS App Transport Security (ATS) blocks cleartext HTTP in production unless explicitly allowed."
+            else
+              echo "::error::VITE_API_URL must start with https:// (got: $API_URL)."
+              exit 1
+            fi
+          fi
+
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          MARKETING_VERSION="${INPUT_MARKETING_VERSION:-$PKG_VERSION}"
+          BUILD_NUMBER="${INPUT_BUILD_NUMBER:-$RUN_NUMBER}"
+
+          echo "api_url=${API_URL}" >> "$GITHUB_OUTPUT"
+          echo "marketing_version=${MARKETING_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "build_number=${BUILD_NUMBER}" >> "$GITHUB_OUTPUT"
+
+          echo "Resolved configuration:"
+          echo "  Bundle ID:         com.smartspend.app"
+          echo "  API URL:           $API_URL"
+          echo "  Marketing Version: $MARKETING_VERSION"
+          echo "  Build Number:      $BUILD_NUMBER"
+
+      - name: Build production web bundle (frontend-only)
+        env:
+          VITE_API_URL: ${{ steps.config.outputs.api_url }}
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_VAPID_KEY: ${{ vars.VITE_FIREBASE_VAPID_KEY }}
+          VITE_VAPID_PUBLIC_KEY: ${{ vars.VITE_VAPID_PUBLIC_KEY }}
+          # Intentionally keep VITE_CDN_URL unset so Vite keeps base "/" for local Capacitor bundle.
+          # Intentionally keep VITE_TURNSTILE_SITE_KEY unset unless capacitor://localhost is whitelisted.
+        run: npm run frontend:build
+
+      - name: Sync Capacitor iOS project & web assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx cap sync ios
+          npm run cap:sync
+
+      - name: Resolve Swift Package Manager dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -list -project ios/App/App.xcodeproj
+          xcodebuild -resolvePackageDependencies \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages"
+
+      # ──────────────────────────────────────────────────────────────────────────
+      # Mode 1: Unsigned Sideload IPA (No Mac, No Paid Apple Developer Account)
+      # ──────────────────────────────────────────────────────────────────────────
+      - name: Build unsigned iOS app (generic/platform=iOS)
+        if: ${{ (inputs.build_mode || 'unsigned-sideload') == 'unsigned-sideload' }}
+        shell: bash
+        env:
+          MARKETING_VERSION: ${{ steps.config.outputs.marketing_version }}
+          BUILD_NUMBER: ${{ steps.config.outputs.build_number }}
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
+            MARKETING_VERSION="$MARKETING_VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_IDENTITY=""
+
+      - name: Package & verify unsigned IPA
+        id: package_unsigned
+        if: ${{ (inputs.build_mode || 'unsigned-sideload') == 'unsigned-sideload' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/App.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "::error::Expected built app bundle not found at $APP_PATH"
+            exit 1
+          fi
+
+          STAGE_DIR="$RUNNER_TEMP/ipa-stage"
+          IPA_PATH="$RUNNER_TEMP/SmartSpend-AI-iOS-unsigned.ipa"
+          rm -rf "$STAGE_DIR" "$IPA_PATH"
+          mkdir -p "$STAGE_DIR/Payload"
+
+          ditto "$APP_PATH" "$STAGE_DIR/Payload/App.app"
+          rm -rf "$STAGE_DIR/Payload/App.app/_CodeSignature"
+
+          (
+            cd "$STAGE_DIR"
+            zip -qry "$IPA_PATH" Payload
+          )
+
+          echo "=== Verifying IPA structure ==="
+          unzip -l "$IPA_PATH" | sed -n '1,60p'
+
+          IPA_ENTRIES="$(unzip -Z1 "$IPA_PATH")"
+          for required in "Payload/App.app/Info.plist" "Payload/App.app/App" "Payload/App.app/public/index.html"; do
+            if ! printf '%s\n' "$IPA_ENTRIES" | grep -Fx "$required" >/dev/null; then
+              echo "::error::Missing required entry inside IPA: $required"
+              exit 1
+            fi
+          done
+
+          BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$STAGE_DIR/Payload/App.app/Info.plist")
+          SHORT_VER=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$STAGE_DIR/Payload/App.app/Info.plist")
+          BUILD_VER=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$STAGE_DIR/Payload/App.app/Info.plist")
+          IPA_SIZE=$(du -h "$IPA_PATH" | awk '{print $1}')
+
+          echo "Verified unsigned IPA:"
+          echo "  File:      $IPA_PATH ($IPA_SIZE)"
+          echo "  Bundle ID: $BUNDLE_ID"
+          echo "  Version:   $SHORT_VER ($BUILD_VER)"
+
+          echo "ipa_size=${IPA_SIZE}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload unsigned IPA artifact
+        if: ${{ (inputs.build_mode || 'unsigned-sideload') == 'unsigned-sideload' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartSpend-AI-iOS-unsigned
+          path: ${{ runner.temp }}/SmartSpend-AI-iOS-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 30
+
+      # ──────────────────────────────────────────────────────────────────────────
+      # Mode 2: Signed App Store / TestFlight IPA
+      # ──────────────────────────────────────────────────────────────────────────
+      - name: Validate Apple signing secrets
+        if: ${{ inputs.build_mode == 'app-store-testflight' }}
+        shell: bash
+        env:
+          APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+          APPLE_PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_PROVISION_PROFILE_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          MISSING=()
+          [ -n "$APPLE_CERT_BASE64" ] || MISSING+=("APPLE_CERT_BASE64")
+          [ -n "$APPLE_CERT_PASSWORD" ] || MISSING+=("APPLE_CERT_PASSWORD")
+          [ -n "$APPLE_PROVISION_PROFILE_BASE64" ] || MISSING+=("APPLE_PROVISION_PROFILE_BASE64")
+          [ -n "$APPLE_TEAM_ID" ] || MISSING+=("APPLE_TEAM_ID")
+
+          if [ "${#MISSING[@]}" -gt 0 ]; then
+            echo "::error::Missing required GitHub Secrets for app-store-testflight mode: ${MISSING[*]}"
+            exit 1
+          fi
+
+      - name: Import Apple signing certificate & provisioning profile
+        id: signing
+        if: ${{ inputs.build_mode == 'app-store-testflight' }}
+        shell: bash
+        env:
+          APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+          APPLE_PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_PROVISION_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+          CERT_PATH="$RUNNER_TEMP/apple_distribution.p12"
+          PROFILE_PATH="$RUNNER_TEMP/appstore.mobileprovision"
+          PROFILE_PLIST="$RUNNER_TEMP/profile.plist"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 32)"
+
+          printf '%s' "$APPLE_CERT_BASE64" | tr -d '\r\n ' | base64 --decode > "$CERT_PATH"
+          printf '%s' "$APPLE_PROVISION_PROFILE_BASE64" | tr -d '\r\n ' | base64 --decode > "$PROFILE_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          security import "$CERT_PATH" \
+            -P "$APPLE_CERT_PASSWORD" \
+            -A -t cert -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
+          security default-keychain -d user -s "$KEYCHAIN_PATH"
+
+          security cms -D -i "$PROFILE_PATH" > "$PROFILE_PLIST"
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" "$PROFILE_PLIST")
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" "$PROFILE_PLIST")
+
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
+          cp "$PROFILE_PATH" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
+
+          echo "profile_uuid=${PROFILE_UUID}" >> "$GITHUB_OUTPUT"
+          echo "profile_name=${PROFILE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Installed provisioning profile: ${PROFILE_NAME} (${PROFILE_UUID})"
+
+      - name: Generate ExportOptions.plist
+        if: ${{ inputs.build_mode == 'app-store-testflight' }}
+        shell: bash
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          PROFILE_NAME: ${{ steps.signing.outputs.profile_name }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, plistlib
+          data = {
+              "destination": "export",
+              "method": "app-store-connect",
+              "signingStyle": "manual",
+              "stripSwiftSymbols": True,
+              "teamID": os.environ["APPLE_TEAM_ID"],
+              "uploadSymbols": True,
+              "provisioningProfiles": {
+                  "com.smartspend.app": os.environ["PROFILE_NAME"],
+              },
+          }
+          with open(os.path.join(os.environ["RUNNER_TEMP"], "ExportOptions.plist"), "wb") as f:
+              plistlib.dump(data, f, fmt=plistlib.FMT_XML)
+          PY
+
+      - name: Configure manual signing on App Release target (SPM-safe)
+        if: ${{ inputs.build_mode == 'app-store-testflight' }}
+        shell: bash
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          PROFILE_NAME: ${{ steps.signing.outputs.profile_name }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, re, sys
+
+          pbx_path = "ios/App/App.xcodeproj/project.pbxproj"
+          team_id = os.environ["APPLE_TEAM_ID"]
+          profile_name = os.environ["PROFILE_NAME"]
+
+          def pbx_quote(value: str) -> str:
+              escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+              return f'"{escaped}"'
+
+          with open(pbx_path, "r", encoding="utf-8") as f:
+              text = f.read()
+
+          # Switch TargetAttributes ProvisioningStyle on target App (504EC3031FED79650016851F) to Manual
+          target_attr_re = re.compile(
+              r"(504EC3031FED79650016851F\s*=\s*\{[^}]*?)ProvisioningStyle\s*=\s*Automatic;",
+              re.S,
+          )
+          text, _ = target_attr_re.subn(r"\1ProvisioningStyle = Manual;", text, count=1)
+
+          # Scope signing strictly to target App's Release XCBuildConfiguration (504EC3181FED79650016851F)
+          # so Swift Package Manager targets (CapApp-SPM, Capacitor, etc.) are never forced to use provisioning profiles.
+          cfg_re = re.compile(
+              r"(504EC3181FED79650016851F /\* Release \*/ = \{\s*isa = XCBuildConfiguration;\s*buildSettings = \{)(.*?)(\n\t\t\t\};)",
+              re.S,
+          )
+          match = cfg_re.search(text)
+          if not match:
+              sys.exit("ERROR: Could not locate target App Release XCBuildConfiguration (504EC3181FED79650016851F) in project.pbxproj")
+
+          body = match.group(2)
+          for key in (
+              "CODE_SIGN_STYLE",
+              "CODE_SIGN_IDENTITY",
+              '"CODE_SIGN_IDENTITY[sdk=iphoneos*]"',
+              "DEVELOPMENT_TEAM",
+              "PROVISIONING_PROFILE_SPECIFIER",
+          ):
+              body = re.sub(rf"\n\t\t\t\t{re.escape(key)}\s*=\s*[^;]+;", "", body)
+
+          signing_lines = (
+              "\n\t\t\t\tCODE_SIGN_IDENTITY = \"Apple Distribution\";"
+              "\n\t\t\t\t\"CODE_SIGN_IDENTITY[sdk=iphoneos*]\" = \"Apple Distribution\";"
+              "\n\t\t\t\tCODE_SIGN_STYLE = Manual;"
+              f"\n\t\t\t\tDEVELOPMENT_TEAM = {pbx_quote(team_id)};"
+              f"\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = {pbx_quote(profile_name)};"
+          )
+
+          new_text = text[:match.start(2)] + body + signing_lines + text[match.end(2):]
+          with open(pbx_path, "w", encoding="utf-8") as f:
+              f.write(new_text)
+
+          print("Configured manual signing strictly on App Release target (504EC3181FED79650016851F).")
+          PY
+
+      - name: Archive & export signed App Store IPA
+        id: export_signed
+        if: ${{ inputs.build_mode == 'app-store-testflight' }}
+        shell: bash
+        env:
+          MARKETING_VERSION: ${{ steps.config.outputs.marketing_version }}
+          BUILD_NUMBER: ${{ steps.config.outputs.build_number }}
+        run: |
+          set -euo pipefail
+          ARCHIVE_PATH="$RUNNER_TEMP/SmartSpend.xcarchive"
+          EXPORT_DIR="$RUNNER_TEMP/export"
+          FINAL_IPA="$RUNNER_TEMP/SmartSpend-AI-iOS-appstore.ipa"
+
+          xcodebuild archive \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$ARCHIVE_PATH" \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
+            MARKETING_VERSION="$MARKETING_VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER"
+
+          xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$EXPORT_DIR"
+
+          EXPORTED_IPA=$(find "$EXPORT_DIR" -maxdepth 1 -name "*.ipa" | sed -n '1p')
+          if [ -z "$EXPORTED_IPA" ] || [ ! -f "$EXPORTED_IPA" ]; then
+            echo "::error::Signed IPA not found in $EXPORT_DIR"
+            exit 1
+          fi
+
+          mv "$EXPORTED_IPA" "$FINAL_IPA"
+          echo "=== Verifying signed IPA structure ==="
+          unzip -l "$FINAL_IPA" | sed -n '1,60p'
+
+          IPA_SIZE=$(du -h "$FINAL_IPA" | awk '{print $1}')
+          echo "ipa_size=${IPA_SIZE}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload signed IPA artifact
+        if: ${{ inputs.build_mode == 'app-store-testflight' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartSpend-AI-iOS-appstore
+          path: ${{ runner.temp }}/SmartSpend-AI-iOS-appstore.ipa
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload to TestFlight (App Store Connect)
+        id: testflight
+        if: ${{ inputs.build_mode == 'app-store-testflight' && inputs.upload_to_testflight != false }}
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          ASC_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "$ASC_KEY_ID" ] || [ -z "$ASC_ISSUER_ID" ] || [ -z "$ASC_KEY_BASE64" ]; then
+            echo "::notice::App Store Connect API Key secrets not configured; skipping TestFlight upload. The signed IPA is available as a workflow artifact."
+            echo "uploaded=skipped" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          KEY_FILE="$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s' "$ASC_KEY_BASE64" | tr -d '\r\n ' | base64 --decode > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$RUNNER_TEMP/SmartSpend-AI-iOS-appstore.ipa" \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID"
+
+          echo "uploaded=yes" >> "$GITHUB_OUTPUT"
+
+      - name: Clean up temporary signing credentials
+        if: ${{ always() && inputs.build_mode == 'app-store-testflight' }}
+        shell: bash
+        env:
+          PROFILE_UUID: ${{ steps.signing.outputs.profile_uuid }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+        run: |
+          security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/apple_distribution.p12" "$RUNNER_TEMP/appstore.mobileprovision" "$RUNNER_TEMP/profile.plist" "$RUNNER_TEMP/ExportOptions.plist"
+          if [ -n "$PROFILE_UUID" ]; then
+            rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
+            rm -f "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
+          fi
+          if [ -n "$ASC_KEY_ID" ]; then
+            rm -f "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          fi
+
+      - name: Write build summary
+        if: ${{ success() }}
+        shell: bash
+        env:
+          BUILD_MODE: ${{ inputs.build_mode || 'unsigned-sideload' }}
+          XCODE_VERSION: ${{ steps.xcode.outputs.xcode_version }}
+          IOS_SDK: ${{ steps.xcode.outputs.ios_sdk }}
+          API_URL: ${{ steps.config.outputs.api_url }}
+          MARKETING_VERSION: ${{ steps.config.outputs.marketing_version }}
+          BUILD_NUMBER: ${{ steps.config.outputs.build_number }}
+          UNSIGNED_SIZE: ${{ steps.package_unsigned.outputs.ipa_size }}
+          SIGNED_SIZE: ${{ steps.export_signed.outputs.ipa_size }}
+          TESTFLIGHT_STATUS: ${{ steps.testflight.outputs.uploaded }}
+        run: |
+          {
+            echo "## SmartSpend AI — iOS IPA Build"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Mode | \`${BUILD_MODE}\` |"
+            echo "| Bundle ID | \`com.smartspend.app\` |"
+            echo "| Version | \`${MARKETING_VERSION}\` (build \`${BUILD_NUMBER}\`) |"
+            echo "| API URL | \`${API_URL}\` |"
+            echo "| Xcode | \`${XCODE_VERSION}\` |"
+            echo "| iOS SDK | \`${IOS_SDK}\` |"
+            if [ "$BUILD_MODE" = "unsigned-sideload" ]; then
+              echo "| Artifact | \`SmartSpend-AI-iOS-unsigned\` (\`SmartSpend-AI-iOS-unsigned.ipa\`, ${UNSIGNED_SIZE}) |"
+            else
+              echo "| Artifact | \`SmartSpend-AI-iOS-appstore\` (\`SmartSpend-AI-iOS-appstore.ipa\`, ${SIGNED_SIZE}) |"
+              echo "| TestFlight Upload | \`${TESTFLIGHT_STATUS:-skipped}\` |"
+            fi
+            echo ""
+            if [ "$BUILD_MODE" = "unsigned-sideload" ]; then
+              echo "Download the artifact above and install \`SmartSpend-AI-iOS-unsigned.ipa\` on iPhone using **SideStore**, **Sideloadly**, or **AltStore** (see \`docs/guides/ios-build-and-install.md\`)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

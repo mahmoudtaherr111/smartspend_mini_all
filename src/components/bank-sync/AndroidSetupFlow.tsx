@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   ExternalLink,
 } from "lucide-react";
-import { trpc } from "@/providers/trpc";
+import { getTrpcHeaders, trpc } from "@/providers/trpc";
+import { getApiUrl } from "@/lib/api-url";
 
 interface Props {
   onBack: () => void;
@@ -35,7 +36,7 @@ export function AndroidSetupFlow({ onBack }: Props) {
   // ── Step 1: Download APK ──────────────────────────────────────────────────
   const handleDownload = () => {
     const a = document.createElement("a");
-    a.href = APK_URL;
+    a.href = getApiUrl(APK_URL);
     a.download = "SmartSpend-Sync.apk";
     a.click();
     toast.info("🚀 جاري تحميل التطبيق…", {
@@ -51,7 +52,11 @@ export function AndroidSetupFlow({ onBack }: Props) {
       // Ask the backend for the signed deep link (token auto-created if missing)
       // The session cookie authenticates both account kinds: Google's google_session and
       // the HttpOnly smartspend_token of phone and password accounts.
-      const res = await fetch("/api/sms/android-connect", { credentials: "include" });
+      // Bearer header from getTrpcHeaders() also authenticates Capacitor shells.
+      const res = await fetch(getApiUrl("/api/sms/android-connect"), {
+        credentials: "include",
+        headers: getTrpcHeaders(),
+      });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));

@@ -457,6 +457,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/i18n/en.ts` | [web-app](web-app.md) |
 | `src/i18n/format.ts` | [web-app](web-app.md) |
 | `src/i18n/language.ts` | [web-app](web-app.md) |
+| `src/lib/api-url.ts` | [web-app](web-app.md) |
 | `src/lib/back-button-manager.ts` | [web-app](web-app.md) |
 | `src/lib/backButtonManager.ts` | [web-app](web-app.md) |
 | `src/lib/biometricAuth.ts` | [web-app](web-app.md) |
@@ -464,6 +465,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/lib/compress-image.ts` | [expense-capture](expense-capture.md) |
 | `src/lib/financial-taxonomy.ts` | [web-app](web-app.md) |
 | `src/lib/ledger-refresh.ts` | [web-app](web-app.md) |
+| `src/lib/native-ios-bridge.ts` | [web-app](web-app.md) |
 | `src/lib/offline-queue-count.ts` | [web-app](web-app.md) |
 | `src/lib/queryPersister.ts` | [web-app](web-app.md) |
 | `src/lib/saved-toast.ts` | [web-app](web-app.md) |

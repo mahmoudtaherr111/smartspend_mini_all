@@ -143,7 +143,6 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 | --- | --- | --- |
 | `GEMINI_API_KEY` | yes | `api/services/voice/gateway/index.ts`, `api/services/voice/text-model.ts` |
 | `BASE_URL` | frontend | `src/lib/voice/audio-io.ts` |
-| `VITE_API_URL` | frontend | `src/lib/voice/call-controller.ts` |
 
 ## Source its explanation describes
 

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { BIOMETRIC_PROMPT_SHOWN_KEY, SIGN_UP_SESSION_KEY } from "@/lib/biometricAuth";
 
 export function PushNotificationPrompt() {
-  const { subscribeToPush } = usePushNotifications();
+  const { isSupported, subscribeToPush } = usePushNotifications();
   const [showPushPrompt, setShowPushPrompt] = useState(false);
 
   useEffect(() => {
@@ -57,7 +57,9 @@ export function PushNotificationPrompt() {
     );
   };
 
-  if (!showPushPrompt || typeof document === "undefined") return null;
+  // A build that cannot deliver a push (no Firebase, no Web Push key) never offers it: a "turn on" that ends in
+  // "not available" is worse than no prompt.
+  if (!showPushPrompt || !isSupported || typeof document === "undefined") return null;
 
   return createPortal(
     <div

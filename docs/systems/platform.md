@@ -21,7 +21,7 @@ storage, the contracts shared with the web app, and the retention job that prune
 | Database | `api/queries/connection.ts`, `db/schema.ts`, `db/relations.ts`, `db/table-classes.ts` | The MySQL pool with slow-query logging, the Drizzle schema, the relations that stand in for foreign keys, and every table's storage class |
 | Cache | `api/lib/redis-client.ts`, `api/lib/cache-keys.ts` | Redis with an in-process fallback, the key shapes, counters and the sliding-window rate limiter |
 | Settings | `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` (with the embedding keys and `usd_to_egp_rate`) | `system_settings` behind one cached read, and the registry of keys, defaults and secrets |
-| Business time | `api/lib/app-time.ts` | The day and month boundaries of the ledger, in `APP_TIMEZONE` (Cairo) rather than the server's clock, and `parseBusinessInstant`, which reads a date the client wrote without a time zone as Cairo wall-clock time |
+| Business time | `api/lib/app-time.ts` | The day and month boundaries of the ledger (and `previousBusinessMonth` for the month that just ended), in `APP_TIMEZONE` (Cairo) rather than the server's clock, and `parseBusinessInstant`, which reads a date the client wrote without a time zone as Cairo wall-clock time |
 | Job lock | `api/services/scheduler-lock.ts` | A MySQL advisory lock so a job registered on every replica runs on one |
 | Retention | `api/jobs/data-retention-job.ts` | Rolls up and prunes telemetry, conversation and ephemeral tables |
 | File storage | `api/services/storage/` | One driver interface over local disk or S3-compatible storage, plus the avatar service |
@@ -31,7 +31,7 @@ storage, the contracts shared with the web app, and the retention job that prune
 | Error reporting | `api/lib/error-reporting.ts` | Sentry, when `SENTRY_DSN` is set, under the same rule: console breadcrumbs are dropped, query strings, request bodies, cookies and credentials are removed, and a failed query's values are cut before an event leaves. Traces and profiles cover `SENTRY_TRACES_SAMPLE_RATE` of requests (10% by default); errors are always sent |
 
 ## A request, end to end
-1. HTTPS redirect (production), request log, compression, security headers, the forwarded-IP warning when
+1. HTTPS redirect (production), request log, compression, security headers (in production, inline script hashes are read once at startup from `dist/public/index.html` via `builtIndexScriptHashes()`, logging `csp.no_inline_scripts` if none are found), the forwarded-IP warning when
    `TRUST_PROXY` is off, then the origin policy: CORS and WebSocket origins come from `APP_URL`,
    `FRONTEND_URL` and `ALLOWED_ORIGINS`, never a wildcard.
 2. `/api/trpc/*` builds the context. A Bearer header wins over cookies; the token's SHA-256 hash is looked up

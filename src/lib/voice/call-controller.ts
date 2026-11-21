@@ -7,6 +7,7 @@
  * server decides it was not an interruption, the voice comes back up when the user stops.
  */
 import { Capacitor } from "@capacitor/core";
+import { getWsUrl } from "@/lib/api-url";
 import {
   VOICE_SOCKET_PATH,
   VOICE_TEXT_MAX_LENGTH,
@@ -40,14 +41,7 @@ import { PcmPlayer } from "./pcm-player";
 import { FRAME_SAMPLES, SpeechDetector } from "./speech-detector";
 
 export function voiceSocketUrl(): string {
-  const api = import.meta.env.VITE_API_URL as string | undefined;
-  let base: URL;
-  try {
-    base = new URL(api || window.location.href);
-  } catch {
-    base = new URL(window.location.href);
-  }
-  return `${base.protocol === "https:" ? "wss:" : "ws:"}//${base.host}${VOICE_SOCKET_PATH}`;
+  return getWsUrl(VOICE_SOCKET_PATH);
 }
 
 export function clientPlatform(): VoiceClientPlatform {

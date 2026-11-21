@@ -346,8 +346,10 @@ routes. The next call's snapshot reads these memories, and the memory screen lab
   (`realtimeInputConfig` in the engine's setup), so the app decides when a turn ends.
 - **The assistant's voice.** `src/lib/voice/pcm-player.ts#PcmPlayer` plays the 24 kHz chunks back to back after a
   120 ms cushion, which grows by 40 ms (up to 300 ms) each time a reply runs dry.
-- **The line.** `src/lib/voice/call-connection.ts#CallConnection` sends `hello` with the ticket, pings every
-  10 seconds and treats 25 silent seconds as a dead line. When the line drops it tries again at once, then after 1,
+- **The line.** `src/lib/voice/call-connection.ts#CallConnection` connects to the WebSocket URL returned by
+  `src/lib/voice/call-controller.ts#voiceSocketUrl` (which delegates to `src/lib/api-url.ts#getWsUrl`, turning
+  `VITE_API_URL` into `wss:` / `ws:` for split deploys and Capacitor `capacitor://localhost` shells, or deriving it from
+  `window.location.href` on same-origin web), sends `hello` with the ticket, pings every 10 seconds and treats 25 silent seconds as a dead line. When the line drops it tries again at once, then after 1,
   2, 3 and 5 seconds, and immediately when the network or the app comes back, with the resume token of the latest
   `ready`, for up to 42 seconds (a little under the server's hold). On the server a socket that sends nothing for
   45 seconds is closed, which stops the meter and holds the call for the app like any drop. Hanging up waits up to
@@ -420,7 +422,7 @@ Monthly minutes, seconds per call and whether a plan may call at all are in the 
 | saying a waiting draft is done | `api/services/voice/brain/claims.ts` | `api/services/voice/brain/claims.test.ts` |
 | In the app: when the user is speaking, and what is sent | `src/lib/voice/speech-detector.ts`, `src/lib/voice/downsampler.ts` | `src/lib/voice/speech-detector.test.ts`, `src/lib/voice/downsampler.test.ts` |
 | In the app: the line, resuming a dropped call | `src/lib/voice/call-connection.ts` | `src/lib/voice/call-connection.test.ts` |
-| In the app: what the screen shows, playback, mute, typing | `src/lib/voice/call-controller.ts`, `src/lib/voice/pcm-player.ts`, `src/components/voice/` | `src/lib/voice/call-controller.test.ts`, `src/lib/voice/pcm-player.test.ts` |
+| In the app: what the screen shows, playback, mute, typing | `src/lib/voice/call-controller.ts`, `src/lib/api-url.ts#getWsUrl`, `src/lib/voice/pcm-player.ts`, `src/components/voice/` | `src/lib/voice/call-controller.test.ts`, `src/lib/voice/pcm-player.test.ts`, `src/lib/api-url.test.ts` |
 | Who sees the ways into the call | `src/components/voice/CallSmartButton.tsx`, `src/components/voice/VoiceCallTab.tsx` | |
 
 ## Rules for changes here

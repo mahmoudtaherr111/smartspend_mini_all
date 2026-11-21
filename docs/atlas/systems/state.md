@@ -11,18 +11,18 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (12 of
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-18 2bbf17c | 2026-10-01 85479c6 | 18 | — | — | 2 | — |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-18 2bbf17c | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 10 | — | — | 4 | 2 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-21 0abf2ed4 | 2026-11-21 0abf2ed4 | 5 | — | — | 4 | 1 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-11-21 0abf2ed4 | 2026-11-21 0abf2ed4 | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 6 | — | — | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 7 | — | 3 | 3 | 3 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-21 0abf2ed4 | 2026-11-21 0abf2ed4 | 8 | — | 3 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 6 | — | 1 | 7 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 14 | **2** | — | 5 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-21 0abf2ed4 | 2026-11-21 0abf2ed4 | 14 | **2** | — | 5 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-17 6d541cd | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 1 | **1** | 1 | 3 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-21 0abf2ed4 | 2026-11-21 0abf2ed4 | 1 | **1** | 1 | 3 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 4 | — | 2 | 5 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-18 2bbf17c | 2026-10-01 b5d9955 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 5 | — | — | — | 6 |
-| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 7 | **1** | — | 2 | 2 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-21 0abf2ed4 | 2026-11-21 0abf2ed4 | 5 | — | — | — | 6 |
+| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-21 0abf2ed4 | 2026-11-21 0abf2ed4 | 10 | **1** | — | 2 | 2 |
 
 
 ## Where the risk is
@@ -59,7 +59,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
-- The activity checks take at most 1000 users per account table a day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
+- The activity checks (`checkAndTriggerSmartActivityNotifications` in `api/notification-engine.ts`) page through users in batches of 1,000 per account table until none remain un-logged, but users with `preferences.alertsEnabled === false` are skipped without writing `notification_logs`, so a batch filled with them is matched again on every pass; and a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
 
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
 - Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero.

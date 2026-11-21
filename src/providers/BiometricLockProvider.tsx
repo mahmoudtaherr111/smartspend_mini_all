@@ -310,9 +310,15 @@ export function BiometricLockProvider({ children }: { children: React.ReactNode 
   );
 }
 
-export function useBiometricLock(): BiometricLockContextType {
+export function useBiometricLock(): BiometricLockContextType;
+export function useBiometricLock(options: {
+  optional: true;
+}): BiometricLockContextType | null;
+export function useBiometricLock(options?: {
+  optional?: boolean;
+}): BiometricLockContextType | null {
   const context = useContext(BiometricLockContext);
-  if (!context) {
+  if (!context && !options?.optional) {
     throw new Error("useBiometricLock must be used within a BiometricLockProvider");
   }
   return context;

@@ -407,23 +407,23 @@ describe("Adversarial Stress Test: Viewport Zoom Lock & Meta Configuration", () 
   const indexHtml = readFileSync(resolve(process.cwd(), "index.html"), "utf8");
   const indexCss = readFileSync(resolve(process.cwd(), "src/index.css"), "utf8");
 
-  // Since 33795ec index.html no longer locks zoom: the viewport keeps notch and keyboard handling only.
-  it("sizes the viewport to the device, edge to edge, with the keyboard resizing only the visual viewport", () => {
+  // The installed app must feel like a native one, where a screen never zooms: decision 0021.
+  it("sizes the viewport to the device, edge to edge, with the keyboard resizing the content", () => {
     expect(indexHtml).toMatch(/name="viewport"[^>]*content="[^"]*width=device-width/);
     expect(indexHtml).toMatch(/name="viewport"[^>]*content="[^"]*initial-scale=1\.0/);
     expect(indexHtml).toMatch(/name="viewport"[^>]*content="[^"]*viewport-fit=cover/);
-    expect(indexHtml).toMatch(/name="viewport"[^>]*content="[^"]*interactive-widget=resizes-visual/);
+    expect(indexHtml).toMatch(/name="viewport"[^>]*content="[^"]*interactive-widget=resizes-content/);
   });
 
-  it("lets people zoom: no scale lock and no pinch-gesture blocking", () => {
-    expect(indexHtml).not.toMatch(/user-scalable=no/);
-    expect(indexHtml).not.toMatch(/maximum-scale=1/);
+  it("locks zoom in the viewport, like a native app, without script-level gesture handling", () => {
+    expect(indexHtml).toMatch(/user-scalable=no/);
+    expect(indexHtml).toMatch(/maximum-scale=1/);
     expect(indexHtml).not.toContain("gesturestart");
   });
 
   it("configures touch-action: manipulation across html, inputs, buttons and links to eliminate double-tap zoom delay", () => {
     expect(indexCss).toContain("touch-action: manipulation;");
-    expect(indexCss).toMatch(/input,\s*textarea,\s*select\s*\{[^}]*font-size:\s*16px;/);
+    expect(indexCss).toMatch(/input,\s*textarea,\s*select,[^}]*font-size:\s*16px !important;/);
   });
 
   it("enforces overscroll-behavior-y: none to prevent browser elastic rubber-banding", () => {

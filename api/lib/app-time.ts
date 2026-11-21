@@ -78,6 +78,13 @@ export function businessMonthRange(value = new Date(), timeZone = env.APP_TIMEZO
   return { start, endExclusive: nextStart };
 }
 
+/** "YYYY-MM" of the business month before the one `value` falls in: on the 1st at 01:00 Cairo, the month that just ended. */
+export function previousBusinessMonth(value = new Date(), timeZone = env.APP_TIMEZONE): string {
+  const [year, month] = businessDateKey(value, timeZone).split("-").map(Number);
+  const previous = new Date(Date.UTC(year, month - 2, 1));
+  return `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
 const WALL_CLOCK = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
 
 /**

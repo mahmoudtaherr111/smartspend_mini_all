@@ -5,6 +5,8 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import {
+  useEffect,
+  useMemo,
   useRef,
   useState,
   type MouseEvent as ReactMouseEvent,
@@ -18,6 +20,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useVirtualKeyboard } from "@/hooks/useVirtualKeyboard";
@@ -31,20 +34,37 @@ import {
 } from "./mobile-nav-platform";
 import { useLanguage } from "@/i18n/context";
 import type { MessageKey } from "@/i18n/ar";
+import { useBiometricLock } from "@/providers/BiometricLockProvider";
+import { useVoiceCallView } from "@/lib/voice/call-store";
+import {
+  addNativeHotActionListener,
+  addNativeTabSelectedListener,
+  configureNativeTabBar,
+  getNativeTabBarMetrics,
+  isNativeIosCapacitor,
+  setNativeActiveTab,
+  setNativeTabBarVisible,
+  syncNativeTabBarHeightCssVar,
+  type LiquidGlassHotAction,
+  type LiquidGlassTabItem,
+  type LiquidGlassTheme,
+} from "@/lib/native-ios-bridge";
 
 interface TabItem {
   id: string;
   labelKey: MessageKey;
   icon: typeof PlusCircle;
+  sfSymbol: string;
   tab: string;
   href: string;
 }
 
-const navTabs: TabItem[] = [
+const MOBILE_NAV_TABS: TabItem[] = [
   {
     id: "record",
     labelKey: "nav.record",
     icon: PlusCircle,
+    sfSymbol: "plus.circle.fill",
     tab: "record",
     href: "/dashboard?tab=record",
   },
@@ -52,32 +72,126 @@ const navTabs: TabItem[] = [
     id: "stats",
     labelKey: "nav.stats",
     icon: BarChart3,
+    sfSymbol: "chart.bar.fill",
     tab: "stats",
     href: "/dashboard?tab=stats",
   },
-  { id: "ai", labelKey: "nav.ai", icon: Sparkles, tab: "ai", href: "/ai" },
+  {
+    id: "ai",
+    labelKey: "nav.ai",
+    icon: Sparkles,
+    sfSymbol: "sparkles",
+    tab: "ai",
+    href: "/ai",
+  },
   {
     id: "calendar",
     labelKey: "nav.calendar",
     icon: CalendarDays,
+    sfSymbol: "calendar",
     tab: "calendar",
     href: "/dashboard?tab=calendar",
   },
-  { id: "more", labelKey: "nav.more", icon: Menu, tab: "more", href: "/more" },
+  {
+    id: "more",
+    labelKey: "nav.more",
+    icon: Menu,
+    sfSymbol: "line.3.horizontal",
+    tab: "more",
+    href: "/more",
+  },
 ];
 
+// Mirrors BOTTOM_NAV_ROUTES in src/App.tsx
+const VISIBLE_ROUTES = [
+  "/dashboard",
+  "/ai",
+  "/settings",
+  "/support",
+  "/pro",
+  "/bank-sync",
+  "/plan",
+  "/more",
+];
+
+const MORE_TAB_ROUTES = [
+  "/more",
+  "/settings",
+  "/support",
+  "/pro",
+  "/bank-sync",
+  "/plan",
+];
+
+const NATIVE_TABBAR_BREATHING_PX = 12;
+
+function resolveTabHref(item: TabItem, month: string | null): string {
+  return item.href.includes("?") && month
+    ? `${item.href}&month=${month}`
+    : item.href;
+}
+
+function focusQuickExpenseInput(): void {
+  if (typeof document === "undefined") return;
+  const tryFocus = (): boolean => {
+    const el = document.getElementById("expense-input");
+    if (!el || !(el instanceof HTMLElement)) return false;
+    try {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch {
+      // jsdom or unsupported smooth scroll
+    }
+    el.focus();
+    return true;
+  };
+
+  if (tryFocus()) return;
+  window.setTimeout(() => {
+    if (!tryFocus()) {
+      window.setTimeout(tryFocus, 250);
+    }
+  }, 120);
+}
+
 export function MobileBottomNav() {
-  const { t } = useLanguage();
+  const { t, dir, language } = useLanguage();
+  const { resolvedTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { lightTap } = useHaptics();
+  const { lightTap, mediumTap } = useHaptics();
   const { isKeyboardOpen } = useVirtualKeyboard();
+  const biometricLock = useBiometricLock({ optional: true });
+  const voiceCallView = useVoiceCallView();
+
   // Only a month the user picked travels between tabs; otherwise Home opens the month holding today, which with a
   // payday is not always the calendar month.
   const month = searchParams.get("month");
+  const isNativeIos = isNativeIosCapacitor();
   const isIos = detectMobileNavPlatform() === "ios";
   const isIphoneScrubEnabled = supportsIphoneNavScrub();
+
+  const [isDesktopViewport, setIsDesktopViewport] = useState(() =>
+    typeof window !== "undefined" && typeof window.matchMedia === "function"
+      ? window.matchMedia("(min-width: 1024px)").matches
+      : false,
+  );
+
+  useEffect(() => {
+    if (
+      !isNativeIos ||
+      typeof window === "undefined" ||
+      typeof window.matchMedia !== "function"
+    ) {
+      return;
+    }
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const onChange = () => setIsDesktopViewport(mq.matches);
+    onChange();
+    mq.addEventListener?.("change", onChange);
+    return () => mq.removeEventListener?.("change", onChange);
+  }, [isNativeIos]);
+
   const [scrubIndex, setScrubIndex] = useState<number | null>(null);
   const [optimisticSelection, setOptimisticSelection] = useState<{
     index: number;
@@ -96,27 +210,13 @@ export function MobileBottomNav() {
   const suppressNextPointerClickRef = useRef(false);
   const pointerHapticHandledRef = useRef(false);
 
-  const visibleRoutes = [
-    "/dashboard",
-    "/settings",
-    "/support",
-    "/pro",
-    "/bank-sync",
-    "/ai",
-    "/more",
-  ];
-  const isVisible = visibleRoutes.some((route) =>
+  const isRouteVisible =
+    !location.pathname.startsWith("/settings/") &&
+    VISIBLE_ROUTES.some((route) => location.pathname.startsWith(route));
+
+  const isMoreActive = MORE_TAB_ROUTES.some((route) =>
     location.pathname.startsWith(route),
   );
-  if (!isVisible || location.pathname.startsWith("/settings/")) return null;
-
-  const isMoreActive = [
-    "/more",
-    "/settings",
-    "/support",
-    "/pro",
-    "/bank-sync",
-  ].some((route) => location.pathname.startsWith(route));
   const isAiPage = location.pathname.startsWith("/ai");
   const activeTab = isAiPage
     ? "ai"
@@ -124,7 +224,184 @@ export function MobileBottomNav() {
       ? "more"
       : searchParams.get("tab") || "record";
 
-  const matchingActiveIndex = navTabs.findIndex((t) => t.tab === activeTab);
+  const isBiometricOverlayActive = Boolean(
+    biometricLock?.isLocked || biometricLock?.isPrivacyMaskActive,
+  );
+  const isVoiceCallFullscreen =
+    voiceCallView.phase !== "idle" && !voiceCallView.minimized;
+
+  const shouldShowNativeBar =
+    isNativeIos &&
+    isRouteVisible &&
+    !isKeyboardOpen &&
+    !isDesktopViewport &&
+    !isBiometricOverlayActive &&
+    !isVoiceCallFullscreen;
+
+  const nativeTheme: LiquidGlassTheme =
+    resolvedTheme === "dark" ? "dark" : "light";
+
+  const nativeTabItems = useMemo<LiquidGlassTabItem[]>(
+    () =>
+      MOBILE_NAV_TABS.map((item) => ({
+        id: item.id,
+        label: t(item.labelKey),
+        route: item.href,
+        sfSymbol: item.sfSymbol,
+      })),
+    [t],
+  );
+
+  const nativeHotAction = useMemo<LiquidGlassHotAction>(
+    () => ({
+      id: "quick-action",
+      label: t("nav.quickRecord"),
+      sfSymbol: "mic.fill",
+      accessibilityLabel: t("nav.quickRecordAria"),
+    }),
+    [t],
+  );
+
+  const monthRef = useRef(month);
+  const navigateRef = useRef(navigate);
+  const activeTabRef = useRef(activeTab);
+  const shouldShowNativeBarRef = useRef(shouldShowNativeBar);
+  const mediumTapRef = useRef(mediumTap);
+  const measuredNativeHeightRef = useRef<number | null>(null);
+  const hasConfiguredNativeBarRef = useRef(false);
+
+  useEffect(() => {
+    monthRef.current = month;
+    navigateRef.current = navigate;
+    activeTabRef.current = activeTab;
+    shouldShowNativeBarRef.current = shouldShowNativeBar;
+    mediumTapRef.current = mediumTap;
+  }, [month, navigate, activeTab, shouldShowNativeBar, mediumTap]);
+
+  // 1. Register native LiquidGlassTabBar event listeners and tear down cleanly on unmount
+  useEffect(() => {
+    if (!isNativeIos) return;
+
+    const tabHandlePromise = addNativeTabSelectedListener((event) => {
+      const matched =
+        MOBILE_NAV_TABS.find((item) => item.id === event.id) ??
+        MOBILE_NAV_TABS.find((item) => item.href === event.route);
+      if (matched) {
+        navigateRef.current(resolveTabHref(matched, monthRef.current));
+      } else if (event.route) {
+        navigateRef.current(event.route);
+      }
+    });
+
+    const hotActionHandlePromise = addNativeHotActionListener((event) => {
+      void mediumTapRef.current();
+      const recordTab = MOBILE_NAV_TABS[0];
+      navigateRef.current(resolveTabHref(recordTab, monthRef.current));
+      if (typeof window !== "undefined") {
+        try {
+          window.dispatchEvent(
+            new CustomEvent("smartspend:quick-action", {
+              detail: { id: event.id },
+            }),
+          );
+        } catch {
+          // Ignore CustomEvent dispatch failures on restricted webviews
+        }
+      }
+      focusQuickExpenseInput();
+    });
+
+    return () => {
+      void tabHandlePromise.then((handle) => handle.remove()).catch(() => {});
+      void hotActionHandlePromise
+        .then((handle) => handle.remove())
+        .catch(() => {});
+      hasConfiguredNativeBarRef.current = false;
+      measuredNativeHeightRef.current = null;
+      void setNativeTabBarVisible(false, false);
+      syncNativeTabBarHeightCssVar(null);
+    };
+  }, [isNativeIos]);
+
+  // 2. Configure native LiquidGlassTabBar on mount and whenever language / RTL / theme changes
+  useEffect(() => {
+    if (!isNativeIos) return;
+
+    let cancelled = false;
+    const configuredActiveId = activeTabRef.current;
+    void configureNativeTabBar({
+      items: nativeTabItems,
+      activeId: configuredActiveId,
+      hotAction: nativeHotAction,
+      theme: nativeTheme,
+      rtl: dir === "rtl",
+      visible: shouldShowNativeBarRef.current,
+    }).then(async (result) => {
+      if (cancelled) return;
+      hasConfiguredNativeBarRef.current = true;
+      if (activeTabRef.current !== configuredActiveId) {
+        void setNativeActiveTab(activeTabRef.current, false);
+      }
+      const metrics = result ?? (await getNativeTabBarMetrics());
+      if (cancelled) return;
+      if (metrics && metrics.totalHeight > 0) {
+        measuredNativeHeightRef.current = metrics.totalHeight;
+        syncNativeTabBarHeightCssVar(
+          shouldShowNativeBarRef.current
+            ? metrics.totalHeight + NATIVE_TABBAR_BREATHING_PX
+            : null,
+        );
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isNativeIos, nativeTabItems, nativeHotAction, nativeTheme, dir, language]);
+
+  // 3. Sync active tab selection to native LiquidGlassTabBar on route/searchParam changes
+  useEffect(() => {
+    if (!isNativeIos || !hasConfiguredNativeBarRef.current) return;
+    void setNativeActiveTab(activeTab, true);
+  }, [isNativeIos, activeTab]);
+
+  // 4. Sync native visibility + CSS bottom clearance variable on route, keyboard, lock, or voice call changes
+  useEffect(() => {
+    if (!isNativeIos) return;
+
+    let cancelled = false;
+    void setNativeTabBarVisible(shouldShowNativeBar, true);
+
+    if (!shouldShowNativeBar) {
+      syncNativeTabBarHeightCssVar(null);
+    } else if (measuredNativeHeightRef.current) {
+      syncNativeTabBarHeightCssVar(
+        measuredNativeHeightRef.current + NATIVE_TABBAR_BREATHING_PX,
+      );
+    } else {
+      void getNativeTabBarMetrics().then((metrics) => {
+        if (cancelled || !metrics || metrics.totalHeight <= 0) return;
+        measuredNativeHeightRef.current = metrics.totalHeight;
+        if (shouldShowNativeBarRef.current) {
+          syncNativeTabBarHeightCssVar(
+            metrics.totalHeight + NATIVE_TABBAR_BREATHING_PX,
+          );
+        }
+      });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isNativeIos, shouldShowNativeBar]);
+
+  // On Capacitor iOS, the native UIKit LiquidGlassTabBar owns the tab bar surface; do not render a duplicate DOM bar.
+  if (isNativeIos) return null;
+  if (!isRouteVisible) return null;
+
+  const matchingActiveIndex = MOBILE_NAV_TABS.findIndex(
+    (tabItem) => tabItem.tab === activeTab,
+  );
   const activeIndex = matchingActiveIndex >= 0 ? matchingActiveIndex : 0;
   const optimisticIndex =
     optimisticSelection?.locationKey === location.key
@@ -135,8 +412,7 @@ export function MobileBottomNav() {
   const trailOrigin = pressedIndex ?? activeIndex;
   const trailStart = Math.min(trailOrigin, indicatorPosition);
   const trailWidth = Math.abs(indicatorPosition - trailOrigin) + 1;
-  const tabHref = (item: TabItem) =>
-    item.href.includes("?") && month ? `${item.href}&month=${month}` : item.href;
+  const tabHref = (item: TabItem) => resolveTabHref(item, month);
 
   const resetGesture = () => {
     activePointerRef.current = null;
@@ -246,7 +522,7 @@ export function MobileBottomNav() {
       suppressNextPointerClickRef.current = true;
       setOptimisticSelection({ index: targetIndex, locationKey: location.key });
       if (targetIndex !== activeIndex) {
-        navigate(tabHref(navTabs[targetIndex]));
+        navigate(tabHref(MOBILE_NAV_TABS[targetIndex]));
       }
     }
     resetGesture();
@@ -348,7 +624,7 @@ export function MobileBottomNav() {
                 </div>
               </div>
             )}
-            {navTabs.map((item, index) => {
+            {MOBILE_NAV_TABS.map((item, index) => {
               const Icon = item.icon;
               const isSelected = activeIndex === index;
               const isVisualSelected = visualActiveIndex === index;

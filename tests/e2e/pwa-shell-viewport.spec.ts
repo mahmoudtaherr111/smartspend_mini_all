@@ -91,7 +91,7 @@ test.describe("R1: True Edge-to-Edge Standalone PWA & Viewport Geometry", () => 
   test("Tier 1 (F2): Universal Route-Aware Nav Safe Padding (`pb-nav-safe`) prevents button occlusion", async ({
     page,
   }) => {
-    const bottomNavRoutes = ["/dashboard", "/ai", "/settings", "/pro", "/support", "/bank-sync"];
+    const bottomNavRoutes = ["/dashboard", "/ai", "/settings", "/pro", "/support", "/wallets"];
 
     for (const route of bottomNavRoutes) {
       await page.goto(route);

@@ -90,25 +90,26 @@ describe("Native Mobile Transformation: Adversarial Vitest Integration & Archite
   // =========================================================================
   // 3. ACCESSIBLE ZOOM & VIEWPORT STABILITY
   // =========================================================================
-  describe("3. Accessible zoom & viewport stability invariants", () => {
-    it("keeps viewport edge-to-edge while preserving user zoom", () => {
+  // The installed app must feel like a native one, where a screen never zooms: decision 0021.
+  describe("3. Native viewport invariants", () => {
+    it("keeps the viewport edge to edge with zoom locked, as a native app", () => {
       expect(indexHtml).toMatch(
         /name="viewport"[^>]*content="[^"]*width=device-width/,
       );
       expect(indexHtml).toMatch(
         /name="viewport"[^>]*content="[^"]*initial-scale=1\.0/,
       );
-      expect(indexHtml).not.toContain("maximum-scale=1.0");
-      expect(indexHtml).not.toContain("user-scalable=no");
+      expect(indexHtml).toContain("maximum-scale=1.0");
+      expect(indexHtml).toContain("user-scalable=no");
       expect(indexHtml).toMatch(
         /name="viewport"[^>]*content="[^"]*viewport-fit=cover/,
       );
       expect(indexHtml).toMatch(
-        /name="viewport"[^>]*content="[^"]*interactive-widget=resizes-visual/,
+        /name="viewport"[^>]*content="[^"]*interactive-widget=resizes-content/,
       );
     });
 
-    it("does not suppress native WebKit pinch gestures", () => {
+    it("adds no script-level gesture handling on top of the viewport lock", () => {
       expect(indexHtml).not.toContain("gesturestart");
       expect(indexHtml).not.toContain("gesturechange");
       expect(indexHtml).not.toContain("gestureend");
@@ -229,8 +230,9 @@ describe("Native Mobile Transformation: Adversarial Vitest Integration & Archite
     });
 
     it("declares 16px minimum font size on inputs to prevent iOS automatic zoom on focus", () => {
+      // Phones and coarse pointers: every field at 16px, Tailwind's text-sm and text-xs included.
       expect(indexCss).toMatch(
-        /input,\s*textarea,\s*select\s*\{[^}]*font-size:\s*16px;/,
+        /@media \(max-width: 1024px\), \(pointer: coarse\)\s*\{\s*input,\s*textarea,\s*select,[^}]*font-size:\s*16px !important;/,
       );
     });
 
