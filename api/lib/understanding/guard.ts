@@ -29,6 +29,7 @@ export type EventFlag =
   | "sub_repaired"
   | "kind_category_mismatch"
   | "flow_impossible"
+  | "person_unverified"
   | "commitment_unknown"
   | "wallet_unknown"
   | "date_invalid"
@@ -267,6 +268,8 @@ export function guardReading(reading: Reading, sentence: string, ctx: GuardConte
     }
     const forced = FORCED_FLOW[event.kind];
     if (forced && forced !== event.flow) flags.push("flow_impossible");
+
+    if (event.person && !quoteIsFromText(event.person, sentence)) flags.push("person_unverified");
 
     // ── References ──
     if (event.commitment && !ctx.commitmentRefs.has(event.commitment)) {

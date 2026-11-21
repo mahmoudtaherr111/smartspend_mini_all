@@ -329,20 +329,20 @@
         "api/lib/text-normalizer.ts": "05ac2af6ca6a",
         "api/lib/understanding/bridge.ts": "a48f4db9d0a1",
         "api/lib/understanding/context.ts": "d325302a93bf",
-        "api/lib/understanding/contract.ts": "09d201d8df2f",
+        "api/lib/understanding/contract.ts": "49d3f12627cb",
         "api/lib/understanding/currency.ts": "d747d23ecbab",
         "api/lib/understanding/engine.ts": "869fcc7f5c90",
-        "api/lib/understanding/guard.ts": "9a035275e5e3",
+        "api/lib/understanding/guard.ts": "87c2773f9efa",
         "api/lib/understanding/numbers.ts": "00318130d0ae",
         "api/lib/understanding/policy.ts": "cf598e12bf88",
-        "api/lib/understanding/prompt.ts": "37e3445ee13c",
-        "api/lib/understanding/reading-context.ts": "c6edfd3615e4",
+        "api/lib/understanding/prompt.ts": "722a1161daa9",
+        "api/lib/understanding/reading-context.ts": "63fd49f3ff63",
         "api/lib/understanding/routes.ts": "1c2384b5e358",
         "api/lib/unified-normalizer.ts": "bfd4f91bfd4b",
         "api/lib/voice-intake-gate.ts": "0a8bf7293a27",
         "api/services/parser-trace.ts": "aa8b5bad3877",
         "api/services/recording/engine-switch.ts": "3e36aa1d93eb",
-        "api/services/recording/items.ts": "94a214b14d02",
+        "api/services/recording/items.ts": "0f4d0895b305",
         "api/services/recording/read-sentence.ts": "dd29a540979f",
         "api/services/recording/reading-log.ts": "c610b2ea5979",
         "api/services/recording/saved-reading.ts": "9afcf3c69aa5",
@@ -352,9 +352,9 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-11-21 20483aa7",
-      "arabic": "d995bebd52de",
-      "arabicChecked": "2026-11-21 20483aa7"
+      "checked": "2026-11-21 de463a99",
+      "arabic": "354ddfac1b3f",
+      "arabicChecked": "2026-11-21 de463a99"
     },
     "insights": {
       "files": {

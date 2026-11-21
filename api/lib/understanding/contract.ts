@@ -22,7 +22,7 @@ import { arabicIndicToAscii } from "../arabic-number-parser";
 import type { StructuredSchema } from "../llm-router";
 
 /** Bump when the reply's shape or the meaning of a field changes; stored with every reading. */
-export const READING_CONTRACT_VERSION = "2";
+export const READING_CONTRACT_VERSION = "3";
 
 export const FLOWS = ["out", "in"] as const;
 export type Flow = (typeof FLOWS)[number];
@@ -119,7 +119,7 @@ export const READING_SCHEMA: StructuredSchema = {
           d: STRING(),
           db: ENUM(DOUBTS),
         },
-        required: ["a", "k", "f", "c", "s"],
+        required: ["a", "k", "f", "c", "s", "p", "pr", "pl"],
       },
     },
     x: {

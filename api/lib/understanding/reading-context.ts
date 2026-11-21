@@ -142,14 +142,14 @@ function wordForms(word: string): string[] {
 }
 
 /** A name as the keys it may be matched by: the whole name and its first word, each with or without a prefix. */
-function nameKeys(raw: string): string[] {
+function nameKeys(raw: string, includeFirst: boolean): string[] {
   const folded = foldForMatch(raw);
   if (folded.length < 2) return [];
   const [first, ...rest] = folded.split(" ");
   const keys = new Set<string>([folded]);
   for (const form of wordForms(first)) {
     keys.add([form, ...rest].join(" "));
-    if (form.length >= 2) keys.add(form);
+    if (includeFirst && form.length >= 2) keys.add(form);
   }
   return [...keys];
 }
@@ -167,17 +167,28 @@ function safeJson(value: string): unknown {
   }
 }
 
-/**
- * A matcher over the user's people: their names, their aliases and the first word of each, as
- * folded text. A name said in the sentence matches when it, or its first word, is one of those,
- * with or without a leading «و», «ل», «لل» or «ال» on either side.
- */
-export function personMatcher(contacts: readonly ContactRow[]): (name: string) => boolean {
-  const known = new Set<string>();
+/** Resolve only unambiguous names. Full names must agree in full; a first name or alias
+ * can identify one contact but cannot choose between two people. */
+export function personResolver<T extends ContactRow>(contacts: readonly T[]): (name: string) => T | undefined {
+  const index = new Map<string, Set<T>>();
   for (const contact of contacts) {
-    for (const raw of [contact.name, ...aliasesOf(contact.aliases)]) nameKeys(String(raw ?? "")).forEach((key) => known.add(key));
+    for (const raw of [contact.name, ...aliasesOf(contact.aliases)]) {
+      for (const key of nameKeys(raw, true)) {
+        const owners = index.get(key) ?? new Set<T>();
+        owners.add(contact);
+        index.set(key, owners);
+      }
+    }
   }
-  return (name: string) => known.size > 0 && nameKeys(name).some((key) => known.has(key));
+  return (name) => {
+    const matches = new Set(nameKeys(name, false).flatMap(key => [...(index.get(key) ?? [])]));
+    return matches.size === 1 ? matches.values().next().value : undefined;
+  };
+}
+
+export function personMatcher(contacts: readonly ContactRow[]): (name: string) => boolean {
+  const resolve = personResolver(contacts);
+  return name => resolve(name) !== undefined;
 }
 
 // ─── Ledger familiarity ──────────────────────────────────────────────────────────

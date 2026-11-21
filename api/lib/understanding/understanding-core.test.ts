@@ -176,6 +176,11 @@ describe("what the code reads on its own", () => {
 });
 
 describe("the guard", () => {
+  it("flags a named beneficiary missing from the sentence", () => {
+    const sentence = "دفعت 500 مصاريف المدرسة";
+    const reading = flagsOf(sentence, [event({ quote: sentence, amount: 500, person: "يوسف" })]);
+    expect(reading.events[0].flags).toContain("person_unverified");
+  });
   it("passes a true reading clean", () => {
     const guarded = flagsOf("دفعت القسط التاني للمدرسة 8000", [
       event({ quote: "دفعت القسط التاني للمدرسة 8000", amount: 8000, category: "education", sub: "school_fees" }),

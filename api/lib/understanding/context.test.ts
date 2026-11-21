@@ -167,6 +167,13 @@ describe("recognising the user's people", () => {
     { name: "منى", aliases: ["مونمون"] },
   ]);
 
+  it("does not guess a surname or pick the first of two people named Ahmed", () => {
+    const matches = personMatcher([{ name: "أحمد حسن" }, { name: "أحمد حسين" }]);
+    expect(matches("لأحمد")).toBe(false);
+    expect(matches("أحمد علي")).toBe(false);
+    expect(matches("لأحمد حسن")).toBe(true);
+  });
+
   it("matches names, aliases and first names, with or without a leading و ل لل ال", () => {
     expect(known("أحمد")).toBe(true);
     expect(known("لأحمد")).toBe(true);

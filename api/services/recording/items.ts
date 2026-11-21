@@ -8,7 +8,7 @@
  */
 import type { Understanding, UnderstoodEvent } from "../../lib/understanding/engine";
 import { taxonomyCategory, taxonomySub } from "../../../contracts/taxonomy";
-import { personMatcher } from "../../lib/understanding/reading-context";
+import { personResolver } from "../../lib/understanding/reading-context";
 import type { PromptPerson } from "../../lib/understanding/prompt";
 import type { ParseDecision, ReadingSummary, RecordedItem } from "./types";
 
@@ -24,11 +24,6 @@ export interface ItemContext {
   people: readonly PromptPerson[];
   /** Set in business mode when the user has an active business. */
   businessId?: number | null;
-}
-
-function knownPersonOf(name: string, people: readonly PromptPerson[]): PromptPerson | undefined {
-  if (!name.trim()) return undefined;
-  return people.find((person) => personMatcher([{ name: person.name }])(name));
 }
 
 export function readingSummaryOf(event: UnderstoodEvent): ReadingSummary {
@@ -72,7 +67,7 @@ export function toParsedItem(event: UnderstoodEvent, ctx: ItemContext, sentenceR
   // The day the sentence named, at noon UTC of that Cairo day, as the manual sheet sends a date.
   if (event.date) item.date = `${event.date}T12:00:00.000Z`;
 
-  const known = knownPersonOf(event.person, ctx.people);
+  const known = event.person ? personResolver(ctx.people)(event.person) : undefined;
   const name = (known?.name ?? event.person).trim().slice(0, PERSON_NAME_MAX);
   const relation = (known?.relation ?? event.personRelation ?? "").trim().slice(0, PERSON_RELATION_MAX);
   if (name) item.person_mentioned = name;

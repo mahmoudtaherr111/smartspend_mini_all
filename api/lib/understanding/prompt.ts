@@ -18,7 +18,7 @@ import { TAXONOMY, TAXONOMY_VERSION, type TaxonomyCategory } from "../../../cont
 import { foldForMatch } from "./numbers";
 
 /** Bump on any change to the instructions or examples; stored with every reading. */
-export const PROMPT_VERSION = "6";
+export const PROMPT_VERSION = "7";
 
 export interface PromptPerson {
   name: string;
@@ -278,7 +278,7 @@ An event is money that ALREADY moved. Its keys:
 - c and s (always): category and subcategory ids from the taxonomy below; s must belong to c; use "other" when no subcategory fits. Movement categories are tied to their kinds.
 - w: two to five of the person's words naming the thing.
 - q: the person's own words for this event, copied from the sentence exactly as written. Leave q out when the sentence is this one event; write it only when the sentence holds more than one event or a clause set aside.
-- p, pr, pl: a person the event names, as said («ماما», «ابني يوسف»; «السباك» is NOT a person, it is a service); their role pr: to (paid or given to), from (received from), for (bought or paid on their behalf), with; and pl, what they are to the user when the sentence says it, as one word («ابني» = ابن, «ماما» = أم, «صاحبي» = صاحب, «جاري» = جار, «المدام» = زوجة).
+- p, pr, pl (always present): copy the named person or family reference from the sentence even if they are absent from CONTACTS. Use p="", pr="none", pl="" when the event names nobody. Use pl="" for a named person whose relationship was not stated. Preserve the person as spoken («ماما», «ابني يوسف»; «السباك» is NOT a person, it is a service); their role pr: to (paid or given to), from (received from), for (bought or paid on their behalf), with; and pl, what they are to the user when the sentence says it, as one word («ابني» = ابن, «ماما» = أم, «صاحبي» = صاحب, «جاري» = جار, «المدام» = زوجة).
 - cm and i: when the event pays one of the COMMITMENTS listed in the context, its reference (c1, c2…) and how many instalments it pays (1 unless the sentence says more). Never invent a reference.
 - wl: when the sentence says which of the listed WALLETS the money came from or went to, its reference.
 - d: YYYY-MM-DD only when the sentence says a day other than today («امبارح», «أول امبارح», «يوم 5», «الجمعة اللي فاتت»), worked out from TODAY in the context. When it names a past time without a day («الشهر اللي فات», «من كام يوم», «الأسبوع اللي فات»), leave d out and set db to "date".
