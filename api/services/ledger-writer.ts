@@ -394,6 +394,16 @@ export async function updateLedgerEntryInTx(tx: LedgerTx, owner: LedgerOwner, id
         ...(change.capturePurpose ? { purpose: change.capturePurpose.trim().slice(0, 200) } : {}) } } };
   }
 
+  // Keep the original reading for history, but a later refiling must take precedence, even if
+  // the row is eventually filed back under the same legacy pair.
+  if (filingChanged || (set.type !== undefined && set.type !== row.type)) {
+    const metadata = (set.parsedMetadata ?? row.parsedMetadata) as Record<string, unknown> | null;
+    const reading = metadata?.reading;
+    if (reading && typeof reading === "object" && !Array.isArray(reading)) {
+      set.parsedMetadata = { ...metadata, reading: { ...reading, superseded: true } };
+    }
+  }
+
   await tx.update(expenses).set(set).where(own);
   if (change.contactId !== undefined && change.contactId !== row.contactId) {
     if (row.contactId) await tx.update(userContacts).set({ transactionCount: sql`GREATEST(COALESCE(${userContacts.transactionCount}, 1) - 1, 0)` }).where(and(eq(userContacts.id, row.contactId), eq(userContacts.userId, owner.userId), eq(userContacts.userType, owner.userType)));

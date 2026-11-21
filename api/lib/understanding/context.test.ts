@@ -205,7 +205,7 @@ describe("the reverse of the bridge", () => {
   });
 
   it("prefers a real subcategory, then the category that owns the stored name", () => {
-    expect(v2OfStored("أكل وشرب", "بقالة")).toEqual({ category: "groceries", sub: "vegetables_fruits" });
+    expect(v2OfStored("أكل وشرب", "بقالة")).toEqual({ category: "groceries", sub: "supermarket" });
     expect(v2OfStored("أقساط وفوايد", "أقساط")).toEqual({ category: "financial_fees", sub: "installment" });
     expect(v2OfStored("تحويل", "دين/سلفة")).toEqual({ category: "debts", sub: "other" });
     expect(v2OfStored("سكن", "ايجار")).toEqual({ category: "housing", sub: "rent" });

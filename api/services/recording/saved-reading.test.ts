@@ -3,7 +3,8 @@
  * and the metadata it is written with. A client's own `reading` never survives.
  */
 import { describe, expect, it } from "vitest";
-import { movementKindFor, readingItemFor, readingOf, savedAsRead, withReadingMetadata } from "./saved-reading";
+import { movementKindFor, readingItemFor, readingOf, savedAsRead, savedPurposeLabels, withReadingMetadata } from "./saved-reading";
+import { TAXONOMY_VERSION } from "../../../contracts/taxonomy";
 
 const reading = (over: Record<string, unknown> = {}) => ({
   category: "housing", sub: "rent", kind: "spending", flow: "out", commitmentId: 12, commitmentDueDay: "2026-11-01",
@@ -14,6 +15,15 @@ const item = (amount: number, over: Record<string, unknown> = {}) => ({
 });
 
 describe("readingItemFor", () => {
+  it("uses a saved purpose only while its version and ledger filing still agree", () => {
+    const current = { v: TAXONOMY_VERSION, category: "groceries", sub: "packaged_snacks", kind: "spending", flow: "out" };
+    const filing = { type: "expense", category: "أكل وشرب", subCategory: "بقالة" };
+    expect(savedPurposeLabels({ ...filing, parsedMetadata: { reading: current } })?.subAr).toBe("سناكس ومشروبات");
+    for (const changed of [{ v: "2.0" }, { v: "unknown" }, { superseded: true }]) {
+      expect(savedPurposeLabels({ ...filing, parsedMetadata: { reading: { ...current, ...changed } } })).toBeUndefined();
+    }
+    expect(savedPurposeLabels({ ...filing, subCategory: "دليفري", parsedMetadata: { reading: current } })).toBeUndefined();
+  });
   it("takes the only item, whatever its amount", () => {
     expect(readingItemFor([item(4000)], { amount: 3900 })?.reading.commitmentId).toBe(12);
   });

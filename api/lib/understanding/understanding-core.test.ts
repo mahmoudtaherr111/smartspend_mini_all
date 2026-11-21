@@ -53,6 +53,12 @@ describe("taxonomy v2", () => {
 });
 
 describe("the bridge to stored names", () => {
+  it("files packaged snacks with groceries and restaurant delivery with restaurant orders", () => {
+    expect(storedFiling("groceries", "packaged_snacks")).toEqual({ category: "أكل وشرب", subCategory: "بقالة" });
+    expect(storedFiling("dining", "delivery")).toEqual({ category: "أكل وشرب", subCategory: "دليفري" });
+    expect(storedFiling("work", "marketing").subCategory).toBe("إعلانات وتسويق");
+    expect(storedFiling("work", "shipping").subCategory).toBe("شحن بضاعة");
+  });
   it("lands every v2 pair on a pair the ledger knows", () => {
     for (const category of TAXONOMY) {
       for (const sub of category.subs) {

@@ -295,6 +295,8 @@ export const CATEGORIES: MainCategory[] = [
       { id: "hosting", name: "Hosting & Domains", name_ar: "استضافة" },
       { id: "apis", name: "APIs", name_ar: "واجهات برمجية" },
       { id: "coworking", name: "Coworking", name_ar: "مساحة عمل" },
+      { id: "marketing", name: "Marketing", name_ar: "إعلانات وتسويق" },
+      { id: "business_shipping", name: "Business Shipping", name_ar: "شحن بضاعة" },
       { id: "general_work", name: "General", name_ar: "عام" },
     ],
   },

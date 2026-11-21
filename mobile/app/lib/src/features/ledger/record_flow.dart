@@ -29,7 +29,7 @@ class ComposerDraft extends Notifier<String?> {
   void taken() => state = null;
 }
 
-/// Says what was saved and offers to take it back (rule 7.5): «اتحفظت لوحدها: 185 ج.م · أكل وشرب».
+/// Says what was saved and offers to take it back (rule 7.5).
 void announceSaved(
   BuildContext context,
   WidgetRef ref,
@@ -40,9 +40,10 @@ void announceSaved(
   if (!context.mounted) return;
   final l10n = AppLocalizations.of(context);
   SmartSpendHaptics.success();
+  final single = items.length == 1 ? items.single : null;
   // moneyText: «•••• ج.م» while amounts are hidden.
-  final summary = items.length == 1
-      ? '${moneyText(context, items.single.amount)} · ${items.single.categoryLabel}'
+  final summary = single != null
+      ? '${moneyText(context, single.amount)} · ${inlineName(single.purposeLabels?.label(arabic: Localizations.localeOf(context).languageCode == 'ar') ?? single.categoryLabel)}'
       : l10n.savedItemsSummary(
           items.length,
           moneyText(

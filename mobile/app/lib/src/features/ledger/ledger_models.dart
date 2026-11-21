@@ -37,14 +37,14 @@ final class ParsedPurposeLabels {
   final String categoryEn;
   final String subEn;
 
-  String? label({required bool arabic}) {
+  String? label({required bool arabic, String separator = '/'}) {
     final useArabic = arabic || categoryEn.isEmpty;
     final category = useArabic ? categoryAr : categoryEn;
     final sub = useArabic ? subAr : subEn;
     if (category.isEmpty) return null;
     return sub.isEmpty || sub == 'عام' || sub == 'General'
         ? category
-        : '$category/$sub';
+        : '$category$separator$sub';
   }
 
   Map<String, Object?> toJson() => {
@@ -271,6 +271,7 @@ final class LedgerEntry {
     this.walletId,
     this.contactId,
     this.parsedMetadata,
+    this.purposeLabels,
     this.bundleFee,
     this.bundleTotal,
   });
@@ -289,6 +290,10 @@ final class LedgerEntry {
     parsedMetadata: json['parsedMetadata'] is Map<String, Object?>
         ? json['parsedMetadata'] as Map<String, Object?>
         : null,
+    purposeLabels: switch (json['purposeLabels']) {
+      final Map<String, Object?> labels => ParsedPurposeLabels.fromJson(labels),
+      _ => null,
+    },
     bundleFee: json['bundle'] is Map<String, Object?>
         ? readAmount((json['bundle'] as Map<String, Object?>)['feeAmount'])
         : null,
@@ -317,6 +322,7 @@ final class LedgerEntry {
   final int? walletId;
   final int? contactId;
   final Map<String, Object?>? parsedMetadata;
+  final ParsedPurposeLabels? purposeLabels;
   final num? bundleFee;
   final num? bundleTotal;
   num get displayAmount => bundleTotal ?? amount.abs();
@@ -379,14 +385,22 @@ final class LedgerEntry {
     'walletId': walletId,
     'contactId': contactId,
     if (parsedMetadata != null) 'parsedMetadata': parsedMetadata,
+    if (purposeLabels != null) 'purposeLabels': purposeLabels!.toJson(),
     if (bundleTotal != null)
       'bundle': {'feeAmount': bundleFee, 'totalAmount': bundleTotal},
     'date': date.toUtc().toIso8601String(),
   };
 
-  /// What the row is called: the description the parser wrote, else the subcategory, else the category.
-  String get title {
-    for (final candidate in [description, subCategory, category]) {
+  /// Prefer the description, then the reading's purpose, then the stored filing.
+  String get title => titleFor(arabic: true);
+
+  String titleFor({required bool arabic}) {
+    for (final candidate in [
+      description,
+      purposeLabels?.label(arabic: arabic),
+      subCategory,
+      category,
+    ]) {
       final value = candidate?.trim();
       if (value != null && value.isNotEmpty && value != 'عام') return value;
     }

@@ -13,6 +13,7 @@ import { addDays } from "../api/services/coach/schedule";
 import { businessDateKey } from "../api/lib/app-time";
 import { invalidateSettingsCache } from "../api/lib/settings-cache";
 import { readSentence } from "../api/services/recording/read-sentence";
+import { TAXONOMY_VERSION } from "../contracts/taxonomy";
 
 vi.mock("../api/services/recording/read-sentence", async (importOriginal) => ({
   ...await importOriginal<typeof import("../api/services/recording/read-sentence")>(),
@@ -71,6 +72,21 @@ const school = () => commitments.create({ shape: "fixed", kind: "school", title:
 const savedRow = async (id: number) => (await db.select().from(expenses).where(and(eq(expenses.id, id), eq(expenses.userId, user.userId), eq(expenses.userType, user.userType))))[0];
 
 describe("saving what a reading read (docs/decisions/0052-understanding-engine.md)", () => {
+  itWithDatabase("keeps the specific grocery purpose on readback until the user refiles the expense", async () => {
+    await setEngine("understanding");
+    const text = "شيبسي من الكشك بـ 35";
+    const item = { amount: 35, category: "أكل وشرب", subCategory: "بقالة", type: "expense" as const };
+    const classificationLogId = await readingLog(text, [{ ...item, reading: {
+      taxonomyVersion: TAXONOMY_VERSION, category: "groceries", sub: "packaged_snacks", kind: "spending", flow: "out",
+    } }]);
+    const { id } = await ledger.create({ ...item, rawText: text, source: "ai_parsed", classificationLogId });
+    expect(await ledger.getById({ id })).toMatchObject({ ...item, amount: expect.anything(),
+      purposeLabels: { categoryAr: "بقالة وتموين", subAr: "سناكس ومشروبات" },
+    });
+    await ledger.update({ id, category: "أكل وشرب", subCategory: "دليفري" });
+    await ledger.update({ id, category: "أكل وشرب", subCategory: "بقالة" });
+    expect((await ledger.getById({ id }))?.purposeLabels).toBeUndefined();
+  });
   itWithDatabase("attributes a subcategory edit to the saved reading when the same sentence was read twice", async () => {
     await setEngine("understanding");
     const text = "مصاريف المدرسة 5000";

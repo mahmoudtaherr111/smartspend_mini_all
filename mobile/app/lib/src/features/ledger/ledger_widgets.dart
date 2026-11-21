@@ -190,12 +190,15 @@ class _EntryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final words = DateWords.of(context);
     final colors = context.smartSpendColors;
+    final arabic = Localizations.localeOf(context).languageCode == 'ar';
+    final category =
+        entry.purposeLabels?.label(arabic: arabic) ?? entry.category;
     final row = TransactionRow(
       icon: categoryIcon(entry.category),
       iconColor: categoryColor(context, entry.category),
-      title: entry.title,
+      title: entry.titleFor(arabic: arabic),
       subtitle:
-          '${entry.category} · ${inlineName(words.clock(entry.date))}${(entry.bundleFee ?? 0) > 0 ? ' · ${AppLocalizations.of(context).captureFeeLabel}: ${moneyText(context, entry.bundleFee!)}' : ''}',
+          '${inlineName(category)} · ${inlineName(words.clock(entry.date))}${(entry.bundleFee ?? 0) > 0 ? ' · ${AppLocalizations.of(context).captureFeeLabel}: ${moneyText(context, entry.bundleFee!)}' : ''}',
       amount: entry.displayAmount,
       kind: entryKind(entry),
       heroTag: heroTag,

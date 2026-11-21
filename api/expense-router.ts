@@ -1,6 +1,6 @@
 import { MOVEMENT_KINDS, type MovementKind } from "../contracts/ledger-movement";
 import { spendingRowSql, ledgerBucketSql } from "./services/ledger-semantics";
-import { ledgerBundle, ledgerBundleColumns, ledgerBundleJoin, linkedLedgerFee, standaloneLedgerRowSql } from "./services/ledger-bundles";
+import { ledgerBundle, ledgerBundleColumns, ledgerBundleJoin, ledgerEntryWithPurpose, linkedLedgerFee, standaloneLedgerRowSql } from "./services/ledger-bundles";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, authedProcedure } from "./middleware";
@@ -53,7 +53,8 @@ import {
 import { currentRecordingEngine } from "./services/recording/engine-switch";
 import { loadReadingLogItems } from "./services/recording/reading-log";
 import { readSentence } from "./services/recording/read-sentence";
-import { movementKindFor, readingItemFor, readingOf, savedAsRead, withReadingMetadata } from "./services/recording/saved-reading";
+import { movementKindFor, readingItemFor, readingOf, savedAsRead, savedPurposeLabels, withReadingMetadata } from "./services/recording/saved-reading";
+import type { PurposeLabels } from "./services/recording/types";
 
 const reviewLog = createLogger("expense-review");
 const readingLog = createLogger("expense-reading");
@@ -199,6 +200,7 @@ export type SavedEntry = {
   subCategory: string | null;
   type: string;
   direction: "incoming" | "outgoing" | null;
+  purposeLabels?: PurposeLabels;
 };
 
 /**
@@ -243,7 +245,7 @@ async function saveClarifiedItems(
       options.userType,
     );
     const reading = options.fromReading ? readingOf(item.reading) : null;
-    const fromReading = reading
+    const fromReading: ReadingEnrichment = reading
       ? {
         movementKind: movementKindFor(reading, item.type),
         parsedMetadata: withReadingMetadata(undefined, item.direction, reading),
@@ -267,6 +269,7 @@ async function saveClarifiedItems(
         ...fromReading,
       },
     ]);
+    const purposeLabels = savedPurposeLabels({ ...item, parsedMetadata: fromReading.parsedMetadata });
     saved.push({
       id,
       amount: Math.abs(item.amount),
@@ -274,6 +277,7 @@ async function saveClarifiedItems(
       subCategory: item.subCategory ?? null,
       type: item.type,
       direction: item.direction ?? null,
+      ...(purposeLabels ? { purposeLabels } : {}),
     });
   }
   if (saved.length > 0) await bumpStreakInTx(tx, owner);
@@ -932,7 +936,7 @@ export const expenseRouter = router({
       // Under the understanding engine the item takes what its reading knew (the user's own log row, not the client).
       const fromReading: ReadingEnrichment = (await currentRecordingEngine()) === "understanding"
         ? (await enrichFromReadings(owner, [input]))[0]
-        : {};
+        : { parsedMetadata: withReadingMetadata(input.parsedMetadata, input.direction, null) };
 
       // The row, its rollup delta, the contact's count and the streak in one transaction; then the review's
       // correction is learned before the caches forget (api/services/ledger-writer.ts).
@@ -1161,7 +1165,7 @@ export const expenseRouter = router({
           .where(and(...conditions));
 
         return {
-          items: items.map(({ entry, fee }) => input?.groupLinkedFees ? ledgerBundle(entry, fee) : ({ ...entry, bundle: null })),
+          items: items.map(({ entry, fee }) => input?.groupLinkedFees ? ledgerBundle(entry, fee) : ({ ...ledgerEntryWithPurpose(entry), bundle: null })),
           total: Number(countResult[0].count),
         };
       } catch (err) {

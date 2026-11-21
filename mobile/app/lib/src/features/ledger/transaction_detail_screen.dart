@@ -253,10 +253,14 @@ class _Filled extends ConsumerWidget {
         ? null
         : contacts.where((c) => c.id == entry.contactId).firstOrNull;
 
+    final arabic = Localizations.localeOf(context).languageCode == 'ar';
     final sub = entry.subCategory?.trim();
-    final categorySubtitle = sub != null && sub.isNotEmpty && sub != 'عام'
+    final storedCategory = sub != null && sub.isNotEmpty && sub != 'عام'
         ? '${entry.category} · $sub'
         : entry.category;
+    final categorySubtitle =
+        entry.purposeLabels?.label(arabic: arabic, separator: ' · ') ??
+        storedCategory;
     final dateText =
         '${words.day(entry.date, now: now)} · ${inlineName(words.clock(entry.date))}';
     final description = entry.description?.trim();
@@ -272,7 +276,8 @@ class _Filled extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         HeroFigure(
-          label: '${_kindWord(l10n)} · ${inlineName(entry.title)}',
+          label:
+              '${_kindWord(l10n)} · ${inlineName(entry.titleFor(arabic: arabic))}',
           amount: entry.displayAmount,
           kind: entryKind(entry),
           story: dateText,
@@ -300,7 +305,7 @@ class _Filled extends ConsumerWidget {
               icon: categoryIcon(entry.category),
               tint: categoryColor(context, entry.category),
               title: l10n.transactionCategoryLabel,
-              subtitle: categorySubtitle,
+              subtitle: inlineName(categorySubtitle),
             ),
             GroupedRow(
               icon: Icons.schedule_rounded,

@@ -40,7 +40,7 @@ export interface TaxonomyCategory {
 }
 
 /** Bump when a category or subcategory is added, removed or re-bound. Names and guides do not count. */
-export const TAXONOMY_VERSION = "2.0";
+export const TAXONOMY_VERSION = "2.1";
 
 const other: TaxonomySub = { id: "other", nameAr: "أخرى", nameEn: "Other", guide: "" };
 const sub = (id: string, nameAr: string, nameEn: string, guide: string): TaxonomySub => ({ id, nameAr, nameEn, guide });
@@ -51,28 +51,29 @@ const INCOME: readonly MovementKind[] = ["income"];
 export const TAXONOMY: readonly TaxonomyCategory[] = [
   // ─── Spending: what the money bought ───
   {
-    id: "groceries", nameAr: "بقالة وطلبات البيت", nameEn: "Groceries", icon: "🛒", color: "#16a34a",
+    id: "groceries", nameAr: "بقالة وتموين", nameEn: "Groceries", icon: "🛒", color: "#16a34a",
     group: "spending", kinds: SPENDING,
-    guide: "أكل وطلبات بتتاخد البيت: خضار، لحمة، عيش، بقالة، سوبر ماركت. فاتورة السوبر ماركت كلها هنا مهما كان اللي فيها. الأكل الجاهز اللي بيتاكل دلوقتي مش هنا (dining).",
+    guide: "مشتريات البقال والسوبر ماركت والكشك الغذائية حتى لو اتاكلت في السكة. السلة المتنوعة من فروع مختلفة بمبلغ واحد أو فاتورة من غير تفاصيل في supermarket. لو صنف بعينه غرضه معروف زي مسحوق الغسيل أو لبن الرضع، اختار غرضه.",
     subs: [
       sub("vegetables_fruits", "خضار وفاكهة", "Vegetables & fruit", "خضار، فاكهة، الخضري، الفكهاني"),
       sub("meat_poultry_fish", "لحوم وفراخ وسمك", "Meat, poultry & fish", "لحمة، فراخ، سمك، جمبري، الجزار، الفرارجي"),
       sub("bakery", "عيش ومخبوزات", "Bakery", "عيش، فينو، الفرن، المخبز"),
-      sub("dairy_eggs", "ألبان وبيض", "Dairy & eggs", "لبن، جبنة، زبادي، بيض"),
-      sub("supermarket", "سوبر ماركت وتموين", "Supermarket", "سوبر ماركت، بقالة، البقال، كارفور، طلبات البيت، تموين، رز وزيت وسكر، حساب الشكك عند البقال"),
+      sub("dairy_eggs", "ألبان وبيض", "Dairy & eggs", "لبن، جبنة، زبادي، بيض، مشتريات الألبان والبيض مع بعض"),
+      sub("packaged_snacks", "سناكس ومشروبات", "Packaged snacks & drinks", "شيبسي، بسكوت معلب، شوكولاتة مغلفة، عصير معلب، كانز، مية معدنية، تسالي من الكشك"),
+      sub("supermarket", "تموين ومشتريات متنوعة", "Staples & mixed groceries", "طلبات الأسبوع، سلة بقالة متنوعة، فاتورة كارفور بدون تفاصيل، طلبات مارت، بريدفاست، تموين، رز وزيت وسكر، حساب البقال"),
       other,
     ],
   },
   {
-    id: "dining", nameAr: "أكل بره ودليفري", nameEn: "Eating out & delivery", icon: "🍔", color: "#f97316",
+    id: "dining", nameAr: "أكل برّه", nameEn: "Eating out & delivery", icon: "🍔", color: "#f97316",
     group: "spending", kinds: SPENDING,
-    guide: "أكل ومشروبات جاهزة بتتاكل دلوقتي: مطعم، سندوتشات، كافيه، دليفري، فطار وغدا وعشا بره، عزومة في مطعم.",
+    guide: "وجبة أو مشروب من مطعم أو كافيه أو عربية أكل، حتى لو اتاكلت في البيت. دليفري الأكل هنا؛ توصيل مشتريات البقالة يفضل بقالة.",
     subs: [
       sub("restaurant", "مطاعم", "Restaurants", "مطعم، غدا أو عشا بره، عزومة"),
-      sub("fast_food", "وجبات سريعة وسندوتشات", "Fast food & sandwiches", "فول وطعمية، كشري، شاورما، برجر، بيتزا، سندوتشات، ماك، فطار من العربية"),
-      sub("cafe", "كافيهات وقهوة", "Cafes & coffee", "قهوة، كافيه، القعدة على القهوة، شاي، نسكافيه"),
-      sub("delivery", "دليفري", "Delivery", "طلبات، أوردر أكل، دليفري"),
-      sub("sweets_snacks", "حلويات وسناكس وعصاير", "Sweets, snacks & juice", "حلويات، شيبسي، شوكولاتة، آيس كريم، عصير، حاجة ساقعة"),
+      sub("fast_food", "وجبات سريعة", "Fast food & sandwiches", "فول وطعمية، كشري، شاورما، برجر، بيتزا، سندوتشات، ماك، فطار من العربية"),
+      sub("cafe", "كافيهات وقهوة", "Cafes & coffee", "قهوة، كافيه، القعدة على القهوة، فنجان قهوة، شاي على القهوة"),
+      sub("delivery", "دليفري مطاعم", "Restaurant delivery", "أوردر أكل، توصيل وجبة من مطعم، طلبات من مطعم"),
+      sub("sweets_snacks", "حلويات وعصاير", "Desserts & fresh juice", "كنافة من الحلواني، آيس كريم من المحل، عصير قصب، عصير طازة"),
       other,
     ],
   },
@@ -81,10 +82,10 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
     group: "spending", kinds: SPENDING,
     guide: "أجرة أي حاجة بتركبها. مصاريف عربيتك أنت مش هنا (car)، والطيران مش هنا (travel).",
     subs: [
-      sub("ride_apps", "أوبر وتاكسي", "Ride apps & taxi", "أوبر، إن درايفر، ديدي، تاكسي"),
+      sub("ride_apps", "أوبر وتاكسي", "Ride apps & taxi", "أوبر، كريم، إن درايفر، ديدي، تاكسي"),
       sub("metro", "مترو", "Metro", "مترو، تذكرة أو اشتراك المترو"),
       sub("microbus_bus", "ميكروباص وأتوبيس وتوكتوك", "Microbus, bus & toktok", "ميكروباص، أتوبيس، ميني باص، توكتوك، أجرة"),
-      sub("train_intercity", "قطر وسفر بين المحافظات", "Train & intercity", "قطر، سوبر جيت، جو باص، عربية أجرة لمحافظة"),
+      sub("train_intercity", "قطر وسفر داخلي", "Train & intercity", "قطر، سوبر جيت، جو باص، عربية أجرة لمحافظة"),
       other,
     ],
   },
@@ -96,38 +97,38 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
       sub("fuel", "بنزين", "Fuel", "بنزين، تفويل، غاز للعربية، شحن عربية كهربا"),
       sub("maintenance", "صيانة وقطع غيار", "Maintenance & parts", "صيانة، ميكانيكي، زيت، كاوتش، بطارية، قطع غيار، سمكرة"),
       sub("wash_parking_tolls", "غسيل وركنة وكارتة", "Wash, parking & tolls", "غسيل العربية، ركنة، جراج، سايس، كارتة، بوابة"),
-      sub("license_fines", "ترخيص ومخالفات", "Licence & fines", "رخصة العربية أو القيادة، تجديد الترخيص، مخالفة مرور"),
+      sub("license_fines", "ترخيص ومخالفات", "Licence & fines", "رخصة العربية أو القيادة، تجديد الترخيص، مخالفة مرور، مخالفة ركن"),
       sub("car_insurance", "تأمين العربية", "Car insurance", "تأمين العربية"),
-      sub("car_purchase", "شراء عربية (مقدم وأقساط)", "Car purchase", "مقدم العربية، قسط العربية، تمن العربية"),
+      sub("car_purchase", "شراء عربية", "Car purchase", "مقدم العربية، قسط العربية، تمن العربية"),
       other,
     ],
   },
   {
     id: "bills", nameAr: "فواتير ومرافق", nameEn: "Bills & utilities", icon: "💡", color: "#eab308",
     group: "spending", kinds: SPENDING,
-    guide: "كهربا ومية وغاز ونت البيت وخط الموبايل. الاشتراكات الرقمية زي نتفليكس مش هنا (subscriptions).",
+    guide: "كهربا ومية وغاز ونت البيت وخط الموبايل. شحن رصيد المكالمات هنا، وشحن محفظتك الإلكترونية حركة بين حساباتك.",
     subs: [
       sub("electricity", "كهرباء", "Electricity", "فاتورة الكهربا، النور، شحن عداد أو كارت الكهربا"),
       sub("water", "مياه", "Water", "فاتورة المية، عداد المية"),
       sub("gas", "غاز", "Gas", "فاتورة الغاز، أنبوبة"),
       sub("internet_landline", "إنترنت وتليفون أرضي", "Internet & landline", "نت البيت، باقة النت، الراوتر، WE، التليفون الأرضي"),
-      sub("mobile", "موبايل (شحن وباقات)", "Mobile", "شحن رصيد، رصيد، كارت شحن، كارت فودافون، كارت أورنج، كارت اتصالات، باقة الموبايل، فاتورة الخط"),
+      sub("mobile", "شحن وباقات", "Mobile", "شحن رصيد، رصيد، كارت شحن، كارت فودافون، كارت أورنج، كارت اتصالات، باقة الموبايل، فاتورة الخط"),
       other,
     ],
   },
   {
     id: "housing", nameAr: "سكن وبيت", nameEn: "Home", icon: "🏠", color: "#8b5cf6",
     group: "spending", kinds: SPENDING,
-    guide: "البيت اللي ساكن فيه: إيجاره أو شراه، صيانته، عفشه وأجهزته، أدواته، واللي بيخدموا فيه. إيجار محل أو مكتب مش هنا (work).",
+    guide: "البيت اللي ساكن فيه: إيجاره أو شراه، صيانته، عفشه وأجهزته، أدواته، وخدماته زي المكوجي ونقل العفش. إيجار محل أو مكتب مش هنا (work).",
     subs: [
       sub("rent", "إيجار", "Rent", "إيجار الشقة، صاحب البيت"),
-      sub("home_purchase", "شراء شقة (مقدم وأقساط)", "Home purchase", "مقدم الشقة، عربون الشقة، قسط الشقة"),
+      sub("home_purchase", "شراء شقة", "Home purchase", "مقدم الشقة، عربون الشقة، قسط الشقة"),
       sub("maintenance", "صيانة وتصليحات", "Repairs", "سباك، كهربائي، نقاش، نجار، تصليح في البيت، دهان"),
       sub("furniture", "عفش ومفروشات", "Furniture", "عفش، أثاث، سجاد، ستاير، مراتب"),
       sub("appliances", "أجهزة منزلية", "Appliances", "تلاجة، غسالة، بوتاجاز، تكييف، مروحة، قسط أي جهاز منهم"),
       sub("supplies", "منظفات وأدوات البيت", "Household supplies", "منظفات، مسحوق، أدوات مطبخ، لمبات"),
       sub("home_services", "خدمات البيت", "Home help", "الشغالة، البواب، الزبال، الجنايني"),
-      sub("building_fees", "اتحاد ملاك وصيانة العمارة", "Building fees", "اتحاد الملاك، صيانة العمارة، الأسانسير"),
+      sub("building_fees", "مصاريف العمارة", "Building fees", "اتحاد الملاك، صيانة العمارة، الأسانسير"),
       other,
     ],
   },
@@ -159,12 +160,12 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
     guide: "أي علاج ليك أو لحد من أهلك: كشف، دوا، تحاليل، مستشفى، أسنان، نضارة نظر، جلسات، تأمين صحي. اسم الشخص بيتكتب جنب العملية ومش هو الفئة.",
     subs: [
       sub("doctor", "كشف دكتور", "Doctor", "كشف، دكتور، عيادة، استشارة"),
-      sub("pharmacy", "أدوية وصيدلية", "Pharmacy", "دوا، علاج، صيدلية، روشتة، فيتامين"),
+      sub("pharmacy", "أدوية وصيدلية", "Pharmacy", "دوا، روشتة، فيتامين، علاج من الصيدلية"),
       sub("lab_scan", "تحاليل وأشعة", "Labs & scans", "تحاليل، أشعة، سونار، رنين"),
       sub("hospital", "مستشفى وعمليات", "Hospital & surgery", "مستشفى، عملية، ولادة، حجز"),
       sub("dental", "أسنان", "Dental", "دكتور أسنان، حشو، خلع، تقويم"),
       sub("optical", "نظارات وعدسات", "Optical", "كشف نظر، نضارة نظر، عدسات"),
-      sub("therapy", "علاج طبيعي وجلسات", "Therapy sessions", "علاج طبيعي، جلسة، دكتور نفسي"),
+      sub("therapy", "علاج طبيعي وجلسات", "Therapy sessions", "جلسات علاج طبيعي، علاج نفسي، جلسة تخاطب"),
       sub("health_insurance", "تأمين صحي", "Health insurance", "تأمين صحي، كارت التأمين"),
       other,
     ],
@@ -172,13 +173,13 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
   {
     id: "kids", nameAr: "الأولاد", nameEn: "Kids", icon: "🍼", color: "#fb7185",
     group: "spending", kinds: SPENDING,
-    guide: "مصاريف الأولاد غير التعليم: حضانة، بامبرز ولبن، لبسهم ولعبهم، مصروفهم، تمارينهم. المدرسة والدروس في education.",
+    guide: "مصاريف الأولاد غير التعليم: حضانة، بامبرز ولبن، لبسهم ولعبهم، مصروفهم، تمارينهم. تمرين الطفل هنا، المدرسة والدروس في education وعلاجه في health.",
     subs: [
       sub("nursery", "حضانة", "Nursery", "حضانة"),
-      sub("baby_supplies", "بامبرز ولبن ومستلزمات", "Diapers & formula", "بامبرز، لبن أطفال، ببرونة، مستلزمات البيبي"),
+      sub("baby_supplies", "مستلزمات البيبي", "Diapers & formula", "بامبرز، لبن أطفال، ببرونة، مستلزمات البيبي"),
       sub("clothes_toys", "لبس ولعب", "Clothes & toys", "لبس العيال، لبس العيد للأولاد، لعب"),
       sub("pocket_money", "مصروف الأولاد", "Pocket money", "مصروف الواد، مصروف البنت، مصروف العيال، الواد مصروف، البنت مصروف، مصروف المدرسة اليومي"),
-      sub("activities", "تمارين وأنشطة", "Activities", "تمرين كورة أو سباحة للأولاد، نشاط"),
+      sub("activities", "تمارين وأنشطة", "Activities", "تمرين ابني، سباحة بنتي، أكاديمية كورة للأطفال"),
       other,
     ],
   },
@@ -190,7 +191,7 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
       sub("school_fees", "مصاريف مدرسة", "School fees", "مصاريف المدرسة، قسط المدرسة"),
       sub("university", "جامعة", "University", "مصاريف الجامعة أو الكلية، الترم"),
       sub("tutoring", "دروس وسناتر", "Tutoring", "درس خصوصي، سنتر، المستر، حق الدرس"),
-      sub("courses", "كورسات وتدريب", "Courses", "كورس، دورة، تدريب، شهادة"),
+      sub("courses", "كورسات وتدريب", "Courses", "كورس، دورة تدريبية، شهادة كورس"),
       sub("books_supplies", "كتب وأدوات", "Books & supplies", "كتب، كتب خارجية، ملازم، أدوات مدرسية"),
       sub("school_extras", "باص وزي ورحلات", "Bus, uniform & trips", "باص المدرسة، زي المدرسة، رحلة المدرسة"),
       other,
@@ -224,7 +225,7 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
   {
     id: "subscriptions", nameAr: "اشتراكات رقمية", nameEn: "Digital subscriptions", icon: "📱", color: "#14b8a6",
     group: "spending", kinds: SPENDING,
-    guide: "اشتراكات الخدمات الرقمية بس. اشتراك الجيم والنادي في entertainment، والنت والموبايل في bills.",
+    guide: "اشتراكات الخدمات الرقمية الشخصية. برنامج مدفوع للشغل في work. اشتراك الجيم والنادي في entertainment، والنت والموبايل في bills.",
     subs: [
       sub("streaming", "مشاهدة", "Streaming", "نتفليكس، شاهد، واتش ات، يوتيوب بريميوم"),
       sub("music", "موسيقى", "Music", "أنغامي، سبوتيفاي"),
@@ -238,9 +239,9 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
     group: "spending", kinds: SPENDING,
     guide: "سجاير وفيب وشيشة ومستلزماتهم.",
     subs: [
-      sub("cigarettes", "سجاير", "Cigarettes", "سجاير، علبة، خرطوشة"),
+      sub("cigarettes", "سجاير", "Cigarettes", "سجاير، علبة سجاير، خرطوشة سجاير"),
       sub("vape", "فيب", "Vape", "فيب، ليكويد، بود"),
-      sub("shisha", "شيشة ومعسل", "Shisha", "شيشة، معسل، حجر"),
+      sub("shisha", "شيشة ومعسل", "Shisha", "شيشة، معسل، حجر شيشة"),
       other,
     ],
   },
@@ -270,7 +271,7 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
     ],
   },
   {
-    id: "family_support", nameAr: "مصروف ومساعدة الأهل", nameEn: "Family support", icon: "👨‍👩‍👧", color: "#e11d48",
+    id: "family_support", nameAr: "دعم الأهل", nameEn: "Family support", icon: "👨‍👩‍👧", color: "#e11d48",
     group: "spending", kinds: SPENDING,
     guide: "فلوس بتديها لحد من أهلك من غير ما تقول اتصرفت في إيه: مصروف البيت للزوجة، فلوس لأمك أو أبوك أو أخوك. لو الغرض متقال (دوا أمي، مدرسة ابني) يبقى فئة الغرض.",
     subs: [
@@ -285,7 +286,7 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
     group: "spending", kinds: SPENDING,
     guide: "قسط مش متقال هو قسط إيه، وفوايد القروض والكروت، ورسوم البنك والتحويل، وغرامات التأخير، والتأمين غير الصحي وغير العربية. أي قسط معروف هو قسط إيه بيروح لفئة الحاجة نفسها.",
     subs: [
-      sub("installment", "قسط (من غير تحديد)", "Instalment (unspecified)", "دفعت القسط، قسط فاليو، قسط كونتكت، من غير ما يتقال قسط إيه"),
+      sub("installment", "قسط غير محدد", "Instalment (unspecified)", "دفعت القسط، قسط فاليو، قسط كونتكت، من غير ما يتقال قسط إيه"),
       sub("interest", "فوايد", "Interest", "فوايد القرض، فوايد الكارت"),
       sub("bank_fees", "رسوم بنكية وتحويلات", "Bank & transfer fees", "رسوم البنك، مصاريف التحويل، رسوم انستاباي، عمولة السحب"),
       sub("late_fees", "غرامات تأخير", "Late fees", "غرامة تأخير"),
@@ -301,7 +302,7 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
       sub("documents", "أوراق ومستندات", "Documents", "بطاقة، جواز سفر، شهادة ميلاد، توثيق، الشهر العقاري"),
       sub("taxes", "ضرايب", "Taxes", "ضرايب، ضريبة عقارية، إقرار"),
       sub("social_insurance", "تأمينات", "Social insurance", "تأمينات اجتماعية"),
-      sub("fines", "غرامات", "Fines", "غرامة"),
+      sub("fines", "غرامات", "Fines", "غرامة حكومية، غرامة إدارية"),
       other,
     ],
   },
@@ -313,8 +314,10 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
       sub("supplies_tools", "مستلزمات وأدوات", "Supplies & tools", "عدة، أدوات مكتب، حبر"),
       sub("workplace_rent", "إيجار محل أو مكتب", "Workplace rent", "إيجار المحل، إيجار المكتب، مساحة عمل"),
       sub("goods_materials", "بضاعة وخامات", "Goods & materials", "بضاعة، خامات، توريد"),
+      sub("marketing", "إعلانات وتسويق", "Marketing", "إعلان ممول، حملة إعلانات، تسويق المحل"),
+      sub("shipping", "شحن بضاعة", "Business shipping", "شركة شحن البضاعة، توصيل طلبات العملاء، مندوب شحن للمحل"),
       sub("wages", "مرتبات وعمالة", "Wages", "مرتب الصبي، يومية العمال، أجرة صنايعي للشغل"),
-      sub("software_hosting", "استضافة وبرامج", "Hosting & software", "استضافة، دومين، سيرفر، API"),
+      sub("software_hosting", "استضافة وبرامج", "Hosting & software", "تخزين سحابي لملفات الشغل، اشتراك برامج للمكتب، استضافة، دومين، سيرفر، API"),
       other,
     ],
   },
@@ -358,15 +361,15 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
     group: "movement", kinds: ["own_transfer", "cash_transfer", "card_payment"],
     guide: "فلوسك بتتنقل من مكان لمكان عندك: سحب أو إيداع كاش (kind=cash_transfer)، تحويل بين حساباتك ومحافظك أو تحويش (own_transfer)، سداد كارت الائتمان (card_payment).",
     subs: [
-      sub("cash", "سحب وإيداع كاش", "Cash in & out", "سحبت من الماكينة، ATM، إيداع"),
-      sub("between_accounts", "بين حساباتي ومحافظي", "Between accounts", "شحنت المحفظة، حولت من حسابي لحسابي"),
+      sub("cash", "سحب وإيداع كاش", "Cash in & out", "سحبت من الماكينة، سحب ATM، إيداع كاش، حطيت الكاش في محفظة جيبي"),
+      sub("between_accounts", "تحويل بين حساباتي", "Between accounts", "شحنت المحفظة، حولت من حسابي لحسابي"),
       sub("card_payment", "سداد كارت ائتمان", "Card payment", "سددت الكريدت، سددت الفيزا المشتريات"),
       sub("savings", "تحويش وادخار", "Savings", "حطيت في التحويشة، حوشت، ادخرت"),
       other,
     ],
   },
   {
-    id: "people_transfer", nameAr: "فلوس لأشخاص", nameEn: "Money to people", icon: "💸", color: "#10b981",
+    id: "people_transfer", nameAr: "تحويلات شخصية", nameEn: "Personal transfers", icon: "💸", color: "#10b981",
     group: "movement", kinds: ["personal_transfer"],
     guide: "فلوس راحت لشخص أو جت منه، مش من أهلك، ومش متقال هي إيه (مش سلفة ولا هدية ولا تمن حاجة). لو السبب متقال استخدم فئته.",
     subs: [other],
@@ -378,7 +381,7 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
     subs: [
       sub("gold", "دهب", "Gold", "دهب، سبيكة، جنيه دهب"),
       sub("stocks_funds", "أسهم وصناديق", "Stocks & funds", "أسهم، بورصة، ثاندر، صندوق"),
-      sub("certificates", "شهادات وودائع", "Certificates", "شهادة، وديعة، أذون"),
+      sub("certificates", "شهادات وودائع", "Certificates", "شهادة بنك، شهادة ادخار، وديعة، أذون خزانة"),
       sub("real_estate", "عقارات", "Real estate", "أرض، شقة للاستثمار"),
       sub("crypto", "عملات رقمية", "Crypto", "بيتكوين، USDT"),
       other,
@@ -391,7 +394,7 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
     group: "income", kinds: INCOME,
     guide: "دخل الوظيفة: المرتب والحوافز والأوفر تايم والبدلات والمعاش.",
     subs: [
-      sub("base", "مرتب", "Salary", "المرتب نزل، قبضت، الراتب"),
+      sub("base", "مرتب", "Salary", "المرتب نزل، قبضت مرتبي، الراتب"),
       sub("bonus", "حوافز ومكافآت", "Bonus", "حافز، مكافأة، بونص، أرباح سنوية من الشغل"),
       sub("overtime", "أوفر تايم", "Overtime", "أوفر تايم، سهر"),
       sub("allowance", "بدلات", "Allowances", "بدل انتقال، بدل وجبة"),
@@ -400,7 +403,7 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
     ],
   },
   {
-    id: "business_income", nameAr: "شغل حر ومشروع", nameEn: "Freelance & business", icon: "💻", color: "#06b6d4",
+    id: "business_income", nameAr: "دخل الشغل الحر والمشروع", nameEn: "Freelance & business", icon: "💻", color: "#06b6d4",
     group: "income", kinds: INCOME,
     guide: "دخل من شغل حر أو مشروع أو سبوبة أو عمولة أو مبيعات.",
     subs: [
@@ -428,7 +431,7 @@ export const TAXONOMY: readonly TaxonomyCategory[] = [
     guide: "فلوس جاتلك هدية: عيدية، نقطة، هدية، أو مساعدة من أهلك.",
     subs: [
       sub("eidiya", "عيدية", "Eidiya", "خدت عيدية"),
-      sub("nokta", "نقطة", "Nokta", "نقطة الفرح، نقطة المولود"),
+      sub("nokta", "نقطة", "Nokta", "قبضت نقطة الفرح، جالي نقوط، استلمت نقطة المولود"),
       sub("cash_gift", "هدية", "Cash gift", "جالي هدية فلوس"),
       sub("family_help", "مساعدة من الأهل", "Family help", "بابا اداني، أخويا بعتلي، مصروف من أهلي"),
       other,

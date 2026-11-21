@@ -8,8 +8,11 @@
  * `api/expense-router.ts`): the only item, or the one item with the same amount. Pure.
  */
 import { MOVEMENT_KINDS, type MovementKind } from "../../../contracts/ledger-movement";
-import { TAXONOMY_VERSION } from "../../../contracts/taxonomy";
-import type { ReadingSummary } from "./types";
+import { categoryAllowsKind, TAXONOMY_VERSION, taxonomyCategory, taxonomySub } from "../../../contracts/taxonomy";
+import { storedShape } from "../../lib/understanding/bridge";
+import type { PurposeLabels, ReadingSummary } from "./types";
+
+const FIRST_TAXONOMY_VERSION = "2.0";
 
 /** A log item: what the reading proposed, with its reading. */
 export interface ReadingItem {
@@ -33,6 +36,7 @@ export function readingOf(value: unknown): ReadingSummary | null {
   return {
     category: raw.category,
     sub: raw.sub,
+    ...(typeof raw.taxonomyVersion === "string" ? { taxonomyVersion: raw.taxonomyVersion } : {}),
     kind: raw.kind as MovementKind,
     flow: raw.flow,
     commitmentId: positiveId(raw.commitmentId),
@@ -68,9 +72,30 @@ export function readingItemFor(finalResult: unknown, saved: { amount: number }):
   return same.length === 1 ? readingItemOf(same[0]) : null;
 }
 
+type Filing = { category: string; subCategory?: string | null; type: string };
+
 /** True when the person saved the item as the reading filed it: its category, subcategory and type. */
-export function savedAsRead(item: ReadingItem, saved: { category: string; subCategory?: string | null; type: string }): boolean {
+export function savedAsRead(item: Pick<ReadingItem, "category" | "subCategory" | "type">, saved: Filing): boolean {
   return item.category === saved.category && item.subCategory === (saved.subCategory || "عام") && item.type === saved.type;
+}
+
+export function purposeLabelsFor({ category, sub }: Pick<ReadingSummary, "category" | "sub">): PurposeLabels | undefined {
+  const purpose = taxonomyCategory(category);
+  const leaf = taxonomySub(category, sub);
+  if (!purpose || !leaf) return;
+  return { categoryAr: purpose.nameAr, subAr: leaf.nameAr, categoryEn: purpose.nameEn, subEn: leaf.nameEn };
+}
+
+/** Use the original purpose only while the row still has the filing the reading produced. */
+export function savedPurposeLabels(row: Filing & { parsedMetadata: unknown }): PurposeLabels | undefined {
+  const metadata = row.parsedMetadata as { reading?: { v?: string; superseded?: boolean } } | null;
+  const stored = metadata?.reading;
+  // Older rows can carry a broader meaning for the same leaf (2.0 dining/sweets_snacks
+  // included packaged snacks). Their accounting label remains a faithful fallback.
+  if (stored?.v !== TAXONOMY_VERSION || stored.superseded) return;
+  const reading = readingOf(stored);
+  if (!reading || !categoryAllowsKind(reading.category, reading.kind)) return;
+  if (savedAsRead(storedShape(reading), row)) return purposeLabelsFor(reading);
 }
 
 /**
@@ -84,7 +109,7 @@ export function movementKindFor(reading: Pick<ReadingSummary, "kind">, type: str
 
 /** What a saved row keeps of its reading in `parsed_metadata.reading`: the v2 answer, for when rows carry ids. */
 export function readingMetadata(reading: ReadingSummary): { v: string; category: string; sub: string; kind: MovementKind; flow: "in" | "out" } {
-  return { v: TAXONOMY_VERSION, category: reading.category, sub: reading.sub, kind: reading.kind, flow: reading.flow };
+  return { v: reading.taxonomyVersion ?? FIRST_TAXONOMY_VERSION, category: reading.category, sub: reading.sub, kind: reading.kind, flow: reading.flow };
 }
 
 /**

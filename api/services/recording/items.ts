@@ -7,9 +7,10 @@
  * can be enriched from the server's own copy of it later (`saved-reading.ts`). Pure.
  */
 import type { Understanding, UnderstoodEvent } from "../../lib/understanding/engine";
-import { taxonomyCategory, taxonomySub } from "../../../contracts/taxonomy";
+import { TAXONOMY_VERSION } from "../../../contracts/taxonomy";
 import { personResolver } from "../../lib/understanding/reading-context";
 import type { PromptPerson } from "../../lib/understanding/prompt";
+import { purposeLabelsFor } from "./saved-reading";
 import type { ParseDecision, ReadingSummary, RecordedItem } from "./types";
 
 /** The save procedures' limits on a named person (`expense.create`, `expense.batchCreate`). */
@@ -30,6 +31,7 @@ export function readingSummaryOf(event: UnderstoodEvent): ReadingSummary {
   return {
     category: event.category,
     sub: event.sub,
+    taxonomyVersion: TAXONOMY_VERSION,
     kind: event.kind,
     flow: event.flow,
     commitmentId: event.commitmentId,
@@ -58,11 +60,8 @@ export function toParsedItem(event: UnderstoodEvent, ctx: ItemContext, sentenceR
     reading: readingSummaryOf(event),
   };
   if (event.stored.direction) item.direction = event.stored.direction;
-  const category = taxonomyCategory(event.category);
-  const sub = taxonomySub(event.category, event.sub);
-  if (category && sub) {
-    item.purposeLabels = { categoryAr: category.nameAr, subAr: sub.nameAr, categoryEn: category.nameEn, subEn: sub.nameEn };
-  }
+  const purposeLabels = purposeLabelsFor(event);
+  if (purposeLabels) item.purposeLabels = purposeLabels;
   if (!clean) item.reviewReasons = reasons;
   // The day the sentence named, at noon UTC of that Cairo day, as the manual sheet sends a date.
   if (event.date) item.date = `${event.date}T12:00:00.000Z`;

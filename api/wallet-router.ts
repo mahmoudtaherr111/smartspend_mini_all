@@ -7,7 +7,7 @@ import { eq, and, or, desc, gte, lt, like, sql } from "drizzle-orm";
 import { counterWalletSql, ledgerMovementSql } from "./services/ledger-semantics";
 import { financialMovement, movementOf } from "../contracts/ledger-movement";
 import { lockLedgerOwner } from "./services/ledger-writer";
-import { ledgerBundle, ledgerBundleColumns, ledgerBundleJoin, linkedLedgerFee, standaloneLedgerRowSql } from "./services/ledger-bundles";
+import { ledgerBundle, ledgerBundleColumns, ledgerBundleJoin, ledgerEntryWithPurpose, linkedLedgerFee, standaloneLedgerRowSql } from "./services/ledger-bundles";
 import { businessDateKey } from "./lib/app-time";
 import { getSystemSettings } from "./lib/settings-cache";
 import { walletBalancePolicies } from "./services/wallet-balance-policy";
@@ -70,9 +70,9 @@ export const walletRouter = router({
 
       return walletExpenses.map(({ entry: row, fee }) => {
         const financial = financialMovement(row);
-        if (row.walletId === input.walletId || financial?.counterWalletId !== input.walletId) return input.groupLinkedFees ? ledgerBundle(row, fee, input.walletId) : { ...row, bundle: null };
+        if (row.walletId === input.walletId || financial?.counterWalletId !== input.walletId) return input.groupLinkedFees ? ledgerBundle(row, fee, input.walletId) : { ...ledgerEntryWithPurpose(row), bundle: null };
         const incoming = movementOf(row) === "out";
-        const view = { ...row, type: incoming ? "income" : "expense", amount: Math.abs(Number(row.amount)).toFixed(2), walletId: input.walletId,
+        const view = { ...ledgerEntryWithPurpose(row), type: incoming ? "income" : "expense", amount: Math.abs(Number(row.amount)).toFixed(2), walletId: input.walletId,
           parsedMetadata: { ...(row.parsedMetadata as Record<string, unknown> | null), financial: { ...financial, movement: incoming ? "in" : "out" }, walletView: { originalWalletId: row.walletId } } };
         return input.groupLinkedFees ? ledgerBundle(view, fee, input.walletId) : { ...view, bundle: null };
       });

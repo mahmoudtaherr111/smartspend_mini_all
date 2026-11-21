@@ -114,6 +114,21 @@ void main() {
       );
     });
 
+    test('a saved purpose survives the cache without changing its accounting category', () {
+      final entry = LedgerEntry.fromJson({
+        ..._entry(1, '35', 'أكل وشرب', subCategory: 'بقالة'),
+        'purposeLabels': {
+          'categoryAr': 'بقالة وتموين',
+          'subAr': 'سناكس ومشروبات',
+          'categoryEn': 'Groceries',
+          'subEn': 'Packaged snacks & drinks',
+        },
+      });
+      final cached = LedgerEntry.fromJson(entry.toJson());
+      expect(cached.category, 'أكل وشرب');
+      expect(cached.titleFor(arabic: false), contains('Packaged snacks'));
+      expect(cached.title, contains('سناكس ومشروبات'));
+    });
     test('an entry is called by its description, else what it was', () {
       expect(
         LedgerEntry.fromJson(_entry(1, '50', 'أكل وشرب')).title,

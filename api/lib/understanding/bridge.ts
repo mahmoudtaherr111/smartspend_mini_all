@@ -36,6 +36,8 @@ const f = (category: string, subCategory: string): StoredFiling => ({ category, 
 
 /** `category/sub` → stored pair; `category/*` is the category's fallback. */
 const FILING: Record<string, StoredFiling> = {
+  // An old generic grocery filing provides no evidence of a specific product.
+  "groceries/supermarket": f("أكل وشرب", "بقالة"),
   "groceries/vegetables_fruits": f("أكل وشرب", "بقالة"),
   "groceries/meat_poultry_fish": f("أكل وشرب", "لحوم ودواجن"),
   "groceries/bakery": f("أكل وشرب", "مخبوزات"),
@@ -156,6 +158,8 @@ const FILING: Record<string, StoredFiling> = {
   "government/taxes": f("خدمات حكومية", "ضرائب"),
   "government/*": f("خدمات حكومية", "عام"),
 
+  "work/marketing": f("عمل", "إعلانات وتسويق"),
+  "work/shipping": f("عمل", "شحن بضاعة"),
   "work/supplies_tools": f("عمل", "مستلزمات مكتب"),
   "work/software_hosting": f("عمل", "استضافة"),
   "work/*": f("عمل", "عام"),

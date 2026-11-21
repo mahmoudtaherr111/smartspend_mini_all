@@ -549,6 +549,7 @@ model {
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.notifications
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.understanding
   smartspend.api.modules.ledger -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.capture_events
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.capture_markers

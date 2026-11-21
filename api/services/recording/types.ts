@@ -14,6 +14,8 @@ export interface ReadingSummary {
   /** Taxonomy v2 ids (`contracts/taxonomy.ts`). */
   category: string;
   sub: string;
+  /** Absent on readings made before the item carried its own version (taxonomy 2.0). */
+  taxonomyVersion?: string;
   kind: MovementKind;
   flow: "in" | "out";
   /** The commitment the sentence named, resolved from its reference; null when none. */
@@ -26,9 +28,11 @@ export interface ReadingSummary {
   flags: string[];
 }
 
+export type PurposeLabels = { categoryAr: string; subAr: string; categoryEn: string; subEn: string };
+
 export type RecordedItem = ParsedTransaction & {
   reading?: ReadingSummary;
-  purposeLabels?: { categoryAr: string; subAr: string; categoryEn: string; subEn: string };
+  purposeLabels?: PurposeLabels;
 };
 
 export type ParseDecision = "auto_save" | "review" | "clarify";
