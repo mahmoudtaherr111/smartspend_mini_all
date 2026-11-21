@@ -675,7 +675,7 @@ Entry point, providers, layout, route guards and PWA or native integration.
 | `src/i18n/language.ts` | — | — | — | — |
 | `src/main.tsx` | — | — | — | — |
 | `src/providers/BiometricLockProvider.tsx` | `web-hooks`, `web-lib` | — | — | — |
-| `src/providers/trpc.ts` | — | — | — | — |
+| `src/providers/trpc.ts` | `web-lib` | — | — | — |
 | `src/pwa/firebase.ts` | — | `firebase` | — | — |
 | `src/pwa/install-platform.ts` | — | — | — | — |
 | `src/pwa/launch-handler.ts` | — | — | — | — |
