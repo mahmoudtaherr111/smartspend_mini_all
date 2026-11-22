@@ -5,7 +5,7 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<string>ar</string>
 	<key>CFBundleDisplayName</key>
 	<string>SmartSpend</string>
 	<key>CFBundleExecutable</key>
@@ -14,41 +14,37 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>SmartSpend</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>ar</string>
 		<string>en</string>
 	</array>
-	<!-- Shown by iOS the first time the app lock asks for Face ID (docs/decisions/0023-mobile-app-lock.md). -->
-	<key>NSFaceIDUsageDescription</key>
-	<string>عشان تفتح SmartSpend بوشّك بدل الرمز السري.</string>
-	<!-- Shown by iOS when the live voice call asks for microphone access (AI-09, GAP-06). -->
-	<key>NSCameraUsageDescription</key>
-	<string>علشان تصوّر الفاتورة ونقراها لك.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>علشان تختار صورة الفاتورة من المعرض.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>علشان تسجّل مصاريفك بصوتك.</string>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<!-- A debug build may reach the API on the development machine over plain HTTP. -->
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
-	</dict>
+	<key>CFBundleName</key>
+	<string>SmartSpend</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
-	<!-- Google sign-in returns to the app through the iOS client id reversed (ios/Flutter/GoogleSignIn.xcconfig). -->
+	<!-- App deep links (`smartspend://share?text=...`) and Google sign-in reversed client ID (`ios/Flutter/GoogleSignIn.xcconfig`). -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.smartspend.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>smartspend</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.smartspend.app.google</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>$(GOOGLE_REVERSED_CLIENT_ID)</string>
@@ -57,8 +53,36 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>whatsapp</string>
+		<string>shortcuts</string>
+		<string>mailto</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- A debug build may reach the API on the development machine over plain HTTP. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<!-- Shown by iOS when the receipt scanner or gallery picker runs. -->
+	<key>NSCameraUsageDescription</key>
+	<string>علشان تصوّر الفاتورة ونقراها لك.</string>
+	<!-- Shown by iOS the first time the app lock asks for Face ID (docs/decisions/0023-mobile-app-lock.md). -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>عشان تفتح SmartSpend بوشّك بدل الرمز السري.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>علشان تسجّل مصاريفك بصوتك.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>علشان تحفظ التقارير والفواتير في معرض الصور.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>علشان تختار صورة الفاتورة من المعرض.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>علشان نحول كلامك لمصاريف مسجّلة تلقائياً.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -82,10 +106,16 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleLightContent</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

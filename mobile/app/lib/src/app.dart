@@ -13,22 +13,40 @@ import 'l10n/app_localizations.dart';
 import 'routing/app_router.dart';
 
 /// The root widget: theme, language, routes, and the app lock over them.
-class SmartSpendApp extends ConsumerWidget {
+class SmartSpendApp extends ConsumerStatefulWidget {
   const SmartSpendApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SmartSpendApp> createState() => _SmartSpendAppState();
+}
+
+class _SmartSpendAppState extends ConsumerState<SmartSpendApp> {
+  bool _pushInitScheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _schedulePushInitIfSignedIn(ref.read(sessionProvider));
+  }
+
+  void _schedulePushInitIfSignedIn(SessionState session) {
+    if (_pushInitScheduled || session is! SignedIn) return;
+    _pushInitScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(pushNotificationServiceProvider).initialize();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     ref.listen(sessionProvider, (previous, next) {
       if (next is SignedIn) {
-        ref.read(pushNotificationServiceProvider).initialize();
+        _schedulePushInitIfSignedIn(next);
+      } else if (next is SignedOut) {
+        _pushInitScheduled = false;
       }
     });
-
-    if (ref.read(sessionProvider) is SignedIn) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(pushNotificationServiceProvider).initialize();
-      });
-    }
 
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,

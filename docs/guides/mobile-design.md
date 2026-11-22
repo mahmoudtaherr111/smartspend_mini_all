@@ -176,8 +176,14 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
 1. **Platform manners, brand looks.** iOS scrolls with a bounce and goes back with an edge swipe; Android stretches
    and uses its back gesture; both use their own share sheet, date pickers and haptics. Flutter gives these per
    platform; screens do not override them. (unenforced)
-2. **No imitation glass.** iOS 26's Liquid Glass is not available to Flutter (Flutter issue 170310); a blur imitation
-   costs frames on low-end phones, so the bar stays a solid brand surface. (unenforced)
+2. **Platform-adaptive Liquid Glass ([decision 0053](../decisions/0053-ios-liquid-glass-flutter-unification.md)).**
+   On iOS, navigation chrome (`SmartSpendNavigationBar` with `ios_liquid_glass` `UIGlassEffect` on iOS 26+ and
+   Impeller frosted glass fallback on iOS 15–18), app bars (`SmartSpendGlassAppBar`), composer docks
+   (`SmartSpendGlassDock`), keyboard accessories (`SmartSpendKeyboardAccessory`), and bottom sheets
+   (`showSmartSpendSheet`) use Liquid Glass (`SmartSpendGlassSurface`), automatically falling back to opaque high-contrast
+   surfaces whenever `MediaQuery.highContrastOf` is enabled. On Android, those same components stay crisp solid brand
+   surfaces with hairline `outlineVariant` borders so mid-range and budget Android devices keep 60/120 Hz frames with
+   zero real-time blur overhead. (`mobile/packages/smartspend_ui/test/glass_test.dart`, `accessibility_test.dart`)
 3. **Store requirements:** Google Play requires targeting Android 16 (API level 36) for new apps and updates from
    31 August 2026; the App Store requires building with the iOS 26 SDK since 28 April 2026. (release checklist)
 

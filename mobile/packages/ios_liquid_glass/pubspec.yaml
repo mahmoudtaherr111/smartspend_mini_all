@@ -1,0 +1,21 @@
+name: ios_liquid_glass
+description: "Native iOS Liquid Glass tab bar platform view (iOS 26 UIGlassEffect with iOS 15-18 UIBlurEffect fallback) for SmartSpend."
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      ios:
+        pluginClass: IosLiquidGlassPlugin

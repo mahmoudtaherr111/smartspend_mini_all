@@ -18,6 +18,7 @@ Future<bool> promptStepUpAuth(
   BuildContext context, {
   required WidgetRef ref,
   required String reason,
+  bool keepScreenProtectedOnClose = false,
 }) async {
   final lock = ref.read(appLockProvider);
   if (!lock.enabled) {
@@ -46,16 +47,24 @@ Future<bool> promptStepUpAuth(
   // Otherwise, show Step-Up PIN sheet
   final confirmed = await showSmartSpendSheet<bool>(
     context: context,
-    builder: (ctx) => _StepUpAuthSheet(reason: reason),
+    scrollable: true,
+    builder: (ctx) => _StepUpAuthSheet(
+      reason: reason,
+      keepScreenProtectedOnClose: keepScreenProtectedOnClose,
+    ),
   );
 
   return confirmed == true;
 }
 
 class _StepUpAuthSheet extends ConsumerStatefulWidget {
-  const _StepUpAuthSheet({required this.reason});
+  const _StepUpAuthSheet({
+    required this.reason,
+    this.keepScreenProtectedOnClose = false,
+  });
 
   final String reason;
+  final bool keepScreenProtectedOnClose;
 
   @override
   ConsumerState<_StepUpAuthSheet> createState() => _StepUpAuthSheetState();
@@ -73,7 +82,9 @@ class _StepUpAuthSheetState extends ConsumerState<_StepUpAuthSheet> {
 
   @override
   void dispose() {
-    unawaited(_deviceLock.setScreenProtected(false));
+    if (!widget.keepScreenProtectedOnClose) {
+      unawaited(_deviceLock.setScreenProtected(false));
+    }
     super.dispose();
   }
 

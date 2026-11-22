@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 
+import '../../core/cairo_time.dart';
 import '../../core/providers.dart';
 
 final class InAppNotificationItem {
@@ -23,8 +24,8 @@ final class InAppNotificationItem {
       actionUrl: json['actionUrl'] as String?,
       isRead: json['isRead'] as bool? ?? false,
       createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? cairoNow()
+          : cairoNow(),
     );
   }
 
@@ -86,6 +87,8 @@ final inAppNotificationsProvider =
     FutureProvider.autoDispose<List<InAppNotificationItem>>((ref) async {
       return ref.watch(notificationsRepositoryProvider).list();
     });
+
+final notificationInboxProvider = inAppNotificationsProvider;
 
 final unreadNotificationsCountProvider = Provider.autoDispose<int>((ref) {
   final list = ref.watch(inAppNotificationsProvider).value ?? const [];

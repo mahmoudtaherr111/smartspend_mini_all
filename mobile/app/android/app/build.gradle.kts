@@ -81,3 +81,8 @@ if (providers.gradleProperty("smartspend.sms").orNull == "true") {
         implementation(project(":bank_capture_sms"))
     }
 }
+
+// Apply Google Services only when google-services.json is present so dev/CI builds without Firebase config keep compiling.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}

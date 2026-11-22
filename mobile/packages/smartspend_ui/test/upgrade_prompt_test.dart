@@ -1,13 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
+
+Widget _localizedApp({
+  required ThemeData theme,
+  required Widget home,
+  Locale locale = const Locale('ar'),
+}) => MaterialApp(
+  theme: theme,
+  locale: locale,
+  supportedLocales: const [Locale('ar'), Locale('en')],
+  localizationsDelegates: GlobalMaterialLocalizations.delegates,
+  home: home,
+);
 
 void main() {
   Widget testFrame({
     required Widget child,
     Brightness brightness = Brightness.light,
   }) {
-    return MaterialApp(
+    return _localizedApp(
       theme: brightness == Brightness.dark
           ? SmartSpendTheme.dark()
           : SmartSpendTheme.light(),
@@ -47,7 +60,7 @@ void main() {
   ) async {
     bool? outcome;
     await tester.pumpWidget(
-      MaterialApp(
+      _localizedApp(
         theme: SmartSpendTheme.dark(),
         home: Scaffold(
           body: Builder(
@@ -83,7 +96,7 @@ void main() {
     bool called = false;
     bool? outcome;
     await tester.pumpWidget(
-      MaterialApp(
+      _localizedApp(
         theme: SmartSpendTheme.light(),
         home: Scaffold(
           body: Builder(
@@ -118,7 +131,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      _localizedApp(
         theme: SmartSpendTheme.dark(),
         home: MediaQuery(
           data: const MediaQueryData(
@@ -147,4 +160,105 @@ void main() {
     // Verify no render flex overflow was thrown
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('omits price section when priceText is not provided', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _localizedApp(
+        theme: SmartSpendTheme.dark(),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => showUpgradePromptSheet(
+                context: context,
+                reason: UpgradeLimitReason.general,
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('99 ج.م'), findsNothing);
+    expect(find.text('ترقية الحساب لباقة برو'), findsOneWidget);
+  });
+
+  testWidgets('uses English defaults and supports localized overrides', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: SmartSpendTheme.light(),
+        locale: const Locale('en'),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () => showUpgradePromptSheet(
+                context: context,
+                reason: UpgradeLimitReason.export,
+                upgradeLabel: 'See Pro plans',
+                dismissLabel: 'Not now',
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Export your financial reports'), findsOneWidget);
+    expect(find.text('See Pro plans'), findsOneWidget);
+    expect(find.text('Not now'), findsOneWidget);
+  });
+
+  testWidgets(
+    'invokes SmartSpendUpgradePrompt.defaultOnUpgrade with mounted caller context when onUpgrade is omitted',
+    (tester) async {
+      BuildContext? receivedContext;
+      var wasMounted = false;
+      SmartSpendUpgradePrompt.defaultOnUpgrade = (ctx) {
+        receivedContext = ctx;
+        wasMounted = ctx.mounted;
+      };
+      addTearDown(() => SmartSpendUpgradePrompt.defaultOnUpgrade = null);
+
+      bool? outcome;
+      await tester.pumpWidget(
+        _localizedApp(
+          theme: SmartSpendTheme.dark(),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () async {
+                  outcome = await showUpgradePromptSheet(
+                    context: context,
+                    reason: UpgradeLimitReason.aiTokens,
+                  );
+                },
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('اشترك الآن في برو'));
+      await tester.pumpAndSettle();
+
+      expect(outcome, isTrue);
+      expect(receivedContext, isNotNull);
+      expect(wasMounted, isTrue);
+    },
+  );
 }

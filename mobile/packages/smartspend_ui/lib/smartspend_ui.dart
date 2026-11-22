@@ -10,6 +10,7 @@ export 'src/charts.dart';
 export 'src/dates.dart';
 export 'src/debt_badge.dart';
 export 'src/figures.dart';
+export 'src/glass.dart';
 export 'src/grouped.dart';
 export 'src/haptics.dart';
 export 'src/logo_badge.dart';

@@ -4,12 +4,66 @@ import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
-
 import '../contacts/contacts_screen.dart';
+import '../ledger/ledger_providers.dart';
 import '../plans/plan_providers.dart';
+import '../plans/plan_screen.dart';
 import 'business_category_sheet.dart';
 import 'business_models.dart';
 import 'business_providers.dart';
+
+/// Banner shown when the user is currently in Business Mode (`isBusinessModeActiveProvider == true`),
+/// allowing a one-tap return to personal mode.
+class ActiveBusinessBanner extends ConsumerWidget {
+  const ActiveBusinessBanner({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isActive = ref.watch(isBusinessModeActiveProvider);
+    if (!isActive) return const SizedBox.shrink();
+
+    final business = ref.watch(businessDashboardProvider).value?.business;
+    if (business == null || !business.isActive) {
+      return const SizedBox.shrink();
+    }
+
+    final l10n = AppLocalizations.of(context);
+    final colors = context.smartSpendColors;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SmartSpendSpacing.md,
+        vertical: SmartSpendSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: colors.accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.md),
+        border: Border.all(color: colors.accent.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.storefront_rounded, size: 20, color: colors.accent),
+          const SizedBox(width: SmartSpendSpacing.sm),
+          Expanded(
+            child: Text(
+              l10n.businessActiveBanner(inlineName(business.name)),
+              style: textTheme.labelLarge?.copyWith(color: colors.foreground),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(isBusinessModeActiveProvider.notifier).set(false);
+              refreshLedger(ref);
+              showSmartSpendNotice(context, l10n.aiSwitchedToPersonal);
+            },
+            child: Text(l10n.businessSwitchPersonalAction),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// Business mode screen (BIZ-01..04).
 /// Enables separate tracking of business finances, AI category suggestion with acceptance preview,
@@ -118,6 +172,14 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     }
   }
 
+  Future<void> _openEditBusinessSheet(BusinessInfo business) async {
+    await showSmartSpendSheet<void>(
+      context: context,
+      scrollable: true,
+      builder: (_) => _EditBusinessSheet(business: business),
+    );
+  }
+
   Future<void> _confirmDeleteBusiness(BusinessInfo business) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -144,6 +206,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
       try {
         await ref.read(businessApiProvider).delete();
         ref.read(isBusinessModeActiveProvider.notifier).set(false);
+        refreshLedger(ref);
         ref.invalidate(businessDashboardProvider);
         if (mounted) {
           showSmartSpendNotice(
@@ -198,10 +261,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
               ),
               const SizedBox(height: SmartSpendSpacing.xl),
               FilledButton(
-                onPressed: () => showSmartSpendNotice(
-                  context,
-                  AppLocalizations.of(context).aiUpgradingFromTheAppIs,
-                ),
+                onPressed: () => context.push(PlanScreen.path),
                 child: Text(AppLocalizations.of(context).aiUpgradeToPro2),
               ),
             ],
@@ -279,7 +339,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                   decoration: InputDecoration(
                     labelText: AppLocalizations.of(context)
                         .aiBusinessOrShopName,
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.md),
@@ -309,15 +369,14 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                   decoration: InputDecoration(
                     labelText: AppLocalizations.of(context)
                         .aiShortDescriptionOptional,
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.md),
                 OutlinedButton.icon(
                   icon: _suggesting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
+                      ? const SizedBox.square(
+                          dimension: SmartSpendSpacing.lg,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.auto_awesome_rounded),
@@ -379,9 +438,8 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
           FilledButton(
             onPressed: _creating ? null : _createBusiness,
             child: _creating
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
+                ? const SizedBox.square(
+                    dimension: SmartSpendSpacing.lg,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : Text(AppLocalizations.of(context).aiCreateTheWorkAccount),
@@ -393,6 +451,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
   Widget _buildActiveBusinessView(BuildContext context, BusinessState state) {
     final business = state.business!;
+    final l10n = AppLocalizations.of(context);
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
     final isBusinessActive = ref.watch(isBusinessModeActiveProvider);
@@ -402,31 +461,48 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (isBusinessActive) ...[
+            const ActiveBusinessBanner(),
+            const SizedBox(height: SmartSpendSpacing.md),
+          ],
           // Business Mode Switcher Card (BIZ-01, BIZ-03)
           GroupedCard(
-            title: AppLocalizations.of(context).aiCurrentWorkAccount,
+            title: l10n.aiCurrentWorkAccount,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          business.name,
-                          style: textTheme.titleMedium?.copyWith(
-                            color: colors.foreground,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            business.name,
+                            style: textTheme.titleMedium?.copyWith(
+                              color: colors.foreground,
+                            ),
                           ),
-                        ),
-                        Text(
-                          business.typeLabel,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colors.mutedForeground,
+                          Text(
+                            business.typeLabel,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colors.mutedForeground,
+                            ),
                           ),
-                        ),
-                      ],
+                          if (business.description.trim().isNotEmpty)
+                            Text(
+                              business.description,
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colors.mutedForeground,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 20),
+                      tooltip: l10n.businessEditAction,
+                      onPressed: () => _openEditBusinessSheet(business),
                     ),
                     Switch(
                       value: isBusinessActive,
@@ -434,13 +510,12 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                         ref
                             .read(isBusinessModeActiveProvider.notifier)
                             .set(val);
+                        refreshLedger(ref);
                         showSmartSpendNotice(
                           context,
                           val
-                              ? AppLocalizations.of(context)
-                                    .aiSwitchedToTheWorkAccount
-                              : AppLocalizations.of(context)
-                                    .aiSwitchedToPersonal,
+                              ? l10n.aiSwitchedToTheWorkAccount
+                              : l10n.aiSwitchedToPersonal,
                         );
                       },
                     ),
@@ -449,8 +524,8 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
                   isBusinessActive
-                      ? AppLocalizations.of(context).aiYouReInTheWork
-                      : AppLocalizations.of(context).aiYouReInPersonalMode,
+                      ? l10n.aiYouReInTheWork
+                      : l10n.aiYouReInPersonalMode,
                   style: textTheme.bodySmall?.copyWith(
                     color: isBusinessActive
                         ? colors.accent
@@ -464,8 +539,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
           // Business Categories Manager (BIZ-02)
           GroupedCard(
-            title: AppLocalizations.of(context)
-                .aiBusinessCategoriesP0('${state.categories.length}'),
+            title: l10n.aiBusinessCategoriesP0('${state.categories.length}'),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -475,37 +549,65 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                       vertical: SmartSpendSpacing.xs,
                     ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              cat.icon,
-                              style: Theme.of(context).textTheme.headlineSmall,
-                            ),
-                            const SizedBox(width: SmartSpendSpacing.sm),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  cat.nameAr,
-                                  style: textTheme.titleSmall?.copyWith(
-                                    color: colors.foreground,
-                                  ),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Text(cat.icon, style: textTheme.headlineSmall),
+                              const SizedBox(width: SmartSpendSpacing.sm),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      cat.nameAr,
+                                      style: textTheme.titleSmall?.copyWith(
+                                        color: colors.foreground,
+                                      ),
+                                    ),
+                                    Text(
+                                      cat.type == 'income'
+                                          ? l10n.aiIncome
+                                          : l10n.aiExpense,
+                                      style: textTheme.bodySmall?.copyWith(
+                                        color: cat.type == 'income'
+                                            ? colors.accent
+                                            : colors.mutedForeground,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  cat.type == 'income'
-                                      ? AppLocalizations.of(context).aiIncome
-                                      : AppLocalizations.of(context).aiExpense,
-                                  style: textTheme.bodySmall?.copyWith(
-                                    color: cat.type == 'income'
-                                        ? colors.accent
-                                        : colors.mutedForeground,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined, size: 20),
+                          tooltip: l10n.businessCategoryEditTitle,
+                          onPressed: () => AddBusinessCategorySheet.show(
+                            context,
+                            existing: cat,
+                            onAdd:
+                                ({
+                                  required String name,
+                                  required String nameAr,
+                                  required String type,
+                                  required String icon,
+                                  required String color,
+                                }) async {
+                                  await ref
+                                      .read(businessApiProvider)
+                                      .updateCategory(
+                                        id: cat.id,
+                                        name: name,
+                                        nameAr: nameAr,
+                                        type: type,
+                                        icon: icon,
+                                        color: color,
+                                      );
+                                  ref.invalidate(businessDashboardProvider);
+                                },
+                          ),
                         ),
                         IconButton(
                           icon: Icon(
@@ -513,14 +615,22 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                             color: colors.danger,
                             size: 20,
                           ),
-                          tooltip: AppLocalizations.of(context)
-                              .aiDeleteTheCategory,
+                          tooltip: l10n.aiDeleteTheCategory,
                           onPressed: () async {
-                            final success = await ref
-                                .read(businessApiProvider)
-                                .removeCategory(cat.id);
-                            if (success) {
-                              ref.invalidate(businessDashboardProvider);
+                            try {
+                              final success = await ref
+                                  .read(businessApiProvider)
+                                  .removeCategory(cat.id);
+                              if (success) {
+                                ref.invalidate(businessDashboardProvider);
+                              }
+                            } catch (_) {
+                              if (context.mounted) {
+                                showSmartSpendNotice(
+                                  context,
+                                  l10n.genericActionFailed,
+                                );
+                              }
                             }
                           },
                         ),
@@ -530,7 +640,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                 const SizedBox(height: SmartSpendSpacing.sm),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.add_rounded),
-                  label: Text(AppLocalizations.of(context).aiAddANewCategory),
+                  label: Text(l10n.aiAddANewCategory),
                   onPressed: () => AddBusinessCategorySheet.show(
                     context,
                     onAdd:
@@ -561,20 +671,19 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
           // People of the Business (BIZ-04)
           GroupedCard(
-            title: AppLocalizations.of(context).aiBusinessPeopleAndSuppliers,
+            title: l10n.aiBusinessPeopleAndSuppliers,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  AppLocalizations.of(context)
-                      .aiSuppliersAndCustomersP0('${state.contactCount}'),
+                  l10n.aiSuppliersAndCustomersP0('${state.contactCount}'),
                   style: textTheme.bodyMedium?.copyWith(
                     color: colors.foreground,
                   ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
-                  AppLocalizations.of(context).aiLinkAnyoneToTheBusiness,
+                  l10n.aiLinkAnyoneToTheBusiness,
                   style: textTheme.bodySmall?.copyWith(
                     color: colors.mutedForeground,
                   ),
@@ -584,10 +693,8 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                   alignment: AlignmentDirectional.centerStart,
                   child: TextButton.icon(
                     icon: const Icon(Icons.people_outline_rounded),
-                    label: Text(
-                      AppLocalizations.of(context).aiManageContactsAndSuppliers,
-                    ),
-                    onPressed: () => context.go(ContactsScreen.path),
+                    label: Text(l10n.aiManageContactsAndSuppliers),
+                    onPressed: () => context.push(ContactsScreen.path),
                   ),
                 ),
               ],
@@ -602,10 +709,176 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
               side: BorderSide(color: colors.danger.withAlpha(120)),
             ),
             icon: const Icon(Icons.delete_forever_rounded),
-            label: Text(AppLocalizations.of(context).aiDeleteTheWorkAccount2),
+            label: Text(l10n.aiDeleteTheWorkAccount2),
             onPressed: () => _confirmDeleteBusiness(business),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _EditBusinessSheet extends ConsumerStatefulWidget {
+  const _EditBusinessSheet({required this.business});
+
+  final BusinessInfo business;
+
+  @override
+  ConsumerState<_EditBusinessSheet> createState() => _EditBusinessSheetState();
+}
+
+class _EditBusinessSheetState extends ConsumerState<_EditBusinessSheet> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _descController;
+  late final String _initialName;
+  late final String _initialDesc;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialName = widget.business.name.trim();
+    _initialDesc = widget.business.description.trim();
+    _nameController = TextEditingController(text: _initialName)
+      ..addListener(_onChanged);
+    _descController = TextEditingController(text: _initialDesc)
+      ..addListener(_onChanged);
+  }
+
+  void _onChanged() {
+    if (mounted) setState(() {});
+  }
+
+  bool get _isDirty =>
+      _nameController.text.trim() != _initialName ||
+      _descController.text.trim() != _initialDesc;
+
+  Future<bool> _confirmDiscard(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(l10n.discardChangesTitle),
+        content: Text(l10n.discardChangesBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: Text(l10n.discardChangesCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            child: Text(l10n.discardChangesConfirm),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
+
+  @override
+  void dispose() {
+    _nameController
+      ..removeListener(_onChanged)
+      ..dispose();
+    _descController
+      ..removeListener(_onChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      showSmartSpendNotice(
+        context,
+        AppLocalizations.of(context).aiEnterTheBusinessNameFirst,
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      await ref
+          .read(businessApiProvider)
+          .update(name: name, description: _descController.text.trim());
+      ref.invalidate(businessDashboardProvider);
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _saving = false);
+        showSmartSpendNotice(
+          context,
+          AppLocalizations.of(context).saveChangesFailed,
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = context.smartSpendColors;
+    final textTheme = Theme.of(context).textTheme;
+
+    return PopScope(
+      canPop: !_isDirty || _saving,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final discard = await _confirmDiscard(context);
+        if (discard && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          SmartSpendSpacing.screen,
+          0,
+          SmartSpendSpacing.screen,
+          SmartSpendSpacing.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.businessEditTitle,
+                    style: textTheme.titleMedium?.copyWith(
+                      color: colors.foreground,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+              ],
+            ),
+            const SizedBox(height: SmartSpendSpacing.md),
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(labelText: l10n.aiBusinessOrShopName),
+            ),
+            const SizedBox(height: SmartSpendSpacing.md),
+            TextField(
+              controller: _descController,
+              maxLines: 2,
+              decoration: InputDecoration(
+                labelText: l10n.aiShortDescriptionOptional,
+              ),
+            ),
+            const SizedBox(height: SmartSpendSpacing.lg),
+            SmartSpendButton(
+              label: l10n.monSaveChanges,
+              busy: _saving,
+              onPressed: _saving ? null : _save,
+            ),
+          ],
+        ),
       ),
     );
   }

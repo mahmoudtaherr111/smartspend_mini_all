@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:device_lock/device_lock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -37,6 +38,7 @@ class DeleteAccountSheet extends ConsumerStatefulWidget {
 class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
   final _confirmationController = TextEditingController();
   final _passwordController = TextEditingController();
+  late final DeviceLock _deviceLock;
   bool _obscurePassword = true;
   bool _deleting = false;
   String? _errorMessage;
@@ -44,12 +46,13 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
   @override
   void initState() {
     super.initState();
-    unawaited(ref.read(deviceLockProvider).setScreenProtected(true));
+    _deviceLock = ref.read(deviceLockProvider);
+    unawaited(_deviceLock.setScreenProtected(true));
   }
 
   @override
   void dispose() {
-    unawaited(ref.read(deviceLockProvider).setScreenProtected(false));
+    unawaited(_deviceLock.setScreenProtected(false));
     _confirmationController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -89,7 +92,11 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
       context,
       ref: ref,
       reason: l10n.deleteAccountTitle,
+      keepScreenProtectedOnClose: true,
     );
+    if (mounted) {
+      unawaited(_deviceLock.setScreenProtected(true));
+    }
     if (!stepUpSuccess || !mounted) return;
 
     setState(() => _deleting = true);

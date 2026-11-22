@@ -115,27 +115,50 @@ final class InAppStorePurchases implements StorePurchases {
 
   @override
   Future<bool> restore() async {
-    var restored = false;
-    final subscription = _store.purchaseStream.listen((purchases) async {
-      for (final purchase in purchases) {
-        if (purchase.status != PurchaseStatus.restored &&
-            purchase.status != PurchaseStatus.purchased) {
-          continue;
-        }
-        try {
-          restored = await _confirm(purchase) || restored;
-          if (purchase.pendingCompletePurchase) {
-            await _store.completePurchase(purchase);
+    final tokens = <String>[];
+    final toComplete = <PurchaseDetails>[];
+    StreamSubscription<List<PurchaseDetails>>? subscription;
+    try {
+      if (await _store.isAvailable()) {
+        subscription = _store.purchaseStream.listen((purchases) {
+          for (final purchase in purchases) {
+            if (purchase.status != PurchaseStatus.restored &&
+                purchase.status != PurchaseStatus.purchased) {
+              continue;
+            }
+            final token = purchase.verificationData.serverVerificationData;
+            if (token.isNotEmpty && !tokens.contains(token)) {
+              tokens.add(token);
+            }
+            if (purchase.pendingCompletePurchase) {
+              toComplete.add(purchase);
+            }
           }
+        });
+        await _store.restorePurchases();
+        // The store reports restored purchases on its stream with no end marker.
+        await Future<void>.delayed(const Duration(seconds: 2));
+      }
+    } on Object {
+      // Proceed to server restore call with any collected tokens.
+    } finally {
+      await subscription?.cancel();
+    }
+
+    final data = await _client.mutate(
+      Procedures.pro.restorePurchases,
+      input: {'store': _storeId, 'tokens': tokens.take(20).toList()},
+    );
+    final restored = data is Map<String, Object?> && data['restored'] == true;
+    if (restored) {
+      for (final purchase in toComplete) {
+        try {
+          await _store.completePurchase(purchase);
         } on Object {
-          // Another account's purchase, or the store refused it: it restores nothing here.
+          // Ignore store completion errors once server confirmed entitlement.
         }
       }
-    });
-    await _store.restorePurchases();
-    // The store reports restored purchases on its stream with no end marker.
-    await Future<void>.delayed(const Duration(seconds: 4));
-    await subscription.cancel();
+    }
     return restored;
   }
 }

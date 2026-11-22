@@ -90,6 +90,7 @@ Future<bool?> reviewAndSave(
   final items = parse.items.where((entry) => entry.isSavable).toList();
   final choice = await showSmartSpendSheet<bool>(
     context: context,
+    scrollable: true,
     // The person opened it to check the amounts: they show even while amounts are hidden.
     builder: (sheetContext) => MoneyPrivacy(
       hidden: false,
@@ -150,6 +151,7 @@ Future<void> answerAndSave(
     }
     final choice = await showSmartSpendSheet<Object>(
       context: context,
+      scrollable: true,
       builder: (sheetContext) => MoneyPrivacy(
         hidden: false,
         child: _ClarifySheet(

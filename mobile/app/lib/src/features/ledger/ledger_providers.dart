@@ -1,20 +1,45 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 
 import '../../core/providers.dart';
 import '../auth/session_controller.dart';
+import '../budgets/budget_providers.dart';
 import '../calendar/calendar_providers.dart';
+import '../commitments/commitment_api.dart';
 import '../contacts/contacts_providers.dart';
+import '../goals/goals_providers.dart';
 import '../infrastructure/remote_config.dart';
+import '../seasons/seasons_api.dart';
 import '../stats/stats_providers.dart';
 import '../wallets/wallet_providers.dart';
 import 'ledger_api.dart';
 import 'ledger_models.dart';
 import 'offline/ledger_store.dart';
 import 'offline/offline_rules.dart';
+
+/// Messenger key for [RecordScreen] so notices raised after popping child sheets or detail screens
+/// render above [RecordComposer] instead of covering its send button on the root shell messenger.
+final GlobalKey<ScaffoldMessengerState> recordScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
+
+/// Tracks whether [RecordComposer]'s text input currently has focus so [RecordScreen] can hide
+/// the bottom composer when an inline question/capture field opens the software keyboard.
+final composerFocusedProvider = NotifierProvider<ComposerFocusNotifier, bool>(
+  ComposerFocusNotifier.new,
+);
+
+class ComposerFocusNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void setFocused(bool focused) {
+    if (state != focused) state = focused;
+  }
+}
 
 final ledgerApiProvider = Provider<LedgerApi>(
   (ref) => LedgerApi(ref.watch(trpcClientProvider)),
@@ -351,6 +376,10 @@ void refreshLedger(WidgetRef ref) {
     ..invalidate(peopleDebtsDataProvider)
     ..invalidate(debtsOverviewProvider)
     ..invalidate(budgetComparisonProvider)
+    ..invalidate(budgetsProvider)
+    ..invalidate(goalsProvider)
+    ..invalidate(commitmentsOverviewProvider)
+    ..invalidate(seasonSpendingFamily)
     ..invalidate(yearlyStatsProvider)
     ..invalidate(monthSummaryProvider)
     ..invalidate(recentEntriesProvider)
@@ -376,6 +405,10 @@ void invalidateLedgerContainer(ProviderContainer container) {
     ..invalidate(peopleDebtsDataProvider)
     ..invalidate(debtsOverviewProvider)
     ..invalidate(budgetComparisonProvider)
+    ..invalidate(budgetsProvider)
+    ..invalidate(goalsProvider)
+    ..invalidate(commitmentsOverviewProvider)
+    ..invalidate(seasonSpendingFamily)
     ..invalidate(yearlyStatsProvider)
     ..invalidate(monthSummaryProvider)
     ..invalidate(recentEntriesProvider)

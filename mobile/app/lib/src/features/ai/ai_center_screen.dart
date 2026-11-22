@@ -47,8 +47,6 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
   }
 
   Future<void> _startVoiceCall() async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
     try {
       final eligibility = await ref.read(voiceEligibilityProvider.future);
       if (!mounted) return;
@@ -113,11 +111,12 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
         ),
       );
     } catch (e) {
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).aiWeCouldnTStartThe),
-        ),
-      );
+      if (mounted) {
+        showSmartSpendNotice(
+          context,
+          AppLocalizations.of(context).aiWeCouldnTStartThe,
+        );
+      }
     }
   }
 

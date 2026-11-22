@@ -51,6 +51,12 @@ final class BusinessApi {
           if (item is Map<String, Object?>) BusinessCategory.fromJson(item),
       ];
     }
+    if (res is Map<String, Object?> && res['categories'] is List<Object?>) {
+      return [
+        for (final item in res['categories']! as List<Object?>)
+          if (item is Map<String, Object?>) BusinessCategory.fromJson(item),
+      ];
+    }
     return const [];
   }
 
@@ -76,6 +82,25 @@ final class BusinessApi {
       return (res['id'] as num).toInt();
     }
     return 0;
+  }
+
+  /// Updates the active business details (`business.update`).
+  Future<bool> update({
+    String? name,
+    String? description,
+    List<String>? keywords,
+    bool? isActive,
+  }) async {
+    final res = await _client.mutate(
+      Procedures.business.update,
+      input: {
+        'name': ?name,
+        'description': ?description,
+        'keywords': ?keywords,
+        'isActive': ?isActive,
+      },
+    );
+    return res is Map<String, Object?> && res['success'] == true;
   }
 
   /// Adds a category to the active business (BIZ-02).
@@ -104,6 +129,35 @@ final class BusinessApi {
       return (res['id'] as num).toInt();
     }
     return 0;
+  }
+
+  /// Updates an existing business category (`business.updateCategory`).
+  Future<bool> updateCategory({
+    required int id,
+    String? name,
+    String? nameAr,
+    String? icon,
+    String? color,
+    String? type,
+    List<String>? keywords,
+    List<String>? matchExamples,
+    bool? isActive,
+  }) async {
+    final res = await _client.mutate(
+      Procedures.business.updateCategory,
+      input: {
+        'id': id,
+        'name': ?name,
+        'nameAr': ?nameAr,
+        'icon': ?icon,
+        'color': ?color,
+        'type': ?type,
+        'keywords': ?keywords,
+        'matchExamples': ?matchExamples,
+        'isActive': ?isActive,
+      },
+    );
+    return res is Map<String, Object?> && res['success'] == true;
   }
 
   /// Removes a business category (BIZ-02).

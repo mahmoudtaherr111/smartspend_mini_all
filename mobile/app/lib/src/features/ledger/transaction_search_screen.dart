@@ -106,22 +106,30 @@ class _TransactionSearchScreenState
           padding: const EdgeInsetsDirectional.only(
             end: SmartSpendSpacing.screen,
           ),
-          child: TextField(
-            controller: _controller,
-            focusNode: _focusNode,
-            autofocus: true,
-            textInputAction: TextInputAction.search,
-            decoration: InputDecoration(
-              hintText: l10n.searchHint,
-              isDense: true,
-              border: InputBorder.none,
-              prefixIcon: const Icon(Icons.search_rounded),
-              suffixIcon: _controller.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear_rounded, size: 20),
-                      onPressed: _clear,
-                    )
-                  : null,
+          child: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _controller,
+            builder: (context, value, _) => TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              autofocus: true,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                hintText: l10n.searchHint,
+                isDense: true,
+                filled: false,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: value.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 20),
+                        onPressed: _clear,
+                      )
+                    : null,
+              ),
             ),
           ),
         ),

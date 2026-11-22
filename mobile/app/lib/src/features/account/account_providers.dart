@@ -129,6 +129,16 @@ final class AccountRepository {
     );
   }
 
+  Future<void> updateProfile({
+    double? monthlyIncome,
+    String? financialGoal,
+  }) async {
+    await _client.mutate(
+      Procedures.profile.updateProfile,
+      input: {'monthlyIncome': ?monthlyIncome, 'financialGoal': ?financialGoal},
+    );
+  }
+
   Future<Map<String, Object?>> requestPhoneChange(String newPhone) async {
     final res = await _client.mutate(
       Procedures.profile.requestPhoneChange,
@@ -183,16 +193,31 @@ final class AccountRepository {
     final data = await _client.query(
       Procedures.profile.getNextOnboardingQuestion,
     );
-    return data is Map<String, Object?> ? data : null;
+    if (data is! Map<String, Object?>) return null;
+    if (data['profileCompleted'] == true) return null;
+    final question = data['question'];
+    if (question is Map<String, Object?>) return question;
+    if (data.containsKey('question') && question == null) return null;
+    if (data['key'] is String || data['id'] is String) return data;
+    return null;
   }
 
   Future<void> submitOnboardingAnswer({
-    required String questionId,
-    required Object? answer,
+    String? key,
+    String? questionId,
+    Object? value,
+    Object? answer,
+    bool skipped = false,
   }) async {
+    final resolvedKey = key ?? questionId ?? '';
+    final resolvedValue = value ?? answer;
     await _client.mutate(
       Procedures.profile.submitOnboardingAnswer,
-      input: {'questionId': questionId, 'answer': answer},
+      input: {
+        'key': resolvedKey,
+        'value': ?resolvedValue,
+        if (skipped) 'skipped': true,
+      },
     );
   }
 

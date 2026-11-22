@@ -196,6 +196,10 @@ final appTabs = <AppTab>[
         redirect: (context, state) => CommitmentsScreen.path,
       ),
       GoRoute(
+        path: 'commitments',
+        redirect: (context, state) => CommitmentsScreen.path,
+      ),
+      GoRoute(
         path: SeasonsScreen.path.substring('/more/'.length),
         builder: (context, state) => const SeasonsScreen(),
       ),

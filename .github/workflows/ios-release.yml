@@ -1,29 +1,118 @@
 name: iOS Release
 
+# Builds the unified Flutter iOS app (`mobile/app/ios/`) with native Liquid Glass (`ios_liquid_glass`)
+# in either `unsigned-sideload` mode (free sideloading via SideStore/Sideloadly/AltStore) or
+# `app-store-testflight` mode (signed App Store / TestFlight distribution).
 on:
   push:
     tags:
       - "v*.*.*"
   workflow_dispatch:
+    inputs:
+      distribution_mode:
+        description: "Distribution mode: unsigned-sideload (free, no Apple Dev account) or app-store-testflight (signed release)"
+        required: true
+        type: choice
+        default: unsigned-sideload
+        options:
+          - unsigned-sideload
+          - app-store-testflight
+      api_url:
+        description: "Production HTTPS API URL for SMARTSPEND_API_URL (leave empty to use repo variable SMARTSPEND_API_URL / VITE_API_URL)"
+        required: false
+        type: string
+        default: ""
+      marketing_version:
+        description: "App version override (e.g. 2.1.0; leave empty to use mobile/app/pubspec.yaml version)"
+        required: false
+        type: string
+        default: ""
+      build_number:
+        description: "CFBundleVersion build number (leave empty to use GitHub run number)"
+        required: false
+        type: string
+        default: ""
+      upload_to_testflight:
+        description: "Upload signed IPA to TestFlight (app-store-testflight mode only, requires App Store Connect API secrets)"
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: read
 
 concurrency:
-  group: ios-release-${{ github.ref }}
-  cancel-in-progress: true
-
-defaults:
-  run:
-    working-directory: mobile
+  group: ios-release-${{ github.ref }}-${{ inputs.distribution_mode || 'tag' }}
+  cancel-in-progress: false
 
 jobs:
   build:
-    name: Build iOS Release (Xcode & IPA)
+    name: Build Flutter iOS IPA (${{ inputs.distribution_mode || 'auto' }})
     runs-on: macos-latest
+    timeout-minutes: 45
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Select newest installed Xcode (iOS 26 SDK for Liquid Glass when available)
+        id: xcode
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pick_newest() {
+            local allow_beta="$1"
+            local best_app=""
+            local best_ver=""
+            for app in /Applications/Xcode*.app; do
+              [ -d "$app" ] || continue
+              local base_name
+              base_name="$(basename "$app")"
+              if [ "$allow_beta" = "no" ]; then
+                case "$base_name" in
+                  *[Bb][Ee][Tt][Aa]*) continue ;;
+                esac
+              fi
+              local ver
+              ver=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$app/Contents/Info.plist" 2>/dev/null || echo "0")
+              echo "Detected: $app (version $ver)" >&2
+              if [ -z "$best_app" ]; then
+                best_app="$app"
+                best_ver="$ver"
+              else
+                local higher
+                higher=$(printf '%s\n%s\n' "$best_ver" "$ver" | sort -V | tail -n1)
+                if [ "$higher" = "$ver" ] && [ "$ver" != "$best_ver" ]; then
+                  best_app="$app"
+                  best_ver="$ver"
+                fi
+              fi
+            done
+            echo "$best_app"
+          }
+
+          SELECTED_XCODE="$(pick_newest no)"
+          if [ -z "$SELECTED_XCODE" ]; then
+            SELECTED_XCODE="$(pick_newest yes)"
+          fi
+
+          if [ -n "$SELECTED_XCODE" ]; then
+            echo "Switching active Xcode to: $SELECTED_XCODE"
+            sudo xcode-select -s "$SELECTED_XCODE/Contents/Developer"
+          else
+            echo "Using default runner Xcode: $(xcode-select -p)"
+          fi
+
+          echo "=== Active Xcode ==="
+          xcodebuild -version
+          echo "=== Available SDKs ==="
+          xcodebuild -showsdks
+
+          XCODE_VERSION_LINE=$(xcodebuild -version | sed -n '1p')
+          IOS_SDK_LINE=$(xcodebuild -showsdks | grep -E "iphoneos[0-9.]+" | tail -n1 | sed 's/^[[:space:]]*//' || echo "iphoneos")
+          echo "xcode_version=${XCODE_VERSION_LINE}" >> "$GITHUB_OUTPUT"
+          echo "ios_sdk=${IOS_SDK_LINE}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -31,66 +120,495 @@ jobs:
           flutter-version-file: mobile/pubspec.yaml
           cache: true
 
-      - name: Install dependencies
+      - name: Install Flutter workspace dependencies
+        working-directory: mobile
         run: flutter pub get
 
-      - name: Configure Signing Certificates & Provisioning Profile
+      - name: Resolve & validate build configuration
+        id: config
+        shell: bash
         env:
-          CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
-          CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-          PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD || 'smartspend-ci' }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_MODE: ${{ inputs.distribution_mode }}
+          HAS_CERT: ${{ (secrets.APPLE_CERT_BASE64 != '' || secrets.IOS_CERTIFICATE_BASE64 != '') && 'yes' || 'no' }}
+          INPUT_API_URL: ${{ inputs.api_url }}
+          VAR_SMARTSPEND_API_URL: ${{ vars.SMARTSPEND_API_URL }}
+          VAR_VITE_API_URL: ${{ vars.VITE_API_URL }}
+          INPUT_MARKETING_VERSION: ${{ inputs.marketing_version }}
+          INPUT_BUILD_NUMBER: ${{ inputs.build_number }}
+          RUN_NUMBER: ${{ github.run_number }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
         run: |
-          if [ -n "$CERTIFICATE_BASE64" ]; then
-            CERT_PATH=$RUNNER_TEMP/build_cert.p12
-            PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
-            KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          set -euo pipefail
 
-            echo "$CERTIFICATE_BASE64" | base64 --decode > "$CERT_PATH"
-            echo "$PROVISION_PROFILE_BASE64" | base64 --decode > "$PP_PATH"
-
-            security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-            security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-            security import "$CERT_PATH" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
-            security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-            mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-            cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
-
-            echo "iOS signing credentials installed."
+          if [ -n "$INPUT_MODE" ]; then
+            MODE="$INPUT_MODE"
+          elif [ "$HAS_CERT" = "yes" ]; then
+            MODE="app-store-testflight"
           else
-            echo "No iOS signing certificates configured in secrets. Building unsigned archive."
+            MODE="unsigned-sideload"
           fi
 
-      - name: Build iOS Archive & IPA
+          RAW_API_URL="${INPUT_API_URL:-${VAR_SMARTSPEND_API_URL:-$VAR_VITE_API_URL}}"
+          if [ -z "$RAW_API_URL" ] && [ "$EVENT_NAME" = "push" ]; then
+            RAW_API_URL="https://api.smartspend.app"
+          fi
+          API_URL="${RAW_API_URL%/}"
+
+          if [ -z "$API_URL" ]; then
+            echo "::error::SMARTSPEND_API_URL is required for iOS builds. Pass the 'api_url' workflow input or configure repository variable SMARTSPEND_API_URL (or VITE_API_URL)."
+            exit 1
+          fi
+
+          if [[ "$API_URL" != https://* ]]; then
+            echo "::error::Release Flutter iOS builds require an HTTPS API URL (got: $API_URL)."
+            exit 1
+          fi
+
+          PUBSPEC_VERSION=$(grep -E '^version:' mobile/app/pubspec.yaml | head -n1 | sed -E 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/')
+          TAG_VERSION=""
+          if [[ "$EVENT_NAME" == "push" && "$GITHUB_REF_NAME" == v* ]]; then
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          MARKETING_VERSION="${INPUT_MARKETING_VERSION:-${TAG_VERSION:-$PUBSPEC_VERSION}}"
+          BUILD_NUMBER="${INPUT_BUILD_NUMBER:-$RUN_NUMBER}"
+
+          echo "mode=${MODE}" >> "$GITHUB_OUTPUT"
+          echo "api_url=${API_URL}" >> "$GITHUB_OUTPUT"
+          echo "marketing_version=${MARKETING_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "build_number=${BUILD_NUMBER}" >> "$GITHUB_OUTPUT"
+
+          echo "Resolved Flutter iOS build configuration:"
+          echo "  Distribution Mode: $MODE"
+          echo "  Bundle ID:         com.smartspend.app"
+          echo "  API URL:           $API_URL"
+          echo "  Marketing Version: $MARKETING_VERSION"
+          echo "  Build Number:      $BUILD_NUMBER"
+
+      - name: Configure iOS Google Sign-In & optional Firebase plist
+        shell: bash
+        env:
+          GOOGLE_IOS_CLIENT_ID: ${{ vars.GOOGLE_IOS_CLIENT_ID }}
+          GOOGLE_REVERSED_CLIENT_ID: ${{ vars.GOOGLE_REVERSED_CLIENT_ID }}
+          GOOGLE_SERVICE_INFO_PLIST_B64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_B64 }}
+        run: |
+          set -euo pipefail
+
+          # Auto-derive reversed client ID from GOOGLE_IOS_CLIENT_ID if not explicitly provided.
+          REVERSED_ID="$GOOGLE_REVERSED_CLIENT_ID"
+          if [ -z "$REVERSED_ID" ] && [ -n "$GOOGLE_IOS_CLIENT_ID" ]; then
+            REVERSED_ID=$(python3 -c 'import os; parts = os.environ["GOOGLE_IOS_CLIENT_ID"].strip().split("."); print(".".join(reversed(parts)))')
+          fi
+
+          if [ -n "$REVERSED_ID" ]; then
+            printf 'GOOGLE_REVERSED_CLIENT_ID = %s\n' "$REVERSED_ID" > mobile/app/ios/Flutter/GoogleSignIn.xcconfig
+            echo "Configured GOOGLE_REVERSED_CLIENT_ID in mobile/app/ios/Flutter/GoogleSignIn.xcconfig."
+          fi
+
+          if [ -n "$GOOGLE_SERVICE_INFO_PLIST_B64" ]; then
+            PLIST_PATH="mobile/app/ios/Runner/GoogleService-Info.plist"
+            printf '%s' "$GOOGLE_SERVICE_INFO_PLIST_B64" | tr -d '\r\n ' | base64 --decode > "$PLIST_PATH"
+            python3 - <<'PY'
+          pbx_path = "mobile/app/ios/Runner.xcodeproj/project.pbxproj"
+          with open(pbx_path, "r", encoding="utf-8") as f:
+              text = f.read()
+
+          if "GoogleService-Info.plist" not in text:
+              ref_id = "A1B2C3D42F00000100AA0006"
+              build_id = "A1B2C3D42F00000100AA0007"
+              text = text.replace(
+                  "/* End PBXBuildFile section */",
+                  f"\t\t{build_id} /* GoogleService-Info.plist in Resources */ = {{isa = PBXBuildFile; fileRef = {ref_id} /* GoogleService-Info.plist */; }};\n/* End PBXBuildFile section */",
+                  1,
+              )
+              text = text.replace(
+                  "/* End PBXFileReference section */",
+                  f"\t\t{ref_id} /* GoogleService-Info.plist */ = {{isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = \"GoogleService-Info.plist\"; sourceTree = \"<group>\"; }};\n/* End PBXFileReference section */",
+                  1,
+              )
+              text = text.replace(
+                  "97C147021CF9000F007C117D /* Info.plist */,",
+                  f"97C147021CF9000F007C117D /* Info.plist */,\n\t\t\t\t{ref_id} /* GoogleService-Info.plist */,",
+                  1,
+              )
+              text = text.replace(
+                  "97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,",
+                  f"97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,\n\t\t\t\t{build_id} /* GoogleService-Info.plist in Resources */,",
+                  1,
+              )
+              with open(pbx_path, "w", encoding="utf-8") as f:
+                  f.write(text)
+              print("Registered GoogleService-Info.plist in Runner.xcodeproj.")
+          PY
+          else
+            echo "GOOGLE_SERVICE_INFO_PLIST_B64 secret not set; skipping iOS Firebase plist."
+          fi
+
+      - name: Build dart-define flags file
+        shell: bash
+        env:
+          API_URL: ${{ steps.config.outputs.api_url }}
+          GOOGLE_SERVER_CLIENT_ID: ${{ vars.GOOGLE_SERVER_CLIENT_ID }}
+          GOOGLE_IOS_CLIENT_ID: ${{ vars.GOOGLE_IOS_CLIENT_ID }}
+          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+
+          defines = {
+              "SMARTSPEND_ENV": "production",
+              "SMARTSPEND_API_URL": os.environ["API_URL"],
+          }
+          for key in ("GOOGLE_SERVER_CLIENT_ID", "GOOGLE_IOS_CLIENT_ID", "TURNSTILE_SITE_KEY"):
+              val = os.environ.get(key, "").strip()
+              if val:
+                  defines[key] = val
+
+          out_path = os.path.join(os.environ["RUNNER_TEMP"], "dart-defines.json")
+          with open(out_path, "w", encoding="utf-8") as f:
+              json.dump(defines, f, indent=2)
+          print("Wrote dart-defines keys:", sorted(defines.keys()))
+          PY
+
+      # ──────────────────────────────────────────────────────────────────────────
+      # Mode 1: Unsigned Sideload IPA (Free — SideStore / Sideloadly / AltStore)
+      # ──────────────────────────────────────────────────────────────────────────
+      - name: Build unsigned Flutter iOS app
+        if: ${{ steps.config.outputs.mode == 'unsigned-sideload' }}
         working-directory: mobile/app
+        env:
+          MARKETING_VERSION: ${{ steps.config.outputs.marketing_version }}
+          BUILD_NUMBER: ${{ steps.config.outputs.build_number }}
         run: |
-          if [ -n "${{ secrets.IOS_CERTIFICATE_BASE64 }}" ]; then
-            flutter build ipa --release \
-              --dart-define=SMARTSPEND_ENV=production \
-              --dart-define=SMARTSPEND_API_URL=https://api.smartspend.app
-          else
-            flutter build ios --release --no-codesign \
-              --dart-define=SMARTSPEND_ENV=production \
-              --dart-define=SMARTSPEND_API_URL=https://api.smartspend.app
-            mkdir -p build/ios/ipa
-            if [ -d "build/ios/iphoneos/Runner.app" ]; then
-              mkdir -p Payload
-              cp -r build/ios/iphoneos/Runner.app Payload/
-              zip -r build/ios/ipa/SmartSpend-unsigned.ipa Payload
-              rm -rf Payload
-            fi
+          set -euo pipefail
+          flutter build ios --release --no-codesign \
+            --build-name="$MARKETING_VERSION" \
+            --build-number="$BUILD_NUMBER" \
+            --dart-define-from-file="$RUNNER_TEMP/dart-defines.json"
+
+      - name: Package & verify unsigned IPA (symlink-safe ditto + zip -qry)
+        id: package_unsigned
+        if: ${{ steps.config.outputs.mode == 'unsigned-sideload' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH="mobile/app/build/ios/iphoneos/Runner.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "::error::Expected Flutter Runner.app not found at $APP_PATH"
+            exit 1
           fi
 
-      - name: Upload iOS Build Artifact
+          STAGE_DIR="$RUNNER_TEMP/ipa-stage"
+          IPA_PATH="$RUNNER_TEMP/SmartSpend-AI-iOS-unsigned.ipa"
+          rm -rf "$STAGE_DIR" "$IPA_PATH"
+          mkdir -p "$STAGE_DIR/Payload"
+
+          ditto "$APP_PATH" "$STAGE_DIR/Payload/Runner.app"
+          rm -rf "$STAGE_DIR/Payload/Runner.app/_CodeSignature"
+
+          (
+            cd "$STAGE_DIR"
+            zip -qry "$IPA_PATH" Payload
+          )
+
+          echo "=== Verifying unsigned IPA structure ==="
+          unzip -l "$IPA_PATH" | sed -n '1,60p'
+
+          IPA_ENTRIES="$(unzip -Z1 "$IPA_PATH")"
+          for required in \
+            "Payload/Runner.app/Info.plist" \
+            "Payload/Runner.app/Runner" \
+            "Payload/Runner.app/Frameworks/App.framework/App" \
+            "Payload/Runner.app/Frameworks/Flutter.framework/Flutter"; do
+            if ! printf '%s\n' "$IPA_ENTRIES" | grep -Fx "$required" >/dev/null; then
+              echo "::error::Missing required entry inside Flutter IPA: $required"
+              exit 1
+            fi
+          done
+
+          BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$STAGE_DIR/Payload/Runner.app/Info.plist")
+          SHORT_VER=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$STAGE_DIR/Payload/Runner.app/Info.plist")
+          BUILD_VER=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$STAGE_DIR/Payload/Runner.app/Info.plist")
+          IPA_SIZE=$(du -h "$IPA_PATH" | awk '{print $1}')
+
+          echo "Verified unsigned Flutter IPA:"
+          echo "  File:      $IPA_PATH ($IPA_SIZE)"
+          echo "  Bundle ID: $BUNDLE_ID"
+          echo "  Version:   $SHORT_VER ($BUILD_VER)"
+
+          echo "ipa_size=${IPA_SIZE}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload unsigned IPA artifact
+        if: ${{ steps.config.outputs.mode == 'unsigned-sideload' }}
         uses: actions/upload-artifact@v4
         with:
-          name: smartspend-ios-release
-          path: |
-            mobile/app/build/ios/archive/*.xcarchive
-            mobile/app/build/ios/ipa/*.ipa
-            mobile/app/build/ios/iphoneos/*.app
-          if-no-files-found: warn
+          name: SmartSpend-AI-iOS-unsigned
+          path: ${{ runner.temp }}/SmartSpend-AI-iOS-unsigned.ipa
+          if-no-files-found: error
           retention-days: 30
+
+      # ──────────────────────────────────────────────────────────────────────────
+      # Mode 2: Signed App Store / TestFlight IPA
+      # ──────────────────────────────────────────────────────────────────────────
+      - name: Validate Apple signing secrets
+        if: ${{ steps.config.outputs.mode == 'app-store-testflight' }}
+        shell: bash
+        env:
+          CERT_B64: ${{ secrets.APPLE_CERT_BASE64 || secrets.IOS_CERTIFICATE_BASE64 }}
+          CERT_PASS: ${{ secrets.APPLE_CERT_PASSWORD || secrets.IOS_CERTIFICATE_PASSWORD }}
+          PROFILE_B64: ${{ secrets.APPLE_PROVISION_PROFILE_BASE64 || secrets.IOS_PROVISION_PROFILE_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          MISSING=()
+          [ -n "$CERT_B64" ] || MISSING+=("APPLE_CERT_BASE64 (or IOS_CERTIFICATE_BASE64)")
+          [ -n "$CERT_PASS" ] || MISSING+=("APPLE_CERT_PASSWORD (or IOS_CERTIFICATE_PASSWORD)")
+          [ -n "$PROFILE_B64" ] || MISSING+=("APPLE_PROVISION_PROFILE_BASE64 (or IOS_PROVISION_PROFILE_BASE64)")
+          [ -n "$APPLE_TEAM_ID" ] || MISSING+=("APPLE_TEAM_ID")
+
+          if [ "${#MISSING[@]}" -gt 0 ]; then
+            echo "::error::Missing required GitHub Secrets for app-store-testflight mode: ${MISSING[*]}"
+            exit 1
+          fi
+
+      - name: Import Apple signing certificate & provisioning profile
+        id: signing
+        if: ${{ steps.config.outputs.mode == 'app-store-testflight' }}
+        shell: bash
+        env:
+          CERT_B64: ${{ secrets.APPLE_CERT_BASE64 || secrets.IOS_CERTIFICATE_BASE64 }}
+          CERT_PASS: ${{ secrets.APPLE_CERT_PASSWORD || secrets.IOS_CERTIFICATE_PASSWORD }}
+          PROFILE_B64: ${{ secrets.APPLE_PROVISION_PROFILE_BASE64 || secrets.IOS_PROVISION_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+          CERT_PATH="$RUNNER_TEMP/apple_distribution.p12"
+          PROFILE_PATH="$RUNNER_TEMP/appstore.mobileprovision"
+          PROFILE_PLIST="$RUNNER_TEMP/profile.plist"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 32)"
+
+          printf '%s' "$CERT_B64" | tr -d '\r\n ' | base64 --decode > "$CERT_PATH"
+          printf '%s' "$PROFILE_B64" | tr -d '\r\n ' | base64 --decode > "$PROFILE_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          security import "$CERT_PATH" \
+            -P "$CERT_PASS" \
+            -A -t cert -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
+          security default-keychain -d user -s "$KEYCHAIN_PATH"
+
+          security cms -D -i "$PROFILE_PATH" > "$PROFILE_PLIST"
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" "$PROFILE_PLIST")
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" "$PROFILE_PLIST")
+
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
+          cp "$PROFILE_PATH" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
+
+          echo "profile_uuid=${PROFILE_UUID}" >> "$GITHUB_OUTPUT"
+          echo "profile_name=${PROFILE_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Installed provisioning profile: ${PROFILE_NAME} (${PROFILE_UUID})"
+
+      - name: Generate ExportOptions.plist & configure manual signing on Runner Release target
+        if: ${{ steps.config.outputs.mode == 'app-store-testflight' }}
+        shell: bash
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          PROFILE_NAME: ${{ steps.signing.outputs.profile_name }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, plistlib, re, sys
+
+          team_id = os.environ["APPLE_TEAM_ID"]
+          profile_name = os.environ["PROFILE_NAME"]
+
+          export_opts = {
+              "destination": "export",
+              "method": "app-store-connect",
+              "signingStyle": "manual",
+              "stripSwiftSymbols": True,
+              "teamID": team_id,
+              "uploadSymbols": True,
+              "provisioningProfiles": {
+                  "com.smartspend.app": profile_name,
+              },
+          }
+          with open(os.path.join(os.environ["RUNNER_TEMP"], "ExportOptions.plist"), "wb") as f:
+              plistlib.dump(export_opts, f, fmt=plistlib.FMT_XML)
+
+          pbx_path = "mobile/app/ios/Runner.xcodeproj/project.pbxproj"
+          with open(pbx_path, "r", encoding="utf-8") as f:
+              text = f.read()
+
+          def pbx_quote(value: str) -> str:
+              escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+              return f'"{escaped}"'
+
+          # Scope manual signing strictly to Runner Release XCBuildConfiguration (97C147071CF9000F007C117D)
+          # so Swift Package Manager plugin targets never require provisioning profiles.
+          cfg_re = re.compile(
+              r"(97C147071CF9000F007C117D /\* Release \*/ = \{\s*isa = XCBuildConfiguration;\s*baseConfigurationReference = [^;]+;\s*buildSettings = \{)(.*?)(\n\t\t\t\};)",
+              re.S,
+          )
+          match = cfg_re.search(text)
+          if not match:
+              sys.exit("ERROR: Could not locate Runner Release XCBuildConfiguration (97C147071CF9000F007C117D)")
+
+          body = match.group(2)
+          for key in (
+              "CODE_SIGN_STYLE",
+              "CODE_SIGN_IDENTITY",
+              '"CODE_SIGN_IDENTITY[sdk=iphoneos*]"',
+              "DEVELOPMENT_TEAM",
+              "PROVISIONING_PROFILE_SPECIFIER",
+          ):
+              body = re.sub(rf"\n\t\t\t\t{re.escape(key)}\s*=\s*[^;]+;", "", body)
+
+          signing_lines = (
+              "\n\t\t\t\tCODE_SIGN_IDENTITY = \"Apple Distribution\";"
+              "\n\t\t\t\t\"CODE_SIGN_IDENTITY[sdk=iphoneos*]\" = \"Apple Distribution\";"
+              "\n\t\t\t\tCODE_SIGN_STYLE = Manual;"
+              f"\n\t\t\t\tDEVELOPMENT_TEAM = {pbx_quote(team_id)};"
+              f"\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = {pbx_quote(profile_name)};"
+          )
+          new_text = text[:match.start(2)] + body + signing_lines + text[match.end(2):]
+          with open(pbx_path, "w", encoding="utf-8") as f:
+              f.write(new_text)
+
+          print("Configured ExportOptions.plist and Runner Release manual signing.")
+          PY
+
+      - name: Build & export signed Flutter App Store IPA
+        id: export_signed
+        if: ${{ steps.config.outputs.mode == 'app-store-testflight' }}
+        working-directory: mobile/app
+        env:
+          MARKETING_VERSION: ${{ steps.config.outputs.marketing_version }}
+          BUILD_NUMBER: ${{ steps.config.outputs.build_number }}
+        run: |
+          set -euo pipefail
+          flutter build ipa --release \
+            --build-name="$MARKETING_VERSION" \
+            --build-number="$BUILD_NUMBER" \
+            --export-options-plist="$RUNNER_TEMP/ExportOptions.plist" \
+            --dart-define-from-file="$RUNNER_TEMP/dart-defines.json"
+
+          EXPORTED_IPA=$(find build/ios/ipa -maxdepth 1 -name "*.ipa" | sed -n '1p')
+          if [ -z "$EXPORTED_IPA" ] || [ ! -f "$EXPORTED_IPA" ]; then
+            echo "::error::Signed IPA not found in mobile/app/build/ios/ipa"
+            exit 1
+          fi
+
+          FINAL_IPA="$RUNNER_TEMP/SmartSpend-AI-iOS-appstore.ipa"
+          mv "$EXPORTED_IPA" "$FINAL_IPA"
+
+          echo "=== Verifying signed IPA structure ==="
+          unzip -l "$FINAL_IPA" | sed -n '1,60p'
+
+          IPA_SIZE=$(du -h "$FINAL_IPA" | awk '{print $1}')
+          echo "ipa_size=${IPA_SIZE}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload signed IPA artifact
+        if: ${{ steps.config.outputs.mode == 'app-store-testflight' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartSpend-AI-iOS-appstore
+          path: ${{ runner.temp }}/SmartSpend-AI-iOS-appstore.ipa
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload to TestFlight (App Store Connect)
+        id: testflight
+        if: ${{ steps.config.outputs.mode == 'app-store-testflight' && inputs.upload_to_testflight != false }}
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          ASC_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "$ASC_KEY_ID" ] || [ -z "$ASC_ISSUER_ID" ] || [ -z "$ASC_KEY_BASE64" ]; then
+            echo "::notice::App Store Connect API Key secrets not configured; skipping TestFlight upload. Signed IPA is available as an artifact."
+            echo "uploaded=skipped" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          KEY_FILE="$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s' "$ASC_KEY_BASE64" | tr -d '\r\n ' | base64 --decode > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$RUNNER_TEMP/SmartSpend-AI-iOS-appstore.ipa" \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID"
+
+          echo "uploaded=yes" >> "$GITHUB_OUTPUT"
+
+      - name: Clean up temporary signing credentials
+        if: ${{ always() && steps.config.outputs.mode == 'app-store-testflight' }}
+        shell: bash
+        env:
+          PROFILE_UUID: ${{ steps.signing.outputs.profile_uuid }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+        run: |
+          security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/apple_distribution.p12" "$RUNNER_TEMP/appstore.mobileprovision" "$RUNNER_TEMP/profile.plist" "$RUNNER_TEMP/ExportOptions.plist"
+          if [ -n "$PROFILE_UUID" ]; then
+            rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
+            rm -f "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/${PROFILE_UUID}.mobileprovision"
+          fi
+          if [ -n "$ASC_KEY_ID" ]; then
+            rm -f "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          fi
+
+      - name: Write build summary
+        if: ${{ success() }}
+        shell: bash
+        env:
+          BUILD_MODE: ${{ steps.config.outputs.mode }}
+          XCODE_VERSION: ${{ steps.xcode.outputs.xcode_version }}
+          IOS_SDK: ${{ steps.xcode.outputs.ios_sdk }}
+          API_URL: ${{ steps.config.outputs.api_url }}
+          MARKETING_VERSION: ${{ steps.config.outputs.marketing_version }}
+          BUILD_NUMBER: ${{ steps.config.outputs.build_number }}
+          UNSIGNED_SIZE: ${{ steps.package_unsigned.outputs.ipa_size }}
+          SIGNED_SIZE: ${{ steps.export_signed.outputs.ipa_size }}
+          TESTFLIGHT_STATUS: ${{ steps.testflight.outputs.uploaded }}
+        run: |
+          {
+            echo "## SmartSpend AI — Unified Flutter iOS IPA Build"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Runtime | Flutter (\`mobile/app/ios\`) + Native Liquid Glass (\`ios_liquid_glass\`) |"
+            echo "| Distribution Mode | \`${BUILD_MODE}\` |"
+            echo "| Bundle ID | \`com.smartspend.app\` |"
+            echo "| Version | \`${MARKETING_VERSION}\` (build \`${BUILD_NUMBER}\`) |"
+            echo "| API URL | \`${API_URL}\` |"
+            echo "| Xcode | \`${XCODE_VERSION}\` |"
+            echo "| iOS SDK | \`${IOS_SDK}\` |"
+            if [ "$BUILD_MODE" = "unsigned-sideload" ]; then
+              echo "| Artifact | \`SmartSpend-AI-iOS-unsigned\` (\`SmartSpend-AI-iOS-unsigned.ipa\`, ${UNSIGNED_SIZE}) |"
+            else
+              echo "| Artifact | \`SmartSpend-AI-iOS-appstore\` (\`SmartSpend-AI-iOS-appstore.ipa\`, ${SIGNED_SIZE}) |"
+              echo "| TestFlight Upload | \`${TESTFLIGHT_STATUS:-skipped}\` |"
+            fi
+            echo ""
+            if [ "$BUILD_MODE" = "unsigned-sideload" ]; then
+              echo "Download the artifact above and install \`SmartSpend-AI-iOS-unsigned.ipa\` on iPhone using **SideStore**, **Sideloadly**, or **AltStore** (see \`docs/guides/ios-build-and-install.md\`)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

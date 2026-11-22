@@ -38,9 +38,8 @@ class WalletsScreen extends ConsumerWidget {
     }
 
     Future<void> add() async {
-      final messenger = ScaffoldMessenger.of(context);
-      if (await showWalletForm(context)) {
-        messenger.showSnackBar(SnackBar(content: Text(l10n.walletSaved)));
+      if (await showWalletForm(context) && context.mounted) {
+        showSmartSpendNotice(context, l10n.walletSaved);
       }
     }
 

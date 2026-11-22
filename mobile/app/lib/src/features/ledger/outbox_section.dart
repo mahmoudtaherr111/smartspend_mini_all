@@ -52,6 +52,7 @@ class _OutboxRow extends ConsumerWidget {
     if (item.state == OutboxState.sending) return;
     await showSmartSpendSheet<void>(
       context: context,
+      scrollable: true,
       builder: (sheetContext) => _OutboxActions(item: item),
     );
   }

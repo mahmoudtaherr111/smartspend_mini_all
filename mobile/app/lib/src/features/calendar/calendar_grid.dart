@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../core/cairo_time.dart';
 import '../../l10n/app_localizations.dart';
 import '../commitments/commitment_models.dart';
 import '../commitments/commitment_ui.dart';
@@ -61,7 +63,7 @@ class CalendarGrid extends StatelessWidget {
   }
 }
 
-class _CalendarMonthGrid extends StatelessWidget {
+class _CalendarMonthGrid extends ConsumerWidget {
   const _CalendarMonthGrid({
     required this.year,
     required this.month,
@@ -77,11 +79,11 @@ class _CalendarMonthGrid extends StatelessWidget {
   final Map<String, List<DueDate>> dues;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
 
-    final now = DateTime.now();
+    final now = ref.watch(cairoTodayProvider);
     final isCurrentMonth = now.year == year && now.month == month;
     final todayDay = isCurrentMonth ? now.day : null;
 
@@ -159,7 +161,7 @@ class _CalendarMonthGrid extends StatelessWidget {
             crossAxisCount: 7,
             mainAxisSpacing: 4,
             crossAxisSpacing: 4,
-            childAspectRatio: 0.88,
+            mainAxisExtent: 54,
           ),
           itemCount: cells.length,
           itemBuilder: (context, index) {
@@ -214,6 +216,7 @@ class _DayCellWidget extends StatelessWidget {
       },
       borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
       child: Container(
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
@@ -221,7 +224,7 @@ class _DayCellWidget extends StatelessWidget {
         ),
         padding: const EdgeInsets.symmetric(
           horizontal: SmartSpendSpacing.xs / 2,
-          vertical: SmartSpendSpacing.xs,
+          vertical: SmartSpendSpacing.xs / 2,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -229,10 +232,15 @@ class _DayCellWidget extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '${cell.dayNumber}',
-                  style: Theme.of(context).textTheme.labelSmall!.copyWith(
-                    color: cell.isToday ? colors.accent : colors.foreground,
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '${cell.dayNumber}',
+                      style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                        color: cell.isToday ? colors.accent : colors.foreground,
+                      ),
+                    ),
                   ),
                 ),
                 // A commitment's mark on its day (a known service's logo), else payday's star, else today's dot.
@@ -276,7 +284,7 @@ class _DayCellWidget extends StatelessWidget {
 }
 
 /// Fallback list view when textScaler >= 2.0 (CAL-01).
-class _CalendarDayList extends StatelessWidget {
+class _CalendarDayList extends ConsumerWidget {
   const _CalendarDayList({
     required this.year,
     required this.month,
@@ -292,12 +300,12 @@ class _CalendarDayList extends StatelessWidget {
   final Map<String, List<DueDate>> dues;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
 
     final daysInMonth = DateTime(year, month + 1, 0).day;
-    final now = DateTime.now();
+    final now = ref.watch(cairoTodayProvider);
     final isCurrentMonth = now.year == year && now.month == month;
 
     return ListView.separated(

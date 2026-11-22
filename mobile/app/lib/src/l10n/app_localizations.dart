@@ -9337,6 +9337,504 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'قبضك من الجمعية'**
   String get cfYourPayouts;
+
+  /// No description provided for @keyboardDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم'**
+  String get keyboardDone;
+
+  /// No description provided for @genericActionFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نكمّل العملية دلوقتي. جرّب تاني.'**
+  String get genericActionFailed;
+
+  /// No description provided for @saveChangesFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نحفظ التعديلات. جرّب تاني.'**
+  String get saveChangesFailed;
+
+  /// No description provided for @confirmDeleteAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكد المسح'**
+  String get confirmDeleteAction;
+
+  /// No description provided for @goalEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الهدف'**
+  String get goalEditTitle;
+
+  /// No description provided for @goalEditAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدّل الهدف'**
+  String get goalEditAction;
+
+  /// No description provided for @goalUpdatedNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف اتحدّث.'**
+  String get goalUpdatedNotice;
+
+  /// No description provided for @goalDeleteConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمسح الهدف؟'**
+  String get goalDeleteConfirmTitle;
+
+  /// No description provided for @goalDeleteConfirmBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف ده هيتمسح من قايمة أهدافك. المسح مابيترجعش.'**
+  String get goalDeleteConfirmBody;
+
+  /// No description provided for @goalDeletedNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف اتمسح.'**
+  String get goalDeletedNotice;
+
+  /// No description provided for @savingPlanEndConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنهي خطة التوفير؟'**
+  String get savingPlanEndConfirmTitle;
+
+  /// No description provided for @savingPlanEndConfirmBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخطة الحالية هتتوقف ومش هتظهر تاني. عملياتك المحفوظة هتفضل زي ما هي.'**
+  String get savingPlanEndConfirmBody;
+
+  /// No description provided for @savingPlanEndConfirmAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنهي الخطة'**
+  String get savingPlanEndConfirmAction;
+
+  /// No description provided for @contactEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل بيانات الشخص'**
+  String get contactEditTitle;
+
+  /// No description provided for @contactEditAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدّل البيانات'**
+  String get contactEditAction;
+
+  /// No description provided for @contactUpdatedNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيانات الشخص اتحدّثت.'**
+  String get contactUpdatedNotice;
+
+  /// No description provided for @commitmentEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الالتزام'**
+  String get commitmentEditTitle;
+
+  /// No description provided for @commitmentEditAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدّل الالتزام'**
+  String get commitmentEditAction;
+
+  /// No description provided for @commitmentUpdatedNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'الالتزام اتحدّث.'**
+  String get commitmentUpdatedNotice;
+
+  /// No description provided for @commitmentLinkTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اربط بعملية متسجلة'**
+  String get commitmentLinkTitle;
+
+  /// No description provided for @commitmentLinkAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'اربط بعملية'**
+  String get commitmentLinkAction;
+
+  /// No description provided for @commitmentLinkedNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتربطت العملية بالالتزام.'**
+  String get commitmentLinkedNotice;
+
+  /// No description provided for @commitmentLinkEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش عمليات قريبة مناسبة تربطها بالموعد ده.'**
+  String get commitmentLinkEmpty;
+
+  /// No description provided for @categoryCreateTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصنيف جديد'**
+  String get categoryCreateTitle;
+
+  /// No description provided for @categoryCreateAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف تصنيف'**
+  String get categoryCreateAction;
+
+  /// No description provided for @categoryNameLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم التصنيف'**
+  String get categoryNameLabel;
+
+  /// No description provided for @categoryCreatedNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيف اتضاف.'**
+  String get categoryCreatedNotice;
+
+  /// No description provided for @businessEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل حساب الشغل'**
+  String get businessEditTitle;
+
+  /// No description provided for @businessEditAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدّل الحساب'**
+  String get businessEditAction;
+
+  /// No description provided for @businessCategoryEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل فئة المشروع'**
+  String get businessCategoryEditTitle;
+
+  /// No description provided for @businessActiveBanner.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغّال على حساب الشغل: {name}'**
+  String businessActiveBanner(String name);
+
+  /// No description provided for @businessSwitchPersonalAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارجع للشخصي'**
+  String get businessSwitchPersonalAction;
+
+  /// No description provided for @moneyPrefMonthlyIncomeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدخل الشهري المتوقع'**
+  String get moneyPrefMonthlyIncomeLabel;
+
+  /// No description provided for @moneyPrefMonthlyIncomeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختياري، بيساعدنا نقارن صرفك بدخلك'**
+  String get moneyPrefMonthlyIncomeHint;
+
+  /// No description provided for @moneyPrefCurrencyLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'العملة الأساسية'**
+  String get moneyPrefCurrencyLabel;
+
+  /// No description provided for @moneyPrefSavedNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفضيلات الفلوس اتحفظت.'**
+  String get moneyPrefSavedNotice;
+
+  /// No description provided for @upgradeDefaultTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح كل مميزات SmartSpend'**
+  String get upgradeDefaultTitle;
+
+  /// No description provided for @upgradeDefaultBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقّي لباقة Pro عشان تستفيد بتحليل الأهداف وحساب الشغل وقراءة الفواتير والمكالمات الصوتية.'**
+  String get upgradeDefaultBody;
+
+  /// No description provided for @upgradeDefaultCta.
+  ///
+  /// In ar, this message translates to:
+  /// **'شوف باقات Pro'**
+  String get upgradeDefaultCta;
+
+  /// No description provided for @upgradePaymobCheckoutAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'ادفع بالبطاقة أو المحفظة (Paymob)'**
+  String get upgradePaymobCheckoutAction;
+
+  /// No description provided for @upgradePaymobCancelAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'ألغي اشتراك Paymob'**
+  String get upgradePaymobCancelAction;
+
+  /// No description provided for @upgradePaymobCancelConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تلغي الاشتراك؟'**
+  String get upgradePaymobCancelConfirmTitle;
+
+  /// No description provided for @upgradePaymobCancelConfirmBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'هيفضل اشتراكك شغال لحد آخر الفترة المدفوعة، ومش هيتجدد بعد كده.'**
+  String get upgradePaymobCancelConfirmBody;
+
+  /// No description provided for @upgradeRestoreAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجّع مشترياتي'**
+  String get upgradeRestoreAction;
+
+  /// No description provided for @supportCloseTicketAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقفل الطلب'**
+  String get supportCloseTicketAction;
+
+  /// No description provided for @supportCloseConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقفل الطلب ده؟'**
+  String get supportCloseConfirmTitle;
+
+  /// No description provided for @supportCloseConfirmBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو مشكلتك اتحلت تقدر تقفل الطلب. تقدر تبعت طلب جديد في أي وقت.'**
+  String get supportCloseConfirmBody;
+
+  /// No description provided for @supportTicketClosedNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطلب اتقفل.'**
+  String get supportTicketClosedNotice;
+
+  /// No description provided for @supportMessageRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب موضوع الطلب وتفاصيله الأول.'**
+  String get supportMessageRequired;
+
+  /// No description provided for @appInfoVersionValue.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإصدار {version}'**
+  String appInfoVersionValue(String version);
+
+  /// No description provided for @appInfoLicensesAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'تراخيص البرامج المفتوحة'**
+  String get appInfoLicensesAction;
+
+  /// No description provided for @sessionsDeviceCurrent.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجهاز ده'**
+  String get sessionsDeviceCurrent;
+
+  /// No description provided for @sessionsDeviceAndroid.
+  ///
+  /// In ar, this message translates to:
+  /// **'أندرويد'**
+  String get sessionsDeviceAndroid;
+
+  /// No description provided for @sessionsDeviceIos.
+  ///
+  /// In ar, this message translates to:
+  /// **'آيفون'**
+  String get sessionsDeviceIos;
+
+  /// No description provided for @sessionsDeviceWeb.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتصفح'**
+  String get sessionsDeviceWeb;
+
+  /// No description provided for @sessionsDeviceUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهاز غير معروف'**
+  String get sessionsDeviceUnknown;
+
+  /// No description provided for @iosShortcutsGuideTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعداد اختصارات آيفون'**
+  String get iosShortcutsGuideTitle;
+
+  /// No description provided for @iosShortcutsGuideIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصّل تطبيق الاختصارات عشان رسايل البنك والمحفظة تتبعت لـ SmartSpend أول ما توصل:'**
+  String get iosShortcutsGuideIntro;
+
+  /// No description provided for @iosShortcutsGuideStep1.
+  ///
+  /// In ar, this message translates to:
+  /// **'1. افتح تطبيق الاختصارات واختار تبويب الأتمتة، وبعدين دوس + واعمل أتمتة للرسايل.'**
+  String get iosShortcutsGuideStep1;
+
+  /// No description provided for @iosShortcutsGuideStep2.
+  ///
+  /// In ar, this message translates to:
+  /// **'2. اختار إن الأتمتة تشتغل فورًا لما توصلك رسالة من البنك أو المحفظة.'**
+  String get iosShortcutsGuideStep2;
+
+  /// No description provided for @iosShortcutsGuideStep3.
+  ///
+  /// In ar, this message translates to:
+  /// **'3. اختار إجراء SmartSpend لتسجيل رسالة البنك ومرّر نص الرسالة.'**
+  String get iosShortcutsGuideStep3;
+
+  /// No description provided for @iosShortcutsConnectAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصّل الاختصارات'**
+  String get iosShortcutsConnectAction;
+
+  /// No description provided for @iosShortcutsConnectedNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتوصّل تطبيق الاختصارات بالهاتف ده.'**
+  String get iosShortcutsConnectedNotice;
+
+  /// No description provided for @voicePermissionAllowCta.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة'**
+  String get voicePermissionAllowCta;
+
+  /// No description provided for @termsSectionUsageTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'1. استخدام التطبيق'**
+  String get termsSectionUsageTitle;
+
+  /// No description provided for @termsSectionUsageBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'باستخدامك SmartSpend AI بتوافق على الشروط دي وسياسة الخصوصية المطبقة في مصر وفقًا للقانون رقم 151 لسنة 2020.'**
+  String get termsSectionUsageBody;
+
+  /// No description provided for @termsSectionAiTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'2. الذكاء الاصطناعي والميزانية'**
+  String get termsSectionAiTitle;
+
+  /// No description provided for @termsSectionAiBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'التطبيق بيساعدك تتابع مصاريفك وتنظم ميزانيتك، وتحليلات المساعد إرشادية ومش نصيحة مالية أو بنكية معتمدة.'**
+  String get termsSectionAiBody;
+
+  /// No description provided for @termsSectionPrivacyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'3. حماية البيانات والرسايل'**
+  String get termsSectionPrivacyTitle;
+
+  /// No description provided for @termsSectionPrivacyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'التطبيق مش بيطلب أو يحفظ باسورد البنك أو أرقام الكروت السرية (CVV/PIN)، وبياناتك محمية وتقدر تصدّرها أو تمسحها في أي وقت.'**
+  String get termsSectionPrivacyBody;
+
+  /// No description provided for @dataStoredSectionServerTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي محفوظ على السيرفر'**
+  String get dataStoredSectionServerTitle;
+
+  /// No description provided for @dataStoredSectionServerBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'عملياتك، محافظك، ميزانياتك، التزاماتك، وذاكرة المساعد اللي بتختار تحتفظ بيها عشان نقدم لك الخدمة.'**
+  String get dataStoredSectionServerBody;
+
+  /// No description provided for @dataStoredSectionPhoneTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي محفوظ على الموبايل'**
+  String get dataStoredSectionPhoneTitle;
+
+  /// No description provided for @dataStoredSectionPhoneBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'جلسة الدخول المشفرة، قفل التطبيق، ونسخة أوفلاين من آخر عملياتك والعمليات المستنية النت.'**
+  String get dataStoredSectionPhoneBody;
+
+  /// No description provided for @dataStoredSectionDeleteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حقوقك في التصدير والمسح'**
+  String get dataStoredSectionDeleteTitle;
+
+  /// No description provided for @dataStoredSectionDeleteBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقدر تنزّل نسخة من كل بياناتك أو تمسح حسابك نهائيًا في أي وقت وفقًا لقانون حماية البيانات 151 لسنة 2020.'**
+  String get dataStoredSectionDeleteBody;
+
+  /// No description provided for @manualRecordTypeInvestment.
+  ///
+  /// In ar, this message translates to:
+  /// **'استثمار'**
+  String get manualRecordTypeInvestment;
+
+  /// No description provided for @manualRecordTypeRefund.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجع'**
+  String get manualRecordTypeRefund;
+
+  /// No description provided for @manualRecordContactLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشخص (اختياري)'**
+  String get manualRecordContactLabel;
+
+  /// No description provided for @manualRecordSubcategoryLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيف الفرعي (اختياري)'**
+  String get manualRecordSubcategoryLabel;
+
+  /// No description provided for @voiceCallConnecting.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنوصل...'**
+  String get voiceCallConnecting;
+
+  /// No description provided for @voiceCallListening.
+  ///
+  /// In ar, this message translates to:
+  /// **'سامعينك، اتكلم...'**
+  String get voiceCallListening;
+
+  /// No description provided for @voiceCallEnded.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكالمة خلصت'**
+  String get voiceCallEnded;
 }
 
 class _AppLocalizationsDelegate

@@ -68,6 +68,13 @@ final class CommitmentApi {
     );
   }
 
+  Future<void> replaceItems(int id, List<Map<String, Object?>> items) async {
+    await _client.mutate(
+      Procedures.commitments.replaceItems,
+      input: {'id': id, 'items': items},
+    );
+  }
+
   /// 'active' | 'paused' | 'ended'.
   Future<void> setStatus(int id, String status) async {
     await _client.mutate(

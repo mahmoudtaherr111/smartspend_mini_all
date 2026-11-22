@@ -12,6 +12,7 @@ import '../infrastructure/remote_config.dart';
 import '../ledger/category_style.dart';
 import '../plans/plan_providers.dart';
 import '../stats/stats_providers.dart';
+import 'ai_chat_view.dart';
 import 'ai_models.dart';
 import 'ai_providers.dart';
 
@@ -140,7 +141,7 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
       ],
       for (final alert in report.alerts) ...[
         InlineMessage(
-          alert,
+          AiMarkdownBody.stripMarkers(alert),
           tone: alert.contains('🚨') || alert.contains('⚠️')
               ? MessageTone.warning
               : MessageTone.success,
@@ -149,10 +150,7 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
       ],
       GroupedCard(
         title: l10n.aiThisMonthSAnalysis,
-        child: Text(
-          report.responseText,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
+        child: AiMarkdownBody(text: report.responseText),
       ),
       if (report.dataTable.isNotEmpty) ...[
         const SizedBox(height: SmartSpendSpacing.md),

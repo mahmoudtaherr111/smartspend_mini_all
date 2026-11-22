@@ -73,13 +73,15 @@ class MoreScreen extends ConsumerWidget {
                   value: wallets == null || wallets.isEmpty
                       ? null
                       : AmountText(
-                          wallets.fold<num>(
-                            0,
-                            (sum, wallet) => sum + wallet.balance,
-                          ),
+                          wallets
+                              .where((w) => w.cashBalanceIncluded)
+                              .fold<num>(
+                                0,
+                                (sum, wallet) => sum + wallet.balance,
+                              ),
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
-                  onTap: () => context.go(WalletsScreen.path),
+                  onTap: () => context.push(WalletsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.people_outline_rounded,
@@ -88,19 +90,19 @@ class MoreScreen extends ConsumerWidget {
                   value: netDebt == 0
                       ? null
                       : DebtBadge(balance: netDebt, compact: true),
-                  onTap: () => context.go(ContactsScreen.path),
+                  onTap: () => context.push(ContactsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.savings_outlined,
                   title: l10n.calMonthlyBudgets,
                   subtitle: l10n.calSetALimitAndSee,
-                  onTap: () => context.go(BudgetsScreen.path),
+                  onTap: () => context.push(BudgetsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.flag_outlined,
                   title: l10n.calSavingGoals,
                   subtitle: l10n.calPlanWhatYouAreSaving,
-                  onTap: () => context.go(GoalsScreen.path),
+                  onTap: () => context.push(GoalsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.event_repeat_rounded,
@@ -118,13 +120,13 @@ class MoreScreen extends ConsumerWidget {
                   icon: Icons.star_outline_rounded,
                   title: l10n.calMyPlan,
                   subtitle: l10n.calComparePlansAndManageYour,
-                  onTap: () => context.go(PlanScreen.path),
+                  onTap: () => context.push(PlanScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.storefront_outlined,
                   title: l10n.calWorkAccount,
                   subtitle: l10n.calKeepWorkSpendingApartFrom,
-                  onTap: () => context.go(BusinessScreen.path),
+                  onTap: () => context.push(BusinessScreen.path),
                 ),
               ],
             ),
@@ -136,13 +138,13 @@ class MoreScreen extends ConsumerWidget {
                   icon: Icons.settings_outlined,
                   title: l10n.settingsTitle,
                   subtitle: l10n.settingsEntry,
-                  onTap: () => context.go(SettingsScreen.path),
+                  onTap: () => context.push(SettingsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.help_outline_rounded,
                   title: l10n.calHelpCenter,
                   subtitle: l10n.calCommonQuestionsAndSupportTickets,
-                  onTap: () => context.go(HelpCenterScreen.path),
+                  onTap: () => context.push(HelpCenterScreen.path),
                 ),
               ],
             ),

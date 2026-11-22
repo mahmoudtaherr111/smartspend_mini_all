@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 
 import '../infrastructure/remote_config.dart';
 import '../stats/stats_providers.dart';
+import 'ai_chat_view.dart';
 import 'ai_models.dart';
 import 'ai_providers.dart';
 
@@ -131,10 +132,7 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
           words.month(comparison.secondMonth),
           words.month(comparison.firstMonth),
         ),
-        child: Text(
-          comparison.responseText,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
+        child: AiMarkdownBody(text: comparison.responseText),
       ),
       if (comparison.changes.isNotEmpty) ...[
         const SizedBox(height: SmartSpendSpacing.md),

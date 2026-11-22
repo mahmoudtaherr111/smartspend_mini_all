@@ -73,6 +73,23 @@ enum CommitmentType {
   };
 }
 
+/// Maps a stored commitment's [kind] back to the [CommitmentType] form that edits it.
+CommitmentType commitmentTypeOf(String kind) => switch (kind) {
+  'subscription' => CommitmentType.subscription,
+  'installment' => CommitmentType.installment,
+  'loan' => CommitmentType.loan,
+  'property' => CommitmentType.property,
+  'school' || 'university' => CommitmentType.school,
+  'lessons' => CommitmentType.lessons,
+  'rent' => CommitmentType.rent,
+  'bill' => CommitmentType.bill,
+  'card' => CommitmentType.card,
+  'debt' => CommitmentType.debt,
+  'gam3eya' => CommitmentType.gam3eya,
+  'salary' || 'freelance' => CommitmentType.income,
+  _ => CommitmentType.other,
+};
+
 /// Adding a commitment: pick what it is, then fill its few fields.
 class AddCommitmentScreen extends ConsumerStatefulWidget {
   const AddCommitmentScreen({super.key, this.initialType});
@@ -116,7 +133,7 @@ class _AddCommitmentScreenState extends ConsumerState<AddCommitmentScreen> {
     return PopScope(
       canPop: type == null,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _back();
+        if (!didPop && _picking) _back();
       },
       child: Scaffold(
         appBar: AppBar(
@@ -129,7 +146,7 @@ class _AddCommitmentScreenState extends ConsumerState<AddCommitmentScreen> {
                 onPick: (brand) => setState(() => _brand = brand),
                 onCustom: () => setState(() => _customSubscription = true),
               )
-            : CommitmentForm(type: type, brand: _brand),
+            : CommitmentForm(type: type, brand: _brand, onBack: _back),
       ),
     );
   }

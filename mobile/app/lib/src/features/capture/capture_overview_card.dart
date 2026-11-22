@@ -254,7 +254,8 @@ class _PurposeFormState extends ConsumerState<_PurposeForm> {
                   _subCategory = null;
                 }),
         ),
-        if (category != null)
+        if (category != null) ...[
+          const SizedBox(height: SmartSpendSpacing.sm),
           DropdownButtonFormField<String>(
             key: ValueKey(_category),
             initialValue: _subCategory,
@@ -270,7 +271,9 @@ class _PurposeFormState extends ConsumerState<_PurposeForm> {
                 ? null
                 : (value) => setState(() => _subCategory = value),
           ),
-        if (_category == 'transfer' && _subCategory == 'debt')
+        ],
+        if (_category == 'transfer' && _subCategory == 'debt') ...[
+          const SizedBox(height: SmartSpendSpacing.sm),
           DropdownButtonFormField<int>(
             initialValue: _contactId,
             isExpanded: true,
@@ -288,6 +291,7 @@ class _PurposeFormState extends ConsumerState<_PurposeForm> {
                 ? null
                 : (value) => setState(() => _contactId = value),
           ),
+        ],
         const SizedBox(height: SmartSpendSpacing.sm),
         TextField(
           controller: _purpose,

@@ -128,12 +128,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
             ListTile(
               leading: const Icon(Icons.password),
               title: Text(l10n.securityChangePin),
-              trailing: Transform.scale(
-                scaleX: Directionality.of(context) == TextDirection.rtl
-                    ? -1
-                    : 1,
-                child: const Icon(Icons.chevron_right),
-              ),
+              trailing: const Icon(Icons.chevron_right),
               onTap: _setUpPin,
             ),
           ],

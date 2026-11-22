@@ -21,9 +21,18 @@ class _OnboardingQuestionsScreenState
     extends ConsumerState<OnboardingQuestionsScreen> {
   bool _loading = true;
   bool _submitting = false;
+  String? _loadError;
   Map<String, Object?>? _currentQuestion;
   final _answerController = TextEditingController();
-  Object? _selectedOption;
+  String? _selectedOption;
+
+  static String _extractOptionValue(Object? opt) {
+    if (opt is Map) {
+      final raw = opt['value'] ?? opt['id'] ?? opt['label'];
+      return raw?.toString() ?? opt.toString();
+    }
+    return opt?.toString() ?? '';
+  }
 
   @override
   void initState() {
@@ -40,6 +49,7 @@ class _OnboardingQuestionsScreenState
   Future<void> _loadNext() async {
     setState(() {
       _loading = true;
+      _loadError = null;
       _answerController.clear();
       _selectedOption = null;
     });
@@ -53,23 +63,34 @@ class _OnboardingQuestionsScreenState
         _currentQuestion = q;
         _loading = false;
       });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = e.message;
+        _loading = false;
+      });
     } on Object {
       if (!mounted) return;
-      setState(() => _loading = false);
+      setState(() {
+        _loadError = AppLocalizations.of(context).genericActionFailed;
+        _loading = false;
+      });
     }
   }
 
   Future<void> _submit() async {
     if (_currentQuestion == null) return;
-    final id = _currentQuestion!['id'] as String? ?? '';
+    final key =
+        (_currentQuestion!['key'] ?? _currentQuestion!['id'])?.toString() ?? '';
     final answer = _selectedOption ?? _answerController.text.trim();
-    if (answer is String && answer.isEmpty) return;
+    if (answer.isEmpty) return;
 
     setState(() => _submitting = true);
     try {
       await ref
           .read(accountRepositoryProvider)
-          .submitOnboardingAnswer(questionId: id, answer: answer);
+          .submitOnboardingAnswer(key: key, value: answer);
+      ref.invalidate(nextPersonalQuestionProvider);
       if (!mounted) return;
       await _loadNext();
     } on ApiException catch (e) {
@@ -108,6 +129,14 @@ class _OnboardingQuestionsScreenState
       appBar: AppBar(title: Text(l10n.onboardingQuestionsTitle)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
+          : _loadError != null
+          ? Center(
+              child: ErrorState(
+                message: _loadError!,
+                retryLabel: l10n.retry,
+                onRetry: _loadNext,
+              ),
+            )
           : _currentQuestion == null
           ? Center(
               child: Padding(
@@ -154,39 +183,47 @@ class _OnboardingQuestionsScreenState
                   const SizedBox(height: SmartSpendSpacing.xl),
                   if (_currentQuestion!['options'] is List) ...[
                     for (final opt in _currentQuestion!['options'] as List)
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: SmartSpendSpacing.sm,
-                        ),
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            backgroundColor: _selectedOption == opt
-                                ? colors.accent.withValues(alpha: 0.1)
-                                : null,
-                            side: BorderSide(
-                              color: _selectedOption == opt
-                                  ? colors.accent
-                                  : colors.border,
-                              width: _selectedOption == opt ? 2 : 1,
+                      Builder(
+                        builder: (context) {
+                          final optVal = _extractOptionValue(opt);
+                          final isSelected = _selectedOption == optVal;
+                          return Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: SmartSpendSpacing.sm,
                             ),
-                            padding: const EdgeInsets.all(SmartSpendSpacing.md),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                SmartSpendRadii.md,
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: isSelected
+                                    ? colors.accent.withValues(alpha: 0.1)
+                                    : null,
+                                side: BorderSide(
+                                  color: isSelected
+                                      ? colors.accent
+                                      : colors.border,
+                                  width: isSelected ? 2 : 1,
+                                ),
+                                padding: const EdgeInsets.all(
+                                  SmartSpendSpacing.md,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    SmartSpendRadii.md,
+                                  ),
+                                ),
+                              ),
+                              onPressed: () =>
+                                  setState(() => _selectedOption = optVal),
+                              child: Text(
+                                opt is Map
+                                    ? (opt['label'] as String? ?? optVal)
+                                    : optVal,
+                                style: isSelected
+                                    ? textTheme.titleSmall
+                                    : textTheme.bodyMedium,
                               ),
                             ),
-                          ),
-                          onPressed: () =>
-                              setState(() => _selectedOption = opt),
-                          child: Text(
-                            opt is Map
-                                ? (opt['label'] as String? ?? opt.toString())
-                                : opt.toString(),
-                            style: _selectedOption == opt
-                                ? textTheme.titleSmall
-                                : textTheme.bodyMedium,
-                          ),
-                        ),
+                          );
+                        },
                       ),
                   ] else ...[
                     TextField(

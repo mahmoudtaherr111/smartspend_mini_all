@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 
+import '../../core/cairo_time.dart';
 import '../../core/providers.dart';
 
 final class SupportTicket {
@@ -21,8 +22,8 @@ final class SupportTicket {
       status: json['status'] as String? ?? 'open',
       response: json['response'] as String?,
       createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? cairoNow()
+          : cairoNow(),
     );
   }
 
@@ -64,6 +65,10 @@ final class SupportRepository {
       return data['ticketId']! as int;
     }
     return 0;
+  }
+
+  Future<void> closeTicket(int id) async {
+    await _client.mutate(Procedures.support.close, input: {'id': id});
   }
 }
 

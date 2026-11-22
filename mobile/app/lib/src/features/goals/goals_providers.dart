@@ -43,6 +43,27 @@ class GoalsNotifier extends AsyncNotifier<GoalsListResponse> {
     return id;
   }
 
+  Future<int> updateGoal({
+    required int goalId,
+    required String title,
+    String? description,
+    required double targetAmount,
+    DateTime? targetDate,
+    String? status,
+  }) async {
+    final api = ref.read(goalsApiProvider);
+    final newId = await api.updateGoal(
+      goalId: goalId,
+      title: title,
+      description: description,
+      targetAmount: targetAmount,
+      targetDate: targetDate,
+      status: status,
+    );
+    unawaited(refresh());
+    return newId;
+  }
+
   Future<bool> setStatus({required int goalId, required String status}) async {
     final api = ref.read(goalsApiProvider);
     final ok = await api.setStatus(goalId: goalId, status: status);

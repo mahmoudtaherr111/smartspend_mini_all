@@ -6,6 +6,7 @@ import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../business/business_providers.dart';
 import '../infrastructure/remote_config.dart';
 import 'category_style.dart';
 import 'ledger_models.dart';
@@ -30,6 +31,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
   AppLocalizations get _l10n => AppLocalizations.of(context);
 
   final _text = TextEditingController();
+  final _focusNode = FocusNode();
   Timer? _debounceTimer;
   String _debouncedQuery = '';
   bool _busy = false;
@@ -45,6 +47,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
   void initState() {
     super.initState();
     _text.addListener(_onTextChanged);
+    _focusNode.addListener(_onFocusChanged);
   }
 
   @override
@@ -53,8 +56,15 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
     _recordTimer?.cancel();
     unawaited(_amplitudeSub?.cancel());
     _text.removeListener(_onTextChanged);
+    _focusNode.removeListener(_onFocusChanged);
     _text.dispose();
+    _focusNode.dispose();
     super.dispose();
+  }
+
+  void _onFocusChanged() {
+    if (!mounted) return;
+    ref.read(composerFocusedProvider.notifier).setFocused(_focusNode.hasFocus);
   }
 
   void _onTextChanged() {
@@ -79,6 +89,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
 
   Future<void> _startVoiceRecording() async {
     if (_busy || _isRecording) return;
+    FocusScope.of(context).unfocus();
     final isOnline = ref.read(networkStatusProvider);
     if (!isOnline) {
       _tell(_l10n.monVoiceRecordingNeedsInternetYou);
@@ -161,10 +172,12 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
         if (result == null || result.audioBase64.trim().isEmpty) {
           return const SubmitEmpty();
         }
+        final isBiz = ref.read(isBusinessModeActiveProvider);
         parse = await api.parseVoice(
           audioBase64: result.audioBase64,
           mimeType: result.mimeType,
           durationSeconds: duration > 0 ? duration : result.durationSeconds,
+          businessMode: isBiz ? true : null,
         );
       } on ApiException catch (e) {
         final msg = e.message.toLowerCase();
@@ -287,173 +300,171 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
         : null;
     final preview = previewAsync?.asData?.value;
 
-    return Material(
-      color: colors.surface,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            SmartSpendSpacing.lg,
-            SmartSpendSpacing.sm,
-            SmartSpendSpacing.lg,
-            SmartSpendSpacing.sm,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (preview != null && !_isRecording)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: SmartSpendSpacing.xs),
-                  child: ExcludeSemantics(
-                    child: Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Container(
-                        key: const Key('category-hint'),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: SmartSpendSpacing.sm,
-                          vertical: SmartSpendSpacing.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.accent.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(
-                            SmartSpendRadii.pill,
-                          ),
-                          border: Border.all(
-                            color: colors.accent.withValues(alpha: 0.25),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              categoryIcon(preview.category),
-                              size: 14,
-                              color: colors.accent,
-                            ),
-                            const SizedBox(width: SmartSpendSpacing.xs),
-                            Text(
-                              preview.subCategory.isNotEmpty &&
-                                      preview.subCategory != 'عام'
-                                  ? '${preview.category} / ${preview.subCategory}'
-                                  : preview.category,
-                              style: Theme.of(context).textTheme.labelMedium!
-                                  .copyWith(color: colors.accent),
-                            ),
-                            if (preview.amount > 0) ...[
-                              const SizedBox(width: SmartSpendSpacing.xs),
-                              Text(
-                                '· ${moneyText(context, preview.amount)}',
-                                style: Theme.of(context).textTheme.bodySmall!
-                                    .copyWith(color: colors.mutedForeground),
-                              ),
-                            ],
-                          ],
-                        ),
+    return SmartSpendGlassDock(
+      safeAreaBottom: false,
+      padding: const EdgeInsets.fromLTRB(
+        SmartSpendSpacing.md,
+        SmartSpendSpacing.sm,
+        SmartSpendSpacing.md,
+        SmartSpendSpacing.sm,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (preview != null && !_isRecording)
+            Padding(
+              padding: const EdgeInsets.only(bottom: SmartSpendSpacing.xs),
+              child: ExcludeSemantics(
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Container(
+                    key: const Key('category-hint'),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: SmartSpendSpacing.sm,
+                      vertical: SmartSpendSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.accent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(SmartSpendRadii.pill),
+                      border: Border.all(
+                        color: colors.accent.withValues(alpha: 0.25),
                       ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          categoryIcon(preview.category),
+                          size: 14,
+                          color: colors.accent,
+                        ),
+                        const SizedBox(width: SmartSpendSpacing.xs),
+                        Flexible(
+                          child: Text(
+                            preview.subCategory.isNotEmpty &&
+                                    preview.subCategory != 'عام'
+                                ? '${preview.category} / ${preview.subCategory}'
+                                : preview.category,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.labelMedium!
+                                .copyWith(color: colors.accent),
+                          ),
+                        ),
+                        if (preview.amount > 0) ...[
+                          const SizedBox(width: SmartSpendSpacing.xs),
+                          Text(
+                            '· ${moneyText(context, preview.amount)}',
+                            style: Theme.of(context).textTheme.bodySmall!
+                                .copyWith(color: colors.mutedForeground),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ),
-              if (_busy && _text.text.isEmpty && !_isRecording)
-                _buildProcessingBar(colors)
-              else
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: _isRecording
-                          ? _buildRecordingStatus(colors, isTapToRecord)
-                          : TextField(
-                              controller: _text,
-                              minLines: 1,
-                              maxLines: 4,
-                              enabled: !_busy,
-                              textInputAction: TextInputAction.send,
-                              keyboardType: TextInputType.text,
-                              onSubmitted: (_) => _submit(),
-                              decoration: InputDecoration(
-                                hintText: l10n.composerHint,
-                                hintMaxLines: 1,
-                                suffixIcon: IconButton(
-                                  tooltip: isTapToRecord
-                                      ? _l10n.monModeSingleTap
-                                      : _l10n.monModeHold,
-                                  icon: Icon(
-                                    isTapToRecord
-                                        ? Icons.touch_app_rounded
-                                        : Icons.gesture_rounded,
-                                    size: 20,
-                                    color: colors.mutedForeground,
-                                  ),
-                                  onPressed: () {
-                                    ref
-                                        .read(tapToRecordModeProvider.notifier)
-                                        .toggle();
-                                  },
-                                ),
-                              ),
+              ),
+            ),
+          if (_busy && _text.text.isEmpty && !_isRecording)
+            _buildProcessingBar(colors)
+          else
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: _isRecording
+                      ? _buildRecordingStatus(colors, isTapToRecord)
+                      : TextField(
+                          controller: _text,
+                          focusNode: _focusNode,
+                          minLines: 1,
+                          maxLines: 4,
+                          enabled: !_busy,
+                          textInputAction: TextInputAction.send,
+                          keyboardType: TextInputType.text,
+                          onSubmitted: (_) => _submit(),
+                          decoration: InputDecoration(
+                            hintText: l10n.composerHint,
+                            hintMaxLines: 1,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: SmartSpendSpacing.md,
+                              vertical: SmartSpendSpacing.md,
                             ),
-                    ),
-                    const SizedBox(width: SmartSpendSpacing.xs),
-                    if (!stopped.contains('image'))
-                      Visibility(
-                        visible: !_isRecording,
-                        maintainSize: true,
-                        maintainAnimation: true,
-                        maintainState: true,
-                        child: SizedBox.square(
-                          dimension: 48,
-                          child: IconButton(
-                            tooltip: _l10n.monPhotographAReceipt,
-                            onPressed: _busy
-                                ? null
-                                : () => startReceiptIntake(
-                                    context: context,
-                                    ref: ref,
-                                  ),
-                            icon: Icon(
-                              Icons.camera_alt_outlined,
-                              color: colors.foreground,
-                              size: 22,
+                            suffixIconConstraints: const BoxConstraints(
+                              minWidth: 36,
+                              minHeight: 36,
+                            ),
+                            suffixIcon: IconButton(
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              tooltip: isTapToRecord
+                                  ? _l10n.monModeSingleTap
+                                  : _l10n.monModeHold,
+                              icon: Icon(
+                                isTapToRecord
+                                    ? Icons.touch_app_rounded
+                                    : Icons.gesture_rounded,
+                                size: 18,
+                                color: colors.mutedForeground,
+                              ),
+                              onPressed: () {
+                                ref
+                                    .read(tapToRecordModeProvider.notifier)
+                                    .toggle();
+                              },
                             ),
                           ),
                         ),
-                      ),
-                    const SizedBox(width: SmartSpendSpacing.xs),
-                    if (!stopped.contains('speech'))
-                      _buildMicButton(
-                        colors,
-                        isTapToRecord,
-                        isRecording: _isRecording,
-                      ),
-                    const SizedBox(width: SmartSpendSpacing.xs),
-                    Visibility(
-                      visible: !_isRecording,
-                      maintainSize: true,
-                      maintainAnimation: true,
-                      maintainState: true,
-                      child: SizedBox.square(
-                        dimension: 48,
-                        child: IconButton.filled(
-                          tooltip: l10n.composerSend,
-                          onPressed: _busy ? null : _submit,
-                          icon: _busy
-                              ? SizedBox.square(
-                                  dimension: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.5,
-                                    color: colors.foreground,
-                                  ),
-                                )
-                              : const Icon(Icons.arrow_upward),
-                        ),
+                ),
+                if (!_isRecording && !stopped.contains('image')) ...[
+                  const SizedBox(width: SmartSpendSpacing.xs),
+                  SizedBox.square(
+                    dimension: 48,
+                    child: IconButton(
+                      tooltip: _l10n.monPhotographAReceipt,
+                      onPressed: _busy
+                          ? null
+                          : () =>
+                                startReceiptIntake(context: context, ref: ref),
+                      icon: Icon(
+                        Icons.camera_alt_outlined,
+                        color: colors.foreground,
+                        size: 22,
                       ),
                     ),
-                  ],
-                ),
-            ],
-          ),
-        ),
+                  ),
+                ],
+                if (!stopped.contains('speech')) ...[
+                  const SizedBox(width: SmartSpendSpacing.xs),
+                  _buildMicButton(
+                    colors,
+                    isTapToRecord,
+                    isRecording: _isRecording,
+                  ),
+                ],
+                if (!_isRecording) ...[
+                  const SizedBox(width: SmartSpendSpacing.xs),
+                  SizedBox.square(
+                    dimension: 48,
+                    child: IconButton.filled(
+                      tooltip: l10n.composerSend,
+                      onPressed: _busy ? null : _submit,
+                      icon: _busy
+                          ? SizedBox.square(
+                              dimension: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: colors.foreground,
+                              ),
+                            )
+                          : const Icon(Icons.arrow_upward),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+        ],
       ),
     );
   }
@@ -461,7 +472,10 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
   Widget _buildRecordingStatus(SmartSpendColors colors, bool isTapToRecord) {
     return Container(
       height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: SmartSpendSpacing.md),
+      padding: const EdgeInsetsDirectional.only(
+        start: SmartSpendSpacing.md,
+        end: SmartSpendSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: colors.surfaceRaised,
         borderRadius: BorderRadius.circular(SmartSpendRadii.pill),
@@ -477,24 +491,29 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: SmartSpendSpacing.sm),
+          const SizedBox(width: SmartSpendSpacing.xs),
           Text(
             '00:${_recordingSeconds.toString().padLeft(2, '0')}',
             style: Theme.of(context).textTheme.titleSmall!
                 .copyWith(color: colors.foreground),
           ),
-          const SizedBox(width: SmartSpendSpacing.md),
+          const SizedBox(width: SmartSpendSpacing.sm),
           Expanded(
             child: Center(child: VoiceLevelMeter(level: _currentAmplitude)),
           ),
-          Text(
-            isTapToRecord ? _l10n.monCancel : _l10n.monSlideToCancel,
-            style: Theme.of(context).textTheme.bodySmall!
-                .copyWith(color: colors.mutedForeground),
-          ),
           const SizedBox(width: SmartSpendSpacing.xs),
+          Flexible(
+            child: Text(
+              isTapToRecord ? _l10n.monCancel : _l10n.monSlideToCancel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall!
+                  .copyWith(color: colors.mutedForeground),
+            ),
+          ),
           IconButton(
             key: const Key('voice-cancel-button'),
+            visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.close_rounded, size: 20),
             tooltip: _l10n.monCancelRecording,
             onPressed: () => unawaited(_cancelVoiceRecording()),
@@ -523,10 +542,14 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
             ),
           ),
           const SizedBox(width: SmartSpendSpacing.md),
-          Text(
-            _l10n.monListeningToTheRecording,
-            style: Theme.of(context).textTheme.bodyMedium!
-                .copyWith(color: colors.mutedForeground),
+          Flexible(
+            child: Text(
+              _l10n.monListeningToTheRecording,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodyMedium!
+                  .copyWith(color: colors.mutedForeground),
+            ),
           ),
         ],
       ),
@@ -543,6 +566,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
         : 'voice-mic-button';
 
     return SizedBox.square(
+      key: const ValueKey('voice-mic-slot'),
       dimension: 48,
       child: Tooltip(
         message: isTapToRecord
@@ -564,26 +588,19 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
           onLongPressStart: isTapToRecord
               ? null
               : (details) {
-                  // ignore: avoid_print
                   unawaited(_startVoiceRecording());
                 },
           onLongPressEnd: isTapToRecord
               ? null
               : (details) {
-                  // ignore: avoid_print
                   unawaited(_stopAndProcessVoice());
                 },
           onLongPressUp: isTapToRecord
               ? null
               : () {
-                  // ignore: avoid_print
                   unawaited(_stopAndProcessVoice());
                 },
-          onLongPressCancel: isTapToRecord
-              ? null
-              : () {
-                  // ignore: avoid_print
-                },
+          onLongPressCancel: isTapToRecord ? null : () {},
           onLongPressMoveUpdate: isTapToRecord
               ? null
               : (details) {

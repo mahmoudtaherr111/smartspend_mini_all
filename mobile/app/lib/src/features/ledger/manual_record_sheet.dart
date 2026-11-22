@@ -3,11 +3,14 @@ import 'dart:async';
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../wallets/wallet_providers.dart';
 import 'category_style.dart';
+import 'ledger_models.dart';
+import 'ledger_providers.dart';
 import 'offline/outbox.dart';
 
 /// Opens the sheet that records a transaction by hand (REC-12).
@@ -15,28 +18,36 @@ import 'offline/outbox.dart';
 Future<bool> showManualRecordSheet(BuildContext context) async {
   final saved = await showSmartSpendSheet<bool>(
     context: context,
-    builder: (_) =>
-        const MoneyPrivacy(hidden: false, child: ManualRecordSheet()),
+    builder: (_) => MoneyPrivacy(
+      hidden: false,
+      child: ManualRecordSheet(hostContext: context),
+    ),
   );
   return saved ?? false;
 }
 
-/// The manual record sheet: custom Egyptian keypad, type switch, category picker, date and wallet (REC-12).
+/// The manual record sheet: custom Egyptian keypad, type switch, category & subcategory picker,
+/// contact picker, date and wallet (REC-12).
 class ManualRecordSheet extends ConsumerStatefulWidget {
-  const ManualRecordSheet({super.key});
+  const ManualRecordSheet({super.key, this.hostContext});
+
+  final BuildContext? hostContext;
 
   @override
   ConsumerState<ManualRecordSheet> createState() => _ManualRecordSheetState();
 }
 
 class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
-  String _type = 'expense'; // 'expense', 'income', 'transfer'
+  // 'expense', 'income', 'transfer', 'investment', 'refund'
+  String _type = 'expense';
   String _amountBuffer = '';
   late String _category;
   String? _subCategory;
   late DateTime _date;
   int? _walletId;
+  ContactSummary? _selectedContact;
   final TextEditingController _noteController = TextEditingController();
+  final FocusNode _noteFocusNode = FocusNode();
   String? _error;
   bool _saving = false;
 
@@ -46,19 +57,30 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
     _category = 'أكل وشرب';
     _subCategory = 'عام';
     _date = clock.now();
-    _noteController.addListener(() => setState(() {}));
+    _noteController.addListener(_onFieldChanged);
+    _noteFocusNode.addListener(_onFieldChanged);
+  }
+
+  void _onFieldChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _noteController.removeListener(_onFieldChanged);
+    _noteFocusNode.removeListener(_onFieldChanged);
     _noteController.dispose();
+    _noteFocusNode.dispose();
     super.dispose();
   }
 
   bool get _isDirty =>
       _amountBuffer.isNotEmpty ||
       _noteController.text.trim().isNotEmpty ||
-      _walletId != null;
+      _walletId != null ||
+      _selectedContact != null;
+
+  String get _ledgerType => _type == 'refund' ? 'expense' : _type;
 
   void _onDigit(String digit) {
     if (_saving) return;
@@ -113,35 +135,38 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
     unawaited(SmartSpendHaptics.selection());
     setState(() {
       _type = newType;
-      // Set canonical default category for the type
-      if (newType == 'income') {
-        _category = 'مرتب';
-        _subCategory = 'عام';
-      } else if (newType == 'transfer') {
-        _category = 'تحويل';
-        _subCategory = 'عام';
-      } else {
-        _category = 'أكل وشرب';
-        _subCategory = 'عام';
-      }
+      final ledgerType = newType == 'refund' ? 'expense' : newType;
+      final canonical = categoriesForType(ledgerType);
+      _category = canonical.isNotEmpty ? canonical.first : 'أكل وشرب';
+      _subCategory = defaultSubCategory(_category);
     });
   }
 
   Future<void> _pickCategory() async {
     if (_saving) return;
-    final available = categoryTaxonomy
-        .where(
-          (tax) =>
-              tax.type == _type ||
-              (_type == 'expense' && tax.type == 'expense'),
-        )
-        .toList();
+    final custom = ref.read(customCategoriesProvider).value ?? const <String>[];
+    final ledgerType = _ledgerType;
+    final available = <CategoryTaxonomy>[
+      for (final tax in categoryTaxonomy)
+        if (tax.type == ledgerType) tax,
+      if (ledgerType == 'expense')
+        for (final name in custom)
+          if (!categoryTaxonomy.any((t) => t.name == name))
+            CategoryTaxonomy(
+              name: name,
+              type: 'expense',
+              subcategories: const ['عام'],
+            ),
+    ];
     if (available.isEmpty) return;
 
     final picked = await showSmartSpendSheet<String>(
       context: context,
-      builder: (ctx) =>
-          _CategoryPickerSheet(categories: available, selected: _category),
+      builder: (ctx) => _CategoryPickerSheet(
+        categories: available,
+        selected: _category,
+        allowCustomCreation: ledgerType == 'expense',
+      ),
     );
 
     if (picked != null && mounted) {
@@ -150,6 +175,54 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
         _category = picked;
         _subCategory = defaultSubCategory(picked);
       });
+    }
+  }
+
+  Future<void> _pickSubCategory() async {
+    if (_saving) return;
+    final subs = subcategoriesForCategory(_category, current: _subCategory);
+    if (subs.isEmpty) return;
+
+    final picked = await showSmartSpendSheet<String>(
+      context: context,
+      scrollable: true,
+      builder: (sheetContext) {
+        final l10n = AppLocalizations.of(sheetContext);
+        final colors = sheetContext.smartSpendColors;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SmartSpendSpacing.screen,
+            0,
+            SmartSpendSpacing.screen,
+            SmartSpendSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.manualRecordSubcategoryLabel,
+                style: Theme.of(sheetContext).textTheme.titleLarge,
+              ),
+              const SizedBox(height: SmartSpendSpacing.sm),
+              for (final sub in subs)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(sub),
+                  trailing: sub == _subCategory
+                      ? Icon(Icons.check_rounded, color: colors.accent)
+                      : null,
+                  onTap: () => Navigator.of(sheetContext).pop(sub),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (picked != null && mounted) {
+      unawaited(SmartSpendHaptics.selection());
+      setState(() => _subCategory = picked);
     }
   }
 
@@ -167,6 +240,17 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
       setState(() {
         _date = picked;
       });
+    }
+  }
+
+  void _showNoticeOnRecordScaffold(String message) {
+    final recordCtx = recordScaffoldMessengerKey.currentContext;
+    final hostCtx = widget.hostContext;
+    final targetContext = (recordCtx != null && recordCtx.mounted)
+        ? recordCtx
+        : (hostCtx != null && hostCtx.mounted ? hostCtx : context);
+    if (targetContext.mounted) {
+      showSmartSpendNotice(targetContext, message);
     }
   }
 
@@ -193,12 +277,15 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
       final outbox = ref.read(outboxProvider.notifier);
       final outcome = await outbox.submitManual(
         amount: amount.toDouble(),
-        type: _type,
+        type: _ledgerType,
         category: _category,
         subCategory: _subCategory,
         description: _noteController.text.trim().isNotEmpty
             ? _noteController.text.trim()
             : null,
+        direction: _type == 'refund' ? 'incoming' : null,
+        personName: _selectedContact?.name,
+        personRelationship: _selectedContact?.relation,
         date: _date,
         walletId: _walletId,
       );
@@ -209,16 +296,16 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
         case SubmitSaved():
           unawaited(SmartSpendHaptics.success());
           Navigator.of(context).pop(true);
-          showSmartSpendNotice(context, l10n.manualRecordSavedNotice);
+          _showNoticeOnRecordScaffold(l10n.manualRecordSavedNotice);
         case SubmitQueued():
           unawaited(SmartSpendHaptics.success());
           Navigator.of(context).pop(true);
-          showSmartSpendNotice(context, l10n.manualRecordQueuedNotice);
+          _showNoticeOnRecordScaffold(l10n.manualRecordQueuedNotice);
         case SubmitFailed(:final message, :final kept):
           unawaited(SmartSpendHaptics.warning());
           if (kept) {
             Navigator.of(context).pop(true);
-            showSmartSpendNotice(context, message);
+            _showNoticeOnRecordScaffold(message);
           } else {
             setState(() {
               _saving = false;
@@ -228,7 +315,7 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
         default:
           unawaited(SmartSpendHaptics.success());
           Navigator.of(context).pop(true);
-          showSmartSpendNotice(context, l10n.manualRecordSavedNotice);
+          _showNoticeOnRecordScaffold(l10n.manualRecordSavedNotice);
       }
     } catch (e) {
       if (mounted) {
@@ -268,6 +355,13 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
     final l10n = AppLocalizations.of(context);
     final colors = context.smartSpendColors;
     final walletsAsync = ref.watch(walletsProvider);
+    final contacts =
+        ref.watch(contactsProvider).value ?? const <ContactSummary>[];
+    final subcategories = subcategoriesForCategory(
+      _category,
+      current: _subCategory,
+    );
+    final hideCustomKeypad = _noteFocusNode.hasFocus;
 
     return PopScope(
       canPop: !_isDirty || _saving,
@@ -281,9 +375,6 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
       child: Container(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.sizeOf(context).height * 0.92,
-        ),
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -317,7 +408,7 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
 
               const SizedBox(height: SmartSpendSpacing.xs),
 
-              // Type Toggle (Expense / Income / Transfer)
+              // Type Toggle (Expense / Income / Transfer / Investment / Refund)
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: SmartSpendSpacing.lg,
@@ -328,30 +419,48 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
                     color: colors.surfaceRaised,
                     borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                   ),
-                  child: Row(
-                    children: [
-                      _TypeTab(
-                        label: l10n.manualRecordTypeExpense,
-                        icon: Icons.arrow_upward_rounded,
-                        selected: _type == 'expense',
-                        color: colors.danger,
-                        onTap: () => _setType('expense'),
-                      ),
-                      _TypeTab(
-                        label: l10n.manualRecordTypeIncome,
-                        icon: Icons.arrow_downward_rounded,
-                        selected: _type == 'income',
-                        color: colors.accent,
-                        onTap: () => _setType('income'),
-                      ),
-                      _TypeTab(
-                        label: l10n.manualRecordTypeTransfer,
-                        icon: Icons.swap_horiz_rounded,
-                        selected: _type == 'transfer',
-                        color: colors.info,
-                        onTap: () => _setType('transfer'),
-                      ),
-                    ],
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _TypeTab(
+                          label: l10n.manualRecordTypeExpense,
+                          icon: Icons.arrow_upward_rounded,
+                          selected: _type == 'expense',
+                          color: colors.danger,
+                          onTap: () => _setType('expense'),
+                        ),
+                        _TypeTab(
+                          label: l10n.manualRecordTypeIncome,
+                          icon: Icons.arrow_downward_rounded,
+                          selected: _type == 'income',
+                          color: colors.accent,
+                          onTap: () => _setType('income'),
+                        ),
+                        _TypeTab(
+                          label: l10n.manualRecordTypeTransfer,
+                          icon: Icons.swap_horiz_rounded,
+                          selected: _type == 'transfer',
+                          color: colors.info,
+                          onTap: () => _setType('transfer'),
+                        ),
+                        _TypeTab(
+                          label: l10n.manualRecordTypeInvestment,
+                          icon: Icons.trending_up_rounded,
+                          selected: _type == 'investment',
+                          color: colors.ai,
+                          onTap: () => _setType('investment'),
+                        ),
+                        _TypeTab(
+                          label: l10n.manualRecordTypeRefund,
+                          icon: Icons.replay_rounded,
+                          selected: _type == 'refund',
+                          color: colors.accent,
+                          onTap: () => _setType('refund'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -371,7 +480,7 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
                     style: Theme.of(context).textTheme.displayMedium!.copyWith(
                       color: _amountBuffer.isEmpty
                           ? colors.mutedForeground.withValues(alpha: 0.4)
-                          : _type == 'income'
+                          : (_type == 'income' || _type == 'refund')
                           ? colors.accent
                           : colors.foreground,
                     ),
@@ -396,7 +505,7 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
 
               const SizedBox(height: SmartSpendSpacing.sm),
 
-              // Details Row: Category Chip & Date Chip & Wallet Chip
+              // Details Row: Category Chip, Subcategory Chip, Date Chip, Wallet & Contact
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: SmartSpendSpacing.lg,
@@ -417,6 +526,19 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
                         backgroundColor: colors.surface,
                         side: BorderSide(color: colors.border),
                       ),
+                      if (subcategories.length > 1) ...[
+                        const SizedBox(width: SmartSpendSpacing.sm),
+                        ActionChip(
+                          avatar: const Icon(
+                            Icons.subdirectory_arrow_left_rounded,
+                            size: 16,
+                          ),
+                          label: Text(_subCategory ?? subcategories.first),
+                          onPressed: _pickSubCategory,
+                          backgroundColor: colors.surface,
+                          side: BorderSide(color: colors.border),
+                        ),
+                      ],
                       const SizedBox(width: SmartSpendSpacing.sm),
 
                       // Date Chip
@@ -468,6 +590,43 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
                               ),
                         orElse: () => const SizedBox.shrink(),
                       ),
+
+                      if (contacts.isNotEmpty) ...[
+                        const SizedBox(width: SmartSpendSpacing.sm),
+                        DropdownButtonHideUnderline(
+                          child: DropdownButton<int?>(
+                            value: _selectedContact?.id,
+                            hint: Text(
+                              l10n.manualRecordContactLabel,
+                              style: Theme.of(context).textTheme.bodyMedium!,
+                            ),
+                            icon: const Icon(
+                              Icons.person_outline_rounded,
+                              size: 16,
+                            ),
+                            items: [
+                              DropdownMenuItem<int?>(
+                                value: null,
+                                child: Text(l10n.manualRecordContactLabel),
+                              ),
+                              for (final c in contacts)
+                                DropdownMenuItem<int?>(
+                                  value: c.id,
+                                  child: Text(inlineName(c.name)),
+                                ),
+                            ],
+                            onChanged: (id) {
+                              setState(() {
+                                _selectedContact = id == null
+                                    ? null
+                                    : contacts
+                                          .where((c) => c.id == id)
+                                          .firstOrNull;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -482,11 +641,21 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
                 ),
                 child: TextField(
                   controller: _noteController,
+                  focusNode: _noteFocusNode,
                   maxLines: 1,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _noteFocusNode.unfocus(),
                   decoration: InputDecoration(
                     hintText: l10n.manualRecordNoteHint,
                     isDense: true,
                     prefixIcon: const Icon(Icons.edit_note_rounded, size: 20),
+                    suffixIcon: hideCustomKeypad
+                        ? IconButton(
+                            tooltip: l10n.keyboardDone,
+                            icon: const Icon(Icons.dialpad_rounded, size: 20),
+                            onPressed: () => _noteFocusNode.unfocus(),
+                          )
+                        : null,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: SmartSpendSpacing.sm,
                       vertical: SmartSpendSpacing.xs,
@@ -500,21 +669,22 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
 
               const SizedBox(height: SmartSpendSpacing.sm),
 
-              // Custom Egyptian Numeric Keypad
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: SmartSpendSpacing.lg,
+              // Custom Egyptian Numeric Keypad (hidden while Note TextField is focused so OS keyboard never collides)
+              if (!hideCustomKeypad) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: SmartSpendSpacing.lg,
+                  ),
+                  child: _EgyptianNumericKeypad(
+                    onDigit: _onDigit,
+                    onDecimal: _onDecimal,
+                    onDelete: _onDelete,
+                    onClear: _onClear,
+                    deleteLabel: AppLocalizations.of(context).monClear,
+                  ),
                 ),
-                child: _EgyptianNumericKeypad(
-                  onDigit: _onDigit,
-                  onDecimal: _onDecimal,
-                  onDelete: _onDelete,
-                  onClear: _onClear,
-                  deleteLabel: AppLocalizations.of(context).monClear,
-                ),
-              ),
-
-              const SizedBox(height: SmartSpendSpacing.sm),
+                const SizedBox(height: SmartSpendSpacing.sm),
+              ],
 
               // Save CTA Button
               Padding(
@@ -556,45 +726,46 @@ class _TypeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.smartSpendColors;
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.sm),
-          decoration: BoxDecoration(
-            color: selected ? colors.surface : Colors.transparent,
-            borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Large text needs the row's width for the word.
-              if (MediaQuery.textScalerOf(context).scale(10) <= 15) ...[
-                Icon(
-                  icon,
-                  size: 16,
-                  color: selected ? color : colors.mutedForeground,
-                ),
-                const SizedBox(width: SmartSpendSpacing.xs),
-              ],
-              Flexible(
-                child: Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  style:
-                      (selected
-                              ? Theme.of(context).textTheme.titleSmall
-                              : Theme.of(context).textTheme.bodyMedium)!
-                          .copyWith(
-                            color: selected
-                                ? colors.foreground
-                                : colors.mutedForeground,
-                          ),
-                ),
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(
+          horizontal: SmartSpendSpacing.md,
+          vertical: SmartSpendSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: selected ? colors.surface : Colors.transparent,
+          borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Large text needs the row's width for the word.
+            if (MediaQuery.textScalerOf(context).scale(10) <= 15) ...[
+              Icon(
+                icon,
+                size: 16,
+                color: selected ? color : colors.mutedForeground,
               ),
+              const SizedBox(width: SmartSpendSpacing.xs),
             ],
-          ),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style:
+                  (selected
+                          ? Theme.of(context).textTheme.titleSmall
+                          : Theme.of(context).textTheme.bodyMedium)!
+                      .copyWith(
+                        color: selected
+                            ? colors.foreground
+                            : colors.mutedForeground,
+                      ),
+            ),
+          ],
         ),
       ),
     );
@@ -794,27 +965,85 @@ class _DeleteKeyButton extends StatelessWidget {
   }
 }
 
-class _CategoryPickerSheet extends StatefulWidget {
+class _CategoryPickerSheet extends ConsumerStatefulWidget {
   const _CategoryPickerSheet({
     required this.categories,
     required this.selected,
+    this.allowCustomCreation = false,
   });
 
   final List<CategoryTaxonomy> categories;
   final String selected;
+  final bool allowCustomCreation;
 
   @override
-  State<_CategoryPickerSheet> createState() => _CategoryPickerSheetState();
+  ConsumerState<_CategoryPickerSheet> createState() =>
+      _CategoryPickerSheetState();
 }
 
-class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
+class _CategoryPickerSheetState extends ConsumerState<_CategoryPickerSheet> {
   final _searchController = TextEditingController();
   String _filter = '';
+  bool _creating = false;
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _promptCreateCategory() async {
+    if (_creating) return;
+    final l10n = AppLocalizations.of(context);
+    final controller = TextEditingController(text: _filter);
+    final createdName = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.categoryCreateTitle),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(labelText: l10n.categoryNameLabel),
+          onSubmitted: (value) => Navigator.of(dialogContext).pop(value.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.discardChangesCancel),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(controller.text.trim()),
+            child: Text(l10n.categoryCreateAction),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+
+    if (createdName == null || createdName.isEmpty || !mounted) return;
+    setState(() => _creating = true);
+    try {
+      await ref.read(ledgerApiProvider).createCategory(createdName);
+      ref.invalidate(customCategoriesProvider);
+      if (!mounted) return;
+      unawaited(SmartSpendHaptics.success());
+      showSmartSpendNotice(context, l10n.categoryCreatedNotice);
+      Navigator.of(context).pop(createdName);
+    } on ApiException catch (e) {
+      if (mounted) {
+        showSmartSpendNotice(
+          context,
+          e.message.isNotEmpty ? e.message : l10n.genericActionFailed,
+        );
+      }
+    } on Object {
+      if (mounted) {
+        showSmartSpendNotice(context, l10n.genericActionFailed);
+      }
+    } finally {
+      if (mounted) setState(() => _creating = false);
+    }
   }
 
   @override
@@ -845,6 +1074,12 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
                   style: Theme.of(context).textTheme.titleLarge!,
                 ),
               ),
+              if (widget.allowCustomCreation)
+                TextButton.icon(
+                  onPressed: _creating ? null : _promptCreateCategory,
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: Text(l10n.categoryCreateAction),
+                ),
               IconButton(
                 icon: const Icon(Icons.close_rounded),
                 onPressed: () => Navigator.of(context).pop(),

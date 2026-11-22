@@ -8,6 +8,8 @@ import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../commitments/commitment_api.dart';
+import '../commitments/commitment_models.dart';
 import '../contacts/person_transactions_sheet.dart';
 import '../wallets/wallet_detail_screen.dart';
 import '../wallets/wallet_models.dart';
@@ -30,7 +32,7 @@ final class TransactionDetailLaunch {
 
 /// One transaction's full view (REC-08, MON-03 in .agents/mobile-program/features.json): its amount on the hero wash
 /// (read in words by the screen reader), category, date and time, linked wallet or person, note, how it was recorded
-/// and its original sentence, plus editing (REC-07) and undoable deletion.
+/// and its original sentence, plus editing (REC-07), linking to a commitment, and undoable deletion.
 class TransactionDetailScreen extends ConsumerWidget {
   const TransactionDetailScreen({
     super.key,
@@ -42,6 +44,8 @@ class TransactionDetailScreen extends ConsumerWidget {
   static const path = '/transaction/:entryId';
 
   static String pathFor(int id) => '/transaction/$id';
+
+  static String pathOf(int id) => pathFor(id);
 
   final int entryId;
   final LedgerEntry? initialEntry;
@@ -188,6 +192,117 @@ class _Filled extends ConsumerWidget {
     }
   }
 
+  Future<void> _linkCommitment(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    CommitmentsOverview overview;
+    try {
+      overview = await ref.read(commitmentsOverviewProvider.future);
+    } on Object {
+      if (context.mounted) {
+        showSmartSpendNotice(context, l10n.genericActionFailed);
+      }
+      return;
+    }
+    if (!context.mounted) return;
+
+    final candidates = <DueDate>[
+      for (final d in overview.due)
+        if (d.isOpen && d.cashflowId > 0 && d.dueDay.isNotEmpty) d,
+      for (final item in overview.items)
+        if (item.progress.next case final DueDate next
+            when next.isOpen &&
+                next.cashflowId > 0 &&
+                next.dueDay.isNotEmpty &&
+                !overview.due.any(
+                  (d) =>
+                      d.cashflowId == next.cashflowId &&
+                      d.dueDay == next.dueDay,
+                ))
+          next,
+    ];
+
+    final picked = await showSmartSpendSheet<DueDate>(
+      context: context,
+      scrollable: true,
+      builder: (sheetContext) {
+        final textTheme = Theme.of(sheetContext).textTheme;
+        final colors = sheetContext.smartSpendColors;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SmartSpendSpacing.screen,
+            0,
+            SmartSpendSpacing.screen,
+            SmartSpendSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(l10n.commitmentLinkTitle, style: textTheme.titleLarge),
+              const SizedBox(height: SmartSpendSpacing.md),
+              if (candidates.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: SmartSpendSpacing.lg,
+                  ),
+                  child: Text(
+                    l10n.commitmentLinkEmpty,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colors.mutedForeground,
+                    ),
+                  ),
+                )
+              else
+                for (final candidate in candidates)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      Icons.event_repeat_rounded,
+                      color: colors.accent,
+                    ),
+                    title: Text(inlineName(candidate.title)),
+                    subtitle: Text(candidate.day),
+                    trailing: candidate.amount != null
+                        ? AmountText(candidate.amount!)
+                        : null,
+                    onTap: () => Navigator.of(sheetContext).pop(candidate),
+                  ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (picked == null || !context.mounted) return;
+    try {
+      await ref
+          .read(ledgerApiProvider)
+          .linkCommitment(
+            expenseId: entry.id,
+            cashflowId: picked.cashflowId,
+            dueDay: picked.dueDay,
+            amount: entry.amount.abs(),
+          );
+      refreshLedger(ref);
+      refreshCommitments(ref);
+      if (context.mounted) {
+        unawaited(SmartSpendHaptics.success());
+        showSmartSpendNotice(context, l10n.commitmentLinkedNotice);
+      }
+    } on ApiException catch (e) {
+      if (context.mounted) {
+        showSmartSpendNotice(
+          context,
+          e.message.isNotEmpty ? e.message : l10n.genericActionFailed,
+        );
+      }
+    } on Object {
+      if (context.mounted) {
+        showSmartSpendNotice(context, l10n.genericActionFailed);
+      }
+    }
+  }
+
   void _delete(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final container = ProviderScope.containerOf(context, listen: false);
@@ -202,8 +317,13 @@ class _Filled extends ConsumerWidget {
     TransactionDetailScreen._goBack(context);
     if (!navigator.mounted) return;
 
+    final recordCtx = recordScaffoldMessengerKey.currentContext;
+    final noticeContext = (recordCtx != null && recordCtx.mounted)
+        ? recordCtx
+        : navigator.context;
+
     showSmartSpendNotice(
-      navigator.context,
+      noticeContext,
       l10n.entryDeleted,
       undoLabel: l10n.undo,
       onUndo: () {
@@ -220,9 +340,13 @@ class _Filled extends ConsumerWidget {
       } on Object {
         container.read(hiddenEntryIdsProvider.notifier).restore(entry.id);
         container.read(allEntriesProvider.notifier).restore(entry);
-        if (navigator.mounted) {
+        final errRecordCtx = recordScaffoldMessengerKey.currentContext;
+        final errContext = (errRecordCtx != null && errRecordCtx.mounted)
+            ? errRecordCtx
+            : (navigator.mounted ? navigator.context : null);
+        if (errContext != null && errContext.mounted) {
           unawaited(SmartSpendHaptics.error());
-          showSmartSpendNotice(navigator.context, l10n.deleteFailed);
+          showSmartSpendNotice(errContext, l10n.deleteFailed);
         }
       }
     });
@@ -324,7 +448,7 @@ class _Filled extends ConsumerWidget {
                     : inlineName(wallet.name),
                 onTap: wallet == null
                     ? null
-                    : () => context.go(
+                    : () => context.push(
                         WalletDetailScreen.pathFor(entry.walletId!),
                       ),
               ),
@@ -379,6 +503,14 @@ class _Filled extends ConsumerWidget {
               tint: online ? colors.accent : colors.mutedForeground,
               trailing: const SizedBox.shrink(),
               onTap: online ? () => _edit(context) : null,
+            ),
+            GroupedRow(
+              icon: Icons.event_repeat_rounded,
+              title: l10n.commitmentLinkAction,
+              subtitle: online ? null : l10n.transactionEditOffline,
+              tint: online ? colors.accent : colors.mutedForeground,
+              trailing: const SizedBox.shrink(),
+              onTap: online ? () => _linkCommitment(context, ref) : null,
             ),
             GroupedRow(
               icon: Icons.delete_outline_rounded,

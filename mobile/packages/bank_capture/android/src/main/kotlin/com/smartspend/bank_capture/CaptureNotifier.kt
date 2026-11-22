@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 
 /**
@@ -19,6 +20,9 @@ internal object CaptureNotifier {
     private const val REVIEW_CHANNEL = "smartspend_capture_review"
     private const val SYNC_CHANNEL = "smartspend_capture_sync"
     private const val CAPTURE_TAG = "smartspend.capture"
+    const val CAPTURE_ROUTE = "/more/capture"
+    const val CAPTURE_DEEP_LINK = "smartspend:///more/capture"
+    const val EXTRA_ROUTE = "route"
     const val SYNC_NOTIFICATION_ID = 7_400_001
     private const val STOPPED_NOTIFICATION_ID = 7_400_002
 
@@ -53,12 +57,22 @@ internal object CaptureNotifier {
     private fun builder(context: Context, channel: String): Notification.Builder =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) Notification.Builder(context, channel) else Notification.Builder(context)
 
-    private fun openApp(context: Context): PendingIntent? {
+    internal fun buildOpenAppIntent(context: Context): Intent? {
         val launch = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return null
+        return launch.apply {
+            action = Intent.ACTION_VIEW
+            data = Uri.parse(CAPTURE_DEEP_LINK)
+            putExtra(EXTRA_ROUTE, CAPTURE_ROUTE)
+            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+    }
+
+    private fun openApp(context: Context): PendingIntent? {
+        val launch = buildOpenAppIntent(context) ?: return null
         return PendingIntent.getActivity(context, 0, launch, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
-    private fun smallIcon(context: Context): Int = context.applicationInfo.icon
+    private fun smallIcon(): Int = R.drawable.ic_stat_smartspend
 
     /** Asks about one captured transaction. [actions] are the buttons the server allowed ("record", "dismiss"). */
     fun showReview(context: Context, eventId: Long, title: String, body: String, actions: List<String>, language: String): Boolean {
@@ -66,11 +80,11 @@ internal object CaptureNotifier {
         val arabic = language != "en"
         ensureChannels(context, arabic)
         val publicVersion = builder(context, REVIEW_CHANNEL)
-            .setSmallIcon(smallIcon(context))
+            .setSmallIcon(smallIcon())
             .setContentTitle(if (arabic) "عملية جديدة من البنك" else "New bank transaction")
             .build()
         val notification = builder(context, REVIEW_CHANNEL)
-            .setSmallIcon(smallIcon(context))
+            .setSmallIcon(smallIcon())
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(Notification.BigTextStyle().bigText(body))
@@ -115,13 +129,17 @@ internal object CaptureNotifier {
             "We can't read bank notifications anymore. Open the app and turn access back on from the bank messages card."
         }
         val notification = builder(context, REVIEW_CHANNEL)
-            .setSmallIcon(smallIcon(context))
+            .setSmallIcon(smallIcon())
             .setContentTitle(if (arabic) "تسجيل رسايل البنك واقف" else "Bank message capture stopped")
             .setContentText(body)
             .setStyle(Notification.BigTextStyle().bigText(body))
             .setAutoCancel(true)
             .setContentIntent(openApp(context))
-        manager(context).notify(STOPPED_NOTIFICATION_ID, notification.build())
+        try {
+            manager(context).notify(STOPPED_NOTIFICATION_ID, notification.build())
+        } catch (_: SecurityException) {
+            // Android 13+ may revoke POST_NOTIFICATIONS between canNotify() and notify().
+        }
     }
 
     /** The quiet notification of a send running in the foreground (expedited work on Android 11 and older). */
@@ -129,7 +147,7 @@ internal object CaptureNotifier {
         val arabic = language != "en"
         ensureChannels(context, arabic)
         return builder(context, SYNC_CHANNEL)
-            .setSmallIcon(smallIcon(context))
+            .setSmallIcon(smallIcon())
             .setContentTitle(if (arabic) "بنبعت رسايل البنك" else "Sending bank messages")
             .setOngoing(true)
             .build()

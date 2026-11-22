@@ -5,6 +5,7 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../ads/sponsored_card.dart';
+import '../business/business_screen.dart';
 import '../capture/capture_overview_card.dart';
 import '../capture/shared_text_receiver.dart';
 import '../commitments/commitments_quick_card.dart';
@@ -23,13 +24,29 @@ import 'transactions_screen.dart';
 
 /// The record tab, the app's home: the month at a glance, waiting questions (REC-09), the outbox, the latest
 /// transactions by day, and the sentence box at the bottom. Pulling down reloads it.
-class RecordScreen extends ConsumerWidget {
+class RecordScreen extends ConsumerStatefulWidget {
   const RecordScreen({super.key});
 
   static const path = '/record';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RecordScreen> createState() => _RecordScreenState();
+}
+
+class _RecordScreenState extends ConsumerState<RecordScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Check once on mount for text shared into the app via Android share target / iOS extension (CAP-05).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(sharedTextReceiverProvider).checkAndSubmitSharedText();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final recent = ref.watch(recentEntriesProvider);
     final hiddenIds = ref.watch(hiddenEntryIdsProvider);
@@ -37,14 +54,14 @@ class RecordScreen extends ConsumerWidget {
     final hidden = ref.watch(
       appLockProvider.select((lock) => lock.hideAmounts),
     );
+    final composerFocused = ref.watch(composerFocusedProvider);
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final hideComposerForInlineInput = keyboardOpen && !composerFocused;
 
-    // Check for text shared into the app via Android share target / iOS extension (CAP-05).
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(sharedTextReceiverProvider).checkAndSubmitSharedText();
-    });
     // Its own messenger: notices raised here show on this scaffold, above the sentence box, instead of on the tab
     // shell's, where they would float over the box's send button.
     return ScaffoldMessenger(
+      key: recordScaffoldMessengerKey,
       child: Scaffold(
         appBar: AppBar(
           title: Text(l10n.navRecord),
@@ -91,6 +108,8 @@ class RecordScreen extends ConsumerWidget {
                   }
                 },
                 child: ListView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(
                     SmartSpendSpacing.screen,
@@ -112,6 +131,7 @@ class RecordScreen extends ConsumerWidget {
                             child: StreakBadge(),
                           ),
                         ),
+                        const ActiveBusinessBanner(),
                         const MonthSummaryCard(),
                         const CaptureOverviewCard(),
                         const PendingQuestionsCard(),
@@ -166,7 +186,9 @@ class RecordScreen extends ConsumerWidget {
         ),
         // In the bottom slot, notices float above the sentence box instead of covering its send button, and the
         // box still rises with the keyboard, which the tab shell's scaffold makes room for.
-        bottomNavigationBar: const RecordComposer(),
+        bottomNavigationBar: hideComposerForInlineInput
+            ? const SizedBox.shrink()
+            : const RecordComposer(),
       ),
     );
   }

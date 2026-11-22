@@ -7,6 +7,7 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../ledger/ledger_providers.dart';
+import '../lock/app_lock.dart';
 import 'commitment_api.dart';
 import 'commitment_models.dart';
 import 'commitment_ui.dart';
@@ -56,11 +57,18 @@ class _CommitmentPromptHostState extends ConsumerState<CommitmentPromptHost>
 
   Future<void> _ask() async {
     if (_asking || !mounted) return;
+    final lock = ref.read(appLockProvider);
+    if (!lock.ready || lock.locked) return;
     _asking = true;
     _asked = clock.now();
     try {
       final questions = await ref.read(commitmentApiProvider).questions();
       if (!mounted || questions.isEmpty) return;
+      final lockNow = ref.read(appLockProvider);
+      if (!lockNow.ready || lockNow.locked) {
+        _asked = null;
+        return;
+      }
       if (questions.dueChecks.isNotEmpty) {
         await DueChecksSheet.show(context, questions.dueChecks);
       }
@@ -75,7 +83,17 @@ class _CommitmentPromptHostState extends ConsumerState<CommitmentPromptHost>
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    ref.listen(appLockProvider, (previous, next) {
+      if (next.ready &&
+          !next.locked &&
+          (_asked == null ||
+              clock.now().difference(_asked!) > CommitmentPromptHost.quiet)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_ask()));
+      }
+    });
+    return widget.child;
+  }
 }
 
 /// «المواعيد دي عدّت: اتدفعت؟» — each with «دفعته», «اتدفع بره التسجيل» and «لسه»; «تخطي» leaves them all unpaid.
@@ -251,14 +269,19 @@ class _DueCheck extends StatelessWidget {
               runSpacing: SmartSpendSpacing.xs,
               children: [
                 FilledButton(
+                  style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
                   onPressed: busy ? null : () => onAnswer('paid'),
                   child: Text(due.isIncome ? l10n.cmGotIt : l10n.cmPaidIt),
                 ),
                 OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                  ),
                   onPressed: busy ? null : () => onAnswer('paid_off_records'),
                   child: Text(l10n.cmPaidOffRecords),
                 ),
                 TextButton(
+                  style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
                   onPressed: busy ? null : () => onAnswer('not_yet'),
                   child: Text(l10n.cmNotYet),
                 ),

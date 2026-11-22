@@ -5280,4 +5280,274 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cfYourPayouts => 'قبضك من الجمعية';
+
+  @override
+  String get keyboardDone => 'تم';
+
+  @override
+  String get genericActionFailed => 'ماقدرناش نكمّل العملية دلوقتي. جرّب تاني.';
+
+  @override
+  String get saveChangesFailed => 'ماقدرناش نحفظ التعديلات. جرّب تاني.';
+
+  @override
+  String get confirmDeleteAction => 'أكد المسح';
+
+  @override
+  String get goalEditTitle => 'تعديل الهدف';
+
+  @override
+  String get goalEditAction => 'عدّل الهدف';
+
+  @override
+  String get goalUpdatedNotice => 'الهدف اتحدّث.';
+
+  @override
+  String get goalDeleteConfirmTitle => 'تمسح الهدف؟';
+
+  @override
+  String get goalDeleteConfirmBody =>
+      'الهدف ده هيتمسح من قايمة أهدافك. المسح مابيترجعش.';
+
+  @override
+  String get goalDeletedNotice => 'الهدف اتمسح.';
+
+  @override
+  String get savingPlanEndConfirmTitle => 'تنهي خطة التوفير؟';
+
+  @override
+  String get savingPlanEndConfirmBody =>
+      'الخطة الحالية هتتوقف ومش هتظهر تاني. عملياتك المحفوظة هتفضل زي ما هي.';
+
+  @override
+  String get savingPlanEndConfirmAction => 'أنهي الخطة';
+
+  @override
+  String get contactEditTitle => 'تعديل بيانات الشخص';
+
+  @override
+  String get contactEditAction => 'عدّل البيانات';
+
+  @override
+  String get contactUpdatedNotice => 'بيانات الشخص اتحدّثت.';
+
+  @override
+  String get commitmentEditTitle => 'تعديل الالتزام';
+
+  @override
+  String get commitmentEditAction => 'عدّل الالتزام';
+
+  @override
+  String get commitmentUpdatedNotice => 'الالتزام اتحدّث.';
+
+  @override
+  String get commitmentLinkTitle => 'اربط بعملية متسجلة';
+
+  @override
+  String get commitmentLinkAction => 'اربط بعملية';
+
+  @override
+  String get commitmentLinkedNotice => 'اتربطت العملية بالالتزام.';
+
+  @override
+  String get commitmentLinkEmpty =>
+      'مفيش عمليات قريبة مناسبة تربطها بالموعد ده.';
+
+  @override
+  String get categoryCreateTitle => 'تصنيف جديد';
+
+  @override
+  String get categoryCreateAction => 'ضيف تصنيف';
+
+  @override
+  String get categoryNameLabel => 'اسم التصنيف';
+
+  @override
+  String get categoryCreatedNotice => 'التصنيف اتضاف.';
+
+  @override
+  String get businessEditTitle => 'تعديل حساب الشغل';
+
+  @override
+  String get businessEditAction => 'عدّل الحساب';
+
+  @override
+  String get businessCategoryEditTitle => 'تعديل فئة المشروع';
+
+  @override
+  String businessActiveBanner(String name) {
+    return 'شغّال على حساب الشغل: $name';
+  }
+
+  @override
+  String get businessSwitchPersonalAction => 'ارجع للشخصي';
+
+  @override
+  String get moneyPrefMonthlyIncomeLabel => 'الدخل الشهري المتوقع';
+
+  @override
+  String get moneyPrefMonthlyIncomeHint => 'اختياري، بيساعدنا نقارن صرفك بدخلك';
+
+  @override
+  String get moneyPrefCurrencyLabel => 'العملة الأساسية';
+
+  @override
+  String get moneyPrefSavedNotice => 'تفضيلات الفلوس اتحفظت.';
+
+  @override
+  String get upgradeDefaultTitle => 'افتح كل مميزات SmartSpend';
+
+  @override
+  String get upgradeDefaultBody =>
+      'رقّي لباقة Pro عشان تستفيد بتحليل الأهداف وحساب الشغل وقراءة الفواتير والمكالمات الصوتية.';
+
+  @override
+  String get upgradeDefaultCta => 'شوف باقات Pro';
+
+  @override
+  String get upgradePaymobCheckoutAction => 'ادفع بالبطاقة أو المحفظة (Paymob)';
+
+  @override
+  String get upgradePaymobCancelAction => 'ألغي اشتراك Paymob';
+
+  @override
+  String get upgradePaymobCancelConfirmTitle => 'تلغي الاشتراك؟';
+
+  @override
+  String get upgradePaymobCancelConfirmBody =>
+      'هيفضل اشتراكك شغال لحد آخر الفترة المدفوعة، ومش هيتجدد بعد كده.';
+
+  @override
+  String get upgradeRestoreAction => 'رجّع مشترياتي';
+
+  @override
+  String get supportCloseTicketAction => 'اقفل الطلب';
+
+  @override
+  String get supportCloseConfirmTitle => 'تقفل الطلب ده؟';
+
+  @override
+  String get supportCloseConfirmBody =>
+      'لو مشكلتك اتحلت تقدر تقفل الطلب. تقدر تبعت طلب جديد في أي وقت.';
+
+  @override
+  String get supportTicketClosedNotice => 'الطلب اتقفل.';
+
+  @override
+  String get supportMessageRequired => 'اكتب موضوع الطلب وتفاصيله الأول.';
+
+  @override
+  String appInfoVersionValue(String version) {
+    return 'الإصدار $version';
+  }
+
+  @override
+  String get appInfoLicensesAction => 'تراخيص البرامج المفتوحة';
+
+  @override
+  String get sessionsDeviceCurrent => 'الجهاز ده';
+
+  @override
+  String get sessionsDeviceAndroid => 'أندرويد';
+
+  @override
+  String get sessionsDeviceIos => 'آيفون';
+
+  @override
+  String get sessionsDeviceWeb => 'المتصفح';
+
+  @override
+  String get sessionsDeviceUnknown => 'جهاز غير معروف';
+
+  @override
+  String get iosShortcutsGuideTitle => 'إعداد اختصارات آيفون';
+
+  @override
+  String get iosShortcutsGuideIntro =>
+      'وصّل تطبيق الاختصارات عشان رسايل البنك والمحفظة تتبعت لـ SmartSpend أول ما توصل:';
+
+  @override
+  String get iosShortcutsGuideStep1 =>
+      '1. افتح تطبيق الاختصارات واختار تبويب الأتمتة، وبعدين دوس + واعمل أتمتة للرسايل.';
+
+  @override
+  String get iosShortcutsGuideStep2 =>
+      '2. اختار إن الأتمتة تشتغل فورًا لما توصلك رسالة من البنك أو المحفظة.';
+
+  @override
+  String get iosShortcutsGuideStep3 =>
+      '3. اختار إجراء SmartSpend لتسجيل رسالة البنك ومرّر نص الرسالة.';
+
+  @override
+  String get iosShortcutsConnectAction => 'وصّل الاختصارات';
+
+  @override
+  String get iosShortcutsConnectedNotice =>
+      'اتوصّل تطبيق الاختصارات بالهاتف ده.';
+
+  @override
+  String get voicePermissionAllowCta => 'متابعة';
+
+  @override
+  String get termsSectionUsageTitle => '1. استخدام التطبيق';
+
+  @override
+  String get termsSectionUsageBody =>
+      'باستخدامك SmartSpend AI بتوافق على الشروط دي وسياسة الخصوصية المطبقة في مصر وفقًا للقانون رقم 151 لسنة 2020.';
+
+  @override
+  String get termsSectionAiTitle => '2. الذكاء الاصطناعي والميزانية';
+
+  @override
+  String get termsSectionAiBody =>
+      'التطبيق بيساعدك تتابع مصاريفك وتنظم ميزانيتك، وتحليلات المساعد إرشادية ومش نصيحة مالية أو بنكية معتمدة.';
+
+  @override
+  String get termsSectionPrivacyTitle => '3. حماية البيانات والرسايل';
+
+  @override
+  String get termsSectionPrivacyBody =>
+      'التطبيق مش بيطلب أو يحفظ باسورد البنك أو أرقام الكروت السرية (CVV/PIN)، وبياناتك محمية وتقدر تصدّرها أو تمسحها في أي وقت.';
+
+  @override
+  String get dataStoredSectionServerTitle => 'اللي محفوظ على السيرفر';
+
+  @override
+  String get dataStoredSectionServerBody =>
+      'عملياتك، محافظك، ميزانياتك، التزاماتك، وذاكرة المساعد اللي بتختار تحتفظ بيها عشان نقدم لك الخدمة.';
+
+  @override
+  String get dataStoredSectionPhoneTitle => 'اللي محفوظ على الموبايل';
+
+  @override
+  String get dataStoredSectionPhoneBody =>
+      'جلسة الدخول المشفرة، قفل التطبيق، ونسخة أوفلاين من آخر عملياتك والعمليات المستنية النت.';
+
+  @override
+  String get dataStoredSectionDeleteTitle => 'حقوقك في التصدير والمسح';
+
+  @override
+  String get dataStoredSectionDeleteBody =>
+      'تقدر تنزّل نسخة من كل بياناتك أو تمسح حسابك نهائيًا في أي وقت وفقًا لقانون حماية البيانات 151 لسنة 2020.';
+
+  @override
+  String get manualRecordTypeInvestment => 'استثمار';
+
+  @override
+  String get manualRecordTypeRefund => 'مرتجع';
+
+  @override
+  String get manualRecordContactLabel => 'الشخص (اختياري)';
+
+  @override
+  String get manualRecordSubcategoryLabel => 'التصنيف الفرعي (اختياري)';
+
+  @override
+  String get voiceCallConnecting => 'بنوصل...';
+
+  @override
+  String get voiceCallListening => 'سامعينك، اتكلم...';
+
+  @override
+  String get voiceCallEnded => 'المكالمة خلصت';
 }

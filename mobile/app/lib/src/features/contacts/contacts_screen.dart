@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
-
 import 'add_contact_sheet.dart';
 import 'contact_models.dart';
 import 'contacts_providers.dart';
@@ -13,7 +12,7 @@ import 'person_transactions_sheet.dart';
 
 /// The People and Debts screen (`/more/contacts`, REC-19 / ACC-06).
 /// Shows who owes the user and whom the user owes, allows managing contacts
-/// (add, merge duplicates, delete), and inspecting each person's transactions.
+/// (add, edit, merge duplicates, delete), and inspecting each person's transactions.
 class ContactsScreen extends ConsumerStatefulWidget {
   const ContactsScreen({super.key});
 
@@ -46,13 +45,28 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
   void _openAddSheet() {
     showSmartSpendSheet<bool>(
       context: context,
+      scrollable: true,
       builder: (_) => const AddContactSheet(),
     );
+  }
+
+  Future<void> _openEdit(ContactDebtItem item) async {
+    if (item.contactId == null) return;
+    final l10n = AppLocalizations.of(context);
+    final updated = await showSmartSpendSheet<bool>(
+      context: context,
+      scrollable: true,
+      builder: (_) => AddContactSheet(existing: item),
+    );
+    if (updated == true && mounted) {
+      showSmartSpendNotice(context, l10n.contactUpdatedNotice);
+    }
   }
 
   void _openPerson(ContactDebtItem item) {
     showSmartSpendSheet<void>(
       context: context,
+      scrollable: true,
       builder: (_) => PersonTransactionsSheet(
         name: item.name,
         contactId: item.contactId,
@@ -65,6 +79,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
     if (item.contactId == null) return;
     showSmartSpendSheet<bool>(
       context: context,
+      scrollable: true,
       builder: (_) => MergeContactsSheet(currentContact: item),
     );
   }
@@ -195,6 +210,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
             (item) => _PersonDebtCard(
               item: item,
               onTap: () => _openPerson(item),
+              onEdit: item.contactId != null ? () => _openEdit(item) : null,
               onMerge: item.contactId != null ? () => _openMerge(item) : null,
               onDelete: item.contactId != null
                   ? () => _confirmDelete(item)
@@ -228,6 +244,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
             (item) => _PersonDebtCard(
               item: item,
               onTap: () => _openPerson(item),
+              onEdit: item.contactId != null ? () => _openEdit(item) : null,
               onMerge: item.contactId != null ? () => _openMerge(item) : null,
               onDelete: item.contactId != null
                   ? () => _confirmDelete(item)
@@ -386,12 +403,14 @@ class _PersonDebtCard extends StatelessWidget {
   const _PersonDebtCard({
     required this.item,
     required this.onTap,
+    this.onEdit,
     this.onMerge,
     this.onDelete,
   });
 
   final ContactDebtItem item;
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
   final VoidCallback? onMerge;
   final VoidCallback? onDelete;
 
@@ -454,7 +473,7 @@ class _PersonDebtCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (onMerge != null || onDelete != null) ...[
+              if (onEdit != null || onMerge != null || onDelete != null) ...[
                 PopupMenuButton<String>(
                   icon: Icon(
                     Icons.more_vert_rounded,
@@ -462,17 +481,31 @@ class _PersonDebtCard extends StatelessWidget {
                     color: colors.mutedForeground,
                   ),
                   onSelected: (action) {
+                    if (action == 'edit') onEdit?.call();
                     if (action == 'merge') onMerge?.call();
                     if (action == 'delete') onDelete?.call();
                   },
                   itemBuilder: (context) => [
+                    if (onEdit != null)
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.edit_outlined, size: 18),
+                            const SizedBox(width: SmartSpendSpacing.xs),
+                            Text(
+                              AppLocalizations.of(context).contactEditAction,
+                            ),
+                          ],
+                        ),
+                      ),
                     if (onMerge != null)
                       PopupMenuItem(
                         value: 'merge',
                         child: Row(
                           children: [
-                            Icon(Icons.call_merge_rounded, size: 18),
-                            SizedBox(width: SmartSpendSpacing.xs),
+                            const Icon(Icons.call_merge_rounded, size: 18),
+                            const SizedBox(width: SmartSpendSpacing.xs),
                             Text(
                               AppLocalizations.of(context)
                                   .aiMergeWithADuplicate,
@@ -493,8 +526,9 @@ class _PersonDebtCard extends StatelessWidget {
                             const SizedBox(width: SmartSpendSpacing.xs),
                             Text(
                               AppLocalizations.of(context).aiDeleteThePerson,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: colors.danger),
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: colors.danger,
+                              ),
                             ),
                           ],
                         ),

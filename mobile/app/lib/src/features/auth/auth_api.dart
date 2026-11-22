@@ -1,12 +1,25 @@
 import 'package:smartspend_api/smartspend_api.dart';
 
+/// Normalizes Eastern and Western Arabic-Indic digits (U+0660..U+0669, U+06F0..U+06F9) to ASCII 0-9.
+String normalizeArabicDigits(String input) {
+  final buffer = StringBuffer();
+  for (var i = 0; i < input.length; i++) {
+    final unit = input.codeUnitAt(i);
+    if (unit >= 0x0660 && unit <= 0x0669) {
+      buffer.writeCharCode(unit - 0x0660 + 0x30);
+    } else if (unit >= 0x06F0 && unit <= 0x06F9) {
+      buffer.writeCharCode(unit - 0x06F0 + 0x30);
+    } else {
+      buffer.writeCharCode(unit);
+    }
+  }
+  return buffer.toString();
+}
+
 /// The number as the server keeps it (`cleanPhoneNumber` in `api/local-auth-utils.ts`): Arabic digits made Latin,
 /// spaces removed and the country code dropped, so `+20 100 123 4567` becomes `01001234567`.
 String normalizePhoneNumber(String input) {
-  final latin = input.replaceAllMapped(
-    RegExp('[٠-٩]'),
-    (match) => String.fromCharCode(match[0]!.codeUnitAt(0) - 0x0660 + 0x30),
-  );
+  final latin = normalizeArabicDigits(input);
   return latin.replaceAll(RegExp(r'\s'), '').replaceFirst(RegExp(r'^\+?2'), '');
 }
 
@@ -55,6 +68,8 @@ final class AppUser {
   final String? email;
   final String? phone;
   final String? avatarUrl;
+
+  String? get avatar => avatarUrl;
 
   /// Admin or moderator access; not the subscription (golden rule 2).
   final String role;

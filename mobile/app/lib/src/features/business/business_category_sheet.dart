@@ -2,10 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import 'business_models.dart';
 
-/// Bottom sheet to add a custom business category (BIZ-02).
+/// Bottom sheet to add or edit a custom business category (BIZ-02).
 class AddBusinessCategorySheet extends StatefulWidget {
-  const AddBusinessCategorySheet({super.key, required this.onAdd});
+  const AddBusinessCategorySheet({
+    super.key,
+    required this.onAdd,
+    this.existing,
+  });
+
+  final BusinessCategory? existing;
 
   final Future<void> Function({
     required String name,
@@ -18,6 +25,7 @@ class AddBusinessCategorySheet extends StatefulWidget {
 
   static Future<void> show(
     BuildContext context, {
+    BusinessCategory? existing,
     required Future<void> Function({
       required String name,
       required String nameAr,
@@ -29,7 +37,9 @@ class AddBusinessCategorySheet extends StatefulWidget {
   }) {
     return showSmartSpendSheet<void>(
       context: context,
-      builder: (_) => AddBusinessCategorySheet(onAdd: onAdd),
+      scrollable: true,
+      builder: (_) =>
+          AddBusinessCategorySheet(existing: existing, onAdd: onAdd),
     );
   }
 
@@ -39,11 +49,15 @@ class AddBusinessCategorySheet extends StatefulWidget {
 }
 
 class _AddBusinessCategorySheetState extends State<AddBusinessCategorySheet> {
-  final _nameController = TextEditingController();
-  String _type = 'expense';
-  String _icon = '🛍️';
-  final _color = '#3b82f6';
+  late final TextEditingController _nameController;
+  late String _type;
+  late String _icon;
+  late final String _color;
   bool _saving = false;
+
+  late final String _initialName;
+  late final String _initialType;
+  late final String _initialIcon;
 
   static const _emojis = [
     '🛍️',
@@ -59,8 +73,55 @@ class _AddBusinessCategorySheetState extends State<AddBusinessCategorySheet> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    final existing = widget.existing;
+    _initialName = (existing?.nameAr ?? '').trim();
+    _initialType = existing?.type ?? 'expense';
+    _initialIcon = existing?.icon ?? '🛍️';
+    _nameController = TextEditingController(text: _initialName)
+      ..addListener(_onChanged);
+    _type = _initialType;
+    _icon = _initialIcon;
+    _color = existing?.color ?? '#3b82f6';
+  }
+
+  void _onChanged() {
+    if (mounted) setState(() {});
+  }
+
+  bool get _isDirty =>
+      _nameController.text.trim() != _initialName ||
+      _type != _initialType ||
+      _icon != _initialIcon;
+
+  Future<bool> _confirmDiscard(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(l10n.discardChangesTitle),
+        content: Text(l10n.discardChangesBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: Text(l10n.discardChangesCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            child: Text(l10n.discardChangesConfirm),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
+
+  @override
   void dispose() {
-    _nameController.dispose();
+    _nameController
+      ..removeListener(_onChanged)
+      ..dispose();
     super.dispose();
   }
 
@@ -79,43 +140,58 @@ class _AddBusinessCategorySheetState extends State<AddBusinessCategorySheet> {
       );
       if (mounted) Navigator.of(context).pop();
     } catch (_) {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) {
+        setState(() => _saving = false);
+        showSmartSpendNotice(
+          context,
+          AppLocalizations.of(context).saveChangesFailed,
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
+    final isEditing = widget.existing != null;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(SmartSpendSpacing.lg),
-        decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(SmartSpendRadii.sheet),
-          ),
+    return PopScope(
+      canPop: !_isDirty || _saving,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final discard = await _confirmDiscard(context);
+        if (discard && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          SmartSpendSpacing.screen,
+          0,
+          SmartSpendSpacing.screen,
+          SmartSpendSpacing.xl,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  AppLocalizations.of(context).aiAddACategory,
-                  style: textTheme.titleMedium?.copyWith(
-                    color: colors.foreground,
+                Expanded(
+                  child: Text(
+                    isEditing
+                        ? l10n.businessCategoryEditTitle
+                        : l10n.aiAddACategory,
+                    style: textTheme.titleMedium?.copyWith(
+                      color: colors.foreground,
+                    ),
                   ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => Navigator.of(context).maybePop(),
                 ),
               ],
             ),
@@ -123,21 +199,16 @@ class _AddBusinessCategorySheetState extends State<AddBusinessCategorySheet> {
             TextField(
               controller: _nameController,
               decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)
-                    .aiCategoryNameLikeStockShop,
-                border: OutlineInputBorder(),
+                labelText: l10n.aiCategoryNameLikeStockShop,
               ),
             ),
             const SizedBox(height: SmartSpendSpacing.md),
             SegmentedButton<String>(
               segments: [
-                ButtonSegment(
-                  value: 'expense',
-                  label: Text(AppLocalizations.of(context).aiExpense),
-                ),
+                ButtonSegment(value: 'expense', label: Text(l10n.aiExpense)),
                 ButtonSegment(
                   value: 'income',
-                  label: Text(AppLocalizations.of(context).aiIncomeOrSales),
+                  label: Text(l10n.aiIncomeOrSales),
                 ),
               ],
               selected: {_type},
@@ -146,20 +217,15 @@ class _AddBusinessCategorySheetState extends State<AddBusinessCategorySheet> {
               },
             ),
             const SizedBox(height: SmartSpendSpacing.md),
-            Text(
-              AppLocalizations.of(context).aiIcon,
-              style: textTheme.labelLarge,
-            ),
+            Text(l10n.aiIcon, style: textTheme.labelLarge),
             const SizedBox(height: SmartSpendSpacing.xs),
             Wrap(
               spacing: SmartSpendSpacing.sm,
+              runSpacing: SmartSpendSpacing.xs,
               children: [
                 for (final emoji in _emojis)
                   ChoiceChip(
-                    label: Text(
-                      emoji,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
+                    label: Text(emoji, style: textTheme.titleLarge),
                     selected: _icon == emoji,
                     onSelected: (sel) {
                       if (sel) setState(() => _icon = emoji);
@@ -168,15 +234,10 @@ class _AddBusinessCategorySheetState extends State<AddBusinessCategorySheet> {
               ],
             ),
             const SizedBox(height: SmartSpendSpacing.lg),
-            FilledButton(
+            SmartSpendButton(
+              label: isEditing ? l10n.monSaveChanges : l10n.aiAddTheCategory,
+              busy: _saving,
               onPressed: _saving ? null : _submit,
-              child: _saving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(AppLocalizations.of(context).aiAddTheCategory),
             ),
           ],
         ),

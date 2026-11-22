@@ -4,6 +4,7 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../infrastructure/remote_config.dart';
+import 'ai_chat_view.dart';
 import 'ai_providers.dart';
 
 /// Yearly insights view analyzing the user's entire year of finances (AI-11).
@@ -76,9 +77,8 @@ class _AiYearlyInsightsViewState extends ConsumerState<AiYearlyInsightsView> {
                       ),
                       data: (insights) => GroupedCard(
                         title: l10n.aiP0Summary(year),
-                        child: Text(
-                          insights ?? l10n.aiNotEnoughDataForThis,
-                          style: Theme.of(context).textTheme.bodyLarge,
+                        child: AiMarkdownBody(
+                          text: insights ?? l10n.aiNotEnoughDataForThis,
                         ),
                       ),
                     ),

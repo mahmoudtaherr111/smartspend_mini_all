@@ -17,6 +17,7 @@ class PhoneChangeSheet extends ConsumerStatefulWidget {
   static Future<bool?> show(BuildContext context) {
     return showSmartSpendSheet<bool>(
       context: context,
+      scrollable: true,
       builder: (ctx) => const PhoneChangeSheet(),
     );
   }
@@ -30,6 +31,8 @@ enum _Step { inputPhone, verifyCode }
 class _PhoneChangeSheetState extends ConsumerState<PhoneChangeSheet> {
   final _phoneController = TextEditingController();
   final _codeController = TextEditingController();
+  final _phoneFocusNode = FocusNode();
+  final _codeFocusNode = FocusNode();
   var _step = _Step.inputPhone;
   bool _busy = false;
   String? _errorMessage;
@@ -42,6 +45,8 @@ class _PhoneChangeSheetState extends ConsumerState<PhoneChangeSheet> {
     _countdownTimer?.cancel();
     _phoneController.dispose();
     _codeController.dispose();
+    _phoneFocusNode.dispose();
+    _codeFocusNode.dispose();
     super.dispose();
   }
 
@@ -97,14 +102,15 @@ class _PhoneChangeSheetState extends ConsumerState<PhoneChangeSheet> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _errorMessage = l10n.captureStatusFailed;
+        _errorMessage = l10n.genericActionFailed;
       });
     }
   }
 
   Future<void> _confirmChallenge() async {
     final l10n = AppLocalizations.of(context);
-    final code = _codeController.text.trim();
+    final code = normalizeArabicDigits(_codeController.text.trim())
+        .replaceAll(RegExp(r'\D'), '');
     if (code.length != 6) {
       setState(() {
         _errorMessage = AppLocalizations.of(context).appEnterThe6DigitCode;
@@ -141,7 +147,7 @@ class _PhoneChangeSheetState extends ConsumerState<PhoneChangeSheet> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _errorMessage = l10n.captureStatusFailed;
+        _errorMessage = l10n.genericActionFailed;
       });
     }
   }
@@ -152,110 +158,109 @@ class _PhoneChangeSheetState extends ConsumerState<PhoneChangeSheet> {
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
 
-    return SafeArea(
+    return SmartSpendKeyboardAccessory(
+      focusNodes: [_phoneFocusNode, _codeFocusNode],
+      doneLabel: l10n.keyboardDone,
       child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(SmartSpendSpacing.screen),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.phone_android_rounded,
-                    color: colors.accent,
-                    size: 28,
+        padding: const EdgeInsets.all(SmartSpendSpacing.screen),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.phone_android_rounded,
+                  color: colors.accent,
+                  size: 28,
+                ),
+                const SizedBox(width: SmartSpendSpacing.md),
+                Expanded(
+                  child: Text(
+                    l10n.phoneChangeTitle,
+                    style: textTheme.titleMedium,
                   ),
-                  const SizedBox(width: SmartSpendSpacing.md),
-                  Expanded(
-                    child: Text(
-                      l10n.phoneChangeTitle,
-                      style: textTheme.titleMedium,
-                    ),
+                ),
+              ],
+            ),
+            const SizedBox(height: SmartSpendSpacing.md),
+            Text(
+              l10n.phoneChangeBody,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colors.mutedForeground,
+              ),
+            ),
+            const SizedBox(height: SmartSpendSpacing.lg),
+            if (_step == _Step.inputPhone) ...[
+              TextField(
+                controller: _phoneController,
+                focusNode: _phoneFocusNode,
+                keyboardType: TextInputType.phone,
+                enabled: !_busy,
+                decoration: InputDecoration(
+                  labelText: l10n.phoneChangeNewNumber,
+                  hintText: '01xxxxxxxxx',
+                  prefixIcon: const Icon(Icons.phone_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                   ),
-                ],
+                ),
+              ),
+              const SizedBox(height: SmartSpendSpacing.xl),
+              SmartSpendButton(
+                label: l10n.phoneChangeSendCode,
+                busy: _busy,
+                onPressed: _requestChallenge,
+              ),
+            ] else ...[
+              TextField(
+                controller: _codeController,
+                focusNode: _codeFocusNode,
+                keyboardType: TextInputType.number,
+                enabled: !_busy,
+                maxLength: 6,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineMedium
+                    ?.copyWith(letterSpacing: SmartSpendSpacing.sm),
+                decoration: InputDecoration(
+                  labelText: l10n.phoneChangeEnterCode,
+                  counterText: '',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(SmartSpendRadii.md),
+                  ),
+                ),
               ),
               const SizedBox(height: SmartSpendSpacing.md),
-              Text(
-                l10n.phoneChangeBody,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colors.mutedForeground,
-                ),
-              ),
-              const SizedBox(height: SmartSpendSpacing.lg),
-              if (_step == _Step.inputPhone) ...[
-                TextField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  enabled: !_busy,
-                  decoration: InputDecoration(
-                    labelText: l10n.phoneChangeNewNumber,
-                    hintText: '01xxxxxxxxx',
-                    prefixIcon: const Icon(Icons.phone_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: SmartSpendSpacing.xl),
-                SmartSpendButton(
-                  label: l10n.phoneChangeSendCode,
-                  busy: _busy,
-                  onPressed: _requestChallenge,
-                ),
-              ] else ...[
-                TextField(
-                  controller: _codeController,
-                  keyboardType: TextInputType.number,
-                  enabled: !_busy,
-                  maxLength: 6,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium
-                      ?.copyWith(letterSpacing: SmartSpendSpacing.sm),
-                  decoration: InputDecoration(
-                    labelText: l10n.phoneChangeEnterCode,
-                    counterText: '',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: SmartSpendSpacing.md),
-                if (_resendInSeconds > 0)
-                  Text(
-                    AppLocalizations.of(context)
-                        .appYouCanAskForA('$_resendInSeconds'),
-                    textAlign: TextAlign.center,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colors.mutedForeground,
-                    ),
-                  )
-                else
-                  TextButton(
-                    onPressed: _busy ? null : _requestChallenge,
-                    child: Text(l10n.phoneChangeSendCode),
-                  ),
-                const SizedBox(height: SmartSpendSpacing.lg),
-                SmartSpendButton(
-                  label: l10n.profileSave,
-                  busy: _busy,
-                  onPressed: _confirmChallenge,
-                ),
-              ],
-              if (_errorMessage != null) ...[
-                const SizedBox(height: SmartSpendSpacing.md),
+              if (_resendInSeconds > 0)
                 Text(
-                  _errorMessage!,
-                  style: textTheme.bodySmall?.copyWith(color: colors.danger),
+                  AppLocalizations.of(context)
+                      .appYouCanAskForA('$_resendInSeconds'),
                   textAlign: TextAlign.center,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colors.mutedForeground,
+                  ),
+                )
+              else
+                TextButton(
+                  onPressed: _busy ? null : _requestChallenge,
+                  child: Text(l10n.phoneChangeSendCode),
                 ),
-              ],
+              const SizedBox(height: SmartSpendSpacing.lg),
+              SmartSpendButton(
+                label: l10n.profileSave,
+                busy: _busy,
+                onPressed: _confirmChallenge,
+              ),
             ],
-          ),
+            if (_errorMessage != null) ...[
+              const SizedBox(height: SmartSpendSpacing.md),
+              Text(
+                _errorMessage!,
+                style: textTheme.bodySmall?.copyWith(color: colors.danger),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
         ),
       ),
     );

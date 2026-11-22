@@ -22,10 +22,14 @@ class LedgerApi {
   final Random _random;
 
   /// Reads a typed sentence: `ai.parseExpense`.
-  Future<ParseResult> parse(String text) async {
+  Future<ParseResult> parse(String text, {bool? businessMode}) async {
     final data = await _client.mutate(
       Procedures.ai.parseExpense,
-      input: {'text': text, 'inputChannel': 'text'},
+      input: {
+        'text': text,
+        'inputChannel': 'text',
+        'businessMode': ?businessMode,
+      },
     );
     return ParseResult.fromJson(_object(data));
   }
@@ -248,6 +252,34 @@ class LedgerApi {
           if (item['name'] case final String name when name.trim().isNotEmpty)
             name.trim(),
     ];
+  }
+
+  /// Creates a custom personal category: `expense.createCategory`.
+  Future<void> createCategory(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+    await _client.mutate(
+      Procedures.expense.createCategory,
+      input: {'name': trimmed},
+    );
+  }
+
+  /// Manually links a saved expense to a commitment due date: `commitments.link`.
+  Future<void> linkCommitment({
+    required int expenseId,
+    required int cashflowId,
+    required String dueDay,
+    num? amount,
+  }) async {
+    await _client.mutate(
+      Procedures.commitments.link,
+      input: {
+        'expenseId': expenseId,
+        'cashflowId': cashflowId,
+        'dueDay': dueDay,
+        'amount': ?amount,
+      },
+    );
   }
 
   /// The people saved on this account: `profile.listContacts`.

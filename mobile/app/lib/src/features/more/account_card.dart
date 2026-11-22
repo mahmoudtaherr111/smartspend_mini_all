@@ -23,11 +23,15 @@ class AccountCard extends ConsumerWidget {
     // A phone number or an email reads left to right inside the Arabic card, aligned with the rest of it.
     final contact = user?.phone ?? user?.email;
     if (user == null) return const SizedBox.shrink();
+    final avatar = user.avatar;
+    final hasNetworkAvatar = avatar != null && avatar.startsWith('http');
+    final hasEmojiAvatar =
+        avatar != null && avatar.isNotEmpty && !hasNetworkAvatar;
 
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => context.go(ProfileScreen.path),
+        onTap: () => context.push(ProfileScreen.path),
         child: Padding(
           padding: const EdgeInsets.all(SmartSpendSpacing.lg),
           child: Row(
@@ -35,8 +39,11 @@ class AccountCard extends ConsumerWidget {
               CircleAvatar(
                 radius: SmartSpendSpacing.xl,
                 backgroundColor: colors.accent.withValues(alpha: 0.14),
+                foregroundImage: hasNetworkAvatar ? NetworkImage(avatar) : null,
                 child: Text(
-                  user.name.isEmpty ? '👤' : user.name.characters.first,
+                  hasEmojiAvatar
+                      ? avatar
+                      : (user.name.isEmpty ? '👤' : user.name.characters.first),
                   style: textTheme.titleLarge?.copyWith(color: colors.accent),
                 ),
               ),
@@ -83,6 +90,7 @@ class _SignOutButtonState extends ConsumerState<SignOutButton> {
     if (unsent > 0 && mounted) {
       final proceed = await showSmartSpendSheet<bool>(
         context: context,
+        scrollable: true,
         builder: (ctx) => _SignOutWarningSheet(unsentCount: unsent),
       );
       if (proceed != true) return;

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 
 import '../../auth/session_controller.dart';
+import '../../business/business_providers.dart';
 import '../ledger_models.dart';
 import '../ledger_providers.dart';
 import 'ledger_store.dart';
@@ -205,6 +206,9 @@ class Outbox extends AsyncNotifier<OutboxView> {
     required String category,
     String? subCategory,
     String? description,
+    String? direction,
+    String? personName,
+    String? personRelationship,
     DateTime? date,
     int? walletId,
   }) async {
@@ -229,6 +233,9 @@ class Outbox extends AsyncNotifier<OutboxView> {
             category: category,
             subCategory: subCategory,
             description: description,
+            direction: direction,
+            personName: personName,
+            personRelationship: personRelationship,
             date: dateIso,
             walletId: walletId,
             source: 'manual',
@@ -346,7 +353,10 @@ class Outbox extends AsyncNotifier<OutboxView> {
     await _replace(item.copyWith(state: OutboxState.sending));
     var pending = item;
     try {
-      final parse = item.parse ?? await api.parse(item.text);
+      final isBiz = ref.read(isBusinessModeActiveProvider);
+      final parse =
+          item.parse ??
+          await api.parse(item.text, businessMode: isBiz ? true : null);
       if (item.parse == null) _online();
       switch (parse.decision) {
         case ParseDecision.autoSave:

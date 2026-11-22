@@ -5327,4 +5327,276 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cfYourPayouts => 'Your payouts';
+
+  @override
+  String get keyboardDone => 'Done';
+
+  @override
+  String get genericActionFailed =>
+      'We couldn\'t complete that right now. Try again.';
+
+  @override
+  String get saveChangesFailed => 'We couldn\'t save your changes. Try again.';
+
+  @override
+  String get confirmDeleteAction => 'Confirm delete';
+
+  @override
+  String get goalEditTitle => 'Edit goal';
+
+  @override
+  String get goalEditAction => 'Edit goal';
+
+  @override
+  String get goalUpdatedNotice => 'Goal updated.';
+
+  @override
+  String get goalDeleteConfirmTitle => 'Delete this goal?';
+
+  @override
+  String get goalDeleteConfirmBody =>
+      'This goal will be removed from your list. This can\'t be undone.';
+
+  @override
+  String get goalDeletedNotice => 'Goal deleted.';
+
+  @override
+  String get savingPlanEndConfirmTitle => 'End saving plan?';
+
+  @override
+  String get savingPlanEndConfirmBody =>
+      'Your current plan will stop showing. Your saved transactions stay as they are.';
+
+  @override
+  String get savingPlanEndConfirmAction => 'End plan';
+
+  @override
+  String get contactEditTitle => 'Edit contact';
+
+  @override
+  String get contactEditAction => 'Edit contact';
+
+  @override
+  String get contactUpdatedNotice => 'Contact updated.';
+
+  @override
+  String get commitmentEditTitle => 'Edit commitment';
+
+  @override
+  String get commitmentEditAction => 'Edit commitment';
+
+  @override
+  String get commitmentUpdatedNotice => 'Commitment updated.';
+
+  @override
+  String get commitmentLinkTitle => 'Link to a recorded transaction';
+
+  @override
+  String get commitmentLinkAction => 'Link transaction';
+
+  @override
+  String get commitmentLinkedNotice => 'Transaction linked to commitment.';
+
+  @override
+  String get commitmentLinkEmpty =>
+      'No recent matching transactions to link to this date.';
+
+  @override
+  String get categoryCreateTitle => 'New category';
+
+  @override
+  String get categoryCreateAction => 'Add category';
+
+  @override
+  String get categoryNameLabel => 'Category name';
+
+  @override
+  String get categoryCreatedNotice => 'Category added.';
+
+  @override
+  String get businessEditTitle => 'Edit work account';
+
+  @override
+  String get businessEditAction => 'Edit account';
+
+  @override
+  String get businessCategoryEditTitle => 'Edit business category';
+
+  @override
+  String businessActiveBanner(String name) {
+    return 'Active work account: $name';
+  }
+
+  @override
+  String get businessSwitchPersonalAction => 'Switch to personal';
+
+  @override
+  String get moneyPrefMonthlyIncomeLabel => 'Expected monthly income';
+
+  @override
+  String get moneyPrefMonthlyIncomeHint =>
+      'Optional, helps compare your spending with your income';
+
+  @override
+  String get moneyPrefCurrencyLabel => 'Primary currency';
+
+  @override
+  String get moneyPrefSavedNotice => 'Money preferences saved.';
+
+  @override
+  String get upgradeDefaultTitle => 'Unlock all SmartSpend features';
+
+  @override
+  String get upgradeDefaultBody =>
+      'Upgrade to Pro for goal analysis, work account, receipt scanning, and live voice calls.';
+
+  @override
+  String get upgradeDefaultCta => 'View Pro plans';
+
+  @override
+  String get upgradePaymobCheckoutAction => 'Pay by card or wallet (Paymob)';
+
+  @override
+  String get upgradePaymobCancelAction => 'Cancel Paymob subscription';
+
+  @override
+  String get upgradePaymobCancelConfirmTitle => 'Cancel subscription?';
+
+  @override
+  String get upgradePaymobCancelConfirmBody =>
+      'Your subscription stays active until the end of the paid period and won\'t renew after.';
+
+  @override
+  String get upgradeRestoreAction => 'Restore purchases';
+
+  @override
+  String get supportCloseTicketAction => 'Close ticket';
+
+  @override
+  String get supportCloseConfirmTitle => 'Close this ticket?';
+
+  @override
+  String get supportCloseConfirmBody =>
+      'If your issue is resolved, you can close this ticket. You can open a new one anytime.';
+
+  @override
+  String get supportTicketClosedNotice => 'Ticket closed.';
+
+  @override
+  String get supportMessageRequired => 'Enter a subject and details first.';
+
+  @override
+  String appInfoVersionValue(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get appInfoLicensesAction => 'Open-source licenses';
+
+  @override
+  String get sessionsDeviceCurrent => 'This device';
+
+  @override
+  String get sessionsDeviceAndroid => 'Android';
+
+  @override
+  String get sessionsDeviceIos => 'iPhone';
+
+  @override
+  String get sessionsDeviceWeb => 'Web browser';
+
+  @override
+  String get sessionsDeviceUnknown => 'Unknown device';
+
+  @override
+  String get iosShortcutsGuideTitle => 'iPhone Shortcuts setup';
+
+  @override
+  String get iosShortcutsGuideIntro =>
+      'Connect the Shortcuts app so bank and wallet messages are sent to SmartSpend as soon as they arrive:';
+
+  @override
+  String get iosShortcutsGuideStep1 =>
+      '1. Open the Shortcuts app, go to Automation, tap +, and create a Message automation.';
+
+  @override
+  String get iosShortcutsGuideStep2 =>
+      '2. Set it to run immediately when you receive a message from your bank or wallet.';
+
+  @override
+  String get iosShortcutsGuideStep3 =>
+      '3. Choose the SmartSpend bank message action and pass the message text.';
+
+  @override
+  String get iosShortcutsConnectAction => 'Connect Shortcuts';
+
+  @override
+  String get iosShortcutsConnectedNotice =>
+      'Shortcuts connected on this iPhone.';
+
+  @override
+  String get voicePermissionAllowCta => 'Continue';
+
+  @override
+  String get termsSectionUsageTitle => '1. Using the app';
+
+  @override
+  String get termsSectionUsageBody =>
+      'By using SmartSpend AI, you agree to these terms and our privacy policy under Egyptian Law 151 of 2020.';
+
+  @override
+  String get termsSectionAiTitle => '2. AI and budgeting';
+
+  @override
+  String get termsSectionAiBody =>
+      'The app helps you track spending and organize budgets. Assistant insights are guidance, not certified financial or banking advice.';
+
+  @override
+  String get termsSectionPrivacyTitle => '3. Data and message protection';
+
+  @override
+  String get termsSectionPrivacyBody =>
+      'The app never asks for or stores banking passwords or card PIN/CVV numbers. You can export or delete your data anytime.';
+
+  @override
+  String get dataStoredSectionServerTitle => 'Stored on our servers';
+
+  @override
+  String get dataStoredSectionServerBody =>
+      'Your transactions, wallets, budgets, commitments, and assistant preferences needed to run the service.';
+
+  @override
+  String get dataStoredSectionPhoneTitle => 'Stored on your phone';
+
+  @override
+  String get dataStoredSectionPhoneBody =>
+      'Your encrypted sign-in token, app lock settings, and an offline copy of recent and pending transactions.';
+
+  @override
+  String get dataStoredSectionDeleteTitle => 'Your export and deletion rights';
+
+  @override
+  String get dataStoredSectionDeleteBody =>
+      'You can export a copy of all your data or permanently delete your account anytime under Law 151 of 2020.';
+
+  @override
+  String get manualRecordTypeInvestment => 'Investment';
+
+  @override
+  String get manualRecordTypeRefund => 'Refund';
+
+  @override
+  String get manualRecordContactLabel => 'Person (optional)';
+
+  @override
+  String get manualRecordSubcategoryLabel => 'Subcategory (optional)';
+
+  @override
+  String get voiceCallConnecting => 'Connecting...';
+
+  @override
+  String get voiceCallListening => 'Listening, go ahead...';
+
+  @override
+  String get voiceCallEnded => 'Call ended';
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../core/cairo_time.dart';
 import '../../core/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../ledger/ledger_providers.dart';
@@ -59,7 +60,7 @@ Future<String?> pickCommitmentDay(
   String? initial,
   String? today,
 }) async {
-  final base = dateOfKey(initial) ?? dateOfKey(today) ?? DateTime.now();
+  final base = dateOfKey(initial) ?? dateOfKey(today) ?? cairoNowDate();
   final picked = await showDatePicker(
     context: context,
     initialDate: base,
@@ -262,6 +263,7 @@ class PaySheet extends ConsumerStatefulWidget {
   static Future<bool?> show(BuildContext context, DueDate due) =>
       showSmartSpendSheet<bool>(
         context: context,
+        scrollable: true,
         builder: (_) => PaySheet(due: due),
       );
 
@@ -273,6 +275,7 @@ class _PaySheetState extends ConsumerState<PaySheet> {
   late final _amount = TextEditingController(
     text: _plain(widget.due.remaining ?? widget.due.amount),
   );
+  final _amountFocus = FocusNode();
   bool _record = true;
   bool _busy = false;
   String? _error;
@@ -286,6 +289,7 @@ class _PaySheetState extends ConsumerState<PaySheet> {
 
   @override
   void dispose() {
+    _amountFocus.dispose();
     _amount.dispose();
     super.dispose();
   }
@@ -329,59 +333,68 @@ class _PaySheetState extends ConsumerState<PaySheet> {
     final textTheme = Theme.of(context).textTheme;
     final colors = context.smartSpendColors;
     final due = widget.due;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        SmartSpendSpacing.screen,
-        0,
-        SmartSpendSpacing.screen,
-        SmartSpendSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            due.isIncome
-                ? l10n.cmReceivedTitle(due.title)
-                : l10n.cmPaidTitle(due.title),
-            style: textTheme.titleLarge,
-          ),
-          const SizedBox(height: SmartSpendSpacing.xs),
-          Text(
-            due.undated
-                ? l10n.cmNoDate
-                : l10n.cmDueOn(commitmentDayLabel(context, due.day)),
-            style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
-          ),
-          const SizedBox(height: SmartSpendSpacing.md),
-          TextField(
-            key: const ValueKey('pay-amount'),
-            controller: _amount,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: l10n.cmAmountPaid,
-              suffixText: MoneyLocale.of(context).symbol,
+    return SmartSpendKeyboardAccessory(
+      focusNodes: [_amountFocus],
+      doneLabel: l10n.keyboardDone,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          SmartSpendSpacing.screen,
+          0,
+          SmartSpendSpacing.screen,
+          SmartSpendSpacing.lg,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              due.isIncome
+                  ? l10n.cmReceivedTitle(due.title)
+                  : l10n.cmPaidTitle(due.title),
+              style: textTheme.titleLarge,
             ),
-          ),
-          SwitchListTile.adaptive(
-            contentPadding: EdgeInsets.zero,
-            value: _record,
-            onChanged: (value) => setState(() => _record = value),
-            title: Text(l10n.cmRecordInSpending),
-            subtitle: Text(
-              _record ? l10n.cmRecordInSpendingHint : l10n.cmOffRecordsHint,
+            const SizedBox(height: SmartSpendSpacing.xs),
+            Text(
+              due.undated
+                  ? l10n.cmNoDate
+                  : l10n.cmDueOn(commitmentDayLabel(context, due.day)),
+              style: textTheme.bodySmall?.copyWith(
+                color: colors.mutedForeground,
+              ),
             ),
-          ),
-          if (_error != null) ...[
-            InlineMessage(_error!, tone: MessageTone.warning),
-            const SizedBox(height: SmartSpendSpacing.sm),
+            const SizedBox(height: SmartSpendSpacing.md),
+            TextField(
+              key: const ValueKey('pay-amount'),
+              controller: _amount,
+              focusNode: _amountFocus,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: l10n.cmAmountPaid,
+                suffixText: MoneyLocale.of(context).symbol,
+              ),
+            ),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              value: _record,
+              onChanged: (value) => setState(() => _record = value),
+              title: Text(l10n.cmRecordInSpending),
+              subtitle: Text(
+                _record ? l10n.cmRecordInSpendingHint : l10n.cmOffRecordsHint,
+              ),
+            ),
+            if (_error != null) ...[
+              InlineMessage(_error!, tone: MessageTone.warning),
+              const SizedBox(height: SmartSpendSpacing.sm),
+            ],
+            SmartSpendButton(
+              label: due.isIncome ? l10n.cmGotIt : l10n.cmPaidIt,
+              busy: _busy,
+              onPressed: _busy ? null : _save,
+            ),
           ],
-          SmartSpendButton(
-            label: due.isIncome ? l10n.cmGotIt : l10n.cmPaidIt,
-            busy: _busy,
-            onPressed: _busy ? null : _save,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -459,6 +472,7 @@ class LinkQuestionSheet extends ConsumerWidget {
   static Future<void> show(BuildContext context, LinkQuestion question) =>
       showSmartSpendSheet<void>(
         context: context,
+        scrollable: true,
         builder: (_) => LinkQuestionSheet(question: question),
       );
 

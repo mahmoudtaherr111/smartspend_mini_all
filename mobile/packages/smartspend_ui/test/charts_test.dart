@@ -159,6 +159,158 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets(
+      'handles 12 months on narrow viewport and 2x text scale without overflow',
+      (tester) async {
+        final yearData = [
+          for (var m = 1; m <= 12; m++)
+            LineDataPoint(
+              label: 'شهر $m',
+              value: m == 6 ? null : m * 650,
+              amountFormatted: '${m * 650} ج.م',
+            ),
+        ];
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: SmartSpendTheme.dark(),
+            home: MediaQuery(
+              data: const MediaQueryData(
+                size: Size(320, 640),
+                textScaler: TextScaler.linear(2.0),
+              ),
+              child: Scaffold(
+                body: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SmartSpendLineChart(
+                    title: 'المصاريف خلال 12 شهر',
+                    data: yearData,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'uses custom emptyLabel and English default without hardcoded Arabic',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: SmartSpendTheme.light(),
+            locale: const Locale('en'),
+            home: Scaffold(
+              body: SmartSpendLineChart(
+                title: 'Monthly trend',
+                data: const [
+                  LineDataPoint(label: 'Jan', value: 1200),
+                  LineDataPoint(label: 'Feb', value: null),
+                ],
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byWidgetPredicate(
+            (w) =>
+                w is Semantics &&
+                w.properties.label != null &&
+                w.properties.label!.contains('Feb: no data') &&
+                !w.properties.label!.contains('لا توجد بيانات'),
+          ),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'shows exact formatted amount tooltip on tap and respects MoneyPrivacy',
+      (tester) async {
+        int? selected;
+        final points = const [
+          LineDataPoint(
+            label: 'يناير',
+            value: 1500,
+            amountFormatted: '1,500 ج.م',
+          ),
+          LineDataPoint(
+            label: 'فبراير',
+            value: 3200,
+            amountFormatted: '3,200 ج.م',
+          ),
+        ];
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: SmartSpendTheme.dark(),
+            home: Scaffold(
+              body: SizedBox(
+                width: 360,
+                child: SmartSpendLineChart(
+                  title: 'اتجاه الصرف',
+                  data: points,
+                  onPointSelected: (i) => selected = i,
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final paintRect = tester.getRect(
+          find.descendant(
+            of: find.byType(SmartSpendLineChart),
+            matching: find.byType(CustomPaint),
+          ),
+        );
+        // Tap near the right side (second point in LTR)
+        await tester.tapAt(Offset(paintRect.right - 20, paintRect.center.dy));
+        await tester.pump();
+
+        expect(selected, 1);
+        expect(find.text('فبراير: 3,200 ج.م'), findsOneWidget);
+
+        // Tap same point again clears selection
+        await tester.tapAt(Offset(paintRect.right - 20, paintRect.center.dy));
+        await tester.pump();
+        expect(selected, isNull);
+        expect(find.text('فبراير: 3,200 ج.م'), findsNothing);
+
+        // Privacy mode masks tooltip amount
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: SmartSpendTheme.dark(),
+            home: MoneyPrivacy(
+              hidden: true,
+              child: Scaffold(
+                body: SizedBox(
+                  width: 360,
+                  child: SmartSpendLineChart(
+                    title: 'اتجاه الصرف',
+                    data: points,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tapAt(Offset(paintRect.right - 20, paintRect.center.dy));
+        await tester.pump();
+
+        expect(find.textContaining('3,200'), findsNothing);
+        expect(find.textContaining('••••'), findsOneWidget);
+      },
+    );
   });
 
   group('SmartSpendProportionChart (FND-04)', () {

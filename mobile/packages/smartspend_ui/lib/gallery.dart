@@ -15,7 +15,7 @@ class ComponentGallery extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final colors = context.smartSpendColors;
     return Scaffold(
-      appBar: AppBar(title: const Text('مكوّنات SmartSpend')),
+      appBar: const SmartSpendGlassAppBar(title: Text('مكوّنات SmartSpend')),
       body: ListView(
         padding: const EdgeInsets.all(SmartSpendSpacing.screen),
         children: [
@@ -247,6 +247,47 @@ class ComponentGallery extends StatelessWidget {
             label: 'اعرف أكتر',
             variant: ButtonVariant.quiet,
             onPressed: () {},
+          ),
+          const SectionHeader('أسطح Liquid Glass المتكيفة'),
+          SmartSpendGlassSurface(
+            padding: const EdgeInsets.all(SmartSpendSpacing.lg),
+            elevated: true,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'سطح زجاجي على iOS وصلب سريع على أندرويد',
+                  style: textTheme.titleSmall,
+                ),
+                const SizedBox(height: SmartSpendSpacing.xs),
+                Text(
+                  'يحترم وضع التباين العالي بدون استهلاك بطارية.',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colors.mutedForeground,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: SmartSpendSpacing.sm),
+          SmartSpendGlassDock(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'شريط التسجيل السريع',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colors.mutedForeground,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'إرسال',
+                  onPressed: () {},
+                  icon: Icon(Icons.send_rounded, color: colors.accent),
+                ),
+              ],
+            ),
           ),
           const SectionHeader('الرسائل'),
           const InlineMessage('اكتب المبلغ.'),

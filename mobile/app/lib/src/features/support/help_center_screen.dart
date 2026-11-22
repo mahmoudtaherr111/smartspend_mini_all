@@ -95,18 +95,23 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
   }
 
   Future<void> _submitTicket() async {
+    final l10n = AppLocalizations.of(context);
     final subject = _subjectController.text.trim();
     final message = _messageController.text.trim();
-    if (subject.isEmpty || message.isEmpty) return;
+    if (subject.isEmpty || message.isEmpty) {
+      showSmartSpendNotice(context, l10n.supportMessageRequired);
+      return;
+    }
 
     setState(() => _submitting = true);
     try {
       await ref
           .read(supportRepositoryProvider)
           .createTicket(subject: subject, message: message);
-      await _clearDraft();
       _subjectController.clear();
       _messageController.clear();
+      _draftTimer?.cancel();
+      await _clearDraft();
 
       if (mounted) {
         ref.invalidate(mySupportTicketsProvider);
@@ -126,6 +131,39 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Future<void> _closeTicket(SupportTicket ticket) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.supportCloseConfirmTitle),
+        content: Text(l10n.supportCloseConfirmBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.signOutCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n.supportCloseTicketAction),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ref.read(supportRepositoryProvider).closeTicket(ticket.id);
+      if (!mounted) return;
+      ref.invalidate(mySupportTicketsProvider);
+      showSmartSpendNotice(context, l10n.supportTicketClosedNotice);
+    } on ApiException catch (e) {
+      if (mounted) showSmartSpendNotice(context, e.message);
+    } on Object {
+      if (mounted) showSmartSpendNotice(context, l10n.genericActionFailed);
     }
   }
 
@@ -280,6 +318,21 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
                             ),
                             const SizedBox(height: SmartSpendSpacing.xs),
                             Text(reply, style: textTheme.bodyMedium),
+                          ],
+                          if (t.status != 'closed' &&
+                              t.status != 'resolved') ...[
+                            const SizedBox(height: SmartSpendSpacing.sm),
+                            Align(
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: TextButton.icon(
+                                icon: const Icon(
+                                  Icons.check_circle_outline_rounded,
+                                  size: 18,
+                                ),
+                                label: Text(l10n.supportCloseTicketAction),
+                                onPressed: () => _closeTicket(t),
+                              ),
+                            ),
                           ],
                         ],
                       );

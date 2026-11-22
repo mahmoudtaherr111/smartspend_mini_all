@@ -5,8 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../core/cairo_time.dart';
+import '../../core/deep_links.dart';
 import '../../l10n/app_localizations.dart';
-import '../support/help_center_screen.dart';
 import 'notification_providers.dart';
 
 /// Notification Inbox Screen with read/unread filtering, date grouping, and deep link navigation (NOT-01, FND-10).
@@ -25,7 +26,7 @@ class _NotificationInboxScreenState
   bool _showOnlyUnread = false;
 
   String _dateGroupKey(DateTime dt, AppLocalizations l10n) {
-    final now = DateTime.now();
+    final now = cairoNow();
     final today = DateTime(now.year, now.month, now.day);
     final target = DateTime(dt.year, dt.month, dt.day);
     final diff = today.difference(target).inDays;
@@ -42,18 +43,11 @@ class _NotificationInboxScreenState
       ref.invalidate(inAppNotificationsProvider);
     }
 
-    if (!mounted || item.actionUrl == null || item.actionUrl!.isEmpty) return;
+    final targetRoute = resolveAppRoute(item.actionUrl);
+    if (!mounted || targetRoute == null) return;
 
-    final url = item.actionUrl!;
     try {
-      if (url == '/support') {
-        unawaited(context.push(HelpCenterScreen.path));
-      } else if (url.startsWith('/')) {
-        unawaited(context.push(url));
-      } else if (url.startsWith('smartspend://')) {
-        final internalPath = url.replaceFirst('smartspend://', '/');
-        unawaited(context.push(internalPath));
-      }
+      unawaited(context.push(targetRoute));
     } catch (_) {}
   }
 
@@ -109,7 +103,7 @@ class _NotificationInboxScreenState
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => Center(
                 child: ErrorState(
-                  message: l10n.captureStatusFailed,
+                  message: l10n.genericActionFailed,
                   retryLabel: l10n.retry,
                   onRetry: () => ref.invalidate(inAppNotificationsProvider),
                 ),
@@ -149,8 +143,8 @@ class _NotificationInboxScreenState
                 }
 
                 return RefreshIndicator(
-                  onRefresh: () async =>
-                      ref.refresh(inAppNotificationsProvider),
+                  onRefresh: () =>
+                      ref.refresh(inAppNotificationsProvider.future),
                   child: ListView.builder(
                     padding: const EdgeInsets.all(SmartSpendSpacing.screen),
                     itemCount: groups.length,
@@ -188,6 +182,9 @@ class _NotificationInboxScreenState
                                   const Divider(height: 1),
                               itemBuilder: (ctx, i) {
                                 final item = groupItems[i];
+                                final targetRoute = resolveAppRoute(
+                                  item.actionUrl,
+                                );
                                 return ListTile(
                                   onTap: () => _handleTap(item),
                                   leading: Container(
@@ -217,10 +214,12 @@ class _NotificationInboxScreenState
                                       ),
                                     ),
                                   ),
-                                  trailing: const Icon(
-                                    Icons.chevron_right,
-                                    size: 20,
-                                  ),
+                                  trailing: targetRoute != null
+                                      ? const Icon(
+                                          Icons.chevron_right,
+                                          size: 20,
+                                        )
+                                      : null,
                                 );
                               },
                             ),

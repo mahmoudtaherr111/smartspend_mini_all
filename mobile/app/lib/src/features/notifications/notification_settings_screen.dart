@@ -29,7 +29,7 @@ class _NotificationSettingsScreenState
   bool _saving = false;
   bool _initialized = false;
 
-  Future<void> _save() async {
+  Future<void> _save({VoidCallback? onRollback}) async {
     final l10n = AppLocalizations.of(context);
     setState(() => _saving = true);
     try {
@@ -57,14 +57,32 @@ class _NotificationSettingsScreenState
       }
     } on ApiException catch (e) {
       if (mounted) {
+        if (onRollback != null) setState(onRollback);
         showSmartSpendNotice(context, e.message);
       }
     } on Object {
       if (mounted) {
-        showSmartSpendNotice(context, l10n.captureStatusFailed);
+        if (onRollback != null) setState(onRollback);
+        showSmartSpendNotice(context, l10n.genericActionFailed);
       }
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _onMasterChanged(bool val) async {
+    if (val) {
+      final granted = await ref
+          .read(pushNotificationServiceProvider)
+          .requestPermission();
+      if (!granted || !mounted) return;
+      final prev = _masterEnabled;
+      setState(() => _masterEnabled = true);
+      await _save(onRollback: () => _masterEnabled = prev);
+    } else {
+      final prev = _masterEnabled;
+      setState(() => _masterEnabled = false);
+      await _save(onRollback: () => _masterEnabled = prev);
     }
   }
 
@@ -114,18 +132,7 @@ class _NotificationSettingsScreenState
                   AppLocalizations.of(context).appAllowNotificationsFromTheApp,
                 ),
                 value: _masterEnabled,
-                onChanged: _saving
-                    ? null
-                    : (val) {
-                        setState(() => _masterEnabled = val);
-                        _save();
-                        // The system prompt comes here, when the person asked for notifications.
-                        if (val) {
-                          ref
-                              .read(pushNotificationServiceProvider)
-                              .initialize(askPermission: true);
-                        }
-                      },
+                onChanged: _saving ? null : _onMasterChanged,
               ),
             ),
             const SizedBox(height: SmartSpendSpacing.lg),
@@ -143,8 +150,9 @@ class _NotificationSettingsScreenState
                     onChanged: _saving
                         ? null
                         : (val) {
+                            final prev = _budgetEnabled;
                             setState(() => _budgetEnabled = val);
-                            _save();
+                            _save(onRollback: () => _budgetEnabled = prev);
                           },
                   ),
                   SwitchListTile(
@@ -157,8 +165,9 @@ class _NotificationSettingsScreenState
                     onChanged: _saving
                         ? null
                         : (val) {
+                            final prev = _dailyEnabled;
                             setState(() => _dailyEnabled = val);
-                            _save();
+                            _save(onRollback: () => _dailyEnabled = prev);
                           },
                   ),
                   SwitchListTile(
@@ -171,8 +180,9 @@ class _NotificationSettingsScreenState
                     onChanged: _saving
                         ? null
                         : (val) {
+                            final prev = _streakEnabled;
                             setState(() => _streakEnabled = val);
-                            _save();
+                            _save(onRollback: () => _streakEnabled = prev);
                           },
                   ),
                   SwitchListTile(
@@ -185,8 +195,9 @@ class _NotificationSettingsScreenState
                     onChanged: _saving
                         ? null
                         : (val) {
+                            final prev = _monthlyEnabled;
                             setState(() => _monthlyEnabled = val);
-                            _save();
+                            _save(onRollback: () => _monthlyEnabled = prev);
                           },
                   ),
                 ],

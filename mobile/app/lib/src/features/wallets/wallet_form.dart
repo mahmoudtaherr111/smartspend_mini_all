@@ -15,6 +15,7 @@ import 'wallet_style.dart';
 Future<bool> showWalletForm(BuildContext context, {Wallet? wallet}) async {
   final saved = await showSmartSpendSheet<bool>(
     context: context,
+    scrollable: true,
     builder: (_) => _WalletForm(wallet: wallet),
   );
   return saved ?? false;
@@ -35,6 +36,8 @@ class _WalletFormState extends ConsumerState<_WalletForm> {
   late final _balance = TextEditingController(
     text: widget.wallet == null ? '' : _plain(widget.wallet!.balance),
   );
+  final _lastFourFocusNode = FocusNode();
+  final _balanceFocusNode = FocusNode();
   late WalletKind _kind = widget.wallet?.kind ?? WalletKind.card;
   bool _busy = false;
   String? _nameError;
@@ -101,6 +104,8 @@ class _WalletFormState extends ConsumerState<_WalletForm> {
     _name.dispose();
     _lastFour.dispose();
     _balance.dispose();
+    _lastFourFocusNode.dispose();
+    _balanceFocusNode.dispose();
     super.dispose();
   }
 
@@ -176,100 +181,106 @@ class _WalletFormState extends ConsumerState<_WalletForm> {
           Navigator.of(context).pop(false);
         }
       },
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          SmartSpendSpacing.screen,
-          0,
-          SmartSpendSpacing.screen,
-          SmartSpendSpacing.xl,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              editing
-                  ? l10n.walletFormEditTitle(widget.wallet!.name)
-                  : l10n.walletFormAddTitle,
-              style: textTheme.titleLarge,
-            ),
-            const SizedBox(height: SmartSpendSpacing.lg),
-            if (error != null) ...[
-              InlineMessage(error),
-              const SizedBox(height: SmartSpendSpacing.md),
-            ],
-            if (!editing) ...[
-              Text(l10n.walletKindLabel, style: textTheme.labelLarge),
-              const SizedBox(height: SmartSpendSpacing.sm),
-              Wrap(
-                spacing: SmartSpendSpacing.sm,
-                runSpacing: SmartSpendSpacing.sm,
-                children: [
-                  for (final kind in WalletKind.values)
-                    ChoiceChip(
-                      avatar: Icon(
-                        kind.icon,
-                        size: 18,
-                        color: walletKindColor(context, kind),
-                      ),
-                      label: Text(walletKindName(l10n, kind)),
-                      selected: _kind == kind,
-                      onSelected: (_) {
-                        unawaited(SmartSpendHaptics.selection());
-                        setState(() => _kind = kind);
-                      },
-                    ),
-                ],
+      child: SmartSpendKeyboardAccessory(
+        focusNodes: [_lastFourFocusNode, _balanceFocusNode],
+        doneLabel: l10n.keyboardDone,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            SmartSpendSpacing.screen,
+            0,
+            SmartSpendSpacing.screen,
+            SmartSpendSpacing.xl,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                editing
+                    ? l10n.walletFormEditTitle(widget.wallet!.name)
+                    : l10n.walletFormAddTitle,
+                style: textTheme.titleLarge,
               ),
               const SizedBox(height: SmartSpendSpacing.lg),
-            ],
-            TextField(
-              controller: _name,
-              textInputAction: TextInputAction.next,
-              maxLength: 100,
-              decoration: InputDecoration(
-                labelText: l10n.walletNameLabel,
-                hintText: l10n.walletNameHint,
-                errorText: _nameError,
-                counterText: '',
-              ),
-            ),
-            const SizedBox(height: SmartSpendSpacing.md),
-            TextField(
-              controller: _lastFour,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.next,
-              maxLength: 4,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp('[0-9٠-٩]')),
+              if (error != null) ...[
+                InlineMessage(error),
+                const SizedBox(height: SmartSpendSpacing.md),
               ],
-              decoration: InputDecoration(
-                labelText: l10n.walletLastFourLabel,
-                errorText: _lastFourError,
-                counterText: '',
+              if (!editing) ...[
+                Text(l10n.walletKindLabel, style: textTheme.labelLarge),
+                const SizedBox(height: SmartSpendSpacing.sm),
+                Wrap(
+                  spacing: SmartSpendSpacing.sm,
+                  runSpacing: SmartSpendSpacing.sm,
+                  children: [
+                    for (final kind in WalletKind.values)
+                      ChoiceChip(
+                        avatar: Icon(
+                          kind.icon,
+                          size: 18,
+                          color: walletKindColor(context, kind),
+                        ),
+                        label: Text(walletKindName(l10n, kind)),
+                        selected: _kind == kind,
+                        onSelected: (_) {
+                          unawaited(SmartSpendHaptics.selection());
+                          setState(() => _kind = kind);
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: SmartSpendSpacing.lg),
+              ],
+              TextField(
+                controller: _name,
+                textInputAction: TextInputAction.next,
+                maxLength: 100,
+                decoration: InputDecoration(
+                  labelText: l10n.walletNameLabel,
+                  hintText: l10n.walletNameHint,
+                  errorText: _nameError,
+                  counterText: '',
+                ),
               ),
-            ),
-            const SizedBox(height: SmartSpendSpacing.md),
-            TextField(
-              controller: _balance,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-                signed: true,
+              const SizedBox(height: SmartSpendSpacing.md),
+              TextField(
+                controller: _lastFour,
+                focusNode: _lastFourFocusNode,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.next,
+                maxLength: 4,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp('[0-9٠-٩]')),
+                ],
+                decoration: InputDecoration(
+                  labelText: l10n.walletLastFourLabel,
+                  errorText: _lastFourError,
+                  counterText: '',
+                ),
               ),
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _save(),
-              decoration: InputDecoration(
-                labelText: l10n.walletBalanceLabel,
-                errorText: _balanceError,
-                suffixText: MoneyLocale.of(context).symbol,
+              const SizedBox(height: SmartSpendSpacing.md),
+              TextField(
+                controller: _balance,
+                focusNode: _balanceFocusNode,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                ),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _save(),
+                decoration: InputDecoration(
+                  labelText: l10n.walletBalanceLabel,
+                  errorText: _balanceError,
+                  suffixText: MoneyLocale.of(context).symbol,
+                ),
               ),
-            ),
-            const SizedBox(height: SmartSpendSpacing.xl),
-            SmartSpendButton(
-              label: l10n.walletSave,
-              busy: _busy,
-              onPressed: _save,
-            ),
-          ],
+              const SizedBox(height: SmartSpendSpacing.xl),
+              SmartSpendButton(
+                label: l10n.walletSave,
+                busy: _busy,
+                onPressed: _save,
+              ),
+            ],
+          ),
         ),
       ),
     );

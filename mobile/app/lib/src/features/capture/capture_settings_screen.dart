@@ -83,13 +83,12 @@ class _DeviceTile extends ConsumerWidget {
         ),
         trailing: TextButton(
           onPressed: () async {
-            final messenger = ScaffoldMessenger.of(context);
             try {
               await connector.revoke(device);
             } on Object {
-              messenger.showSnackBar(
-                SnackBar(content: Text(l10n.captureSettingsFailed)),
-              );
+              if (context.mounted) {
+                showSmartSpendNotice(context, l10n.captureSettingsFailed);
+              }
             }
           },
           child: Text(l10n.captureDeviceStop),
@@ -176,7 +175,6 @@ class _DeleteMyDataState extends ConsumerState<_DeleteMyData> {
 
   Future<void> _delete() async {
     final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     final sure = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -198,11 +196,11 @@ class _DeleteMyDataState extends ConsumerState<_DeleteMyData> {
     setState(() => _busy = true);
     try {
       await ref.read(captureConnectorProvider).deleteMyData();
-      messenger.showSnackBar(SnackBar(content: Text(l10n.captureDeleted)));
+      if (mounted) showSmartSpendNotice(context, l10n.captureDeleted);
     } on Object {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.captureSettingsFailed)),
-      );
+      if (mounted) {
+        showSmartSpendNotice(context, l10n.captureSettingsFailed);
+      }
     }
     if (mounted) setState(() => _busy = false);
   }

@@ -42,6 +42,29 @@ class GoalsApi {
     return (response['id'] as num?)?.toInt() ?? 0;
   }
 
+  /// Updates an existing goal by replacing it via the generated `goals` procedures
+  /// (`Procedures.goals.delete` + `Procedures.goals.create` + `Procedures.goals.setStatus`).
+  Future<int> updateGoal({
+    required int goalId,
+    required String title,
+    String? description,
+    required double targetAmount,
+    DateTime? targetDate,
+    String? status,
+  }) async {
+    await deleteGoal(goalId);
+    final newId = await createGoal(
+      title: title,
+      description: description,
+      targetAmount: targetAmount,
+      targetDate: targetDate,
+    );
+    if (newId > 0 && status != null && status != 'active') {
+      await setStatus(goalId: newId, status: status);
+    }
+    return newId;
+  }
+
   Future<bool> setStatus({required int goalId, required String status}) async {
     final response = _object(
       await _client.mutate(

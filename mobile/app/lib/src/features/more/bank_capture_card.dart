@@ -70,12 +70,11 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
   bool _busy = false;
   bool _starting = false;
 
-  Future<void> _start() async {
+  Future<void> _start({bool isIos = false}) async {
     if (_starting) return;
     _starting = true;
     setState(() => _busy = true);
     final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     try {
       final server = await ref.read(captureApiProvider).status();
       if (!mounted) return;
@@ -106,9 +105,9 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
           .connect(automaticConsentAccepted: server.automatic);
       if (!mounted) return;
       if (outcome == CaptureConnectOutcome.unavailable) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.captureUnavailable)),
-        );
+        showSmartSpendNotice(context, l10n.captureUnavailable);
+      } else if (isIos) {
+        showSmartSpendNotice(context, l10n.iosShortcutsConnectedNotice);
       } else {
         final status = await ref.read(bankCaptureProvider).status();
         if (status.access != CaptureAccess.granted) {
@@ -117,9 +116,7 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
       }
     } on Object {
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.captureConnectFailed)),
-        );
+        showSmartSpendNotice(context, l10n.captureConnectFailed);
       }
     } finally {
       _starting = false;
@@ -138,7 +135,8 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
     final server = ref.watch(captureServerStatusProvider).value;
     final needsRenewal =
         server?.automatic == true && (!server!.consented || !server.aiReading);
-    final running = android && status.connected && granted && !needsRenewal;
+    final running =
+        status.connected && (android ? granted : true) && !needsRenewal;
     final muted = textTheme.bodyMedium?.copyWith(color: colors.mutedForeground);
 
     return Column(
@@ -171,13 +169,51 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
           style: muted,
         ),
         if (!android) ...[
-          // iPhone capture comes with the Shortcuts step of the plan; for now the card opens the Shortcuts app.
-          if (!granted) ...[
-            const SizedBox(height: SmartSpendSpacing.lg),
+          const SizedBox(height: SmartSpendSpacing.md),
+          Text(l10n.iosShortcutsGuideTitle, style: textTheme.titleSmall),
+          const SizedBox(height: SmartSpendSpacing.xs),
+          Text(l10n.iosShortcutsGuideIntro, style: muted),
+          const SizedBox(height: SmartSpendSpacing.xs),
+          Text(l10n.iosShortcutsGuideStep1, style: textTheme.bodySmall),
+          const SizedBox(height: SmartSpendSpacing.xs),
+          Text(l10n.iosShortcutsGuideStep2, style: textTheme.bodySmall),
+          const SizedBox(height: SmartSpendSpacing.xs),
+          Text(l10n.iosShortcutsGuideStep3, style: textTheme.bodySmall),
+          const SizedBox(height: SmartSpendSpacing.md),
+          if (!status.connected || needsRenewal) ...[
+            if (needsRenewal) Text(l10n.captureRenewConsent),
+            if (status.lastError == 'device_revoked') ...[
+              const SizedBox(height: SmartSpendSpacing.sm),
+              Text(l10n.captureRevoked, style: muted),
+            ],
             SmartSpendButton(
-              label: l10n.captureOpenShortcuts,
-              onPressed: () =>
-                  ref.read(bankCaptureProvider).openAccessSettings(),
+              label: l10n.iosShortcutsConnectAction,
+              busy: _busy,
+              onPressed: () => _start(isIos: true),
+            ),
+            const SizedBox(height: SmartSpendSpacing.sm),
+          ],
+          SmartSpendButton(
+            label: l10n.captureOpenShortcuts,
+            variant: (!status.connected || needsRenewal)
+                ? ButtonVariant.secondary
+                : ButtonVariant.primary,
+            onPressed: () => ref.read(bankCaptureProvider).openAccessSettings(),
+          ),
+          if (status.connected && !needsRenewal) ...[
+            const SizedBox(height: SmartSpendSpacing.sm),
+            Text(l10n.captureWaiting(status.waiting), style: muted),
+            const _UsageLines(),
+            const _AiReadingSwitch(),
+            const _QuestionsSwitch(),
+            const _SamplesSwitch(),
+            const SizedBox(height: SmartSpendSpacing.sm),
+            const _PendingLink(),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(l10n.captureSettingsTitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.go(CaptureSettingsScreen.path),
             ),
           ],
         ] else if (!status.connected || needsRenewal) ...[
@@ -222,10 +258,7 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(l10n.captureSettingsTitle),
-            trailing: Transform.scale(
-              scaleX: Directionality.of(context) == TextDirection.rtl ? -1 : 1,
-              child: const Icon(Icons.chevron_right),
-            ),
+            trailing: const Icon(Icons.chevron_right),
             onTap: () => context.go(CaptureSettingsScreen.path),
           ),
         ],
@@ -283,7 +316,6 @@ class _AiReadingSwitchState extends ConsumerState<_AiReadingSwitch> {
 
   Future<void> _set(CaptureServerStatus server, bool granted) async {
     final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     setState(() => _busy = true);
     try {
       await ref
@@ -291,9 +323,9 @@ class _AiReadingSwitchState extends ConsumerState<_AiReadingSwitch> {
           .setAiReading(granted, server.consentTextVersion);
       ref.invalidate(captureServerStatusProvider);
     } on Object {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.captureAiReadingFailed)),
-      );
+      if (mounted) {
+        showSmartSpendNotice(context, l10n.captureAiReadingFailed);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -349,7 +381,6 @@ class _SmsSectionState extends ConsumerState<_SmsSection> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     final capture = ref.read(bankCaptureProvider);
     final granted = widget.status.smsAccess == CaptureAccess.granted;
     return Column(
@@ -378,9 +409,12 @@ class _SmsSectionState extends ConsumerState<_SmsSection> {
                   ? null
                   : () => _run(() async {
                       final count = await capture.importSmsInbox();
-                      messenger.showSnackBar(
-                        SnackBar(content: Text(l10n.captureSmsImported(count))),
-                      );
+                      if (context.mounted) {
+                        showSmartSpendNotice(
+                          context,
+                          l10n.captureSmsImported(count),
+                        );
+                      }
                     }),
               child: Text(l10n.captureSmsImport),
             ),
@@ -404,7 +438,6 @@ class _QuestionsSwitchState extends ConsumerState<_QuestionsSwitch> {
 
   Future<void> _set(CaptureServerStatus server, bool granted) async {
     final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     setState(() => _busy = true);
     try {
       await ref
@@ -412,9 +445,9 @@ class _QuestionsSwitchState extends ConsumerState<_QuestionsSwitch> {
           .setQuestions(granted, server.consentTextVersion);
       ref.invalidate(captureServerStatusProvider);
     } on Object {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.captureAiReadingFailed)),
-      );
+      if (mounted) {
+        showSmartSpendNotice(context, l10n.captureAiReadingFailed);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -449,7 +482,6 @@ class _SamplesSwitchState extends ConsumerState<_SamplesSwitch> {
 
   Future<void> _set(CaptureServerStatus server, bool granted) async {
     final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
     setState(() => _busy = true);
     try {
       await ref
@@ -457,9 +489,9 @@ class _SamplesSwitchState extends ConsumerState<_SamplesSwitch> {
           .setSamples(granted, server.consentTextVersion);
       ref.invalidate(captureServerStatusProvider);
     } on Object {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.captureAiReadingFailed)),
-      );
+      if (mounted) {
+        showSmartSpendNotice(context, l10n.captureAiReadingFailed);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

@@ -5,8 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../config/app_config.dart';
+import '../../core/providers.dart';
 import '../../l10n/app_localizations.dart';
 import 'auth_api.dart';
+import 'human_check.dart';
 import 'session_controller.dart';
 
 /// Bottom sheet guiding forgotten password recovery via WhatsApp OTP (AUTH-04, GAP-22, GAP-23).
@@ -16,6 +19,7 @@ class ForgotPasswordSheet extends ConsumerStatefulWidget {
   static Future<bool?> show(BuildContext context) {
     return showSmartSpendSheet<bool>(
       context: context,
+      scrollable: true,
       builder: (ctx) => const ForgotPasswordSheet(),
     );
   }
@@ -32,11 +36,15 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
   final _codeController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _phoneFocusNode = FocusNode();
+  final _codeFocusNode = FocusNode();
 
   var _step = _Step.phone;
   bool _busy = false;
   String? _errorMessage;
   String? _ticket;
+  String? _humanToken;
+  int _humanReset = 0;
   int _resendInSeconds = 60;
   Timer? _countdown;
 
@@ -47,6 +55,8 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
     _codeController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _phoneFocusNode.dispose();
+    _codeFocusNode.dispose();
     super.dispose();
   }
 
@@ -65,7 +75,9 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
   }
 
   Future<void> _sendCode() async {
-    final phone = normalizePhoneNumber(_phoneController.text.trim());
+    final phone = normalizePhoneNumber(
+      normalizeArabicDigits(_phoneController.text.trim()),
+    );
     if (phone.isEmpty || !RegExp(r'^01[0125]\d{8}$').hasMatch(phone)) {
       setState(
         () =>
@@ -75,15 +87,39 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
       return;
     }
 
+    final humanCheck = ref.read(humanCheckProvider);
+    final envConfig = AppConfig.fromEnvironment();
+    final providerConfig = ref.read(appConfigProvider);
+    final hasTurnstileKey =
+        humanCheck != null ||
+        providerConfig.turnstileSiteKey.isNotEmpty ||
+        envConfig.turnstileSiteKey.isNotEmpty;
+    final turnstileToken = _humanToken;
+    if (hasTurnstileKey &&
+        humanCheck != null &&
+        (turnstileToken == null || turnstileToken.isEmpty)) {
+      setState(
+        () => _errorMessage = AppLocalizations.of(context).humanCheckPending,
+      );
+      return;
+    }
+
     setState(() {
       _busy = true;
       _errorMessage = null;
+      if (hasTurnstileKey) {
+        _humanToken = null;
+        _humanReset++;
+      }
     });
 
     try {
       final challenge = await ref
           .read(authApiProvider)
-          .startPhoneChallenge(phone: phone);
+          .startPhoneChallenge(
+            phone: phone,
+            turnstileToken: hasTurnstileKey ? turnstileToken : null,
+          );
       if (!mounted) return;
       setState(() {
         _busy = false;
@@ -108,7 +144,8 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
   }
 
   Future<void> _verifyCode() async {
-    final code = _codeController.text.trim();
+    final code = normalizeArabicDigits(_codeController.text.trim())
+        .replaceAll(RegExp(r'\D'), '');
     if (code.length != 6) {
       setState(
         () =>
@@ -179,10 +216,10 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
             newPassword: password,
           );
       if (!mounted) return;
+      final sessionNotifier = ref.read(sessionProvider.notifier);
       showSmartSpendNotice(context, l10n.resetPasswordSuccess);
-      await ref.read(sessionProvider.notifier).signIn(answer);
-      if (!mounted) return;
       Navigator.of(context).pop(true);
+      await sessionNotifier.signIn(answer);
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -203,157 +240,168 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
     final l10n = AppLocalizations.of(context);
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
+    final humanCheck = ref.watch(humanCheckProvider);
 
-    return SafeArea(
+    return SmartSpendKeyboardAccessory(
+      focusNodes: [_phoneFocusNode, _codeFocusNode],
+      doneLabel: l10n.keyboardDone,
       child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(SmartSpendSpacing.screen),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.lock_reset_rounded,
-                    color: colors.accent,
-                    size: 28,
+        padding: const EdgeInsets.all(SmartSpendSpacing.screen),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.lock_reset_rounded, color: colors.accent, size: 28),
+                const SizedBox(width: SmartSpendSpacing.md),
+                Expanded(
+                  child: Text(
+                    l10n.resetPasswordTitle,
+                    style: textTheme.titleMedium,
                   ),
-                  const SizedBox(width: SmartSpendSpacing.md),
-                  Expanded(
-                    child: Text(
-                      l10n.resetPasswordTitle,
-                      style: textTheme.titleMedium,
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: SmartSpendSpacing.lg),
+            if (_step == _Step.phone) ...[
+              Text(
+                AppLocalizations.of(context).appEnterYourRegisteredNumberAnd,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.mutedForeground,
+                ),
               ),
+              const SizedBox(height: SmartSpendSpacing.md),
+              TextField(
+                controller: _phoneController,
+                focusNode: _phoneFocusNode,
+                keyboardType: TextInputType.phone,
+                enabled: !_busy,
+                decoration: InputDecoration(
+                  labelText: l10n.profilePhone,
+                  hintText: '01xxxxxxxxx',
+                  prefixIcon: const Icon(Icons.phone_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(SmartSpendRadii.md),
+                  ),
+                ),
+              ),
+              if (humanCheck != null) ...[
+                const SizedBox(height: SmartSpendSpacing.md),
+                humanCheck(
+                  (token) => setState(() => _humanToken = token),
+                  _humanReset,
+                ),
+              ],
+              const SizedBox(height: SmartSpendSpacing.xl),
+              SmartSpendButton(
+                label: l10n.phoneChangeSendCode,
+                busy: _busy,
+                onPressed: _sendCode,
+              ),
+            ] else if (_step == _Step.code) ...[
+              Text(
+                AppLocalizations.of(context).appEnterThe6DigitCode3,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.mutedForeground,
+                ),
+              ),
+              const SizedBox(height: SmartSpendSpacing.md),
+              TextField(
+                controller: _codeController,
+                focusNode: _codeFocusNode,
+                keyboardType: TextInputType.number,
+                enabled: !_busy,
+                maxLength: 6,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineMedium
+                    ?.copyWith(letterSpacing: SmartSpendSpacing.sm),
+                decoration: InputDecoration(
+                  labelText: l10n.phoneChangeEnterCode,
+                  counterText: '',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(SmartSpendRadii.md),
+                  ),
+                ),
+              ),
+              const SizedBox(height: SmartSpendSpacing.md),
+              if (_resendInSeconds > 0)
+                Text(
+                  AppLocalizations.of(context)
+                      .appYouCanAskForA('$_resendInSeconds'),
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colors.mutedForeground,
+                  ),
+                )
+              else ...[
+                if (humanCheck != null) ...[
+                  humanCheck(
+                    (token) => setState(() => _humanToken = token),
+                    _humanReset,
+                  ),
+                  const SizedBox(height: SmartSpendSpacing.sm),
+                ],
+                TextButton(
+                  onPressed: _busy ? null : _sendCode,
+                  child: Text(l10n.phoneChangeSendCode),
+                ),
+              ],
               const SizedBox(height: SmartSpendSpacing.lg),
-              if (_step == _Step.phone) ...[
-                Text(
-                  AppLocalizations.of(context).appEnterYourRegisteredNumberAnd,
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colors.mutedForeground,
+              SmartSpendButton(
+                label: AppLocalizations.of(context).appConfirmTheCode,
+                busy: _busy,
+                onPressed: _verifyCode,
+              ),
+            ] else ...[
+              Text(
+                AppLocalizations.of(context).appChooseANewPassword,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.mutedForeground,
+                ),
+              ),
+              const SizedBox(height: SmartSpendSpacing.md),
+              TextField(
+                controller: _passwordController,
+                obscureText: true,
+                enabled: !_busy,
+                decoration: InputDecoration(
+                  labelText: l10n.resetPasswordNew,
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                   ),
                 ),
-                const SizedBox(height: SmartSpendSpacing.md),
-                TextField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  enabled: !_busy,
-                  decoration: InputDecoration(
-                    labelText: l10n.profilePhone,
-                    hintText: '01xxxxxxxxx',
-                    prefixIcon: const Icon(Icons.phone_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                    ),
+              ),
+              const SizedBox(height: SmartSpendSpacing.md),
+              TextField(
+                controller: _confirmPasswordController,
+                obscureText: true,
+                enabled: !_busy,
+                decoration: InputDecoration(
+                  labelText: l10n.resetPasswordConfirm,
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                   ),
                 ),
-                const SizedBox(height: SmartSpendSpacing.xl),
-                SmartSpendButton(
-                  label: l10n.phoneChangeSendCode,
-                  busy: _busy,
-                  onPressed: _sendCode,
-                ),
-              ] else if (_step == _Step.code) ...[
-                Text(
-                  AppLocalizations.of(context).appEnterThe6DigitCode3,
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colors.mutedForeground,
-                  ),
-                ),
-                const SizedBox(height: SmartSpendSpacing.md),
-                TextField(
-                  controller: _codeController,
-                  keyboardType: TextInputType.number,
-                  enabled: !_busy,
-                  maxLength: 6,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium
-                      ?.copyWith(letterSpacing: SmartSpendSpacing.sm),
-                  decoration: InputDecoration(
-                    labelText: l10n.phoneChangeEnterCode,
-                    counterText: '',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: SmartSpendSpacing.md),
-                if (_resendInSeconds > 0)
-                  Text(
-                    AppLocalizations.of(context)
-                        .appYouCanAskForA('$_resendInSeconds'),
-                    textAlign: TextAlign.center,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colors.mutedForeground,
-                    ),
-                  )
-                else
-                  TextButton(
-                    onPressed: _busy ? null : _sendCode,
-                    child: Text(l10n.phoneChangeSendCode),
-                  ),
-                const SizedBox(height: SmartSpendSpacing.lg),
-                SmartSpendButton(
-                  label: AppLocalizations.of(context).appConfirmTheCode,
-                  busy: _busy,
-                  onPressed: _verifyCode,
-                ),
-              ] else ...[
-                Text(
-                  AppLocalizations.of(context).appChooseANewPassword,
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colors.mutedForeground,
-                  ),
-                ),
-                const SizedBox(height: SmartSpendSpacing.md),
-                TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  enabled: !_busy,
-                  decoration: InputDecoration(
-                    labelText: l10n.resetPasswordNew,
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: SmartSpendSpacing.md),
-                TextField(
-                  controller: _confirmPasswordController,
-                  obscureText: true,
-                  enabled: !_busy,
-                  decoration: InputDecoration(
-                    labelText: l10n.resetPasswordConfirm,
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: SmartSpendSpacing.xl),
-                SmartSpendButton(
-                  label: l10n.resetPasswordSubmit,
-                  busy: _busy,
-                  onPressed: _resetPassword,
-                ),
-              ],
-              if (_errorMessage != null) ...[
-                const SizedBox(height: SmartSpendSpacing.md),
-                Text(
-                  _errorMessage!,
-                  style: textTheme.bodySmall?.copyWith(color: colors.danger),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+              ),
+              const SizedBox(height: SmartSpendSpacing.xl),
+              SmartSpendButton(
+                label: l10n.resetPasswordSubmit,
+                busy: _busy,
+                onPressed: _resetPassword,
+              ),
             ],
-          ),
+            if (_errorMessage != null) ...[
+              const SizedBox(height: SmartSpendSpacing.md),
+              Text(
+                _errorMessage!,
+                style: textTheme.bodySmall?.copyWith(color: colors.danger),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
         ),
       ),
     );

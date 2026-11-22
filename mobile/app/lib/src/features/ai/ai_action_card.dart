@@ -31,6 +31,7 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
       final confirmed = await showSmartSpendSheet<bool>(
         context: context,
         isDismissible: false,
+        scrollable: true,
         builder: (_) => _HighRiskConfirmSheet(
           expectedPhrase: expectedPhrase,
           actionTitle: widget.draft.summary,
@@ -242,59 +243,57 @@ class _HighRiskConfirmSheetState extends State<_HighRiskConfirmSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final textTheme = Theme.of(context).textTheme;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          SmartSpendSpacing.screen,
-          0,
-          SmartSpendSpacing.screen,
-          SmartSpendSpacing.lg,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Semantics(
-              header: true,
-              child: Text(
-                l10n.aiConfirmASensitiveAction,
-                style: textTheme.titleLarge,
-              ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        SmartSpendSpacing.screen,
+        0,
+        SmartSpendSpacing.screen,
+        SmartSpendSpacing.lg,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            header: true,
+            child: Text(
+              l10n.aiConfirmASensitiveAction,
+              style: textTheme.titleLarge,
             ),
-            const SizedBox(height: SmartSpendSpacing.sm),
-            Text(
-              l10n.aiThisActionP0CanT(widget.actionTitle),
-              style: textTheme.titleSmall,
-            ),
-            const SizedBox(height: SmartSpendSpacing.md),
-            Text(
-              l10n.aiToConfirmTypeExactlyP0(widget.expectedPhrase),
-              style: textTheme.bodyMedium,
-            ),
-            const SizedBox(height: SmartSpendSpacing.md),
-            TextField(
-              autofocus: true,
-              decoration: InputDecoration(hintText: widget.expectedPhrase),
-              onChanged: (text) => setState(() {
-                _phraseMatches = _matchesPhrase(text, widget.expectedPhrase);
-              }),
-            ),
-            const SizedBox(height: SmartSpendSpacing.xl),
-            SmartSpendButton(
-              label: l10n.aiConfirm,
-              variant: ButtonVariant.destructive,
-              onPressed: _phraseMatches
-                  ? () => Navigator.of(context).pop(true)
-                  : null,
-            ),
-            const SizedBox(height: SmartSpendSpacing.sm),
-            SmartSpendButton(
-              label: l10n.aiCancel,
-              variant: ButtonVariant.secondary,
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: SmartSpendSpacing.sm),
+          Text(
+            l10n.aiThisActionP0CanT(widget.actionTitle),
+            style: textTheme.titleSmall,
+          ),
+          const SizedBox(height: SmartSpendSpacing.md),
+          Text(
+            l10n.aiToConfirmTypeExactlyP0(widget.expectedPhrase),
+            style: textTheme.bodyMedium,
+          ),
+          const SizedBox(height: SmartSpendSpacing.md),
+          TextField(
+            autofocus: true,
+            decoration: InputDecoration(hintText: widget.expectedPhrase),
+            onChanged: (text) => setState(() {
+              _phraseMatches = _matchesPhrase(text, widget.expectedPhrase);
+            }),
+          ),
+          const SizedBox(height: SmartSpendSpacing.xl),
+          SmartSpendButton(
+            label: l10n.aiConfirm,
+            variant: ButtonVariant.destructive,
+            onPressed: _phraseMatches
+                ? () => Navigator.of(context).pop(true)
+                : null,
+          ),
+          const SizedBox(height: SmartSpendSpacing.sm),
+          SmartSpendButton(
+            label: l10n.aiCancel,
+            variant: ButtonVariant.secondary,
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+        ],
       ),
     );
   }

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:in_app_purchase/in_app_purchase.dart' show ProductDetails;
+import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../limits/limits_card.dart';
 import 'cancel_plan_screen.dart';
@@ -35,6 +38,7 @@ class PlanScreen extends ConsumerStatefulWidget {
 class _PlanScreenState extends ConsumerState<PlanScreen> {
   bool _purchasing = false;
   bool _restoring = false;
+  bool _checkingOut = false;
 
   Future<void> _buy(ProductDetails product) async {
     final l10n = AppLocalizations.of(context);
@@ -63,6 +67,59 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     }
   }
 
+  Future<void> _startPaymobCheckout() async {
+    final l10n = AppLocalizations.of(context);
+    setState(() => _checkingOut = true);
+    try {
+      final client = ref.read(trpcClientProvider);
+      final data = await client.mutate(
+        Procedures.pro.createCheckoutSession,
+        input: const {'plan': 'pro'},
+      );
+      if (data is Map<String, Object?>) {
+        final redirectUrl = data['redirectUrl'] as String?;
+        final mode = data['mode'] as String?;
+        if (redirectUrl != null && redirectUrl.isNotEmpty) {
+          final uri = Uri.tryParse(redirectUrl);
+          if (uri != null) {
+            final opened = await launchUrl(
+              uri,
+              mode: LaunchMode.externalApplication,
+            );
+            if (!opened && mounted) {
+              showSmartSpendNotice(context, l10n.planPurchaseFailed);
+            }
+            return;
+          }
+        }
+        if (mode == 'simulate') {
+          await client.mutate(
+            Procedures.pro.upgrade,
+            input: {
+              'plan': 'pro',
+              'paymentMethod': 'paymob',
+              'transactionId': 'sim_${DateTime.now().millisecondsSinceEpoch}',
+            },
+          );
+          ref.invalidate(userPlanProvider);
+          if (mounted) {
+            showSmartSpendNotice(context, l10n.planActivated);
+          }
+          return;
+        }
+      }
+      if (mounted) {
+        showSmartSpendNotice(context, l10n.planPurchaseFailed);
+      }
+    } on ApiException catch (e) {
+      if (mounted) showSmartSpendNotice(context, e.message);
+    } on Object {
+      if (mounted) showSmartSpendNotice(context, l10n.planPurchaseFailed);
+    } finally {
+      if (mounted) setState(() => _checkingOut = false);
+    }
+  }
+
   Future<void> _restorePurchases() async {
     final l10n = AppLocalizations.of(context);
     setState(() => _restoring = true);
@@ -75,6 +132,8 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
           restored ? l10n.planRestored : l10n.planNothingToRestore,
         );
       }
+    } on ApiException catch (e) {
+      if (mounted) showSmartSpendNotice(context, e.message);
     } on Object {
       if (mounted) showSmartSpendNotice(context, l10n.planPurchaseFailed);
     } finally {
@@ -98,7 +157,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
           child: ErrorState(
-            message: l10n.captureStatusFailed,
+            message: l10n.genericActionFailed,
             retryLabel: l10n.retry,
             onRetry: () => ref.invalidate(userPlanProvider),
           ),
@@ -214,23 +273,39 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     SmartSpendButton(
                       label: l10n.planBuy(product.price),
                       busy: _purchasing,
-                      onPressed: _restoring ? null : () => _buy(product),
+                      onPressed: (_restoring || _checkingOut)
+                          ? null
+                          : () => _buy(product),
                     ),
                     const SizedBox(height: SmartSpendSpacing.sm),
                   ],
-                  if (products.isEmpty)
+                  if (products.isEmpty) ...[
                     Text(
                       l10n.planStoreSoon,
                       textAlign: TextAlign.center,
                       style: textTheme.bodyMedium,
-                    )
-                  else
-                    SmartSpendButton(
-                      label: l10n.planRestore,
-                      variant: ButtonVariant.quiet,
-                      busy: _restoring,
-                      onPressed: _purchasing ? null : _restorePurchases,
                     ),
+                    const SizedBox(height: SmartSpendSpacing.sm),
+                  ],
+                  SmartSpendButton(
+                    label: l10n.upgradePaymobCheckoutAction,
+                    variant: products.isEmpty
+                        ? ButtonVariant.primary
+                        : ButtonVariant.secondary,
+                    busy: _checkingOut,
+                    onPressed: (_purchasing || _restoring)
+                        ? null
+                        : _startPaymobCheckout,
+                  ),
+                  const SizedBox(height: SmartSpendSpacing.sm),
+                  SmartSpendButton(
+                    label: l10n.upgradeRestoreAction,
+                    variant: ButtonVariant.quiet,
+                    busy: _restoring,
+                    onPressed: (_purchasing || _checkingOut)
+                        ? null
+                        : _restorePurchases,
+                  ),
                 ],
               ],
             ),

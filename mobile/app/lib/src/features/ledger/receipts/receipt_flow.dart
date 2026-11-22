@@ -116,6 +116,11 @@ Future<void> startReceiptIntake({
       builder: (dialogContext) {
         return _ReceiptScanningDialog(
           future: completer.future,
+          onDismissedByBack: () {
+            if (!completer.isCompleted) {
+              completer.complete(null);
+            }
+          },
           onCancel: () {
             if (!completer.isCompleted) {
               completer.complete(null);
@@ -127,6 +132,10 @@ Future<void> startReceiptIntake({
     );
   } catch (_) {
     parsedReceipt = null;
+  } finally {
+    if (!completer.isCompleted) {
+      completer.complete(null);
+    }
   }
 
   if (parsedReceipt == null || !context.mounted) return;
@@ -157,16 +166,33 @@ Future<void> startReceiptIntake({
             ? parsedReceipt.description
             : (parsedReceipt.merchant ??
                   AppLocalizations.of(context).monReceipt),
+        source: 'image',
       );
-      final ids = await api.save(
-        [parsedItem],
-        rawText:
-            parsedReceipt.ocrText ?? '[image] ${parsedReceipt.description}',
-      );
-      if (context.mounted) {
-        announceSaved(context, ref, [parsedItem], ids);
+      final requestId = api.newRequestId();
+      try {
+        final ids = await api.save(
+          [parsedItem],
+          rawText:
+              parsedReceipt.ocrText ?? '[image] ${parsedReceipt.description}',
+          requestId: requestId,
+          defaultSource: 'image',
+        );
+        if (context.mounted) {
+          announceSaved(context, ref, [parsedItem], ids);
+        }
+        refreshLedger(ref);
+      } on ApiException catch (e) {
+        if (context.mounted) {
+          showSmartSpendNotice(context, e.message);
+        }
+      } on Object {
+        if (context.mounted) {
+          showSmartSpendNotice(
+            context,
+            AppLocalizations.of(context).monWeCouldnTSaveIt,
+          );
+        }
       }
-      refreshLedger(ref);
       break;
 
     case ReceiptReviewAction.editInComposer:
@@ -181,10 +207,15 @@ Future<void> startReceiptIntake({
 }
 
 class _ReceiptScanningDialog extends StatefulWidget {
-  const _ReceiptScanningDialog({required this.future, required this.onCancel});
+  const _ReceiptScanningDialog({
+    required this.future,
+    required this.onCancel,
+    required this.onDismissedByBack,
+  });
 
   final Future<ReceiptData?> future;
   final VoidCallback onCancel;
+  final VoidCallback onDismissedByBack;
 
   @override
   State<_ReceiptScanningDialog> createState() => _ReceiptScanningDialogState();
@@ -245,6 +276,9 @@ class _ReceiptScanningDialogState extends State<_ReceiptScanningDialog> {
 
     return PopScope(
       canPop: _showCancel,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) widget.onDismissedByBack();
+      },
       child: Center(
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: SmartSpendSpacing.xl),

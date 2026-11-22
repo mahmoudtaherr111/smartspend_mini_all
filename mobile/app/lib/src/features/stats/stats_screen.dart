@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../core/cairo_time.dart';
 import '../../l10n/app_localizations.dart';
 import '../budgets/budget_providers.dart';
 import '../budgets/budgets_screen.dart';
@@ -106,7 +107,7 @@ class StatsScreen extends ConsumerWidget {
                     );
                   }
                   return _Scrolling(
-                    children: _filled(context, l10n, value, month),
+                    children: _filled(context, ref, l10n, value, month),
                   );
                 }
                 if (stats.hasError) {
@@ -139,6 +140,7 @@ class StatsScreen extends ConsumerWidget {
 
   List<Widget> _filled(
     BuildContext context,
+    WidgetRef ref,
     AppLocalizations l10n,
     MonthStats stats,
     String? month,
@@ -176,7 +178,7 @@ class StatsScreen extends ConsumerWidget {
 
     final currentYear = month != null
         ? month.split('-').first
-        : DateTime.now().year.toString();
+        : ref.watch(cairoTodayProvider).year.toString();
 
     return [
       StaggeredReveal(
@@ -244,7 +246,7 @@ class StatsScreen extends ConsumerWidget {
                 icon: Icons.wb_sunny_outlined,
                 title: l10n.calSeasons,
                 subtitle: l10n.calRamadanFeastsSchoolAndSummer,
-                onTap: () => context.go(SeasonsScreen.path),
+                onTap: () => context.push(SeasonsScreen.path),
               ),
             ],
           ),
@@ -501,7 +503,7 @@ class _BudgetComparisonSection extends ConsumerWidget {
             Align(
               alignment: AlignmentDirectional.centerStart,
               child: FilledButton.tonal(
-                onPressed: () => context.go(BudgetsScreen.path),
+                onPressed: () => context.push(BudgetsScreen.path),
                 child: Text(AppLocalizations.of(context).monSetABudget),
               ),
             ),
@@ -688,22 +690,32 @@ class _DebtsOverviewSection extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    person.name,
-                    style: textTheme.titleSmall?.copyWith(
-                      color: colors.foreground,
+                  Expanded(
+                    child: Text(
+                      person.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.titleSmall?.copyWith(
+                        color: colors.foreground,
+                      ),
                     ),
                   ),
-                  Text(
-                    person.balance >= 0
-                        ? AppLocalizations.of(context)
-                              .monOwesYouP0(moneyText(context, person.balance))
-                        : AppLocalizations.of(context)
-                              .monYouOweP0(moneyText(context, -person.balance)),
-                    style: textTheme.titleSmall?.copyWith(
-                      color: person.balance >= 0
-                          ? colors.accent
-                          : colors.danger,
+                  const SizedBox(width: SmartSpendSpacing.sm),
+                  Flexible(
+                    child: Text(
+                      person.balance >= 0
+                          ? AppLocalizations.of(
+                              context,
+                            ).monOwesYouP0(moneyText(context, person.balance))
+                          : AppLocalizations.of(
+                              context,
+                            ).monYouOweP0(moneyText(context, -person.balance)),
+                      textAlign: TextAlign.end,
+                      style: textTheme.titleSmall?.copyWith(
+                        color: person.balance >= 0
+                            ? colors.accent
+                            : colors.danger,
+                      ),
                     ),
                   ),
                 ],
@@ -713,7 +725,7 @@ class _DebtsOverviewSection extends ConsumerWidget {
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: TextButton(
-              onPressed: () => context.go(ContactsScreen.path),
+              onPressed: () => context.push(ContactsScreen.path),
               child: Text(AppLocalizations.of(context).monSeeAllPeopleAndDebts),
             ),
           ),
@@ -759,6 +771,7 @@ class _YearlyReviewSection extends ConsumerWidget {
       child: SmartSpendLineChart(
         title: title,
         data: points,
+        emptyLabel: AppLocalizations.of(context).calNoSpending,
         spokenSummary: AppLocalizations.of(context)
             .monChartOfTheYearS(moneyText(context, yearly.totalExpense)),
         accentColor: colors.accent,
@@ -911,7 +924,7 @@ class _NextStepCard extends ConsumerWidget {
             label: action,
             icon: icon,
             variant: ButtonVariant.secondary,
-            onPressed: () => context.go(path),
+            onPressed: () => context.push(path),
           ),
         ],
       ),

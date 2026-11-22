@@ -27,9 +27,20 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <meta-data
+              android:name="flutter_deeplinking_enabled"
+              android:value="true"
+              />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Deep links into Flutter GoRouter routes (e.g. smartspend:///more/capture) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="smartspend"/>
             </intent-filter>
             <!-- Share target for incoming text/plain into outbox (CAP-05) -->
             <intent-filter>
@@ -43,7 +54,10 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <!-- Default notification channel and brand color for Firebase Cloud Messaging -->
+        <!-- Default notification channel, icon, and brand color for Firebase Cloud Messaging -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_smartspend" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="channel_budget_spending" />

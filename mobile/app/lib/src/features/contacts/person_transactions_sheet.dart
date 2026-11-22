@@ -8,6 +8,8 @@ import '../ledger/ledger_models.dart';
 import '../ledger/ledger_providers.dart';
 import '../ledger/ledger_widgets.dart';
 import '../ledger/transaction_detail_screen.dart';
+import 'add_contact_sheet.dart';
+import 'contact_models.dart';
 
 /// Bottom sheet displaying transactions linked to one person.
 class PersonTransactionsSheet extends ConsumerWidget {
@@ -29,6 +31,26 @@ class PersonTransactionsSheet extends ConsumerWidget {
   final int? contactId;
   final String? relation;
 
+  Future<void> _editContact(BuildContext context) async {
+    if (contactId == null) return;
+    final l10n = AppLocalizations.of(context);
+    final updated = await showSmartSpendSheet<bool>(
+      context: context,
+      scrollable: true,
+      builder: (_) => AddContactSheet(
+        existing: ContactDebtItem(
+          contactId: contactId,
+          name: name,
+          relation: relation,
+        ),
+      ),
+    );
+    if (updated == true && context.mounted) {
+      Navigator.of(context).pop();
+      showSmartSpendNotice(context, l10n.contactUpdatedNotice);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
@@ -48,19 +70,37 @@ class PersonTransactionsSheet extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            l10n.personTransactionsTitle(inlineName(name)),
-            style: textTheme.titleLarge,
-          ),
-          if (relation case final String rel when rel.trim().isNotEmpty) ...[
-            const SizedBox(height: SmartSpendSpacing.xs / 2),
-            Text(
-              rel.trim(),
-              style: textTheme.bodySmall?.copyWith(
-                color: colors.mutedForeground,
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.personTransactionsTitle(inlineName(name)),
+                      style: textTheme.titleLarge,
+                    ),
+                    if (relation case final String rel
+                        when rel.trim().isNotEmpty) ...[
+                      const SizedBox(height: SmartSpendSpacing.xs / 2),
+                      Text(
+                        rel.trim(),
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colors.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              if (contactId != null)
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: l10n.contactEditAction,
+                  onPressed: () => _editContact(context),
+                ),
+            ],
+          ),
           const SizedBox(height: SmartSpendSpacing.md),
           switch (entries) {
             AsyncData(:final value) when value.isEmpty => Padding(

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
-
 import '../ledger/ledger_models.dart';
 import '../ledger/ledger_providers.dart';
 import 'contact_models.dart';
@@ -36,11 +35,11 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
         .toList();
 
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(
+      padding: const EdgeInsets.fromLTRB(
         SmartSpendSpacing.screen,
         0,
         SmartSpendSpacing.screen,
-        MediaQuery.of(context).viewInsets.bottom + SmartSpendSpacing.xl,
+        SmartSpendSpacing.xl,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -80,7 +79,11 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
             const SizedBox(height: SmartSpendSpacing.sm),
             DropdownButtonFormField<int>(
               initialValue: _selectedOtherId,
-              hint: Text(AppLocalizations.of(context).aiChooseAContact),
+              isExpanded: true,
+              hint: Text(
+                AppLocalizations.of(context).aiChooseAContact,
+                overflow: TextOverflow.ellipsis,
+              ),
               decoration: const InputDecoration(
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: SmartSpendSpacing.md,
@@ -95,6 +98,7 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
                       c.relation != null && c.relation!.isNotEmpty
                           ? '${c.name} (${c.relation})'
                           : c.name,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
               ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../core/cairo_time.dart';
 import '../../l10n/app_localizations.dart';
 import '../auth/session_controller.dart';
 import 'account_providers.dart';
@@ -29,15 +30,30 @@ class SessionsScreen extends ConsumerWidget {
     return Icons.devices_other_rounded;
   }
 
-  String _deviceName(String? userAgent) {
+  String _deviceName(
+    String? userAgent,
+    AppLocalizations l10n, {
+    required bool isCurrent,
+  }) {
     final ua = userAgent?.toLowerCase() ?? '';
-    if (ua.contains('iphone')) return 'Apple iPhone';
-    if (ua.contains('ipad')) return 'Apple iPad';
-    if (ua.contains('android')) return 'Android Device';
-    if (ua.contains('macintosh')) return 'Mac Web Browser';
-    if (ua.contains('windows')) return 'Windows PC Browser';
-    if (ua.contains('linux')) return 'Linux Browser';
-    return userAgent ?? 'Unknown device';
+    if (ua.contains('iphone') || ua.contains('ipad') || ua.contains('ios')) {
+      return l10n.sessionsDeviceIos;
+    }
+    if (ua.contains('android')) {
+      return l10n.sessionsDeviceAndroid;
+    }
+    if (ua.contains('macintosh') ||
+        ua.contains('windows') ||
+        ua.contains('linux') ||
+        ua.contains('mozilla')) {
+      return l10n.sessionsDeviceWeb;
+    }
+    if (isCurrent) {
+      return l10n.sessionsDeviceCurrent;
+    }
+    return userAgent != null && userAgent.trim().isNotEmpty
+        ? userAgent
+        : l10n.sessionsDeviceUnknown;
   }
 
   Future<void> _revoke(
@@ -94,7 +110,7 @@ class SessionsScreen extends ConsumerWidget {
       showSmartSpendNotice(context, e.message);
     } on Object {
       if (!context.mounted) return;
-      showSmartSpendNotice(context, l10n.captureStatusFailed);
+      showSmartSpendNotice(context, l10n.genericActionFailed);
     }
   }
 
@@ -112,7 +128,7 @@ class SessionsScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
           child: ErrorState(
-            message: l10n.captureStatusFailed,
+            message: l10n.genericActionFailed,
             retryLabel: l10n.retry,
             onRetry: () => ref.invalidate(userSessionsProvider),
           ),
@@ -125,7 +141,7 @@ class SessionsScreen extends ConsumerWidget {
           }
 
           return RefreshIndicator(
-            onRefresh: () async => ref.refresh(userSessionsProvider),
+            onRefresh: () => ref.refresh(userSessionsProvider.future),
             child: ListView.separated(
               padding: const EdgeInsets.all(SmartSpendSpacing.screen),
               itemCount: sessions.length,
@@ -137,7 +153,11 @@ class SessionsScreen extends ConsumerWidget {
                     s.isCurrent ||
                     (i == 0 && sessions.every((item) => !item.isCurrent));
                 final icon = _deviceIcon(s.userAgent);
-                final name = _deviceName(s.userAgent);
+                final name = _deviceName(
+                  s.userAgent,
+                  l10n,
+                  isCurrent: isCurrent,
+                );
 
                 return Card(
                   elevation: 0,
@@ -213,7 +233,7 @@ class SessionsScreen extends ConsumerWidget {
                                   AppLocalizations.of(context).appActiveSince(
                                     DateWords.of(context).day(
                                       s.createdAt!.toLocal(),
-                                      now: DateTime.now(),
+                                      now: cairoNow(),
                                     ),
                                   ),
                                   style: textTheme.bodySmall?.copyWith(

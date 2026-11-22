@@ -12,6 +12,7 @@ class ReceiptSourceSheet extends StatelessWidget {
   static Future<ReceiptSource?> show(BuildContext context) {
     return showSmartSpendSheet<ReceiptSource>(
       context: context,
+      scrollable: true,
       builder: (context) => const ReceiptSourceSheet(),
     );
   }

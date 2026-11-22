@@ -102,37 +102,37 @@ class _SeasonsScreenState extends ConsumerState<SeasonsScreen> {
                 data: (data) {
                   final change = data.percentageChange;
                   final prev = data.previous;
+                  final startLabel = _dayLabel(context, data.startDay);
+                  final endLabel = _dayLabel(context, data.endDay);
                   String comparisonStory;
                   if (prev != null && prev.total > 0 && change != null) {
                     if (change > 0) {
                       comparisonStory = AppLocalizations.of(context)
                           .appP0ToP1P2More(
-                            data.startDay,
-                            data.endDay,
+                            startLabel,
+                            endLabel,
                             '$change',
                             moneyText(context, prev.total),
                           );
                     } else if (change < 0) {
                       comparisonStory = AppLocalizations.of(context)
                           .appP0ToP1P2Less(
-                            data.startDay,
-                            data.endDay,
+                            startLabel,
+                            endLabel,
                             '${change.abs()}',
                             moneyText(context, prev.total),
                           );
                     } else {
                       comparisonStory = AppLocalizations.of(context)
                           .appP0ToP1SameAs(
-                            data.startDay,
-                            data.endDay,
+                            startLabel,
+                            endLabel,
                             moneyText(context, prev.total),
                           );
                     }
                   } else {
-                    comparisonStory = AppLocalizations.of(context).appP0ToP1(
-                      _dayLabel(context, data.startDay),
-                      _dayLabel(context, data.endDay),
-                    );
+                    comparisonStory = AppLocalizations.of(context)
+                        .appP0ToP1(startLabel, endLabel);
                   }
 
                   if (data.byCategory.isEmpty) {
@@ -154,10 +154,7 @@ class _SeasonsScreenState extends ConsumerState<SeasonsScreen> {
                           title: AppLocalizations.of(context)
                               .appNoSpendingInP0(data.label),
                           message: AppLocalizations.of(context)
-                              .appNothingRecordedFromP0To(
-                                data.startDay,
-                                data.endDay,
-                              ),
+                              .appNothingRecordedFromP0To(startLabel, endLabel),
                         ),
                       ],
                     );

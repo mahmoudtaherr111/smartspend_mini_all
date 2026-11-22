@@ -8,8 +8,11 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 
+import '../../core/deep_links.dart';
 import '../../core/providers.dart';
 import '../../routing/app_router.dart';
+
+export '../../core/deep_links.dart' show resolveAppRoute;
 
 /// Top-level background message handler required by FirebaseMessaging.
 @pragma('vm:entry-point')
@@ -31,6 +34,26 @@ final class PushNotificationService {
   String? get fcmToken => _fcmToken;
   Stream<RemoteMessage> get onForegroundMessage =>
       _foregroundMessageController.stream;
+
+  /// Requests OS push notification permission and initializes FCM if granted.
+  Future<bool> requestPermission() async {
+    try {
+      await Firebase.initializeApp();
+      final settings = await FirebaseMessaging.instance.requestPermission();
+      final granted =
+          settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional;
+      if (granted) {
+        await initialize(askPermission: false);
+      }
+      return granted;
+    } catch (e) {
+      if (kDebugMode) {
+        print('PushNotificationService requestPermission note: $e');
+      }
+      return false;
+    }
+  }
 
   /// Initializes Firebase and Push Notification handlers safely.
   Future<void> initialize({bool askPermission = false}) async {
@@ -137,39 +160,27 @@ final class PushNotificationService {
   /// Maps backend URLs and event types to native Flutter routes cleanly.
   static String? resolveTargetRoute(Map<String, dynamic> data) {
     final rawUrl = data['url'] as String? ?? data['route'] as String?;
+    if (rawUrl != null && rawUrl.trim().isNotEmpty) {
+      return resolveAppRoute(rawUrl);
+    }
+
     final type = data['type'] as String?;
-
-    if (rawUrl != null && rawUrl.isNotEmpty) {
-      if (rawUrl.contains('budget')) {
-        return '/budgets';
+    if (type != null && type.isNotEmpty) {
+      if (type.contains('budget')) return resolveAppRoute('/budgets');
+      if (type.contains('subscription') || type.contains('pro')) {
+        return resolveAppRoute('/pro');
       }
-      if (rawUrl.contains('pro') || rawUrl.contains('plan')) {
-        return '/plan';
+      if (type.contains('security') ||
+          type.contains('biometric') ||
+          type.contains('passkey')) {
+        return resolveAppRoute('/settings/security');
       }
-      if (rawUrl.contains('record')) {
-        return '/record';
-      }
-      if (rawUrl.contains('security') ||
-          rawUrl.contains('passkey') ||
-          rawUrl.contains('biometric')) {
-        return '/settings/security';
-      }
-      if (rawUrl.contains('notifications')) {
-        return '/notifications';
-      }
-      if (rawUrl.startsWith('/')) {
-        return rawUrl;
-      }
+      if (type.contains('commitment')) return resolveAppRoute('/commitments');
+      if (type.contains('reminder')) return resolveAppRoute('/record');
+      return '/notifications';
     }
 
-    if (type != null) {
-      if (type.contains('budget')) return '/budgets';
-      if (type.contains('subscription') || type.contains('pro')) return '/plan';
-      if (type.contains('security')) return '/settings/security';
-      if (type.contains('reminder')) return '/record';
-    }
-
-    return '/notifications';
+    return null;
   }
 
   Future<void> _registerTokenWithBackend(String token) async {

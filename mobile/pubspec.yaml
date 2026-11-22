@@ -12,6 +12,7 @@ workspace:
   - app
   - packages/bank_capture
   - packages/device_lock
+  - packages/ios_liquid_glass
   - packages/smartspend_api
   - packages/smartspend_ui
 dev_dependencies:

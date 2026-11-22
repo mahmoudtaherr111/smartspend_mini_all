@@ -144,16 +144,18 @@ class BudgetsScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            overall != null
-                                ? overall.title
-                                : AppLocalizations.of(context).monAllBudgets,
-                            style: textTheme.titleMedium?.copyWith(
-                              color: colors.foreground,
+                          Expanded(
+                            child: Text(
+                              overall != null
+                                  ? overall.title
+                                  : AppLocalizations.of(context).monAllBudgets,
+                              style: textTheme.titleMedium?.copyWith(
+                                color: colors.foreground,
+                              ),
                             ),
                           ),
+                          const SizedBox(width: SmartSpendSpacing.sm),
                           Text(
                             '$heroPercentage%',
                             style: textTheme.titleMedium?.copyWith(
@@ -186,27 +188,32 @@ class BudgetsScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: SmartSpendSpacing.sm),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            AppLocalizations.of(context)
-                                .monSpentP0(moneyText(context, heroSpent)),
-                            style: textTheme.bodySmall?.copyWith(
-                              color: colors.mutedForeground,
+                          Expanded(
+                            child: Text(
+                              AppLocalizations.of(context)
+                                  .monSpentP0(moneyText(context, heroSpent)),
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colors.mutedForeground,
+                              ),
                             ),
                           ),
-                          Text(
-                            isHeroExceeded
-                                ? AppLocalizations.of(context).monOverByP0(
-                                    moneyText(context, heroSpent - heroLimit),
-                                  )
-                                : AppLocalizations.of(context).monLeftP0(
-                                    moneyText(context, heroLimit - heroSpent),
-                                  ),
-                            style: textTheme.labelMedium?.copyWith(
-                              color: isHeroExceeded
-                                  ? colors.danger
-                                  : colors.accent,
+                          const SizedBox(width: SmartSpendSpacing.sm),
+                          Flexible(
+                            child: Text(
+                              isHeroExceeded
+                                  ? AppLocalizations.of(context).monOverByP0(
+                                      moneyText(context, heroSpent - heroLimit),
+                                    )
+                                  : AppLocalizations.of(context).monLeftP0(
+                                      moneyText(context, heroLimit - heroSpent),
+                                    ),
+                              textAlign: TextAlign.end,
+                              style: textTheme.labelMedium?.copyWith(
+                                color: isHeroExceeded
+                                    ? colors.danger
+                                    : colors.accent,
+                              ),
                             ),
                           ),
                         ],
@@ -339,19 +346,14 @@ class BudgetsScreen extends ConsumerWidget {
                                   );
                                   await notifier.deleteBudget(budget.id);
                                   if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          AppLocalizations.of(context)
-                                              .monBudgetP0Deleted(budget.title),
-                                        ),
-                                        action: SnackBarAction(
-                                          label: AppLocalizations.of(context)
-                                              .monUndo,
-                                          onPressed: () => unawaited(
-                                            notifier.restoreBudget(budget),
-                                          ),
-                                        ),
+                                    showSmartSpendNotice(
+                                      context,
+                                      AppLocalizations.of(context)
+                                          .monBudgetP0Deleted(budget.title),
+                                      undoLabel: AppLocalizations.of(context)
+                                          .monUndo,
+                                      onUndo: () => unawaited(
+                                        notifier.restoreBudget(budget),
                                       ),
                                     );
                                   }
@@ -382,70 +384,79 @@ class BudgetsScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: SmartSpendSpacing.xs),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                AppLocalizations.of(context).monSpentP0OfP1(
-                                  moneyText(context, budget.currentSpent),
-                                  moneyText(context, budget.monthlyLimit),
-                                ),
-                                style: textTheme.bodySmall?.copyWith(
-                                  color: colors.mutedForeground,
+                              Expanded(
+                                child: Text(
+                                  AppLocalizations.of(context).monSpentP0OfP1(
+                                    moneyText(context, budget.currentSpent),
+                                    moneyText(context, budget.monthlyLimit),
+                                  ),
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colors.mutedForeground,
+                                  ),
                                 ),
                               ),
+                              const SizedBox(width: SmartSpendSpacing.sm),
                               if (budget.isExceeded)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: SmartSpendSpacing.sm,
-                                    vertical: SmartSpendSpacing.xs / 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: colors.danger.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(
-                                      SmartSpendRadii.sm,
+                                Flexible(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: SmartSpendSpacing.sm,
+                                      vertical: SmartSpendSpacing.xs / 2,
                                     ),
-                                  ),
-                                  child: Text(
-                                    AppLocalizations.of(
-                                      context,
-                                    ).monOverBudgetP0('${budget.percentage}'),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelSmall
-                                        ?.copyWith(color: colors.danger),
+                                    decoration: BoxDecoration(
+                                      color: colors.danger.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        SmartSpendRadii.sm,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      ).monOverBudgetP0('${budget.percentage}'),
+                                      style: textTheme.labelSmall?.copyWith(
+                                        color: colors.danger,
+                                      ),
+                                    ),
                                   ),
                                 )
                               else if (budget.isNearLimit)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: SmartSpendSpacing.sm,
-                                    vertical: SmartSpendSpacing.xs / 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: colors.warning.withValues(
-                                      alpha: 0.1,
+                                Flexible(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: SmartSpendSpacing.sm,
+                                      vertical: SmartSpendSpacing.xs / 2,
                                     ),
-                                    borderRadius: BorderRadius.circular(
-                                      SmartSpendRadii.sm,
+                                    decoration: BoxDecoration(
+                                      color: colors.warning.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        SmartSpendRadii.sm,
+                                      ),
                                     ),
-                                  ),
-                                  child: Text(
-                                    AppLocalizations.of(
-                                      context,
-                                    ).monAlmostUsedP0('${budget.percentage}'),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelSmall
-                                        ?.copyWith(color: colors.warning),
+                                    child: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      ).monAlmostUsedP0('${budget.percentage}'),
+                                      style: textTheme.labelSmall?.copyWith(
+                                        color: colors.warning,
+                                      ),
+                                    ),
                                   ),
                                 )
                               else
-                                Text(
-                                  AppLocalizations.of(context).monLeftP02(
-                                    moneyText(context, budget.remaining),
-                                  ),
-                                  style: textTheme.labelMedium?.copyWith(
-                                    color: colors.accent,
+                                Flexible(
+                                  child: Text(
+                                    AppLocalizations.of(context).monLeftP02(
+                                      moneyText(context, budget.remaining),
+                                    ),
+                                    textAlign: TextAlign.end,
+                                    style: textTheme.labelMedium?.copyWith(
+                                      color: colors.accent,
+                                    ),
                                   ),
                                 ),
                             ],

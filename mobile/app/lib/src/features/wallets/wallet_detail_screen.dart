@@ -123,9 +123,8 @@ class _Filled extends ConsumerWidget {
     ].join(' · ');
 
     Future<void> edit() async {
-      final messenger = ScaffoldMessenger.of(context);
-      if (await showWalletForm(context, wallet: wallet)) {
-        messenger.showSnackBar(SnackBar(content: Text(l10n.walletSaved)));
+      if (await showWalletForm(context, wallet: wallet) && context.mounted) {
+        showSmartSpendNotice(context, l10n.walletSaved);
       }
     }
 
@@ -216,15 +215,14 @@ class _Filled extends ConsumerWidget {
 /// Asks before deleting: the sheet ends only in a choice, and deleting cannot be undone.
 Future<void> _confirmDelete(BuildContext context, Wallet wallet) async {
   final l10n = AppLocalizations.of(context);
-  final messenger = ScaffoldMessenger.of(context);
   final router = GoRouter.of(context);
   final deleted = await showSmartSpendSheet<bool>(
     context: context,
     isDismissible: false,
     builder: (_) => _DeleteSheet(wallet: wallet),
   );
-  if (deleted ?? false) {
-    messenger.showSnackBar(SnackBar(content: Text(l10n.walletDeleted)));
+  if ((deleted ?? false) && context.mounted) {
+    showSmartSpendNotice(context, l10n.walletDeleted);
     router.go(WalletsScreen.path);
   }
 }

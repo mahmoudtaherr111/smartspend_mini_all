@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -165,15 +166,30 @@ class _DayTransactionsSheetState extends ConsumerState<DayTransactionsSheet> {
                       const SizedBox(height: SmartSpendSpacing.sm),
                   itemBuilder: (context, index) {
                     final item = items[index];
-                    final isExpense = item.type == 'expense';
+                    final displayType = item.displayType;
+                    final isRefund = item.isRefund;
+                    final kind = (displayType == 'income' || isRefund)
+                        ? AmountKind.income
+                        : (displayType == 'transfer' ||
+                              displayType == 'investment')
+                        ? AmountKind.neutral
+                        : AmountKind.expense;
+                    final icon = displayType == 'transfer'
+                        ? Icons.swap_horiz_rounded
+                        : displayType == 'investment'
+                        ? Icons.show_chart_rounded
+                        : categoryStyleIcon(item.category);
                     return TransactionRow(
-                      icon: isExpense
-                          ? Icons.shopping_bag_outlined
-                          : Icons.arrow_downward_rounded,
+                      icon: icon,
+                      iconColor: categoryStyleColor(context, item.category),
                       title: item.category,
                       subtitle: item.description ?? item.subCategory ?? '',
-                      amount: item.amount,
-                      kind: isExpense ? AmountKind.expense : AmountKind.income,
+                      amount: item.displayAmount,
+                      kind: kind,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        context.push('/transaction/${item.id}');
+                      },
                     );
                   },
                 );

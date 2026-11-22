@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../core/cairo_time.dart';
 import '../../l10n/app_localizations.dart';
 import '../commitments/add_commitment_screen.dart';
 import '../commitments/commitment_api.dart';
@@ -346,7 +347,7 @@ class _HeroPaydayPlan extends StatelessWidget {
                   AppLocalizations.of(context).calOldBalances,
                   tone: MessageTone.warning,
                   action: TextButton(
-                    onPressed: () => context.go(WalletsScreen.path),
+                    onPressed: () => context.push(WalletsScreen.path),
                     child: Text(AppLocalizations.of(context).calUpdateBalances),
                   ),
                 ),
@@ -821,22 +822,41 @@ class _ActivePlanSection extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(Icons.flag_rounded, color: colors.accent, size: 22),
-                  const SizedBox(width: SmartSpendSpacing.xs),
-                  Text(
-                    AppLocalizations.of(context).calActiveSavingPlan,
-                    style: textTheme.titleMedium?.copyWith(
-                      color: colors.foreground,
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.flag_rounded, color: colors.accent, size: 22),
+                    const SizedBox(width: SmartSpendSpacing.xs),
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(context).calActiveSavingPlan,
+                        style: textTheme.titleMedium?.copyWith(
+                          color: colors.foreground,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               TextButton(
                 onPressed: () async {
-                  await ref.read(calendarApiProvider).endPlan(plan.id);
-                  ref.invalidate(coachOverviewProvider);
+                  final l10n = AppLocalizations.of(context);
+                  final confirmed = await confirmInSheet(
+                    context: context,
+                    title: l10n.savingPlanEndConfirmTitle,
+                    message: l10n.savingPlanEndConfirmBody,
+                    confirmLabel: l10n.savingPlanEndConfirmAction,
+                    cancelLabel: l10n.appCancel,
+                  );
+                  if (!confirmed) return;
+                  try {
+                    await ref.read(calendarApiProvider).endPlan(plan.id);
+                    ref.invalidate(coachOverviewProvider);
+                  } on Object {
+                    if (context.mounted) {
+                      showSmartSpendNotice(context, l10n.genericActionFailed);
+                    }
+                  }
                 },
                 child: Text(AppLocalizations.of(context).calEndThePlan),
               ),
@@ -937,7 +957,7 @@ class _StepTile extends ConsumerWidget {
                 // clock only until the server has answered.
                 final today =
                     ref.read(coachOverviewProvider).value?.today ??
-                    dayKeyOf(DateTime.now());
+                    dayKeyOf(cairoNowDate());
                 final tomorrow = addDaysToDayKey(today, 1);
                 if (tomorrow == null) return;
                 await ref

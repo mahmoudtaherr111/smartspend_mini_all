@@ -161,6 +161,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
               return ListView.builder(
                 controller: _scrollController,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.symmetric(
                   horizontal: SmartSpendSpacing.screen,
                   vertical: SmartSpendSpacing.md,
@@ -188,45 +190,38 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         ),
 
         // Composer at bottom above keyboard
-        ColoredBox(
-          color: context.smartSpendColors.surface,
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.all(SmartSpendSpacing.sm),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _textController,
-                      focusNode: _focusNode,
-                      minLines: 1,
-                      maxLines: 4,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _handleSend(),
-                      decoration: InputDecoration(
-                        hintText: isOnline
-                            ? AppLocalizations.of(context)
-                                  .aiAskAboutYourSpending
-                            : AppLocalizations.of(context)
-                                  .aiSendingNeedsInternet,
-                      ),
-                    ),
+        SmartSpendGlassDock(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _textController,
+                  focusNode: _focusNode,
+                  minLines: 1,
+                  maxLines: 4,
+                  textInputAction: TextInputAction.send,
+                  onChanged: (value) =>
+                      ref.read(chatDraftProvider.notifier).set(value),
+                  onSubmitted: (_) => _handleSend(),
+                  decoration: InputDecoration(
+                    hintText: isOnline
+                        ? AppLocalizations.of(context).aiAskAboutYourSpending
+                        : AppLocalizations.of(context).aiSendingNeedsInternet,
                   ),
-                  const SizedBox(width: SmartSpendSpacing.sm),
-                  IconButton.filled(
-                    tooltip: AppLocalizations.of(context).aiSend,
-                    constraints: const BoxConstraints.tightFor(
-                      width: 48,
-                      height: 48,
-                    ),
-                    onPressed: isTyping ? null : _handleSend,
-                    icon: const Icon(Icons.arrow_upward_rounded),
-                  ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(width: SmartSpendSpacing.sm),
+              IconButton.filled(
+                tooltip: AppLocalizations.of(context).aiSend,
+                constraints: const BoxConstraints.tightFor(
+                  width: 48,
+                  height: 48,
+                ),
+                onPressed: isTyping ? null : _handleSend,
+                icon: const Icon(Icons.arrow_upward_rounded),
+              ),
+            ],
           ),
         ),
       ],
@@ -426,6 +421,19 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   Widget _buildFormattedLine(String line, bool isUser) {
     final trimmed = line.trim();
     if (trimmed.isEmpty) return const SizedBox(height: SmartSpendSpacing.sm);
+    final direction = Directionality.of(context);
+
+    final headingMatch = RegExp(r'^(#{1,4})\s+(.+)$').firstMatch(trimmed);
+    if (headingMatch != null) {
+      final headingText = headingMatch.group(2)!.trim();
+      return Padding(
+        padding: const EdgeInsets.only(top: SmartSpendSpacing.xs),
+        child: Text.rich(
+          TextSpan(children: _parseSpans(headingText, isUser, forceBold: true)),
+          textDirection: direction,
+        ),
+      );
+    }
 
     // List item (bullet)
     final isBullet =
@@ -441,7 +449,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.xs / 2),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
-          textDirection: TextDirection.rtl,
+          textDirection: direction,
           children: [
             Text(
               '• ',
@@ -451,7 +459,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             Expanded(
               child: Text.rich(
                 TextSpan(children: spans),
-                textDirection: TextDirection.rtl,
+                textDirection: direction,
               ),
             ),
           ],
@@ -459,31 +467,47 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
       );
     }
 
-    return Text.rich(
-      TextSpan(children: spans),
-      textDirection: TextDirection.rtl,
-    );
+    return Text.rich(TextSpan(children: spans), textDirection: direction);
   }
 
-  List<InlineSpan> _parseSpans(String text, bool isUser) {
+  List<InlineSpan> _parseSpans(
+    String text,
+    bool isUser, {
+    bool forceBold = false,
+  }) {
     final spans = <InlineSpan>[];
-    // Split by markdown bold **...**
-    final boldRegex = RegExp(r'\*\*(.+?)\*\*');
+    final tokenRegex = RegExp(r'\*\*(.+?)\*\*|__(.+?)__|\*([^*]+?)\*');
     int lastMatchEnd = 0;
 
-    for (final match in boldRegex.allMatches(text)) {
+    for (final match in tokenRegex.allMatches(text)) {
       if (match.start > lastMatchEnd) {
         final preceding = text.substring(lastMatchEnd, match.start);
-        spans.add(_buildSpan(_isolateLatin(preceding), isUser, isBold: false));
+        spans.add(
+          _buildSpan(_isolateLatin(preceding), isUser, isBold: forceBold),
+        );
       }
-      final boldContent = match.group(1) ?? '';
-      spans.add(_buildSpan(_isolateLatin(boldContent), isUser, isBold: true));
+      final boldContent = match.group(1) ?? match.group(2);
+      final italicContent = match.group(3);
+      if (boldContent != null) {
+        spans.add(_buildSpan(_isolateLatin(boldContent), isUser, isBold: true));
+      } else if (italicContent != null) {
+        spans.add(
+          _buildSpan(
+            _isolateLatin(italicContent),
+            isUser,
+            isBold: forceBold,
+            isItalic: true,
+          ),
+        );
+      }
       lastMatchEnd = match.end;
     }
 
     if (lastMatchEnd < text.length) {
       final remaining = text.substring(lastMatchEnd);
-      spans.add(_buildSpan(_isolateLatin(remaining), isUser, isBold: false));
+      spans.add(
+        _buildSpan(_isolateLatin(remaining), isUser, isBold: forceBold),
+      );
     }
 
     return spans;
@@ -500,12 +524,18 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     return isUser ? colors.onAccent : colors.foreground;
   }
 
-  InlineSpan _buildSpan(String text, bool isUser, {required bool isBold}) {
+  InlineSpan _buildSpan(
+    String text,
+    bool isUser, {
+    required bool isBold,
+    bool isItalic = false,
+  }) {
     final theme = Theme.of(context).textTheme;
     return TextSpan(
       text: text,
       style: (isBold ? theme.titleSmall : theme.bodyMedium)?.copyWith(
         color: _textColor(isUser),
+        fontStyle: isItalic ? FontStyle.italic : null,
       ),
     );
   }
@@ -573,4 +603,150 @@ class _AssistantMark extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Renders AI report, comparison, and yearly insight Markdown (`**bold**`, `*italic*`,
+/// `# headings`, `- bullets`) into clean rich text widgets without raw Markdown markers.
+class AiMarkdownBody extends StatelessWidget {
+  const AiMarkdownBody({super.key, required this.text});
+
+  final String text;
+
+  static String stripMarkers(String raw) => raw
+      .replaceAll(RegExp(r'\*\*(.+?)\*\*'), r'$1')
+      .replaceAll(RegExp(r'__(.+?)__'), r'$1')
+      .replaceAll(RegExp(r'\*([^*]+?)\*'), r'$1')
+      .replaceAll(RegExp(r'^#{1,4}\s+', multiLine: true), '');
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = text.split('\n');
+    return SelectionArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < lines.length; i++) ...[
+            if (i > 0) const SizedBox(height: SmartSpendSpacing.xs),
+            _buildLine(context, lines[i]),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLine(BuildContext context, String line) {
+    final trimmed = line.trim();
+    if (trimmed.isEmpty) return const SizedBox(height: SmartSpendSpacing.xs);
+    final direction = Directionality.of(context);
+    final textTheme = Theme.of(context).textTheme;
+    final colors = context.smartSpendColors;
+
+    final headingMatch = RegExp(r'^(#{1,4})\s+(.+)$').firstMatch(trimmed);
+    if (headingMatch != null) {
+      final level = headingMatch.group(1)!.length;
+      final content = headingMatch.group(2)!.trim();
+      final baseStyle =
+          (level <= 2 ? textTheme.titleMedium : textTheme.titleSmall)?.copyWith(
+            color: colors.foreground,
+          );
+      return Padding(
+        padding: const EdgeInsets.only(top: SmartSpendSpacing.xs),
+        child: Text.rich(
+          TextSpan(
+            children: _parseInline(
+              context,
+              content,
+              baseStyle: baseStyle,
+              boldStyle: baseStyle,
+            ),
+          ),
+          textDirection: direction,
+        ),
+      );
+    }
+
+    final isBullet =
+        trimmed.startsWith('* ') ||
+        trimmed.startsWith('- ') ||
+        trimmed.startsWith('• ');
+    final content = isBullet ? trimmed.substring(2).trim() : trimmed;
+    final spans = _parseInline(context, content);
+
+    if (isBullet) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.xs / 2),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          textDirection: direction,
+          children: [
+            Text(
+              '• ',
+              style: textTheme.titleSmall?.copyWith(color: colors.foreground),
+            ),
+            Expanded(
+              child: Text.rich(
+                TextSpan(children: spans),
+                textDirection: direction,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Text.rich(TextSpan(children: spans), textDirection: direction);
+  }
+
+  List<InlineSpan> _parseInline(
+    BuildContext context,
+    String input, {
+    TextStyle? baseStyle,
+    TextStyle? boldStyle,
+  }) {
+    final textTheme = Theme.of(context).textTheme;
+    final colors = context.smartSpendColors;
+    final normal =
+        baseStyle ?? textTheme.bodyLarge?.copyWith(color: colors.foreground);
+    final bold =
+        boldStyle ?? textTheme.titleSmall?.copyWith(color: colors.foreground);
+    final tokenRegex = RegExp(r'\*\*(.+?)\*\*|__(.+?)__|\*([^*]+?)\*');
+    final spans = <InlineSpan>[];
+    var lastEnd = 0;
+
+    for (final match in tokenRegex.allMatches(input)) {
+      if (match.start > lastEnd) {
+        spans.add(
+          TextSpan(
+            text: _isolateLatin(input.substring(lastEnd, match.start)),
+            style: normal,
+          ),
+        );
+      }
+      final boldGroup = match.group(1) ?? match.group(2);
+      final italicGroup = match.group(3);
+      if (boldGroup != null) {
+        spans.add(TextSpan(text: _isolateLatin(boldGroup), style: bold));
+      } else if (italicGroup != null) {
+        spans.add(
+          TextSpan(
+            text: _isolateLatin(italicGroup),
+            style: normal?.copyWith(fontStyle: FontStyle.italic),
+          ),
+        );
+      }
+      lastEnd = match.end;
+    }
+
+    if (lastEnd < input.length) {
+      spans.add(
+        TextSpan(text: _isolateLatin(input.substring(lastEnd)), style: normal),
+      );
+    }
+    return spans;
+  }
+
+  static String _isolateLatin(String text) =>
+      text.replaceAllMapped(RegExp(r'[A-Za-z][A-Za-z0-9_.\-]*'), (match) {
+        return inlineName(match.group(0)!);
+      });
 }

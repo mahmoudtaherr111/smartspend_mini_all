@@ -4,6 +4,7 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../ledger/ledger_providers.dart';
+import '../more/bank_capture_card.dart';
 import 'capture_api.dart';
 import 'capture_controller.dart';
 import 'capture_overview_card.dart';
@@ -18,14 +19,17 @@ class CaptureReviewScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final automatic =
-        ref.watch(captureServerStatusProvider).value?.automatic == true;
+    final server = ref.watch(captureServerStatusProvider).value;
+    final automatic = server?.automatic == true;
     if (automatic) {
+      final consentGiven = server?.consented == true && server?.enabled == true;
       return Scaffold(
         appBar: AppBar(title: Text(l10n.captureAutomaticTitle)),
-        body: const SingleChildScrollView(
-          padding: EdgeInsets.all(SmartSpendSpacing.screen),
-          child: CaptureOverviewCard(),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(SmartSpendSpacing.screen),
+          child: consentGiven
+              ? const CaptureOverviewCard()
+              : const BankCaptureCard(),
         ),
       );
     }

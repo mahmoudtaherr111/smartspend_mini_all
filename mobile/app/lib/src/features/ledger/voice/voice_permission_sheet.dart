@@ -8,6 +8,7 @@ import '../../../l10n/app_localizations.dart';
 Future<bool> showVoicePermissionSheet(BuildContext context) async {
   final result = await showSmartSpendSheet<bool>(
     context: context,
+    scrollable: true,
     builder: (context) => const VoicePermissionSheet(),
   );
   return result ?? false;
@@ -19,6 +20,7 @@ class VoicePermissionSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.smartSpendColors;
+    final l10n = AppLocalizations.of(context);
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -42,28 +44,22 @@ class VoicePermissionSheet extends StatelessWidget {
           ),
           const SizedBox(height: SmartSpendSpacing.lg),
           Text(
-            AppLocalizations.of(context).monRecordByVoice,
+            l10n.monRecordByVoice,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleLarge!
                 .copyWith(color: colors.foreground),
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
           Text(
-            AppLocalizations.of(context).monToRecordYourSpendingBy,
+            l10n.monToRecordYourSpendingBy,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium!
                 .copyWith(color: colors.mutedForeground, height: 1.5),
           ),
           const SizedBox(height: SmartSpendSpacing.xl),
           SmartSpendButton(
-            label: AppLocalizations.of(context).monAllowTheMicrophone,
+            label: l10n.voicePermissionAllowCta,
             onPressed: () => Navigator.of(context).pop(true),
-          ),
-          const SizedBox(height: SmartSpendSpacing.sm),
-          SmartSpendButton(
-            label: AppLocalizations.of(context).monNotNow,
-            variant: ButtonVariant.quiet,
-            onPressed: () => Navigator.of(context).pop(false),
           ),
         ],
       ),

@@ -25,5 +25,5 @@ Bank and wallet message capture: the Android notification listener and the iOS b
   # required reason APIs, update the PrivacyInfo.xcprivacy file to describe your
   # plugin's privacy impact, and then uncomment this line. For more information,
   # see https://developer.apple.com/documentation/bundleresources/privacy_manifest_files
-  # s.resource_bundles = {'bank_capture_privacy' => ['bank_capture/Sources/bank_capture/PrivacyInfo.xcprivacy']}
+  s.resource_bundles = {'bank_capture_privacy' => ['bank_capture/Sources/bank_capture/PrivacyInfo.xcprivacy']}
 end

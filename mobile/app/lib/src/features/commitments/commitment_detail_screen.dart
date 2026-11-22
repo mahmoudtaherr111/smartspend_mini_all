@@ -6,7 +6,9 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../ledger/ledger_providers.dart';
+import 'add_commitment_screen.dart';
 import 'commitment_api.dart';
+import 'commitment_form.dart';
 import 'commitment_models.dart';
 import 'commitment_ui.dart';
 
@@ -59,6 +61,24 @@ class CommitmentDetailScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _edit(BuildContext context, CommitmentDetail detail) async {
+    final l10n = AppLocalizations.of(context);
+    final item = detail.commitment;
+    await Navigator.of(context).push(
+      MaterialPageRoute<bool>(
+        builder: (_) => Scaffold(
+          appBar: AppBar(title: Text(l10n.commitmentEditTitle)),
+          body: CommitmentForm(
+            type: commitmentTypeOf(item.kind),
+            brand: item.catalog,
+            existing: item,
+            existingDates: detail.dates,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
@@ -68,11 +88,28 @@ class CommitmentDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(item?.title ?? l10n.cmTitle),
         actions: [
+          if (detail.value != null)
+            IconButton(
+              key: const ValueKey('commitment-edit'),
+              tooltip: l10n.commitmentEditAction,
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => _edit(context, detail.value!),
+            ),
           if (item != null)
             PopupMenuButton<String>(
               tooltip: l10n.cmMore,
-              onSelected: (status) => _setStatus(context, ref, item, status),
+              onSelected: (status) {
+                if (status == 'edit' && detail.value != null) {
+                  unawaited(_edit(context, detail.value!));
+                } else {
+                  unawaited(_setStatus(context, ref, item, status));
+                }
+              },
               itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'edit',
+                  child: Text(l10n.commitmentEditAction),
+                ),
                 if (item.status == 'active')
                   PopupMenuItem(value: 'paused', child: Text(l10n.cmPause)),
                 if (item.status == 'paused')
@@ -424,6 +461,7 @@ class DateActionsSheet extends ConsumerStatefulWidget {
     String today,
   ) => showSmartSpendSheet<void>(
     context: context,
+    scrollable: true,
     builder: (_) => DateActionsSheet(item: item, due: due, today: today),
   );
 
@@ -468,35 +506,10 @@ class _DateActionsSheetState extends ConsumerState<DateActionsSheet> {
   }
 
   Future<void> _otherAmount() async {
-    final l10n = AppLocalizations.of(context);
-    final controller = TextEditingController();
     final amount = await showDialog<num>(
       context: context,
-      builder: (dialog) => AlertDialog(
-        title: Text(l10n.cmOtherAmountTitle),
-        content: TextField(
-          key: const ValueKey('other-amount'),
-          controller: controller,
-          autofocus: true,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            suffixText: MoneyLocale.of(context).symbol,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialog),
-            child: Text(l10n.cmCancel),
-          ),
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(dialog, parseAmount(controller.text)),
-            child: Text(l10n.cmSave),
-          ),
-        ],
-      ),
+      builder: (_) => const _OtherAmountDialog(),
     );
-    controller.dispose();
     if (amount == null || amount <= 0 || !mounted) return;
     await _run(
       (api) => api.setOverride(
@@ -601,6 +614,59 @@ class _DateActionsSheetState extends ConsumerState<DateActionsSheet> {
   }
 }
 
+class _OtherAmountDialog extends StatefulWidget {
+  const _OtherAmountDialog();
+
+  @override
+  State<_OtherAmountDialog> createState() => _OtherAmountDialogState();
+}
+
+class _OtherAmountDialogState extends State<_OtherAmountDialog> {
+  final _controller = TextEditingController();
+  final _focusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return SmartSpendKeyboardAccessory(
+      focusNodes: [_focusNode],
+      doneLabel: l10n.keyboardDone,
+      child: AlertDialog(
+        title: Text(l10n.cmOtherAmountTitle),
+        content: TextField(
+          key: const ValueKey('other-amount'),
+          controller: _controller,
+          focusNode: _focusNode,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            suffixText: MoneyLocale.of(context).symbol,
+          ),
+          onSubmitted: (value) => Navigator.of(context).pop(parseAmount(value)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(l10n.cmCancel),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(context).pop(parseAmount(_controller.text)),
+            child: Text(l10n.cmSave),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Action extends StatelessWidget {
   const _Action({required this.icon, required this.label, required this.onTap});
 
@@ -626,6 +692,7 @@ class ReminderSheet extends ConsumerStatefulWidget {
   static Future<void> show(BuildContext context, Commitment item) =>
       showSmartSpendSheet<void>(
         context: context,
+        scrollable: true,
         builder: (_) => ReminderSheet(item: item),
       );
 

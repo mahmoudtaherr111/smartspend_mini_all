@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -57,10 +59,20 @@ typedef _Choice<T> = (T value, String label);
 /// how it is charged, an installment's financing company and what is left, a flat's quarterly instalments and its
 /// one-off payments, a school's dated fees, a debt's person, a gam3eya's turn. Sent as `commitments.create` takes them.
 class CommitmentForm extends ConsumerStatefulWidget {
-  const CommitmentForm({super.key, required this.type, this.brand});
+  const CommitmentForm({
+    super.key,
+    required this.type,
+    this.brand,
+    this.existing,
+    this.existingDates = const [],
+    this.onBack,
+  });
 
   final CommitmentType type;
   final CatalogBrand? brand;
+  final Commitment? existing;
+  final List<DueDate> existingDates;
+  final VoidCallback? onBack;
 
   @override
   ConsumerState<CommitmentForm> createState() => _CommitmentFormState();
@@ -79,6 +91,7 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
   final _turn = TextEditingController();
   final _turn2 = TextEditingController();
   final _turn3 = TextEditingController();
+  final _numericFocusNodes = <TextEditingController, FocusNode>{};
 
   /// A gam3eya's shares: one, two or three, each with its own turn.
   int _shares = 1;
@@ -101,9 +114,26 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
   String _repayment = 'flexible';
   int? _remindDays;
   bool _busy = false;
+  bool _dirty = false;
+  bool _confirmingDiscard = false;
   String? _error;
 
   CommitmentType get _type => widget.type;
+
+  static String _plainNumber(num? value) {
+    if (value == null) return '';
+    return value == value.roundToDouble()
+        ? value.toInt().toString()
+        : value.toString();
+  }
+
+  FocusNode _focusFor(TextEditingController controller) =>
+      _numericFocusNodes.putIfAbsent(controller, FocusNode.new);
+
+  void _disposeItem(_Item item) {
+    _numericFocusNodes.remove(item.amount)?.dispose();
+    item.dispose();
+  }
 
   @override
   void initState() {
@@ -125,15 +155,75 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
       case CommitmentType.card:
         _varies = true;
       case CommitmentType.school:
-        for (var index = 0; index < 2; index++) {
-          _items.add(_Item(TextEditingController()));
+        if (widget.existing == null) {
+          for (var index = 0; index < 2; index++) {
+            _items.add(_Item(TextEditingController()));
+          }
         }
       default:
+    }
+    final existing = widget.existing;
+    if (existing != null) {
+      _title.text = existing.title;
+      _provider.text = existing.provider ?? '';
+      _amount.text = _plainNumber(existing.amount ?? existing.estimatedAmount);
+      _total.text = _plainNumber(existing.totalAmount);
+      _person.text = existing.beneficiaryName ?? existing.contactName ?? '';
+      _day = existing.startDay ?? existing.progress.next?.dueDay;
+      _every = existing.recurrence == 'weekly'
+          ? 0
+          : existing.recurrence == 'yearly'
+          ? 12
+          : existing.intervalCount;
+      _once = existing.recurrence == 'once';
+      _varies = existing.amountVaries;
+      _university = existing.kind == 'university';
+      _owedToMe = existing.isIncome;
+      _incoming = existing.isIncome;
+      _remindDays = existing.remindDaysBefore;
+      if (existing.occurrenceCount != null) {
+        _totalCount.text = '${existing.occurrenceCount}';
+        final remaining =
+            existing.occurrenceCount! - (existing.progress.paidCount ?? 0);
+        _count.text =
+            '${remaining > 0 ? remaining : existing.occurrenceCount!}';
+      }
+      if (existing.gam3eyaTurn != null) {
+        _turn.text = '${existing.gam3eyaTurn}';
+      }
+      if (_type == CommitmentType.debt &&
+          existing.occurrenceCount != null &&
+          existing.occurrenceCount! > 1) {
+        _repayment = 'installments';
+      } else if (_type == CommitmentType.debt && _day != null) {
+        _repayment = 'once';
+      }
+      if (_type == CommitmentType.school) {
+        final scheduleDates = widget.existingDates
+            .where((d) => d.cashflowId == existing.id)
+            .toList();
+        if (scheduleDates.isNotEmpty) {
+          for (final due in scheduleDates) {
+            final row = _Item(TextEditingController(text: due.label ?? ''))
+              ..day = due.dueDay
+              ..amount.text = _plainNumber(due.amount);
+            _items.add(row);
+          }
+        } else {
+          for (var index = 0; index < 2; index++) {
+            _items.add(_Item(TextEditingController()));
+          }
+        }
+      }
     }
   }
 
   @override
   void dispose() {
+    for (final focus in _numericFocusNodes.values) {
+      focus.dispose();
+    }
+    _numericFocusNodes.clear();
     for (final controller in [
       _title,
       _provider,
@@ -479,11 +569,111 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
     return null;
   }
 
+  static const _allowedUpdateKeys = {
+    'title',
+    'amount',
+    'amountVaries',
+    'startDay',
+    'endDay',
+    'recurrence',
+    'intervalCount',
+    'occurrenceCount',
+    'paidBeforeCount',
+    'totalAmount',
+    'provider',
+    'paymentMethod',
+    'category',
+    'subCategory',
+    'remindDaysBefore',
+    'remindHour',
+    'remindersEnabled',
+  };
+
+  Future<void> _handleBack() async {
+    if (_confirmingDiscard) return;
+    if (!_dirty) {
+      if (widget.onBack != null) {
+        widget.onBack!();
+      } else if (mounted) {
+        Navigator.of(context).pop();
+      }
+      return;
+    }
+    _confirmingDiscard = true;
+    final l10n = AppLocalizations.of(context);
+    final discard = await confirmInSheet(
+      context: context,
+      title: l10n.discardChangesTitle,
+      message: l10n.discardChangesBody,
+      confirmLabel: l10n.discardChangesConfirm,
+      cancelLabel: l10n.discardChangesCancel,
+    );
+    _confirmingDiscard = false;
+    if (!discard || !mounted) return;
+    setState(() => _dirty = false);
+    if (widget.onBack != null) {
+      widget.onBack!();
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context);
     final (list, problem) = _fields(l10n);
     if (list == null) {
       setState(() => _error = problem);
+      return;
+    }
+    final editing = widget.existing;
+    if (editing != null) {
+      setState(() {
+        _busy = true;
+        _error = null;
+      });
+      try {
+        final api = ref.read(commitmentApiProvider);
+        final first = list.first;
+        final patch = <String, Object?>{
+          for (final entry in first.entries)
+            if (_allowedUpdateKeys.contains(entry.key)) entry.key: entry.value,
+        };
+        if (first['remainingCount'] is int &&
+            patch['occurrenceCount'] == null) {
+          patch['occurrenceCount'] =
+              (editing.progress.paidCount ?? 0) +
+              (first['remainingCount']! as int);
+        }
+        await api.update(editing.id, patch);
+        if (first['items'] is List) {
+          await api.replaceItems(
+            editing.id,
+            (first['items']! as List).cast<Map<String, Object?>>(),
+          );
+        }
+        refreshCommitments(ref);
+        if (!mounted) return;
+        setState(() => _dirty = false);
+        showSmartSpendNotice(context, l10n.commitmentUpdatedNotice);
+        Navigator.of(context).pop(true);
+      } on ApiException catch (error) {
+        if (!mounted) return;
+        setState(() {
+          _busy = false;
+          _error = error.code == 'FORBIDDEN'
+              ? l10n.cmNotInPlan
+              : error.code == 'BAD_REQUEST'
+              ? error.message
+              : l10n.cmSaveFailed;
+        });
+      } on Object {
+        if (mounted) {
+          setState(() {
+            _busy = false;
+            _error = l10n.cmSaveFailed;
+          });
+        }
+      }
       return;
     }
     final existing = _existing(list.first);
@@ -508,6 +698,7 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
       if (!mounted) return;
       if (again != true) {
         if (again == false) {
+          setState(() => _dirty = false);
           context.pushReplacement(CommitmentDetailScreen.pathOf(existing.id));
         }
         return;
@@ -525,6 +716,7 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
       }
       refreshCommitments(ref);
       if (!mounted) return;
+      setState(() => _dirty = false);
       showSmartSpendNotice(context, l10n.cmAdded);
       context.pushReplacement(CommitmentDetailScreen.pathOf(id));
     } on ApiException catch (error) {
@@ -562,7 +754,8 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
   }) => TextField(
     key: key.isEmpty ? null : ValueKey(key),
     controller: controller,
-    onChanged: (_) => setState(() {}),
+    focusNode: (number || money) ? _focusFor(controller) : null,
+    onChanged: (_) => setState(() => _dirty = true),
     keyboardType: number || money
         ? const TextInputType.numberWithOptions(decimal: true)
         : TextInputType.text,
@@ -592,7 +785,10 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
           initial: value,
           today: today,
         );
-        if (day != null) onPick(day);
+        if (day != null) {
+          _dirty = true;
+          onPick(day);
+        }
       },
       child: InputDecorator(
         decoration: InputDecoration(
@@ -627,7 +823,10 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
             ChoiceChip(
               label: Text(text),
               selected: selected == value,
-              onSelected: (_) => setState(() => onPick(value)),
+              onSelected: (_) => setState(() {
+                _dirty = true;
+                onPick(value);
+              }),
             ),
         ],
       ),
@@ -642,7 +841,10 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
       for (final name in names)
         ActionChip(
           label: Text(inlineName(name)),
-          onPressed: () => setState(() => controller.text = name),
+          onPressed: () => setState(() {
+            _dirty = true;
+            controller.text = name;
+          }),
         ),
     ],
   );
@@ -655,7 +857,10 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
   }) => SwitchListTile.adaptive(
     contentPadding: EdgeInsets.zero,
     value: value,
-    onChanged: (next) => setState(() => onChanged(next)),
+    onChanged: (next) => setState(() {
+      _dirty = true;
+      onChanged(next);
+    }),
     title: Text(title),
     subtitle: subtitle == null ? null : Text(subtitle),
   );
@@ -697,6 +902,7 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
                     TextField(
                       key: ValueKey('$keyPrefix-label-$index'),
                       controller: item.label,
+                      onChanged: (_) => setState(() => _dirty = true),
                       decoration: InputDecoration(
                         labelText: l10n.cfItemLabel,
                         hintText: keyPrefix == 'item'
@@ -728,7 +934,10 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
             IconButton(
               tooltip: l10n.cfRemove,
               icon: const Icon(Icons.close_rounded),
-              onPressed: () => setState(() => list.removeAt(index).dispose()),
+              onPressed: () => setState(() {
+                _dirty = true;
+                _disposeItem(list.removeAt(index));
+              }),
             ),
           ],
         ),
@@ -1405,7 +1614,7 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
     final textTheme = Theme.of(context).textTheme;
     final defaults = ref.watch(commitmentDefaultsProvider).value;
     final remind = _remindDays ?? _suggestedDays ?? defaults?.days ?? 3;
-    return ListView(
+    final body = ListView(
       padding: const EdgeInsets.all(SmartSpendSpacing.screen),
       children: [
         ...switch (_type) {
@@ -1436,7 +1645,10 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
                 ),
               ),
           ],
-          onChanged: (days) => setState(() => _remindDays = days),
+          onChanged: (days) => setState(() {
+            _dirty = true;
+            _remindDays = days;
+          }),
         ),
         const SizedBox(height: SmartSpendSpacing.lg),
         if (_error != null) ...[
@@ -1452,6 +1664,17 @@ class _CommitmentFormState extends ConsumerState<CommitmentForm> {
         const SizedBox(height: SmartSpendSpacing.sm),
         Text(l10n.cmAfterSaveHint, style: textTheme.bodySmall),
       ],
+    );
+    return PopScope(
+      canPop: widget.onBack == null && !_dirty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_handleBack());
+      },
+      child: SmartSpendKeyboardAccessory(
+        focusNodes: _numericFocusNodes.values.toList(),
+        doneLabel: l10n.keyboardDone,
+        child: body,
+      ),
     );
   }
 }

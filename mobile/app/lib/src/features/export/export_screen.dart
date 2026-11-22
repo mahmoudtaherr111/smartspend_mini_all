@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../core/cairo_time.dart';
 import '../../l10n/app_localizations.dart';
 import 'export_api.dart';
 import 'export_models.dart';
@@ -34,7 +35,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
       _exportedFile = null;
     });
 
-    final now = DateTime.now();
+    final now = cairoNowDate();
     DateTime? startDate;
     DateTime? endDate = now;
 
