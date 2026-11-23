@@ -1,0 +1,573 @@
+{
+  "name": "synthetic-egyptian-transcript",
+  "note": "AI-authored Egyptian speech-style gold transcript proxies. No audio, ASR, or human provenance. Keep these families out of prompt tuning. See synthetic-families.json.",
+  "cases": [
+    {
+      "id": "G-route-base",
+      "text": "ركبت أتوبيس خط تلاتة وعشرين ودفعت للأجرة أربعتاشر جنيه",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 14,
+          "kind": "spending",
+          "flow": "out",
+          "category": "transport",
+          "sub": "microbus_bus"
+        }
+      ]
+    },
+    {
+      "id": "G-route-same",
+      "text": "الأتوبيس نمرة تلاتة وعشرين أخد مني أربعتاشر جنيه أجرة",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 14,
+          "kind": "spending",
+          "flow": "out",
+          "category": "transport",
+          "sub": "microbus_bus"
+        }
+      ]
+    },
+    {
+      "id": "G-route-edit",
+      "text": "ركبت أتوبيس خط تلاتة وعشرين ودفعت للأجرة تسعتاشر جنيه",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 19,
+          "kind": "spending",
+          "flow": "out",
+          "category": "transport",
+          "sub": "microbus_bus"
+        }
+      ]
+    },
+    {
+      "id": "G-plumber-base",
+      "text": "السباك خد خمس مية خمسة وتمانين عشان صلح ماسورة المطبخ",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 585,
+          "kind": "spending",
+          "flow": "out",
+          "category": "housing",
+          "sub": "maintenance"
+        }
+      ]
+    },
+    {
+      "id": "G-plumber-same",
+      "text": "دفعت تصليح ماسورة المطبخ للسباك خمسميت خمسة وتمانين",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 585,
+          "kind": "spending",
+          "flow": "out",
+          "category": "housing",
+          "sub": "maintenance"
+        }
+      ]
+    },
+    {
+      "id": "G-plumber-edit",
+      "text": "اتحاد الملاك خد خمس مية خمسة وتمانين رسوم صيانة العمارة",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 585,
+          "kind": "spending",
+          "flow": "out",
+          "category": "housing",
+          "sub": "building_fees"
+        }
+      ]
+    },
+    {
+      "id": "G-correction-base",
+      "text": "الفكهاني الحساب كان ميتين وخمستاشر لأ معلش ميتين خمسة وتلاتين",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 235,
+          "kind": "spending",
+          "flow": "out",
+          "category": "groceries",
+          "sub": "vegetables_fruits"
+        }
+      ]
+    },
+    {
+      "id": "G-correction-same",
+      "text": "أنا دفعت للفكهاني ميتين خمسة وتلاتين مش ميتين وخمستاشر",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 235,
+          "kind": "spending",
+          "flow": "out",
+          "category": "groceries",
+          "sub": "vegetables_fruits"
+        }
+      ]
+    },
+    {
+      "id": "G-correction-edit",
+      "text": "الفكهاني الحساب كان ميتين وخمستاشر لأ معلش ميتين خمسة وخمسين",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 255,
+          "kind": "spending",
+          "flow": "out",
+          "category": "groceries",
+          "sub": "vegetables_fruits"
+        }
+      ]
+    },
+    {
+      "id": "G-nokta-base",
+      "text": "إحنا دفعنا سبعميت وأربعين جنيه نقطة في الفرح",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 740,
+          "kind": "spending",
+          "flow": "out",
+          "category": "gifts_occasions",
+          "sub": "social_duty"
+        }
+      ]
+    },
+    {
+      "id": "G-nokta-same",
+      "text": "حطيت سبع مية وأربعين نقطة في فرح، دفعتها من جيبي",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 740,
+          "kind": "spending",
+          "flow": "out",
+          "category": "gifts_occasions",
+          "sub": "social_duty"
+        }
+      ]
+    },
+    {
+      "id": "G-nokta-edit",
+      "text": "إحنا قبضنا سبعميت وأربعين جنيه نقطة في فرحنا",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 740,
+          "kind": "income",
+          "flow": "in",
+          "category": "gifts_received",
+          "sub": "nokta"
+        }
+      ]
+    },
+    {
+      "id": "G-share-base",
+      "text": "حساب المطعم كله تمنمية وأربعين ودفعت أنا نصيبي ميتين وتمانين، وامبارح دفعت ستة وخمسين تاكسي",
+      "expect": "doubt",
+      "events": [
+        {
+          "amount": 280,
+          "kind": "spending",
+          "flow": "out",
+          "category": "dining",
+          "sub": "restaurant"
+        },
+        {
+          "amount": 56,
+          "kind": "spending",
+          "flow": "out",
+          "category": "transport",
+          "sub": "ride_apps",
+          "date": "offset:-1"
+        }
+      ]
+    },
+    {
+      "id": "G-share-same",
+      "text": "امبارح التاكسي أخد ستة وخمسين، والمطعم النهارده دفعت من جيبي ميتين وتمانين من حساب الكل اللي كان تمنمية وأربعين",
+      "expect": "doubt",
+      "events": [
+        {
+          "amount": 280,
+          "kind": "spending",
+          "flow": "out",
+          "category": "dining",
+          "sub": "restaurant"
+        },
+        {
+          "amount": 56,
+          "kind": "spending",
+          "flow": "out",
+          "category": "transport",
+          "sub": "ride_apps",
+          "date": "offset:-1"
+        }
+      ]
+    },
+    {
+      "id": "G-share-edit",
+      "text": "حساب المطعم كله تمنمية وأربعين ودفعت أنا نصيبي ميتين وتلاتين، وامبارح دفعت ستة وخمسين تاكسي",
+      "expect": "doubt",
+      "events": [
+        {
+          "amount": 230,
+          "kind": "spending",
+          "flow": "out",
+          "category": "dining",
+          "sub": "restaurant"
+        },
+        {
+          "amount": 56,
+          "kind": "spending",
+          "flow": "out",
+          "category": "transport",
+          "sub": "ride_apps",
+          "date": "offset:-1"
+        }
+      ]
+    },
+    {
+      "id": "G-loan-base",
+      "text": "استلفت من نادر فوزي ست مية وأربعين جنيه",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 640,
+          "kind": "loan",
+          "flow": "in",
+          "category": "debts",
+          "sub": "people",
+          "person": "نادر فوزي"
+        }
+      ],
+      "context": {
+        "people": [
+          {
+            "name": "نادر فوزي",
+            "relation": "صاحبي"
+          }
+        ]
+      }
+    },
+    {
+      "id": "G-loan-same",
+      "text": "نادر فوزي سلّفني النهارده ستمية وأربعين",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 640,
+          "kind": "loan",
+          "flow": "in",
+          "category": "debts",
+          "sub": "people",
+          "person": "نادر فوزي"
+        }
+      ],
+      "context": {
+        "people": [
+          {
+            "name": "نادر فوزي",
+            "relation": "صاحبي"
+          }
+        ]
+      }
+    },
+    {
+      "id": "G-loan-edit",
+      "text": "سلّفت نادر فوزي ست مية وأربعين جنيه",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 640,
+          "kind": "loan",
+          "flow": "out",
+          "category": "debts",
+          "sub": "people",
+          "person": "نادر فوزي"
+        }
+      ],
+      "context": {
+        "people": [
+          {
+            "name": "نادر فوزي",
+            "relation": "صاحبي"
+          }
+        ]
+      }
+    },
+    {
+      "id": "G-water-base",
+      "text": "من الكشك جبت تلات أزايز مية معدنية بتسعين جنيه ونص",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 90.5,
+          "kind": "spending",
+          "flow": "out",
+          "category": "groceries",
+          "sub": "packaged_snacks"
+        }
+      ]
+    },
+    {
+      "id": "G-water-same",
+      "text": "تلات إزازات مياه معدنية من الكشك الحساب كله تسعين ونص",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 90.5,
+          "kind": "spending",
+          "flow": "out",
+          "category": "groceries",
+          "sub": "packaged_snacks"
+        }
+      ]
+    },
+    {
+      "id": "G-water-edit",
+      "text": "من الكشك جبت تلات أزايز مية معدنية بمية جنيه ونص",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 100.5,
+          "kind": "spending",
+          "flow": "out",
+          "category": "groceries",
+          "sub": "packaged_snacks"
+        }
+      ]
+    },
+    {
+      "id": "G-currency-base",
+      "text": "دفعت تمن حجز الفندق أوه سبعين دولار مش بالجنيه",
+      "expect": "ask",
+      "events": []
+    },
+    {
+      "id": "G-currency-same",
+      "text": "الفندق خدت منه حجز وخصموا سبعين بالدولار، ماعرفش كام مصري",
+      "expect": "ask",
+      "events": []
+    },
+    {
+      "id": "G-currency-edit",
+      "text": "دفعت تمن حجز الفندق سبعين جنيه مصري مش بالدولار",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 70,
+          "kind": "spending",
+          "flow": "out",
+          "category": "travel",
+          "sub": "stay"
+        }
+      ]
+    },
+    {
+      "id": "G-salon-base",
+      "text": "دفعت عند الكوافير مية وتسعين عشان قصيت شعري",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 190,
+          "kind": "spending",
+          "flow": "out",
+          "category": "personal_care",
+          "sub": "barber_salon"
+        }
+      ]
+    },
+    {
+      "id": "G-salon-same",
+      "text": "قص الشعر في الكوافير خد مني مية وتسعين جنيه",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 190,
+          "kind": "spending",
+          "flow": "out",
+          "category": "personal_care",
+          "sub": "barber_salon"
+        }
+      ]
+    },
+    {
+      "id": "G-salon-edit",
+      "text": "دفعت مية وتسعين عشان جبت إزازة برفان",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 190,
+          "kind": "spending",
+          "flow": "out",
+          "category": "personal_care",
+          "sub": "cosmetics"
+        }
+      ]
+    },
+    {
+      "id": "G-app-base",
+      "text": "دفعت مية تسعة وعشرين اشتراك سبوتيفاي على التليفون",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 129,
+          "kind": "spending",
+          "flow": "out",
+          "category": "subscriptions",
+          "sub": "music"
+        }
+      ]
+    },
+    {
+      "id": "G-app-same",
+      "text": "المية تسعة وعشرين اللي اتخصموا من الكارت كانوا بتوع اشتراك سبوتيفاي",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 129,
+          "kind": "spending",
+          "flow": "out",
+          "category": "subscriptions",
+          "sub": "music"
+        }
+      ]
+    },
+    {
+      "id": "G-app-edit",
+      "text": "دفعت مية تسعة وعشرين اشتراك آي كلاود مساحة تخزين على التليفون",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 129,
+          "kind": "spending",
+          "flow": "out",
+          "category": "subscriptions",
+          "sub": "apps_software"
+        }
+      ]
+    },
+    {
+      "id": "G-saving-base",
+      "text": "طلعت سبع مية وتمانين من الحساب الجاري وحطيتهم في التحويشة بتاعتي، والبنك خد اتناشر رسوم",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 780,
+          "kind": "own_transfer",
+          "flow": "out",
+          "category": "own_money",
+          "sub": "savings"
+        },
+        {
+          "amount": 12,
+          "kind": "spending",
+          "flow": "out",
+          "category": "financial_fees",
+          "sub": "bank_fees"
+        }
+      ],
+      "context": {
+        "wallets": [
+          {
+            "name": "الحساب الجاري"
+          },
+          {
+            "name": "التحويشة"
+          }
+        ]
+      }
+    },
+    {
+      "id": "G-saving-same",
+      "text": "للتحويشة حولت سبعمية وتمانين من جاري بتاعي والبنك خصم اتناشر ع التحويل",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 780,
+          "kind": "own_transfer",
+          "flow": "out",
+          "category": "own_money",
+          "sub": "savings"
+        },
+        {
+          "amount": 12,
+          "kind": "spending",
+          "flow": "out",
+          "category": "financial_fees",
+          "sub": "bank_fees"
+        }
+      ],
+      "context": {
+        "wallets": [
+          {
+            "name": "الحساب الجاري"
+          },
+          {
+            "name": "التحويشة"
+          }
+        ]
+      }
+    },
+    {
+      "id": "G-saving-edit",
+      "text": "كنت هطلع سبع مية وتمانين من الحساب الجاري للتحويشة ولسه ما حولتش، بس البنك خد اتناشر رسوم البنك النهارده",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 12,
+          "kind": "spending",
+          "flow": "out",
+          "category": "financial_fees",
+          "sub": "bank_fees"
+        }
+      ],
+      "context": {
+        "wallets": [
+          {
+            "name": "الحساب الجاري"
+          },
+          {
+            "name": "التحويشة"
+          }
+        ]
+      }
+    },
+    {
+      "id": "G-missing-base",
+      "text": "دفعت تلات تذاكر سينما، بس مش فاكر الحساب كان كام",
+      "expect": "ask",
+      "events": []
+    },
+    {
+      "id": "G-missing-same",
+      "text": "السينما جبتلها تلات تذاكر، ماعرفش دفعت تمنهم كام",
+      "expect": "ask",
+      "events": []
+    },
+    {
+      "id": "G-missing-edit",
+      "text": "دفعت تمن تلات تذاكر سينما، الحساب تلاتمية وستين جنيه",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 360,
+          "kind": "spending",
+          "flow": "out",
+          "category": "entertainment",
+          "sub": "cinema_events"
+        }
+      ]
+    }
+  ]
+}

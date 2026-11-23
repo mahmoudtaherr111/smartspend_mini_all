@@ -1,0 +1,179 @@
+{
+  "version": 1,
+  "provenance": "AI-authored synthetic Egyptian Arabic. Authored for evaluation against the public taxonomy. Families are frozen as complete triplets and excluded from tuning. No participant, recording, or STT data.",
+  "arms": {
+    "typed": "synthetic-typed.json",
+    "gold-transcript": "synthetic-gold-transcript.json",
+    "real-audio": null
+  },
+  "families": [
+    {
+      "id": "T-water",
+      "arm": "typed",
+      "difficulty": "easy",
+      "focus": "Utility purpose",
+      "change": "The paid water bill becomes a mobile bill at the same price."
+    },
+    {
+      "id": "T-pharmacy",
+      "arm": "typed",
+      "difficulty": "easy",
+      "focus": "Care for people and animals",
+      "change": "Prescription drugs become a veterinary vaccination without changing the price."
+    },
+    {
+      "id": "T-cafe",
+      "arm": "typed",
+      "difficulty": "medium",
+      "focus": "Prepared purchase versus packaged goods",
+      "change": "Coffee served at a cafe becomes sealed ground coffee bought for home."
+    },
+    {
+      "id": "T-donation",
+      "arm": "typed",
+      "difficulty": "medium",
+      "focus": "Completed action versus pledge",
+      "change": "A voluntary donation paid today becomes a planned donation."
+    },
+    {
+      "id": "T-credit",
+      "arm": "typed",
+      "difficulty": "hard",
+      "focus": "Card payment versus purchase, plus a fee",
+      "change": "A credit-card balance payment becomes a laptop repair paid by credit card. The bank fee stays."
+    },
+    {
+      "id": "T-shares",
+      "arm": "typed",
+      "difficulty": "hard",
+      "focus": "Quantity, price, total, asset purchase and yield",
+      "change": "The same number of units cost a different unit price and total. The dividend stays."
+    },
+    {
+      "id": "T-quote",
+      "arm": "typed",
+      "difficulty": "strange",
+      "focus": "Other person's reported speech versus user's event",
+      "change": "The user's purchase becomes a second event attributed to the friend."
+    },
+    {
+      "id": "T-reversal",
+      "arm": "typed",
+      "difficulty": "strange",
+      "focus": "An actual reversal versus an open refund request",
+      "change": "The posted refund becomes money that has yet to arrive."
+    },
+    {
+      "id": "G-route",
+      "arm": "gold-transcript",
+      "difficulty": "easy",
+      "focus": "Route numbers versus fare",
+      "change": "Only the fare changes. The bus line remains twenty-three."
+    },
+    {
+      "id": "G-plumber",
+      "arm": "gold-transcript",
+      "difficulty": "easy",
+      "focus": "Purpose behind the same price",
+      "change": "A home repair becomes an apartment building maintenance charge."
+    },
+    {
+      "id": "G-correction",
+      "arm": "gold-transcript",
+      "difficulty": "medium",
+      "focus": "Spoken self-correction and Egyptian hundreds",
+      "change": "The corrected total changes while the abandoned number stays."
+    },
+    {
+      "id": "G-nokta",
+      "arm": "gold-transcript",
+      "difficulty": "medium",
+      "focus": "Wedding contribution paid versus received",
+      "change": "Nokta in a wedding changes from the user's payment to the user's receipt."
+    },
+    {
+      "id": "G-share",
+      "arm": "gold-transcript",
+      "difficulty": "hard",
+      "focus": "Personal share, group total and a separate dated fare",
+      "change": "Only the speaker's stated share changes. The total and dated taxi fare stay."
+    },
+    {
+      "id": "G-loan",
+      "arm": "gold-transcript",
+      "difficulty": "hard",
+      "focus": "Direction in a loan and full counterparty name",
+      "change": "The speaker borrows money in the base and lends it in the edit."
+    },
+    {
+      "id": "G-water",
+      "arm": "gold-transcript",
+      "difficulty": "strange",
+      "focus": "Water homonym, pack count and fractions",
+      "change": "A price of ninety and a half becomes a hundred and a half. The bottle count stays."
+    },
+    {
+      "id": "G-currency",
+      "arm": "gold-transcript",
+      "difficulty": "strange",
+      "focus": "Foreign currency versus Egyptian pounds",
+      "change": "The same completed booking becomes recordable when its amount is expressed in Egyptian pounds."
+    },
+    {
+      "id": "T-documents",
+      "arm": "typed",
+      "difficulty": "easy",
+      "focus": "Government documents versus car licensing",
+      "change": "A passport renewal fee becomes a car licence renewal."
+    },
+    {
+      "id": "T-classes",
+      "arm": "typed",
+      "difficulty": "medium",
+      "focus": "Children's sports versus education",
+      "change": "Swimming lessons for the speaker's daughter become a maths tutoring session for her."
+    },
+    {
+      "id": "T-shop",
+      "arm": "typed",
+      "difficulty": "hard",
+      "focus": "Payer perspective and two opposing business moves",
+      "change": "The shop owner pays a worker in the base. The employee gets paid in the edit. Goods are sold in both."
+    },
+    {
+      "id": "T-instapay",
+      "arm": "typed",
+      "difficulty": "strange",
+      "focus": "Named transfer versus payment for a thing",
+      "change": "With identical transfer rail, person, and amount, a stated furniture purchase determines purpose."
+    },
+    {
+      "id": "G-salon",
+      "arm": "gold-transcript",
+      "difficulty": "easy",
+      "focus": "Personal care service versus product",
+      "change": "The salon visit becomes a perfume purchase at the same amount."
+    },
+    {
+      "id": "G-app",
+      "arm": "gold-transcript",
+      "difficulty": "medium",
+      "focus": "Subscription purpose despite the same device",
+      "change": "A music-streaming subscription becomes a cloud storage subscription on the same phone."
+    },
+    {
+      "id": "G-saving",
+      "arm": "gold-transcript",
+      "difficulty": "hard",
+      "focus": "Transfers to an owned savings account versus a non-transfer, plus a bank fee",
+      "change": "The savings transfer has not happened in the edit. The fee is already charged."
+    },
+    {
+      "id": "G-missing",
+      "arm": "gold-transcript",
+      "difficulty": "strange",
+      "focus": "Cinema ticket count versus missing total",
+      "change": "The ticket count is not the price. A price supplied in the edit makes the purchase recordable."
+    }
+  ]
+}

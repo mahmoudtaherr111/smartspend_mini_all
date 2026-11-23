@@ -1,0 +1,575 @@
+{
+  "name": "synthetic-egyptian-typed",
+  "note": "AI-authored Egyptian Arabic typed exam. Keep these families out of prompt tuning. Synthetic labels and examples only. See synthetic-families.json.",
+  "cases": [
+    {
+      "id": "T-water-base",
+      "text": "فاتورة الميه ٤٦٧ دفعتها على فوري",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 467,
+          "kind": "spending",
+          "flow": "out",
+          "category": "bills",
+          "sub": "water"
+        }
+      ]
+    },
+    {
+      "id": "T-water-same",
+      "text": "سددت حساب عداد المية من فوري، 467 جنيه",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 467,
+          "kind": "spending",
+          "flow": "out",
+          "category": "bills",
+          "sub": "water"
+        }
+      ]
+    },
+    {
+      "id": "T-water-edit",
+      "text": "فاتورة خط الموبايل ٤٦٧ دفعتها على فوري",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 467,
+          "kind": "spending",
+          "flow": "out",
+          "category": "bills",
+          "sub": "mobile"
+        }
+      ]
+    },
+    {
+      "id": "T-pharmacy-base",
+      "text": "جبنا أدوية الروشتة من الصيدلية 275",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 275,
+          "kind": "spending",
+          "flow": "out",
+          "category": "health",
+          "sub": "pharmacy"
+        }
+      ]
+    },
+    {
+      "id": "T-pharmacy-same",
+      "text": "الصيدلية: تمن العلاج اللي في الروشتة ٢٧٥",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 275,
+          "kind": "spending",
+          "flow": "out",
+          "category": "health",
+          "sub": "pharmacy"
+        }
+      ]
+    },
+    {
+      "id": "T-pharmacy-edit",
+      "text": "طعمنا القط عند الدكتور البيطري بـ275",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 275,
+          "kind": "spending",
+          "flow": "out",
+          "category": "pets",
+          "sub": "vet"
+        }
+      ]
+    },
+    {
+      "id": "T-cafe-base",
+      "text": "قعدت ع القهوة ودفعت 118 للمشاريب",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 118,
+          "kind": "spending",
+          "flow": "out",
+          "category": "dining",
+          "sub": "cafe"
+        }
+      ]
+    },
+    {
+      "id": "T-cafe-same",
+      "text": "حساب الشاي والقهوة اللي شربناهم في الكافيه ١١٨",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 118,
+          "kind": "spending",
+          "flow": "out",
+          "category": "dining",
+          "sub": "cafe"
+        }
+      ]
+    },
+    {
+      "id": "T-cafe-edit",
+      "text": "جبت بن مطحون للبيت من السوبرماركت بـ118",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 118,
+          "kind": "spending",
+          "flow": "out",
+          "category": "groceries",
+          "sub": "supermarket"
+        }
+      ]
+    },
+    {
+      "id": "T-donation-base",
+      "text": "تبرعت بـ325 للمطبخ الخيري",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 325,
+          "kind": "spending",
+          "flow": "out",
+          "category": "charity",
+          "sub": "sadaqa"
+        }
+      ]
+    },
+    {
+      "id": "T-donation-same",
+      "text": "دفعت للمطبخ الخيري تلتمية خمسة وعشرين تبرع",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 325,
+          "kind": "spending",
+          "flow": "out",
+          "category": "charity",
+          "sub": "sadaqa"
+        }
+      ]
+    },
+    {
+      "id": "T-donation-edit",
+      "text": "هتبرع بـ325 للمطبخ الخيري بس لسه ما دفعتش",
+      "expect": "none",
+      "events": []
+    },
+    {
+      "id": "T-credit-base",
+      "text": "سددت من حسابي 1340 من مديونية الكريدت، والبنك خصم 18 رسوم",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 1340,
+          "kind": "card_payment",
+          "flow": "out",
+          "category": "own_money",
+          "sub": "card_payment"
+        },
+        {
+          "amount": 18,
+          "kind": "spending",
+          "flow": "out",
+          "category": "financial_fees",
+          "sub": "bank_fees"
+        }
+      ]
+    },
+    {
+      "id": "T-credit-same",
+      "text": "نزل من حسابي ١٣٤٠ لسداد كارت الائتمان و١٨ جنيه رسوم البنك",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 1340,
+          "kind": "card_payment",
+          "flow": "out",
+          "category": "own_money",
+          "sub": "card_payment"
+        },
+        {
+          "amount": 18,
+          "kind": "spending",
+          "flow": "out",
+          "category": "financial_fees",
+          "sub": "bank_fees"
+        }
+      ]
+    },
+    {
+      "id": "T-credit-edit",
+      "text": "دفعت بالكريدت 1340 لتصليح اللابتوب، والبنك خصم 18 رسوم",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 1340,
+          "kind": "spending",
+          "flow": "out",
+          "category": "shopping",
+          "sub": "electronics"
+        },
+        {
+          "amount": 18,
+          "kind": "spending",
+          "flow": "out",
+          "category": "financial_fees",
+          "sub": "bank_fees"
+        }
+      ]
+    },
+    {
+      "id": "T-shares-base",
+      "text": "اشتريت 20 سهم، السهم بـ58، إجمالي 1160. ونزل 73 جنيه توزيعات أرباح من أسهم تانية",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 1160,
+          "kind": "investment",
+          "flow": "out",
+          "category": "investment",
+          "sub": "stocks_funds"
+        },
+        {
+          "amount": 73,
+          "kind": "income",
+          "flow": "in",
+          "category": "returns",
+          "sub": "profits"
+        }
+      ]
+    },
+    {
+      "id": "T-shares-same",
+      "text": "دفعت ١١٦٠ في عشرين سهم سعر الواحد ٥٨؛ ودخل لي ٧٣ أرباح أسهم تانية",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 1160,
+          "kind": "investment",
+          "flow": "out",
+          "category": "investment",
+          "sub": "stocks_funds"
+        },
+        {
+          "amount": 73,
+          "kind": "income",
+          "flow": "in",
+          "category": "returns",
+          "sub": "profits"
+        }
+      ]
+    },
+    {
+      "id": "T-shares-edit",
+      "text": "اشتريت 20 سهم، السهم بـ59، إجمالي 1180. ونزل 73 جنيه توزيعات أرباح من أسهم تانية",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 1180,
+          "kind": "investment",
+          "flow": "out",
+          "category": "investment",
+          "sub": "stocks_funds"
+        },
+        {
+          "amount": 73,
+          "kind": "income",
+          "flow": "in",
+          "category": "returns",
+          "sub": "profits"
+        }
+      ]
+    },
+    {
+      "id": "T-quote-base",
+      "text": "صاحبي كتب «دفعت ٨٠٠ مخالفة» وأنا اشتريت تيشيرت بـ310",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 310,
+          "kind": "spending",
+          "flow": "out",
+          "category": "shopping",
+          "sub": "clothes"
+        }
+      ]
+    },
+    {
+      "id": "T-quote-same",
+      "text": "مخالفة الـ٨٠٠ تخص صاحبي وهو اللي دفعها؛ اللي دفعته أنا ٣١٠ في تيشيرت",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 310,
+          "kind": "spending",
+          "flow": "out",
+          "category": "shopping",
+          "sub": "clothes"
+        }
+      ]
+    },
+    {
+      "id": "T-quote-edit",
+      "text": "صاحبي كتب «دفعت ٨٠٠ مخالفة واشتريت تيشيرت بـ310» وأنا ما اشتريتش حاجة",
+      "expect": "none",
+      "events": []
+    },
+    {
+      "id": "T-reversal-base",
+      "text": "المبلغ اتخصم يوم حجز الفندق ومش بس لغوه، 690 رجعوا فعلا للكارت",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 690,
+          "kind": "refund",
+          "flow": "in",
+          "category": "travel",
+          "sub": "stay"
+        }
+      ]
+    },
+    {
+      "id": "T-reversal-same",
+      "text": "ظهرلي رد مبلغ ٦٩٠ على الكارت لحجز الفندق الملغي، الخصم القديم مش جديد",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 690,
+          "kind": "refund",
+          "flow": "in",
+          "category": "travel",
+          "sub": "stay"
+        }
+      ]
+    },
+    {
+      "id": "T-reversal-edit",
+      "text": "المبلغ اتخصم يوم حجز الفندق ولغوه، طلبت الـ690 يرجعوا للكارت بس لسه ما نزلوش",
+      "expect": "none",
+      "events": []
+    },
+    {
+      "id": "T-documents-base",
+      "text": "مصاريف تجديد الباسبور 620، دفعتهم في المصلحة",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 620,
+          "kind": "spending",
+          "flow": "out",
+          "category": "government",
+          "sub": "documents"
+        }
+      ]
+    },
+    {
+      "id": "T-documents-same",
+      "text": "سددت ٦٢٠ عشان أجدّد جواز السفر",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 620,
+          "kind": "spending",
+          "flow": "out",
+          "category": "government",
+          "sub": "documents"
+        }
+      ]
+    },
+    {
+      "id": "T-documents-edit",
+      "text": "سددت ٦٢٠ عشان أجدّد رخصة العربية",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 620,
+          "kind": "spending",
+          "flow": "out",
+          "category": "car",
+          "sub": "license_fines"
+        }
+      ]
+    },
+    {
+      "id": "T-classes-base",
+      "text": "دفعت 480 في تدريب السباحة لبنتي",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 480,
+          "kind": "spending",
+          "flow": "out",
+          "category": "kids",
+          "sub": "activities"
+        }
+      ]
+    },
+    {
+      "id": "T-classes-same",
+      "text": "اشتراك تمرين السباحة بتاع البنت بـ٤٨٠، دفعته",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 480,
+          "kind": "spending",
+          "flow": "out",
+          "category": "kids",
+          "sub": "activities"
+        }
+      ]
+    },
+    {
+      "id": "T-classes-edit",
+      "text": "دفعت 480 في الدرس الخصوصي بتاع الماث لبنتي",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 480,
+          "kind": "spending",
+          "flow": "out",
+          "category": "education",
+          "sub": "tutoring"
+        }
+      ]
+    },
+    {
+      "id": "T-shop-base",
+      "text": "أنا صاحب الورشة ودفعت للعامل 390 أجر يومه، وبعت قطعة من بضاعة الورشة بـ230",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 390,
+          "kind": "spending",
+          "flow": "out",
+          "category": "work",
+          "sub": "wages"
+        },
+        {
+          "amount": 230,
+          "kind": "income",
+          "flow": "in",
+          "category": "business_income",
+          "sub": "sales"
+        }
+      ]
+    },
+    {
+      "id": "T-shop-same",
+      "text": "من بضاعة الورشة بعت قطعة بـ٢٣٠، والواد اللي شغال عندي اديته أجره ٣٩٠",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 390,
+          "kind": "spending",
+          "flow": "out",
+          "category": "work",
+          "sub": "wages"
+        },
+        {
+          "amount": 230,
+          "kind": "income",
+          "flow": "in",
+          "category": "business_income",
+          "sub": "sales"
+        }
+      ]
+    },
+    {
+      "id": "T-shop-edit",
+      "text": "قبضت من صاحب الورشة 390 أجر يوم شغلي عنده، وبعت من بضاعتي أنا قطعة بـ230",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 390,
+          "kind": "income",
+          "flow": "in",
+          "category": "salary",
+          "sub": "base"
+        },
+        {
+          "amount": 230,
+          "kind": "income",
+          "flow": "in",
+          "category": "business_income",
+          "sub": "sales"
+        }
+      ]
+    },
+    {
+      "id": "T-instapay-base",
+      "text": "بعت لرامي مدحت 850 على إنستا باي تحويل شخصي بس",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 850,
+          "kind": "personal_transfer",
+          "flow": "out",
+          "category": "people_transfer",
+          "sub": "other",
+          "person": "رامي مدحت"
+        }
+      ],
+      "context": {
+        "people": [
+          {
+            "name": "رامي مدحت",
+            "relation": "زميل"
+          }
+        ]
+      }
+    },
+    {
+      "id": "T-instapay-same",
+      "text": "تحويل شخصي من حسابي لرامي مدحت ٨٥٠ جنيه بإنستاباي",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 850,
+          "kind": "personal_transfer",
+          "flow": "out",
+          "category": "people_transfer",
+          "sub": "other",
+          "person": "رامي مدحت"
+        }
+      ],
+      "context": {
+        "people": [
+          {
+            "name": "رامي مدحت",
+            "relation": "زميل"
+          }
+        ]
+      }
+    },
+    {
+      "id": "T-instapay-edit",
+      "text": "بعت لرامي مدحت 850 على إنستا باي تمن الترابيزة اللي اشتريتها منه",
+      "expect": "clear",
+      "events": [
+        {
+          "amount": 850,
+          "kind": "spending",
+          "flow": "out",
+          "category": "housing",
+          "sub": "furniture"
+        }
+      ],
+      "context": {
+        "people": [
+          {
+            "name": "رامي مدحت",
+            "relation": "زميل"
+          }
+        ]
+      }
+    }
+  ]
+}
