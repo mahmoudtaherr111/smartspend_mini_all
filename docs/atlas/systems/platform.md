@@ -86,6 +86,7 @@ flowchart LR
     tbl_scheduled_job_runs[("scheduled_job_runs")]
     tbl_seo_pages[("seo_pages")]
     tbl_sessions[("sessions")]
+    tbl_store_events[("store_events")]
     tbl_store_purchases[("store_purchases")]
     tbl_subscription_catalog[("subscription_catalog")]
     tbl_support_assignments[("support_assignments")]
@@ -173,6 +174,7 @@ flowchart LR
   mod_api_routers -.-> tbl_expense_daily_rollups
   mod_api_routers -.-> tbl_onboarding_questions
   mod_api_routers -.-> tbl_sessions
+  mod_api_routers -.-> tbl_store_events
   mod_api_routers -.-> tbl_voice_calls
   mod_api_routers -.-> tbl_whatsapp_contacts
   mod_api_routers ==> tbl_ad_clicks
@@ -385,6 +387,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `scheduled_job_runs` | E | `jobs`, `platform` | `platform` |
 | `seo_pages` | A | `api-routers` | `api-routers` |
 | `sessions` | D | — | `api-routers` |
+| `store_events` | E | — | `api-routers` |
 | `store_purchases` | A | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `subscription_catalog` | A | `api-routers` | `api-routers` |
 | `support_assignments` | A | `api-routers` | `api-routers` |

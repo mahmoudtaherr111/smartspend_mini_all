@@ -197,3 +197,5 @@ Checked against the code; each one names where it lives.
 
 
 The export formatter now accepts versioned financial metadata and labels internal transfers/investments by economic kind, retaining signed refunds. Its income/expense filter uses the same SQL bucket as month totals.
+
+Finance breakdowns that read saved purpose ids use their taxonomy labels. A historical filing with ambiguous meaning remains broad. A report comparing category distributions must keep these general rows in its denominator.

@@ -441,7 +441,9 @@ export function parseArabicNumbers(text: string): string {
       continue;
     }
 
-    if (core === "مية" || core === "ميه") {
+    const spokenHundred = /^المي[ةه]$/.test(core) && startsTensCompound(words, i + 1) &&
+      (lookupNumberWord(numMap, FOLDED_NUM, words[i + 1]) ?? (normalizeArabic(words[i + 1]) === ONE_FOLDED ? 1 : 0)) > 0;
+    if (core === "مية" || core === "ميه" || spokenHundred) {
       if (!isWaterMention(words, i)) {
         acc.addWord(100);
         continue;

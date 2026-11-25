@@ -35,10 +35,10 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 | HTTP routes (outside tRPC) | 13 |
 | WebSocket upgrade prefixes | 2 |
 | Scheduled jobs | 25 |
-| Browser routes | 18 |
-| Lazy-loaded pages | 17 |
-| Runtime source files | 560 |
-| Clusters | 47 |
+| Browser routes | 19 |
+| Lazy-loaded pages | 16 |
+| Runtime source files | 533 |
+| Clusters | 46 |
 | External systems in use | 19 |
 | Validated server env vars | 63 |
 | Systems | 13 |

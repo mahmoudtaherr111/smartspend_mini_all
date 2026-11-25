@@ -154,7 +154,7 @@ describe("recording in the expense form", () => {
     call.mockResolvedValue({ id: 77 });
     render(<ExpenseForm />);
     fireEvent.click(screen.getByRole("button", { name: "إدخال يدوي تقليدي" }));
-    fireEvent.click(screen.getByRole("button", { name: "تحويل", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "تحويل" }));
     fireEvent.click(screen.getByRole("button", { name: /وارد/ }));
     fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "purpose:debts" } });
     fireEvent.change(screen.getByRole("combobox", { name: "الفئة الفرعية" }), { target: { value: "people" } });

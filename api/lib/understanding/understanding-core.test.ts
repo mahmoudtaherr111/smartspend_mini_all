@@ -24,6 +24,20 @@ const reading = (events: ReadEvent[], over: Partial<Reading> = {}): Reading => (
 const ctx: GuardContext = {
   commitmentRefs: new Set(["c1"]), walletRefs: new Set(["w1"]), today: "2026-11-11", maxAmount: 10_000_000, maxDaysBack: 366,
 };
+it("distinguishes quoted claims from the narrator's own purchase", () => {
+  const guard = guardReading(reading([
+    event({ quote: "دفعت ٦٠٠ رسوم", amount: 600, category: "government", sub: "other" }),
+    event({ quote: "جبت عيش بـ١٢", amount: 12, category: "groceries", sub: "bakery" }),
+  ]), "جارتي قالت «دفعت ٦٠٠ رسوم» وأنا جبت عيش بـ١٢", ctx);
+  expect(guard.events[0].flags).toContain("reported_quote");
+  expect(guard.events[1].flags).not.toContain("reported_quote");
+});
+
+it("keeps a definite colloquial hundred attached to a spoken two-digit amount", () => {
+  expect(numberMentions("المية تلاتة وأربعين اللي اتحولوا")).toEqual([143]);
+  expect(numberMentions("عداد المية تلاتة وأربعين جنيه")).toEqual([43]);
+});
+
 const facts: PolicyFacts = { isFamiliar: () => true, isKnownPerson: () => true };
 const flagsOf = (sentence: string, events: ReadEvent[], over: Partial<Reading> = {}) =>
   guardReading(reading(events, over), sentence, ctx);

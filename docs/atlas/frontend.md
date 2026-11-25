@@ -10,7 +10,8 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | --- | --- | --- | --- | --- |
 | `*` | public | `NotFound` | `src/pages/NotFound.tsx` | — |
 | `/` | public | `Landing` | `src/pages/Landing.tsx` | — |
-| `/admin` | admin | `Admin` | `src/pages/Admin.tsx` | — |
+| `/admin` | public | — | — | — |
+| `/admin/*` | public | — | — | — |
 | `/ai` | signed-in | `AICenter` | `src/pages/AICenter.tsx` | — |
 | `/auth/callback` | public | `AuthCallback` | `src/pages/AuthCallback.tsx` | — |
 | `/dashboard` | signed-in | `Home` | `src/pages/Home.tsx` | — |
@@ -84,93 +85,6 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
 | `voice.eligibility` | useQuery | `src/hooks/useVoiceCallEntry.ts` |
-
-### `Admin` — `src/pages/Admin.tsx`
-
-35 files in its import closure (not counting `src/components/ui/`).
-
-| Procedure | Calls | Files |
-| --- | --- | --- |
-| `admin.addAiProvider` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.clearAllApiKeyErrors` | useMutation | `src/pages/Admin.tsx` |
-| `admin.createNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
-| `admin.deleteAiProvider` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.deleteLearnedRule` | useMutation | `src/components/admin/AdminRulesTab.tsx` |
-| `admin.deleteNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
-| `admin.deleteUser` | useMutation | `src/hooks/useAdmin.ts` |
-| `admin.discoverProviderModels` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.getAIClassificationStats` | useQuery | `src/hooks/useAdmin.ts` |
-| `admin.getAICostOverview` | useQuery | `src/pages/Admin.tsx` |
-| `admin.getActivityLog` | useQuery | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
-| `admin.getAiModels` | useQuery, utils.invalidate | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.getAiProviders` | useQuery, utils.invalidate | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.getAiTelemetryOverview` | useQuery | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` |
-| `admin.getApiKeyErrors` | useQuery, utils.invalidate | `src/pages/Admin.tsx` |
-| `admin.getAuditLogs` | useQuery | `src/components/admin/AdminAuditTab.tsx` |
-| `admin.getAvailableModels` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
-| `admin.getClassificationLogs` | useQuery | `src/hooks/useAdmin.ts` |
-| `admin.getClassificationQuality` | useQuery | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` |
-| `admin.getDashboardStats` | useQuery | `src/hooks/useAdmin.ts` |
-| `admin.getFounderMetrics` | useQuery | `src/pages/Admin.tsx` |
-| `admin.getLearnedRules` | useQuery | `src/components/admin/AdminRulesTab.tsx` |
-| `admin.getNotificationLogs` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
-| `admin.getNotificationStats` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
-| `admin.getNotificationTemplates` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
-| `admin.getPendingClarifications` | useQuery | `src/components/admin/ClarificationsTab.tsx` |
-| `admin.getSettings` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
-| `admin.getUserAiQuota` | useQuery | `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx` |
-| `admin.getUserSessions` | useQuery, utils.invalidate | `src/hooks/useAdmin.ts`, `src/pages/Admin.tsx` |
-| `admin.getUserSmartProfile` | useQuery | `src/pages/Admin.tsx` |
-| `admin.getVoiceUsageStats` | useQuery | `src/hooks/useAdmin.ts` |
-| `admin.listAllUsers` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx`, `src/hooks/useAdmin.ts` |
-| `admin.listStorePurchasesAdmin` | useQuery | `src/pages/Admin.tsx` |
-| `admin.listSubscriptionsAdmin` | useQuery | `src/pages/Admin.tsx` |
-| `admin.resolveApiKeyError` | useMutation | `src/pages/Admin.tsx` |
-| `admin.resolveClarification` | useMutation | `src/components/admin/ClarificationsTab.tsx` |
-| `admin.revokeSession` | useMutation | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
-| `admin.saveAiModels` | useMutation | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.sendInstantNotification` | useMutation | `src/components/admin/NotificationsTab.tsx` |
-| `admin.toggleNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
-| `admin.triggerActivityCheck` | useMutation | `src/components/admin/NotificationsTab.tsx` |
-| `admin.triggerBackupDemo` | useMutation | `src/components/admin/AdminSettingsTab.tsx` |
-| `admin.updateAiProvider` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.updateNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
-| `admin.updateSettings` | useMutation | `src/components/admin/AdminSettingsTab.tsx` |
-| `admin.updateUserPlanV2` | useMutation | `src/hooks/useAdmin.ts` |
-| `admin.updateUserRole` | useMutation | `src/hooks/useAdmin.ts` |
-| `admin.validateApiKey` | useMutation | `src/components/admin/settings/AdminKeysTab.tsx` |
-| `adminWhatsapp.getOutboxLog` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.getSettings` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.getStatus` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.getTemplates` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.sendDirectMessage` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx`, `src/pages/Admin.tsx` |
-| `adminWhatsapp.syncTemplates` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.updateSettings` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `ads.create` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
-| `ads.delete` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
-| `ads.stats` | useQuery | `src/components/admin/AdminAdsTab.tsx` |
-| `ads.update` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
-| `ai.parseExpense` | useMutation | `src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx` |
-| `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
-| `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
-| `captureAdmin.bulkUndo` | useMutation | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
-| `captureAdmin.catalog` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.funnel` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
-| `captureAdmin.restoreSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.saveSource` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.saveSubscription` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.setSourceStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.setSubscriptionStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.syncSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.timeline` | useQuery | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
-| `export.allUsers` | useMutation | `src/pages/Admin.tsx` |
-| `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
-| `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
-| `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
-| `support.close` | useMutation | `src/pages/Admin.tsx` |
-| `support.listAll` | useQuery | `src/pages/Admin.tsx` |
-| `support.respond` | useMutation | `src/pages/Admin.tsx` |
-| `voice.adminStats` | useQuery | `src/components/admin/settings/AdminVoiceCallSection.tsx` |
 
 ### `AuthCallback` — `src/pages/AuthCallback.tsx`
 
@@ -261,71 +175,11 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-65 files in its import closure (not counting `src/components/ui/`).
+38 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
-| `admin.addAiProvider` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.clearAllApiKeyErrors` | useMutation | `src/pages/Admin.tsx` |
-| `admin.createNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
-| `admin.deleteAiProvider` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.deleteLearnedRule` | useMutation | `src/components/admin/AdminRulesTab.tsx` |
-| `admin.deleteNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
-| `admin.deleteUser` | useMutation | `src/hooks/useAdmin.ts` |
-| `admin.discoverProviderModels` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.getAIClassificationStats` | useQuery | `src/hooks/useAdmin.ts` |
-| `admin.getAICostOverview` | useQuery | `src/pages/Admin.tsx` |
-| `admin.getActivityLog` | useQuery | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
-| `admin.getAiModels` | useQuery, utils.invalidate | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.getAiProviders` | useQuery, utils.invalidate | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.getAiTelemetryOverview` | useQuery | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` |
-| `admin.getApiKeyErrors` | useQuery, utils.invalidate | `src/pages/Admin.tsx` |
-| `admin.getAuditLogs` | useQuery | `src/components/admin/AdminAuditTab.tsx` |
-| `admin.getAvailableModels` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
-| `admin.getClassificationLogs` | useQuery | `src/hooks/useAdmin.ts` |
-| `admin.getClassificationQuality` | useQuery | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` |
-| `admin.getDashboardStats` | useQuery | `src/hooks/useAdmin.ts` |
-| `admin.getFounderMetrics` | useQuery | `src/pages/Admin.tsx` |
-| `admin.getLearnedRules` | useQuery | `src/components/admin/AdminRulesTab.tsx` |
-| `admin.getNotificationLogs` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
-| `admin.getNotificationStats` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
-| `admin.getNotificationTemplates` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
-| `admin.getPendingClarifications` | useQuery | `src/components/admin/ClarificationsTab.tsx` |
-| `admin.getSettings` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
-| `admin.getUserAiQuota` | useQuery | `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx` |
-| `admin.getUserSessions` | useQuery, utils.invalidate | `src/hooks/useAdmin.ts`, `src/pages/Admin.tsx` |
-| `admin.getUserSmartProfile` | useQuery | `src/pages/Admin.tsx` |
-| `admin.getVoiceUsageStats` | useQuery | `src/hooks/useAdmin.ts` |
-| `admin.listAllUsers` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx`, `src/hooks/useAdmin.ts` |
-| `admin.listStorePurchasesAdmin` | useQuery | `src/pages/Admin.tsx` |
-| `admin.listSubscriptionsAdmin` | useQuery | `src/pages/Admin.tsx` |
-| `admin.resolveApiKeyError` | useMutation | `src/pages/Admin.tsx` |
-| `admin.resolveClarification` | useMutation | `src/components/admin/ClarificationsTab.tsx` |
-| `admin.revokeSession` | useMutation | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
-| `admin.saveAiModels` | useMutation | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.sendInstantNotification` | useMutation | `src/components/admin/NotificationsTab.tsx` |
-| `admin.toggleNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
-| `admin.triggerActivityCheck` | useMutation | `src/components/admin/NotificationsTab.tsx` |
-| `admin.triggerBackupDemo` | useMutation | `src/components/admin/AdminSettingsTab.tsx` |
-| `admin.updateAiProvider` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.updateNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
-| `admin.updateSettings` | useMutation | `src/components/admin/AdminSettingsTab.tsx` |
-| `admin.updateUserPlanV2` | useMutation | `src/hooks/useAdmin.ts` |
-| `admin.updateUserRole` | useMutation | `src/hooks/useAdmin.ts` |
-| `admin.validateApiKey` | useMutation | `src/components/admin/settings/AdminKeysTab.tsx` |
-| `adminWhatsapp.getOutboxLog` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.getSettings` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.getStatus` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.getTemplates` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.sendDirectMessage` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx`, `src/pages/Admin.tsx` |
-| `adminWhatsapp.syncTemplates` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.updateSettings` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `ads.create` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
-| `ads.delete` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
-| `ads.stats` | useQuery | `src/components/admin/AdminAdsTab.tsx` |
-| `ads.update` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
 | `ai.getUserLimits` | useQuery | `src/components/profile/ProfileScreen.tsx` |
-| `ai.parseExpense` | useMutation | `src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx` |
 | `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `auth.me` | useQuery, utils.invalidate, utils.setData | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
 | `business.addCategory` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
@@ -338,16 +192,6 @@ _None._
 | `capture.setWalletKind` | useMutation | `src/components/wallets/WalletBalanceKind.tsx` |
 | `capture.status` | useQuery | `src/components/wallets/WalletBalanceKind.tsx` |
 | `capture.walletKind` | useQuery, utils.invalidate | `src/components/wallets/WalletBalanceKind.tsx` |
-| `captureAdmin.bulkUndo` | useMutation | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
-| `captureAdmin.catalog` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.funnel` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
-| `captureAdmin.restoreSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.saveSource` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.saveSubscription` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.setSourceStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.setSubscriptionStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.syncSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.timeline` | useQuery | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 | `coach.addCashflow` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.cancelReminder` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.endPlan` | useMutation | `src/pages/PlanPage.tsx` |
@@ -358,7 +202,6 @@ _None._
 | `coach.settle` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.unsettle` | useMutation | `src/pages/PlanPage.tsx` |
 | `expense.getMonthlyStats` | useQuery | `src/components/settings/BusinessSettingsView.tsx` |
-| `export.allUsers` | useMutation | `src/pages/Admin.tsx` |
 | `export.myExpenses` | useMutation | `src/components/expenses/ExportExpensesCard.tsx` |
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
@@ -380,12 +223,8 @@ _None._
 | `profile.updateSmartProfile` | useMutation | `src/components/notifications/NotificationSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.updateUserInfo` | useMutation | `src/components/profile/ProfileScreen.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
-| `support.close` | useMutation | `src/pages/Admin.tsx` |
 | `support.create` | useMutation | `src/pages/Support.tsx` |
-| `support.listAll` | useQuery | `src/pages/Admin.tsx` |
 | `support.listMine` | useQuery | `src/pages/Support.tsx` |
-| `support.respond` | useMutation | `src/pages/Admin.tsx` |
-| `voice.adminStats` | useQuery | `src/components/admin/settings/AdminVoiceCallSection.tsx` |
 | `wallet.*` | utils.invalidate | `src/components/wallets/WalletBalanceKind.tsx` |
 | `wallet.createWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.deleteWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |

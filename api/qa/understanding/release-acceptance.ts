@@ -217,9 +217,10 @@ function pilotGates(pilot: Evidence["pilot"], candidateSha256: string, asOf: str
   const observed = [5, 25, 100].every(stage => days.some(entry => entry.rolloutPercent === stage
     && entry.recordingRequests > 0 && entry.telemetryComplete && entry.reconciliationComplete));
   const fullWindow = days.slice(-requiredPilotDays);
-  const continuous = fullWindow.length === requiredPilotDays && fullWindow.every((entry, index) =>
-    entry.rolloutPercent === 100 && entry.telemetryComplete && entry.reconciliationComplete
-    && (index === 0 || isoDayNumber(entry.day) - isoDayNumber(fullWindow[index - 1].day) === 1));
+  const continuous = fullWindow.length === requiredPilotDays
+    && fullWindow.some(entry => entry.recordingRequests > 0)
+    && fullWindow.every((entry, index) => entry.rolloutPercent === 100 && entry.telemetryComplete && entry.reconciliationComplete
+      && (index === 0 || isoDayNumber(entry.day) - isoDayNumber(fullWindow[index - 1].day) === 1));
   const legacy = fullWindow.reduce((sum, entry) => sum + entry.legacy.requestPaths + entry.legacy.queues + entry.legacy.jobs, 0);
   const sameCandidate = candidateSha256 === pilot.candidateSha256;
   return [

@@ -235,3 +235,5 @@ Checked against the code; each one names where it lives.
 The understanding reader budgets the system prompt, context, reply schema and output separately from the user sentence limit. Its short structured Gemini 3.1 Flash-Lite calls request minimal thinking. Recorded completion usage includes reported thinking tokens.
 
 The understanding reader uses the same classification routing tier and output allowance for eligible Free and Pro requests. Admission checks the actual subscription, its parse switch, request allowance and remaining tokens. The admin prompt detail selects the full or compact prompt for both. The classification evaluator reports incomplete provider coverage alongside returned answers.
+
+The recording admission service counts logical requests separately from provider attempts. It checks the recording request and token caps under the owner lock. A completed request can replay its saved result. Reconciliation accounts for provider attempts and speech usage against the reserved budget.

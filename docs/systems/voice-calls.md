@@ -528,3 +528,5 @@ read-back; nothing said before the user last spoke does. The re-request never gr
 - [Recording spending](expense-capture.md): voice dictation of expenses is a different feature with its own quota
   check.
 - [Server platform and data](platform.md): Redis and the settings cache.
+
+A call's confirmed expense draft passes the stable item id from the understanding reader to the ledger. This keeps two equal-value expenses separated when their purposes or commitments differ.

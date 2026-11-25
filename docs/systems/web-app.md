@@ -188,3 +188,5 @@ uses the same semantics and server-generated procedure names, honors amount priv
 covered at 200% text scale/offline. A summary income row wraps at that scale rather than overflowing.
 
 The Flutter recording outbox keeps parsed voice questions and reviews across restarts. A review can show the recorded direction, date and localized reason before saving.
+
+The parked web recorder persists a partial reading before booking it. A lost response can retry using the same server log. Manual entries and edits can carry an explicit purpose, and the statistics chart uses the same purpose to request its underlying rows.

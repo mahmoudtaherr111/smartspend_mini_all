@@ -55,6 +55,7 @@ export function createVoiceAppCalls(router: {
         // loan or gam3eya its way, a purpose its person.
         items: result.items.map((item) => ({
           amount: Number(item.amount),
+          ...("readingItemId" in item && typeof item.readingItemId === "string" ? { readingItemId: item.readingItemId } : {}),
           type: String(item.type ?? "expense"),
           category: item.category,
           subCategory: item.subCategory,
@@ -99,6 +100,7 @@ export function createVoiceAppCalls(router: {
           source: "voice" as const,
           date: item.date,
           classificationLogId: item.classificationLogId,
+          readingItemId: item.readingItemId,
           clientRequestId: item.clientRequestId,
           direction: item.direction,
           personName: item.personName,

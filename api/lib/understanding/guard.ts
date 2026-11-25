@@ -35,6 +35,7 @@ export type EventFlag =
   | "date_invalid"
   | "date_unverified"
   | "local_negation_disagrees"
+  | "reported_quote"
   | "duplicate_event"
   | `model_doubt:${string}`;
 
@@ -139,6 +140,9 @@ export function guardReading(reading: Reading, sentence: string, ctx: GuardConte
   const text = evidenceText(sentence);
   const mentions = numberMentionSpans(text);
   const today = Date.parse(`${ctx.today}T12:00:00Z`);
+  // The narrator can repeat another person's words without asserting the payment as their own.
+  const reported = [...sentence.matchAll(/(?:^|[\s،؛.])(?:قال(?:ت|وا)?|كتب(?:ت|وا)?|بيقول(?:وا)?|بتقول)\s*[:،]?\s*(?:«([^»]+)»|“([^”]+)”|"([^"]+)")/gu)]
+    .flatMap(match => spansOf(evidenceText(match[1] ?? match[2] ?? match[3]), text));
   const quoteSpans = reading.events.map((event) => spansOf(evidenceText(event.quote), text));
   const replyFlags = new Set<ReplyFlag>();
   if (eventsDropped) replyFlags.add("events_dropped");
@@ -216,6 +220,9 @@ export function guardReading(reading: Reading, sentence: string, ctx: GuardConte
     const flags: EventFlag[] = [];
     const next: GuardedEvent = { ...event, flags };
     const spans = quoteSpans[eventIndex];
+    if (reported.some(quote => spans.some(span => span.start < quote.end && quote.start < span.end))) {
+      flags.push("reported_quote");
+    }
 
     // ── Money ──
     if (!(event.amount > 0)) {

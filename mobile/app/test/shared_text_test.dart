@@ -29,7 +29,7 @@ void main() {
       api.answer(
         'ai.parseExpense',
         (input) => {
-          'decision': 'recorded',
+          'decision': 'review',
           'items': [
             {
               'amount': 150,
@@ -50,6 +50,12 @@ void main() {
       expect(api.lastInput('ai.parseExpense'), {
         'text': 'دفعت 150 جنيه بنزين كاش',
         'inputChannel': 'text',
+        'partialBooking': true,
+        'clientRequestId': isA<String>().having(
+          (id) => id.isNotEmpty,
+          'isNotEmpty',
+          true,
+        ),
       });
       final receiver = app.container.read(sharedTextReceiverProvider);
 

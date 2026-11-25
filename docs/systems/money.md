@@ -527,3 +527,5 @@ This is cancellation, not a fabricated delivery timestamp; already delivered not
 
 A category or subcategory edit marks the classification log linked to the original expense. In a multi-item reading, correction learning uses the uniquely matched clause.
 Saved ledger entries return purpose labels when the current taxonomy version and the stored filing agree. Flutter lists, details and save notices use these labels. Editing the category, subcategory or row type supersedes the original reading for display. Older entries and entries without a matching reading use their accounting category. Budget and reporting totals still use the stored filing.
+
+The parked web statistics screen reads the purpose breakdown and asks the server for its matching transactions. Its manual and edit forms can send the selected purpose, and a transfer also specifies its financial kind and direction.

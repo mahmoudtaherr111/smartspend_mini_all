@@ -56,7 +56,7 @@ vi.mock("../../lib/ai-usage-policy", async (importOriginal) => {
     trackAiTokens: vi.fn(async () => undefined),
   };
 });
-vi.mock("../../lib/ai-ledger", () => ({ recordModelCalls: vi.fn() }));
+vi.mock("../../lib/ai-ledger", () => ({ recordAiLedger: vi.fn(async () => undefined), recordModelCalls: vi.fn() }));
 vi.mock("../ai-cost-policy", () => ({ recordAICostMetric: vi.fn(async () => undefined) }));
 vi.mock("./admission", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./admission")>();
@@ -72,9 +72,10 @@ vi.mock("./admission", async (importOriginal) => {
   };
 });
 
-import { recordModelCalls } from "../../lib/ai-ledger";
+import { recordAiLedger, recordModelCalls } from "../../lib/ai-ledger";
 import { assertAiBudget, estimateTokensFromText, getAiBudget, trackAiTokens } from "../../lib/ai-usage-policy";
 import { readSentence, READING_LOG_VERSION, UNAVAILABLE_MESSAGE, type ReadSentenceDeps } from "./read-sentence";
+import { settleRecording } from "./admission";
 
 const user = { id: 31, type: "local" as const, plan: "free" };
 const context = assembleContext({
@@ -128,6 +129,8 @@ beforeEach(() => {
   h.budget = { limit: 50_000, used: 0, remaining: 50_000, plan: "free", perRequestMax: 384 };
   vi.mocked(assertAiBudget).mockClear();
   vi.mocked(recordModelCalls).mockClear();
+  vi.mocked(recordAiLedger).mockClear();
+  vi.mocked(settleRecording).mockClear();
   vi.mocked(trackAiTokens).mockClear();
 });
 
@@ -254,7 +257,8 @@ describe("each outcome", () => {
     expect(READING_LOG_VERSION.length).toBeLessThanOrEqual(20);
     expect(row.finalResult).toEqual(result.items);
     const trace = row.reasoningTraceLight as Record<string, unknown>;
-    expect(Object.keys(trace).sort()).toEqual(["flags", "outcome", "reasons", "route", "usage", "versions"]);
+    expect(Object.keys(trace).sort()).toEqual(["flags", "outcome", "reasons", "recordingRequestId", "route", "usage", "versions"]);
+    expect(trace.recordingRequestId).toBe(1);
     expect(JSON.stringify(trace)).not.toContain("دفعت");
   });
 
@@ -316,5 +320,20 @@ describe("no provider could read", () => {
     expect(recordModelCalls).toHaveBeenCalledWith(user, "parse", failed, expect.objectContaining({ tokens: 50 }));
     expect(trackAiTokens).toHaveBeenCalledWith(user, 50, "parse", "alpha-1");
     expect(h.inserts).toEqual([]);
+  });
+
+  it("settles an actual provider timeout with its estimate and skips routes the deadline never started", async () => {
+    const attempts: LlmAttempt[] = [
+      { slug: "alpha", model: "alpha-1", ok: false, latencyMs: 9, failure: "timeout" },
+      { slug: "beta", model: "beta-1", ok: false, latencyMs: 0, failure: "timeout" },
+    ];
+    const d = deps(() => { throw new UnderstandingUnavailableError("no", attempts); });
+    await expect(readSentence({ user, text: "دفعت 20 قهوة", channel: "text" }, d)).rejects.toMatchObject({ code: "SERVICE_UNAVAILABLE" });
+    expect(recordAiLedger).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      providerSlug: "alpha", modelId: "alpha-1", finishReason: "timeout", metadata: { estimated: true },
+    }));
+    const tokens = vi.mocked(recordAiLedger).mock.calls[0][0].promptTokens;
+    expect(tokens).toBeGreaterThan(0);
+    expect(settleRecording).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: 1 }), tokens);
   });
 });

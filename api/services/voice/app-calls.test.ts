@@ -39,10 +39,11 @@ describe("createVoiceAppCalls", () => {
 
   it("keeps a refund's direction and the person beside the purpose from parse to save", async () => {
     const batchCreate = vi.fn(async () => ({ success: true, count: 1 }));
+    const readingItemId = "4b3100ee-5324-499b-9e0f-67e4019bbcd2";
     const parseExpense = vi.fn(async () => ({
       decision: "review",
       items: [
-        { amount: 300, type: "expense", category: "تسوق", direction: "incoming", person_mentioned: "أحمد", person_relationship: "صديق" },
+        { readingItemId, amount: 300, type: "expense", category: "تسوق", direction: "incoming", person_mentioned: "أحمد", person_relationship: "صديق" },
         { amount: 500, type: "transfer", category: "سلف", direction: "outgoing" },
         { amount: 80, type: "expense", category: "أكل وشرب", direction: "outgoing" },
       ],
@@ -61,7 +62,7 @@ describe("createVoiceAppCalls", () => {
 
     await app.saveExpenses(identity, parsed.items.map((item, index) => ({ ...item, rawText: "x", clientRequestId: `vc:1:d:${index}` })));
     const sent = (batchCreate.mock.calls[0] as unknown as [Array<Record<string, unknown>>])[0];
-    expect(sent[0]).toMatchObject({ direction: "incoming", personName: "أحمد", personRelationship: "صديق", source: "voice" });
+    expect(sent[0]).toMatchObject({ readingItemId, direction: "incoming", personName: "أحمد", personRelationship: "صديق", source: "voice" });
     expect(sent[1]).toMatchObject({ type: "transfer", direction: "outgoing" });
     expect(sent[2].direction).toBeUndefined();
   });

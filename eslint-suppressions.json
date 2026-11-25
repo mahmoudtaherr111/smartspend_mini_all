@@ -96,9 +96,6 @@
   "api/chat-router.phase6.test.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 4
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
     }
   },
   "api/chat-router.phase9.test.ts": {

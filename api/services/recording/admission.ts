@@ -63,6 +63,7 @@ async function requestsWithoutReservation(tx: Tx, owner: Owner, now: Date) {
   const [row] = await tx.select({ count: sql<number>`COUNT(*)` }).from(classificationLogs).where(and(
     eq(classificationLogs.userId, owner.id), eq(classificationLogs.userType, owner.type),
     gte(classificationLogs.createdAt, start), lt(classificationLogs.createdAt, endExclusive),
+    sql`JSON_EXTRACT(${classificationLogs.reasoningTraceLight}, '$.recordingRequestId') IS NULL`,
     sql`NOT EXISTS (SELECT 1 FROM recording_requests r WHERE r.user_id = ${classificationLogs.userId}
       AND r.user_type = ${classificationLogs.userType} AND r.classification_log_id = ${classificationLogs.id})`,
   ));
@@ -170,9 +171,12 @@ export async function advanceRecording<T>(lease: RecordingLease, settings: Recor
 export async function settleRecording(lease: RecordingLease, tokens: number | null, response?: ParseResponse) {
   // `null` means the provider may still bill the reserved estimate after an uncertain failure.
   const reply = response ? { ...response, text: undefined } : null;
-  await getDb().update(recordingRequests).set({
-    status: response ? "done" : "failed", reservedTokens: 0,
-    chargedTokens: sql`${recordingRequests.chargedTokens} + ${tokens === null ? recordingRequests.reservedTokens : tokens}`,
-    classificationLogId: response?.classificationLogId, reply,
-  }).where(leaseScope(lease));
+  await getDb().transaction(async tx => {
+    await lockOwner(tx, lease.owner);
+    await tx.update(recordingRequests).set({
+      status: response ? "done" : "failed", reservedTokens: 0,
+      chargedTokens: sql`${recordingRequests.chargedTokens} + ${tokens === null ? recordingRequests.reservedTokens : tokens}`,
+      classificationLogId: response?.classificationLogId, reply,
+    }).where(leaseScope(lease));
+  });
 }

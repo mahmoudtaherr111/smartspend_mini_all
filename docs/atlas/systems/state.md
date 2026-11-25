@@ -10,19 +10,19 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-21 e7b84e27 | behind the English page | 18 | — | — | 1 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-21 0abf2ed4 | behind the English page | 8 | — | — | 5 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-11-21 0abf2ed4 | 2026-11-21 873da7f4 | 10 | — | — | 4 | 2 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-11-05 f7bb4b83 | behind the English page | 6 | — | — | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-21 0abf2ed4 | 2026-11-21 873da7f4 | 9 | — | 2 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-21 e7b84e27 | behind the English page | 11 | — | 1 | 10 | 1 |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-21 e7b84e27 | behind the English page | 16 | **1** | — | 7 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-05 df6216e1 | 2026-11-03 ff028180 | 2 | — | — | 2 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-21 0abf2ed4 | behind the English page | 4 | — | — | 3 | 1 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-21 20483aa7 | behind the English page | 7 | — | — | 5 | — |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-21 20483aa7 | behind the English page | 10 | — | — | 3 | 5 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-21 e7b84e27 | behind the English page | 5 | — | — | 1 | 7 |
-| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-21 e7b84e27 | 2026-11-21 e7b84e27 | 10 | — | — | 3 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-25 2778d740 | 2026-11-25 2778d740 | 18 | — | — | 1 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-25 2778d740 | 2026-11-25 2778d740 | 8 | — | — | 5 | 1 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-11-25 2778d740 | 2026-11-25 2778d740 | 10 | — | — | 4 | 2 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-11-25 2778d740 | 2026-11-25 2778d740 | 6 | — | — | 2 | 2 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-25 2778d740 | 2026-11-25 2778d740 | 9 | — | 2 | 3 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-25 2778d740 | 2026-11-25 2778d740 | 11 | — | 1 | 10 | 1 |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-25 2778d740 | 2026-11-25 2778d740 | 16 | **1** | — | 7 | — |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-25 1435873a | 2026-11-25 1435873a | 2 | — | — | 2 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-25 1435873a | 2026-11-25 1435873a | 4 | — | — | 3 | 1 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-25 2778d740 | 2026-11-25 2778d740 | 7 | — | — | 5 | — |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-25 2778d740 | 2026-11-25 2778d740 | 10 | — | — | 3 | 5 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-25 2778d740 | 2026-11-25 2778d740 | 5 | — | — | 1 | 7 |
+| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-25 2778d740 | 2026-11-25 2778d740 | 10 | — | — | 3 | 1 |
 
 
 ## Where the risk is

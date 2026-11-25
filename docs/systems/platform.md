@@ -225,3 +225,5 @@ Authenticated clients can read the purpose catalog through taxonomy.get, includi
 Migration 0053 adds versioned purpose ids to expenses. When the saved evidence establishes a purpose, the ledger writer stores the ids alongside the existing filing. Nullable ids retain broad historical meanings. The maintenance command `npx tsx scripts/agent/backfill-recording-purpose.ts local 123` previews one account. Adding `--apply` locks each batch, sets only unversioned purpose fields and preserves ledger dates, amounts and update timestamps. Repeating the command skips completed rows.
 
 Migration 0054 adds the versioned purpose of an explicit user correction to a learned rule. This preserves the selected leaf when two leaves share an accounting name.
+
+Migration 0055 adds recording_requests. A request belongs to the signed-in identity pair and has a replay key, a Cairo billing period and a time-limited reservation. The admission transaction locks the account before checking its remaining recording allowances. Retention removes old request records after sixty days.

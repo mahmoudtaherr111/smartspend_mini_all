@@ -5,6 +5,7 @@ import type { FactLedger } from "../facts";
 
 export interface ParsedExpenseItem {
   amount: number;
+  readingItemId?: string;
   type: string;
   category: string;
   subCategory?: string;

@@ -17,7 +17,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq } from "drizzle-orm";
 import { classificationLogs, pendingClarifications, userBusinesses } from "../../../db/schema";
-import { recordModelCalls } from "../../lib/ai-ledger";
+import { recordAiLedger, recordModelCalls } from "../../lib/ai-ledger";
 import {
   assertAiBudget,
   assertAiBudgetRemaining,
@@ -49,7 +49,6 @@ const log = createLogger("recording.read-sentence");
 export const UNAVAILABLE_MESSAGE = "مش قادرين نقرا الجملة دلوقتي. جرّب كمان شوية.";
 const PARSE_OFF_MESSAGE = "تحليل الرسائل بالذكاء الاصطناعي غير متاح في خطتك الحالية.";
 const SCHEMA_AND_FRAMING_TOKENS = estimateTokensFromText(JSON.stringify(READING_SCHEMA)) + 128;
-const MIN_REPLY_TOKENS = 64;
 const MODEL_USED_MAX = 100;
 
 export interface SentenceUser {
@@ -103,7 +102,7 @@ function providerReplyHeadroom(route: LlmRoute): number {
   return route.suppressReasoning && /gpt-oss/i.test(route.model) ? 1_024 : 0;
 }
 
-export function budgetReading(text: string, context: ReadingContext, settings: Record<string, string>, routes: LlmRoute[], budget: AiBudget): { routes: LlmRoute[]; maxOutputTokens: number; reservedTokens: number } {
+export function budgetReading(text: string, context: ReadingContext, settings: Record<string, string>, routes: LlmRoute[], budget: AiBudget): { routes: LlmRoute[]; maxOutputTokens: number; reservedTokens: number; attemptEstimate: number } {
   const sentence = text.trim();
   const ordered = routes.filter((route) => route.apiKey && route.model).sort((a, b) => a.priority - b.priority);
   if (sentence.length > MAX_SENTENCE_CHARS) {
@@ -113,11 +112,12 @@ export function budgetReading(text: string, context: ReadingContext, settings: R
       const plans = chunks.map(chunk => budgetReading(chunk, context, settings, ordered, allowance));
       return { routes: ordered.slice(0, Math.min(...plans.map(plan => plan.routes.length))),
         maxOutputTokens: Math.min(...plans.map(plan => plan.maxOutputTokens)),
-        reservedTokens: plans.reduce((total, plan) => total + plan.reservedTokens, 0) };
+        reservedTokens: plans.reduce((total, plan) => total + plan.reservedTokens, 0),
+        attemptEstimate: Math.max(...plans.map(plan => plan.attemptEstimate)) };
     }
   }
   if (!sentence || sentence.length > MAX_SENTENCE_CHARS || !ordered.length) {
-    return { routes: ordered, maxOutputTokens: budget.perRequestMax, reservedTokens: 0 };
+    return { routes: ordered, maxOutputTokens: budget.perRequestMax, reservedTokens: 0, attemptEstimate: 0 };
   }
 
   const detail = settings.understanding_prompt_detail === "compact" ? "compact" : "full";
@@ -125,10 +125,9 @@ export function budgetReading(text: string, context: ReadingContext, settings: R
   const prompt = buildUserPrompt(toPromptContext(context), sentence, detail);
   // The user cap applies to the sentence. The monthly balance pays for the full call, including cached input.
   const promptTokens = Math.ceil((estimateTokensFromText(system) + estimateTokensFromText(prompt)) * 1.1) + SCHEMA_AND_FRAMING_TOKENS;
-  const firstRouteInput = promptTokens + providerReplyHeadroom(ordered[0]);
-  assertAiBudgetRemaining(budget, firstRouteInput + Math.min(MIN_REPLY_TOKENS, budget.perRequestMax));
-  const maxOutputTokens = Math.min(budget.perRequestMax, budget.remaining - firstRouteInput);
+  const maxOutputTokens = budget.perRequestMax;
   const perRoute = promptTokens + outputTokensFor(sentence, maxOutputTokens);
+  assertAiBudgetRemaining(budget, perRoute + providerReplyHeadroom(ordered[0]));
 
   // An unusable reply can be billable. Only offer fallback routes that fit in the same monthly balance.
   let left = budget.remaining;
@@ -139,7 +138,8 @@ export function budgetReading(text: string, context: ReadingContext, settings: R
     left -= tokens;
     affordable.push(route);
   }
-  return { routes: affordable, maxOutputTokens, reservedTokens: budget.remaining - left };
+  return { routes: affordable, maxOutputTokens, reservedTokens: budget.remaining - left,
+    attemptEstimate: Math.max(0, ...affordable.map(route => perRoute + providerReplyHeadroom(route))) };
 }
 
 /** Voice checks this switch before it pays for transcription. Count limits are checked while reserving. */
@@ -219,6 +219,21 @@ const spendOf = (usage: UnderstandingUsage): Spend => ({
   totalTokens: usage.totalTokens,
   latencyMs: usage.latencyMs,
 });
+
+function chargeReadingAttempts(user: SentenceUser, spend: Pick<Spend, "attempts" | "totalTokens">, reservedTokens: number, attemptEstimate: number) {
+  let charged = spend.totalTokens;
+  for (const attempt of spend.attempts) {
+    if (attempt.totalTokens || attempt.promptTokens || attempt.completionTokens || attempt.latencyMs <= 0 ||
+        (attempt.failure !== "timeout" && attempt.failure !== "network")) continue;
+    const estimate = Math.min(attemptEstimate, Math.max(0, reservedTokens - charged));
+    if (!estimate) break;
+    charged += estimate;
+    void recordAiLedger({ userId: user.id, userType: user.type, channel: "parse", providerSlug: attempt.slug,
+      modelId: attempt.model, promptTokens: estimate, completionTokens: 0, latencyMs: attempt.latencyMs,
+      httpStatus: attempt.status ?? 0, finishReason: attempt.failure, metadata: { estimated: true } });
+  }
+  return charged;
+}
 
 function traceOf(input: ReadSentenceInput, understanding: Understanding, decision: ParseDecision, confidence: number, itemCount: number, latencyMs: number): UnderstandingTrace {
   const { usage } = understanding;
@@ -320,7 +335,7 @@ async function readWithReservation(input: ReadSentenceInput, deps: ReadSentenceD
     plan: await advanceRecording(input.reservation, settings, input.stt?.tokensUsed ?? 0, planTokens),
   } : await reserveRecording(user, input.requestKey ?? recordingKey(input.channel), settings, planTokens, new Date(startedAt), text);
   if ("reply" in reservation && reservation.reply) return reservation.reply;
-  const { lease, plan: { routes, maxOutputTokens } } = reservation;
+  const { lease, plan: { routes, maxOutputTokens, reservedTokens, attemptEstimate } } = reservation;
   if (lease) checkpoint(lease, null);
 
   let understanding: Understanding;
@@ -330,7 +345,7 @@ async function readWithReservation(input: ReadSentenceInput, deps: ReadSentenceD
     const failed = err instanceof UnderstandingUnavailableError ? err : null;
     const attempts = failed?.attempts ?? [];
     const tokens = failed?.tokens ?? { promptTokens: 0, completionTokens: 0, cachedTokens: 0, totalTokens: 0 };
-    if (lease && failed) checkpoint(lease, tokens.totalTokens);
+    if (lease && failed) checkpoint(lease, chargeReadingAttempts(user, { attempts, totalTokens: tokens.totalTokens }, reservedTokens, attemptEstimate));
     await recordSpend(user, input, {
       attempts, model: attempts.at(-1)?.model ?? null, servedBy: attempts.at(-1)?.slug ?? null, ...tokens, latencyMs: Date.now() - startedAt,
     }, { outcome: "unavailable" });
@@ -345,7 +360,7 @@ async function readWithReservation(input: ReadSentenceInput, deps: ReadSentenceD
     );
     throw new TRPCError({ code: "SERVICE_UNAVAILABLE", message: UNAVAILABLE_MESSAGE, cause: err });
   }
-  if (lease) checkpoint(lease, understanding.usage.totalTokens);
+  if (lease) checkpoint(lease, chargeReadingAttempts(user, understanding.usage, reservedTokens, attemptEstimate));
 
   const itemContext = { people: context.people, businessId };
   const split = input.partialBooking && !input.skipClarification && (input.openClarification !== false || input.chatRecording)
@@ -379,6 +394,7 @@ async function readWithReservation(input: ReadSentenceInput, deps: ReadSentenceD
         classificationVersion: READING_LOG_VERSION,
         reasoningTraceLight: {
           outcome: understanding.outcome,
+          ...(lease ? { recordingRequestId: lease.id } : {}),
           ...(input.chatRecording ? { chatRecording: true } : {}),
           ...(split ? { partialBooking: {
             missing: split.missing.map(clause => ({ clause, itemId: randomUUID() })),

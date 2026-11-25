@@ -990,7 +990,7 @@ export const aiRouter = router({
       ai: {
         limit: aiBudget.limit,
         used: aiBudget.used,
-        remaining: aiBudget.limit > 0 ? aiBudget.remaining : -1,
+        remaining: aiBudget.limit > 0 ? aiBudget.remaining : understandingEngine ? 0 : -1,
         maxPerRequest: aiBudget.perRequestMax,
       },
       ...(recording ? { recording: { ...recording, limits, resetDate: businessMonthRange().endExclusive.toISOString() } } : {}),
@@ -1290,6 +1290,7 @@ export const aiRouter = router({
       if (understandingEngine) assertSentenceAllowed(ctx.user, cfg);
 
       const estimated = estimateSpeechTokens(input.audioBase64, voiceVerdict.billableSeconds);
+      const speechAttemptBudget = Math.max(estimated, Math.ceil(voiceVerdict.billableSeconds * 32) + 256);
       await assertAiBudget(
         ctx.user,
         "speech",
@@ -1298,7 +1299,7 @@ export const aiRouter = router({
         understandingEngine ? { recordingBudget: { limit: recordingLimits(cfg, ctx.user).tokens, used: 0 } } : undefined,
       );
 
-      const plan = ctx.user.plan === "ultra" ? "pro" : ctx.user.plan || "free";
+      const plan = understandingEngine || ctx.user.plan === "ultra" ? "pro" : ctx.user.plan || "free";
       const sttModelSetting = cfg[`${plan}_stt_model`] || cfg.stt_model || "gemini-1.5-flash";
       const sttModel = mapModelName(sttModelSetting);
       const getSTTKey = (targetModel: string) => {
@@ -1310,7 +1311,7 @@ export const aiRouter = router({
       const cleanMimeType = input.mimeType.split(";")[0];
       const pureBase64 = input.audioBase64.includes(",") ? input.audioBase64.split(",")[1] : input.audioBase64;
       const speechAdmission = understandingEngine
-        ? await reserveRecording(ctx.user, key, cfg, () => ({ reservedTokens: estimated * 2, plan: null }), new Date(startTime))
+        ? await reserveRecording(ctx.user, key, cfg, () => ({ reservedTokens: speechAttemptBudget * 2, plan: null }), new Date(startTime))
         : undefined;
       if (speechAdmission?.reply) return speechAdmission.reply;
       const speechLease = speechAdmission?.lease;
@@ -1335,8 +1336,8 @@ export const aiRouter = router({
           return result;
         } catch (error) {
           // Without provider usage we keep the reserved estimate for an ambiguous paid attempt.
-          speechTokens += estimated;
-          void recordAiLedger({ ...usage, promptTokens: estimated, completionTokens: 0, httpStatus: 0,
+          speechTokens += speechAttemptBudget;
+          void recordAiLedger({ ...usage, promptTokens: speechAttemptBudget, completionTokens: 0, httpStatus: 0,
             latencyMs: Date.now() - started, finishReason: "failed", metadata: { attempt, estimated: true } });
           throw error;
         }

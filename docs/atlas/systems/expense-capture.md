@@ -13,9 +13,7 @@ Solid arrows: calls and uses. Thick arrows: writes a table. Dotted arrows: reads
 ```mermaid
 flowchart LR
   subgraph g_screens["Screens"]
-    screens_admin["Screens of Admin console, support and growth tools"]
     screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
-    screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
     job_classification_log_cleanup["Job · classification-log-cleanup"]
@@ -114,11 +112,9 @@ flowchart LR
   router_image -.-> tbl_more
   router_image -.-> tbl_user_dictionaries
   router_taxonomy --> sys_platform
-  screens_admin --> router_ai
   screens_money --> router_ai
   screens_money --> router_expense
   screens_money --> router_image
-  screens_web_app --> router_ai
 ```
 
 ## Journeys
@@ -181,7 +177,7 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
 | `ai.learnWord` | mutation | `authedProcedure` | — | `user_dictionaries` | — |
-| `ai.parseExpense` | mutation | `aiProcedure` | `business_categories`, `user_businesses`, `user_dictionaries` | `classification_logs`, `pending_clarifications` | `Admin`, `Home`, `More` |
+| `ai.parseExpense` | mutation | `aiProcedure` | `business_categories`, `user_businesses`, `user_dictionaries` | `classification_logs`, `pending_clarifications` | `Home` |
 | `ai.parseVoiceExpense` | mutation | `aiProcedure` | `business_categories`, `user_businesses`, `user_dictionaries`, `voice_usage` | `classification_logs`, `pending_clarifications`, `voice_usage` | `Home` |
 | `ai.speechToText` | mutation | `aiProcedure` | `voice_usage` | `voice_usage` | — |
 | `expense.answerClarification` | mutation | `authedProcedure` | `business_categories`, `classification_logs`, `pending_clarifications`, `user_businesses`, `user_contacts`, `user_dictionaries` | `pending_clarifications` | `Home` |

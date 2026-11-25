@@ -9,9 +9,9 @@ model {
         file 'api/admin-router.ts'
       }
       addAiProvider = procedure 'admin.addAiProvider' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -29,9 +29,9 @@ model {
         }
       }
       clearAllApiKeyErrors = procedure 'admin.clearAllApiKeyErrors' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -39,9 +39,9 @@ model {
         }
       }
       createNotificationTemplate = procedure 'admin.createNotificationTemplate' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -49,9 +49,9 @@ model {
         }
       }
       deleteAiProvider = procedure 'admin.deleteAiProvider' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -59,9 +59,9 @@ model {
         }
       }
       deleteLearnedRule = procedure 'admin.deleteLearnedRule' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -69,9 +69,9 @@ model {
         }
       }
       deleteNotificationTemplate = procedure 'admin.deleteNotificationTemplate' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -79,9 +79,9 @@ model {
         }
       }
       deleteUser = procedure 'admin.deleteUser' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -89,9 +89,9 @@ model {
         }
       }
       discoverProviderModels = procedure 'admin.discoverProviderModels' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -109,9 +109,9 @@ model {
         }
       }
       getAIClassificationStats = procedure 'admin.getAIClassificationStats' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -119,9 +119,9 @@ model {
         }
       }
       getAICostOverview = procedure 'admin.getAICostOverview' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -129,9 +129,9 @@ model {
         }
       }
       getActivityLog = procedure 'admin.getActivityLog' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -139,9 +139,9 @@ model {
         }
       }
       getAiModels = procedure 'admin.getAiModels' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -149,9 +149,9 @@ model {
         }
       }
       getAiProviders = procedure 'admin.getAiProviders' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -159,9 +159,9 @@ model {
         }
       }
       getAiTelemetryOverview = procedure 'admin.getAiTelemetryOverview' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -179,9 +179,9 @@ model {
         }
       }
       getApiKeyErrors = procedure 'admin.getApiKeyErrors' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -189,9 +189,9 @@ model {
         }
       }
       getAuditLogs = procedure 'admin.getAuditLogs' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -199,9 +199,9 @@ model {
         }
       }
       getAvailableModels = procedure 'admin.getAvailableModels' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -209,9 +209,9 @@ model {
         }
       }
       getClassificationLogs = procedure 'admin.getClassificationLogs' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -219,9 +219,9 @@ model {
         }
       }
       getClassificationQuality = procedure 'admin.getClassificationQuality' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -229,9 +229,9 @@ model {
         }
       }
       getDashboardStats = procedure 'admin.getDashboardStats' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -239,9 +239,9 @@ model {
         }
       }
       getFounderMetrics = procedure 'admin.getFounderMetrics' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -249,9 +249,9 @@ model {
         }
       }
       getLearnedRules = procedure 'admin.getLearnedRules' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -259,9 +259,9 @@ model {
         }
       }
       getNotificationLogs = procedure 'admin.getNotificationLogs' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -269,9 +269,9 @@ model {
         }
       }
       getNotificationStats = procedure 'admin.getNotificationStats' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -279,9 +279,9 @@ model {
         }
       }
       getNotificationTemplates = procedure 'admin.getNotificationTemplates' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -289,9 +289,9 @@ model {
         }
       }
       getPendingClarifications = procedure 'admin.getPendingClarifications' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -309,9 +309,9 @@ model {
         }
       }
       getSettings = procedure 'admin.getSettings' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -329,9 +329,9 @@ model {
         }
       }
       getUserAiQuota = procedure 'admin.getUserAiQuota' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -339,9 +339,9 @@ model {
         }
       }
       getUserSessions = procedure 'admin.getUserSessions' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -349,9 +349,9 @@ model {
         }
       }
       getUserSmartProfile = procedure 'admin.getUserSmartProfile' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -359,9 +359,9 @@ model {
         }
       }
       getVoiceUsageStats = procedure 'admin.getVoiceUsageStats' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -369,9 +369,9 @@ model {
         }
       }
       listAllUsers = procedure 'admin.listAllUsers' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -379,9 +379,9 @@ model {
         }
       }
       listStorePurchasesAdmin = procedure 'admin.listStorePurchasesAdmin' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -389,9 +389,9 @@ model {
         }
       }
       listSubscriptionsAdmin = procedure 'admin.listSubscriptionsAdmin' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -409,9 +409,9 @@ model {
         }
       }
       resolveApiKeyError = procedure 'admin.resolveApiKeyError' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -419,9 +419,9 @@ model {
         }
       }
       resolveClarification = procedure 'admin.resolveClarification' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -429,9 +429,9 @@ model {
         }
       }
       revokeSession = procedure 'admin.revokeSession' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -439,9 +439,9 @@ model {
         }
       }
       saveAiModels = procedure 'admin.saveAiModels' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -449,9 +449,9 @@ model {
         }
       }
       sendInstantNotification = procedure 'admin.sendInstantNotification' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -479,9 +479,9 @@ model {
         }
       }
       toggleNotificationTemplate = procedure 'admin.toggleNotificationTemplate' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -489,9 +489,9 @@ model {
         }
       }
       triggerActivityCheck = procedure 'admin.triggerActivityCheck' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -499,9 +499,9 @@ model {
         }
       }
       triggerBackupDemo = procedure 'admin.triggerBackupDemo' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -509,9 +509,9 @@ model {
         }
       }
       updateAiProvider = procedure 'admin.updateAiProvider' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -519,9 +519,9 @@ model {
         }
       }
       updateNotificationTemplate = procedure 'admin.updateNotificationTemplate' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -529,9 +529,9 @@ model {
         }
       }
       updateSettings = procedure 'admin.updateSettings' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -549,9 +549,9 @@ model {
         }
       }
       updateUserPlanV2 = procedure 'admin.updateUserPlanV2' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -559,9 +559,9 @@ model {
         }
       }
       updateUserRole = procedure 'admin.updateUserRole' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -569,9 +569,9 @@ model {
         }
       }
       validateApiKey = procedure 'admin.validateApiKey' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'
@@ -771,9 +771,9 @@ model {
         }
       }
       getOutboxLog = procedure 'adminWhatsapp.getOutboxLog' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-whatsapp-router.ts'
           builder 'adminProcedure'
@@ -781,9 +781,9 @@ model {
         }
       }
       getSettings = procedure 'adminWhatsapp.getSettings' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-whatsapp-router.ts'
           builder 'adminProcedure'
@@ -791,9 +791,9 @@ model {
         }
       }
       getStatus = procedure 'adminWhatsapp.getStatus' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-whatsapp-router.ts'
           builder 'adminProcedure'
@@ -801,9 +801,9 @@ model {
         }
       }
       getTemplates = procedure 'adminWhatsapp.getTemplates' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-whatsapp-router.ts'
           builder 'adminProcedure'
@@ -821,9 +821,9 @@ model {
         }
       }
       sendDirectMessage = procedure 'adminWhatsapp.sendDirectMessage' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-whatsapp-router.ts'
           builder 'adminProcedure'
@@ -851,9 +851,9 @@ model {
         }
       }
       syncTemplates = procedure 'adminWhatsapp.syncTemplates' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-whatsapp-router.ts'
           builder 'adminProcedure'
@@ -871,9 +871,9 @@ model {
         }
       }
       updateSettings = procedure 'adminWhatsapp.updateSettings' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-whatsapp-router.ts'
           builder 'adminProcedure'
@@ -897,9 +897,9 @@ model {
         }
       }
       create = procedure 'ads.create' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/ads-router.ts'
           builder 'adminProcedure'
@@ -907,9 +907,9 @@ model {
         }
       }
       delete = procedure 'ads.delete' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/ads-router.ts'
           builder 'adminProcedure'
@@ -947,9 +947,9 @@ model {
         }
       }
       stats = procedure 'ads.stats' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/ads-router.ts'
           builder 'adminProcedure'
@@ -957,9 +957,9 @@ model {
         }
       }
       update = procedure 'ads.update' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/ads-router.ts'
           builder 'adminProcedure'
@@ -1621,9 +1621,9 @@ model {
         file 'api/capture-admin-router.ts'
       }
       bulkUndo = procedure 'captureAdmin.bulkUndo' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/capture-admin-router.ts'
           builder 'adminProcedure'
@@ -1631,9 +1631,9 @@ model {
         }
       }
       catalog = procedure 'captureAdmin.catalog' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/capture-admin-router.ts'
           builder 'adminProcedure'
@@ -1641,9 +1641,9 @@ model {
         }
       }
       funnel = procedure 'captureAdmin.funnel' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/capture-admin-router.ts'
           builder 'adminProcedure'
@@ -1671,9 +1671,9 @@ model {
         }
       }
       restoreSeed = procedure 'captureAdmin.restoreSeed' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/capture-admin-router.ts'
           builder 'adminProcedure'
@@ -1681,9 +1681,9 @@ model {
         }
       }
       saveSource = procedure 'captureAdmin.saveSource' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/capture-admin-router.ts'
           builder 'adminProcedure'
@@ -1691,9 +1691,9 @@ model {
         }
       }
       saveSubscription = procedure 'captureAdmin.saveSubscription' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/capture-admin-router.ts'
           builder 'adminProcedure'
@@ -1701,9 +1701,9 @@ model {
         }
       }
       setSourceStatus = procedure 'captureAdmin.setSourceStatus' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/capture-admin-router.ts'
           builder 'adminProcedure'
@@ -1711,9 +1711,9 @@ model {
         }
       }
       setSubscriptionStatus = procedure 'captureAdmin.setSubscriptionStatus' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/capture-admin-router.ts'
           builder 'adminProcedure'
@@ -1731,9 +1731,9 @@ model {
         }
       }
       syncSeed = procedure 'captureAdmin.syncSeed' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/capture-admin-router.ts'
           builder 'adminProcedure'
@@ -1741,9 +1741,9 @@ model {
         }
       }
       timeline = procedure 'captureAdmin.timeline' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/capture-admin-router.ts'
           builder 'adminProcedure'
@@ -2371,9 +2371,9 @@ model {
         file 'api/export-router.ts'
       }
       allUsers = procedure 'export.allUsers' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/export-router.ts'
           builder 'adminProcedure'
@@ -3049,9 +3049,9 @@ model {
         }
       }
       close = procedure 'support.close' {
-        #mutation #authed
+        #mutation #authed #uncalled
         technology 'authedProcedure'
-        description 'mutation · authedProcedure'
+        description 'mutation · authedProcedure · no caller in src/'
         metadata {
           file 'api/support-router.ts'
           builder 'authedProcedure'
@@ -3079,9 +3079,9 @@ model {
         }
       }
       listAll = procedure 'support.listAll' {
-        #query #moderator
+        #query #moderator #uncalled
         technology 'moderatorProcedure'
-        description 'query · moderatorProcedure'
+        description 'query · moderatorProcedure · no caller in src/'
         metadata {
           file 'api/support-router.ts'
           builder 'moderatorProcedure'
@@ -3099,9 +3099,9 @@ model {
         }
       }
       respond = procedure 'support.respond' {
-        #mutation #moderator
+        #mutation #moderator #uncalled
         technology 'moderatorProcedure'
-        description 'mutation · moderatorProcedure'
+        description 'mutation · moderatorProcedure · no caller in src/'
         metadata {
           file 'api/support-router.ts'
           builder 'moderatorProcedure'
@@ -3131,9 +3131,9 @@ model {
         file 'api/voice-router.ts'
       }
       adminStats = procedure 'voice.adminStats' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/voice-router.ts'
           builder 'adminProcedure'
