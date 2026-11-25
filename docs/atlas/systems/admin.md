@@ -95,6 +95,7 @@ flowchart LR
   router_admin ==> tbl_user_dictionaries
   router_admin ==> tbl_users
   router_adminConsole --> sys_ai_platform
+  router_adminConsole --> sys_expense_capture
   router_adminConsole --> sys_platform
   router_adminConsole -.-> tbl_local_users
   router_adminConsole -.-> tbl_more

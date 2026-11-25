@@ -22,12 +22,18 @@ class LedgerApi {
   final Random _random;
 
   /// Reads a typed sentence: `ai.parseExpense`.
-  Future<ParseResult> parse(String text, {bool? businessMode}) async {
+  Future<ParseResult> parse(
+    String text, {
+    bool? businessMode,
+    String? requestId,
+  }) async {
     final data = await _client.mutate(
       Procedures.ai.parseExpense,
       input: {
         'text': text,
         'inputChannel': 'text',
+        'partialBooking': true,
+        'clientRequestId': ?requestId,
         'businessMode': ?businessMode,
       },
     );
@@ -40,6 +46,7 @@ class LedgerApi {
     String mimeType = 'audio/m4a',
     int durationSeconds = 0,
     bool? businessMode,
+    String? requestId,
   }) async {
     final data = await _client.mutate(
       Procedures.ai.parseVoiceExpense,
@@ -47,6 +54,8 @@ class LedgerApi {
         'audioBase64': audioBase64,
         'mimeType': mimeType,
         'durationSeconds': durationSeconds,
+        'partialBooking': true,
+        'clientRequestId': ?requestId,
         'businessMode': ?businessMode,
       },
     );
@@ -104,6 +113,8 @@ class LedgerApi {
       'date': ?item.date,
       'walletId': ?item.walletId,
       'classificationLogId': ?classificationLogId,
+      'readingItemId': ?item.readingItemId,
+      'purpose': ?item.purpose?.toJson(),
       'direction': ?item.directionToSave,
       ...item.personToSave,
       'clientRequestId': id,
@@ -128,6 +139,17 @@ class LedgerApi {
       for (final id in _object(data)['ids'] as List<Object?>? ?? const [])
         if (id is num) id.toInt(),
     ];
+  }
+
+  /// Commits the complete items once for this server-owned reading.
+  Future<PartialBookingResult> commitPartialReading(
+    int classificationLogId,
+  ) async {
+    final data = await _client.mutate(
+      Procedures.expense.commitPartialReading,
+      input: {'classificationLogId': classificationLogId},
+    );
+    return PartialBookingResult.fromJson(_object(data));
   }
 
   /// Answers the server's question about a sentence: `expense.answerClarification`.
@@ -176,6 +198,7 @@ class LedgerApi {
     num? linkedFeeAmount,
     String? category,
     String? subCategory,
+    SpendingPurpose? purpose,
     String? description,
     String? date,
     Object? walletId = unchangedField,
@@ -190,6 +213,7 @@ class LedgerApi {
       'linkedFeeAmount': ?linkedFeeAmount,
       'category': ?category,
       'subCategory': ?subCategory,
+      'purpose': ?purpose?.toJson(),
       'description': ?description,
       'date': ?date,
       if (!identical(walletId, unchangedField)) 'walletId': walletId as int?,
@@ -208,6 +232,7 @@ class LedgerApi {
     int limit = 30,
     int? before,
     String? category,
+    Map<String, String>? spendingCategory,
     String? type,
     String? startDate,
     String? endDate,
@@ -216,9 +241,10 @@ class LedgerApi {
       Procedures.expense.list,
       input: {
         'limit': limit,
-        'groupLinkedFees': true,
+        'groupLinkedFees': spendingCategory == null,
         'cursor': ?before,
         'category': ?category,
+        'spendingCategory': ?spendingCategory,
         'type': ?type,
         'startDate': ?startDate,
         'endDate': ?endDate,

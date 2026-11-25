@@ -1,7 +1,7 @@
 /**
  * Which models may read a sentence, in order.
  *
- * The admin's models for purpose `classification` at the user's plan lead (the providers tab
+ * The admin's models for purpose `classification` at the shared Free/Pro quality tier or Ultra lead (the providers tab
  * of the console); the built-in providers that have a key follow, so an install with an empty
  * providers table still reads sentences and a provider outage moves to the next one. The
  * engine never names a vendor: it takes whatever this returns.
@@ -11,6 +11,7 @@
  * here so the engine does not depend on a router file.
  */
 import { resolveAdminRoutes, type AiTier } from "../ai-gateway";
+import { recordingQualityTier } from "../ai-usage-policy";
 import { env } from "../env";
 import { buildProviderChain } from "../llm-provider-chain";
 import { asLlmProtocol, type LlmRoute } from "../llm-router";
@@ -18,10 +19,6 @@ import { createLogger } from "../log";
 import { coerceModelForProvider, defaultGeminiModelForPlan } from "../model-mapper";
 
 const log = createLogger("understanding.routes");
-
-export function tierOf(plan: string | null | undefined): AiTier {
-  return plan === "ultra" ? "ultra" : plan === "pro" ? "pro" : "free";
-}
 
 /** The built-in fallback: Gemini with the plan's model, and the keys of the other built-in providers. */
 export function builtinRouting(tier: AiTier, settings: Record<string, string>) {
@@ -40,7 +37,7 @@ export function builtinRouting(tier: AiTier, settings: Record<string, string>) {
 }
 
 export async function resolveUnderstandingRoutes(plan: string, settings: Record<string, string>): Promise<LlmRoute[]> {
-  const tier = tierOf(plan);
+  const tier = recordingQualityTier(plan);
   const admin = await resolveAdminRoutes("classification", tier).catch((err: unknown) => {
     // The console's routes are unreadable (the database or the key ring): the built-ins still answer.
     log.warn({ err, event: "understanding.admin_routes_failed", tier }, "Admin routes unavailable for understanding");

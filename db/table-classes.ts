@@ -117,6 +117,7 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   pending_clarifications: "D",
   commitment_questions: "D",
   ai_pending_actions: "D",
+  recording_requests: "D",
   in_app_notifications: "D",
 
   // Class E: Telemetry / Logs (Retention pruned)

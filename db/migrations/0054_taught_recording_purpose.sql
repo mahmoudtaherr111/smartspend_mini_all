@@ -1,0 +1,1 @@
+ALTER TABLE `user_correction_rules` ADD `purpose` json;

@@ -5,6 +5,8 @@ import {
   buildMultiCategoryChartData,
 } from "./row-aggregators";
 import { resolveFinancePeriod } from "./period-resolver";
+import { TAXONOMY_VERSION, taxonomyCategory } from "../../../contracts/taxonomy";
+import { financeRowMatchesCategory } from "./category-matcher";
 
 const period = resolveFinancePeriod(
   { period: "custom", startDate: "2026-06-01", endDate: "2026-06-10" },
@@ -75,6 +77,23 @@ describe("finance row aggregators", () => {
     );
     expect(breakdown.totalExpense).toBe(100);
     expect(breakdown.items.map((item) => item.name)).toEqual(["أكل وشرب"]);
+  });
+
+  it("separates purposes that share a legacy filing and keeps refunds in the saved purpose", () => {
+    const legacy = { type: "expense", category: "food", date: "2026-06-03" };
+    const dining = { ...legacy, purposeCategoryId: "dining", purposeSubId: "other", purposeVersion: TAXONOMY_VERSION };
+    const grocery = { ...dining, purposeCategoryId: "groceries" };
+    const breakdown = buildBreakdown([
+      { ...dining, amount: 100 }, { ...dining, amount: -20 },
+      { ...grocery, amount: 60 }, { ...legacy, amount: 10 },
+    ], period, "category");
+    expect(breakdown.items.map(item => [item.name, item.amount])).toEqual([
+      [taxonomyCategory("dining")!.nameAr, 80], [taxonomyCategory("groceries")!.nameAr, 60], ["أكل وشرب", 10],
+    ]);
+    expect(financeRowMatchesCategory(dining, "dining")).toBe(true);
+    expect(financeRowMatchesCategory(grocery, "dining")).toBe(false);
+    expect(financeRowMatchesCategory(legacy, "dining")).toBe(false);
+    expect(financeRowMatchesCategory(dining, "food")).toBe(true);
   });
 
   it("fills empty monthly chart buckets inside the requested range", () => {

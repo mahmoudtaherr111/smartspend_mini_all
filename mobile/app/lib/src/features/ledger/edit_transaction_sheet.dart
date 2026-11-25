@@ -12,6 +12,7 @@ import '../wallets/wallet_providers.dart';
 import 'category_style.dart';
 import 'ledger_models.dart';
 import 'ledger_providers.dart';
+import 'taxonomy_catalog.dart';
 
 /// Opens the sheet that edits [entry] (REC-07 in .agents/mobile-program/features.json). Returns true when changes
 /// were saved on the server.
@@ -59,6 +60,7 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
   final FocusNode _feeFocusNode = FocusNode();
   late String _category;
   late String _subCategory;
+  SpendingPurpose? _purpose;
   late DateTime _date;
   int? _walletId;
   int? _contactId;
@@ -108,6 +110,11 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
     _subCategory = initialSub != null && initialSub.isNotEmpty
         ? initialSub
         : (subs.contains('عام') ? 'عام' : subs.first);
+    final labels = entry.purposeLabels;
+    if (entry.reportPurposeCategoryId != null && labels != null) {
+      _category = labels.categoryAr;
+      _subCategory = labels.subAr;
+    }
     _date = entry.date;
     _walletId = entry.walletId;
     _contactId = entry.contactId;
@@ -138,6 +145,7 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
       _noteController.text.trim() != _initialNote ||
       _category != _initialCategory ||
       _subCategory != _initialSubCategory ||
+      _purpose != null ||
       _dateChanged ||
       _walletId != _initialWalletId ||
       _contactId != _initialContactId;
@@ -184,6 +192,7 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
       _kind = next;
       _serverError = null;
       if (previousType != next.ledgerType) {
+        _purpose = null;
         final allowed = categoriesForType(
           next.ledgerType,
           custom: customCategories,
@@ -196,11 +205,14 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
     });
   }
 
-  void _selectCategory(String next) {
+  void _selectCategory(String next, TaxonomyPurpose? purpose) {
     if (_category == next) return;
     setState(() {
       _category = next;
-      _subCategory = defaultSubCategory(next);
+      _subCategory = purpose?.defaultSub.name ?? defaultSubCategory(next);
+      _purpose = purpose == null
+          ? null
+          : SpendingPurpose(category: purpose.id, sub: purpose.defaultSub.id);
       _serverError = null;
     });
   }
@@ -289,8 +301,19 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
             refund: _kind.ledgerType == 'expense'
                 ? _kind == _EditKind.refund
                 : null,
-            category: _category,
-            subCategory: _subCategory,
+            category:
+                _purpose == null &&
+                    (_category != _initialCategory ||
+                        _kind.ledgerType != _initialKind.ledgerType)
+                ? _category
+                : null,
+            subCategory:
+                _purpose == null &&
+                    (_subCategory != _initialSubCategory ||
+                        _category != _initialCategory)
+                ? _subCategory
+                : null,
+            purpose: _purpose,
             description: _noteController.text.trim(),
             date: dateIso,
             walletId: _walletId,
@@ -347,15 +370,27 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
     final contacts =
         ref.watch(contactsProvider).value ?? const <ContactSummary>[];
 
-    final categories = categoriesForType(
-      _kind.ledgerType,
-      current: _category,
-      custom: customCategories,
-    );
-    final subcategories = subcategoriesForCategory(
-      _category,
-      current: _subCategory,
-    );
+    final catalog =
+        ref.watch(taxonomyCatalogProvider).value ?? const <TaxonomyPurpose>[];
+    final purposes = {
+      for (final purpose in purposesForType(catalog, _kind.ledgerType))
+        purpose.name: purpose,
+    };
+    final categories = purposes.isEmpty
+        ? categoriesForType(
+            _kind.ledgerType,
+            current: _category,
+            custom: customCategories,
+          )
+        : {
+            ...purposes.keys,
+            _category,
+            if (_kind.ledgerType == 'expense') ...customCategories,
+          }.toList();
+    final purpose = purposes[_category];
+    final subcategories = purpose == null
+        ? subcategoriesForCategory(_category, current: _subCategory)
+        : {...purpose.subs.map((sub) => sub.name), _subCategory}.toList();
 
     final walletItems = <DropdownMenuItem<int?>>[
       DropdownMenuItem<int?>(
@@ -527,7 +562,9 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
                 onChanged: _saving
                     ? null
                     : (value) {
-                        if (value != null) _selectCategory(value);
+                        if (value != null) {
+                          _selectCategory(value, purposes[value]);
+                        }
                       },
               ),
               const SizedBox(height: SmartSpendSpacing.md),
@@ -551,6 +588,15 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
                         if (value != null) {
                           setState(() {
                             _subCategory = value;
+                            final sub = purpose?.subs
+                                .where((sub) => sub.name == value)
+                                .firstOrNull;
+                            _purpose = purpose != null && sub != null
+                                ? SpendingPurpose(
+                                    category: purpose.id,
+                                    sub: sub.id,
+                                  )
+                                : null;
                             _serverError = null;
                           });
                         }

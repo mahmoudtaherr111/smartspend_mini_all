@@ -70,3 +70,5 @@ A record explains why the code looks the way it does. What the code does today i
 | [0051](0051-commitments-ecosystem.md) | Installments, subscriptions, school fees, debts and gam3eyas are one commitments system with five shapes; a payment links on its own only when certain, else the person is asked |
 
 | [0052](0052-understanding-engine.md) | A model reads a sentence into money events and the code verifies the reading with exact checks; taxonomy v2 is the purpose alone; no confidence numbers; stored names kept through a bridge for now |
+
+| [0054](0054-recording-items-and-purpose.md) | Recording item identity and stored spending purpose |

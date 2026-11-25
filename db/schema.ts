@@ -103,7 +103,10 @@ export const expenses = mysqlTable(
     type: varchar("type", { length: 50 }).notNull().default("expense"), // income | expense
     amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
     category: varchar("category", { length: 100 }).notNull(),
-    subCategory: varchar("sub_category", { length: 100 }), // New: Sub-category for deeper insights
+    subCategory: varchar("sub_category", { length: 100 }),
+    purposeCategoryId: varchar("purpose_category_id", { length: 64 }),
+    purposeSubId: varchar("purpose_sub_id", { length: 64 }),
+    purposeVersion: varchar("purpose_version", { length: 16 }),
     description: text("description"),
     rawText: text("raw_text"),
     source: varchar("source", { length: 50 }).notNull().default("manual"), // voice | manual
@@ -129,6 +132,7 @@ export const expenses = mysqlTable(
     index("expenses_user_date_idx").on(t.userId, t.userType, t.date),
     index("expenses_type_idx").on(t.type),
     index("expenses_category_idx").on(t.category),
+    index("expenses_owner_purpose_idx").on(t.userId, t.userType, t.purposeCategoryId, t.date),
     index("expenses_status_idx").on(t.status),
     index("expenses_business_idx").on(t.businessId),
     index("expenses_contact_idx").on(t.contactId),
@@ -227,6 +231,28 @@ export const userContacts = mysqlTable(
 );
 
 // ─── Pending Clarifications ───
+/** One accepted AI recording, with paid and in-flight tokens tracked separately. */
+export const recordingRequests = mysqlTable("recording_requests", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).$type<"oauth" | "local">().notNull(),
+  requestKey: varchar("request_key", { length: 64 }).notNull(),
+  day: varchar("day", { length: 10 }).notNull(),
+  month: varchar("month", { length: 7 }).notNull(),
+  attempt: int("attempt").notNull().default(1),
+  status: varchar("status", { length: 16 }).$type<"pending" | "failed" | "done">().notNull(),
+  chargedTokens: int("charged_tokens").notNull().default(0),
+  reservedTokens: int("reserved_tokens").notNull().default(0),
+  leaseUntil: datetime("lease_until").notNull(),
+  classificationLogId: int("classification_log_id"),
+  reply: json("reply"),
+  createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  uniqueIndex("recording_requests_owner_key").on(t.userId, t.userType, t.requestKey),
+  index("recording_requests_owner_month").on(t.userId, t.userType, t.month, t.day),
+  index("recording_requests_created").on(t.createdAt),
+]);
+
 export const pendingClarifications = mysqlTable(
   "pending_clarifications",
   {
@@ -2095,6 +2121,7 @@ export const aiTokenLedgers = mysqlTable(
 export const userCorrectionRules = mysqlTable(
   "user_correction_rules",
   {
+    purpose: json("purpose").$type<{ category: string; sub: string; version: string }>(),
     id: int("id").primaryKey().autoincrement(),
     userId: int("user_id").notNull(),
     userType: varchar("user_type", { length: 50 }).notNull(), // oauth | local

@@ -161,6 +161,7 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
   { tableName: "capture_ai_days", class: "D", retainDays: 60, dateColumn: "created_at", optionalTable: true, description: "Capture-only resource reservations and aggregate budgets" },
   { tableName: "capture_ai_accounts", class: "D", retainDays: 60, dateColumn: "created_at", optionalTable: true, description: "Capture-only resource reservations and aggregate budgets" },
   { tableName: "capture_ai_reservations", class: "D", retainDays: 60, dateColumn: "created_at", optionalTable: true, description: "Capture-only resource reservations and aggregate budgets" },
+  { tableName: "recording_requests", class: "D", retainDays: 60, dateColumn: "created_at", optionalTable: true, description: "Logical recording requests and month-scoped token reservations" },
   {
     tableName: "capture_ai_jobs",
     class: "D",

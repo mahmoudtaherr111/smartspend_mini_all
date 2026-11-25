@@ -4,8 +4,8 @@
  */
 import { describe, expect, it } from "vitest";
 import { storedShape } from "../../lib/understanding/bridge";
-import type { UnderstoodEvent } from "../../lib/understanding/engine";
-import { decisionOf, overallConfidenceOf, toParsedItem, toParsedItems } from "./items";
+import type { Understanding, UnderstoodEvent } from "../../lib/understanding/engine";
+import { decisionOf, overallConfidenceOf, splitMissingAmounts, toParsedItem, toParsedItems } from "./items";
 
 function event(over: Partial<UnderstoodEvent> = {}): UnderstoodEvent {
   const base = {
@@ -108,5 +108,72 @@ describe("the decision", () => {
     expect(overallConfidenceOf("review", [])).toBe(0);
     expect(overallConfidenceOf("review", [clean, shown])).toBe(60);
     expect(overallConfidenceOf("auto_save", [clean])).toBe(100);
+  });
+});
+
+describe("splitMissingAmounts", () => {
+  const ready = event();
+  const missing = event({
+    quote: "اشتريت دوا", what: "دوا", amount: 0, category: "health", sub: "pharmacy", doubt: "amount",
+    flags: ["amount_missing", "model_doubt:amount"], reasons: ["amount_missing", "model_doubt:amount"],
+  });
+  const missingBill = event({
+    quote: "سددت فاتورة الميه", what: "المية", amount: 0, category: "bills", sub: "water",
+    flags: ["amount_missing"], reasons: ["amount_missing"],
+  });
+  const sentence = "دفعت تلتمية نت واشتريت دوا";
+  const context = { ...ctx, sentence };
+
+  function reading(over: Partial<Understanding> = {}): Understanding {
+    return {
+      outcome: "show", events: [ready, missing], ignored: [], numbers: [], reasons: ["amount_missing"], source: "model",
+      usage: {
+        attempts: [], servedBy: null, model: null, degradedSchema: false, promptTokens: 0,
+        completionTokens: 0, cachedTokens: 0, totalTokens: 0, latencyMs: 0,
+      },
+      versions: { contract: "test", prompt: "test", taxonomy: "test" },
+      problems: [],
+      ...over,
+    };
+  }
+
+  it("keeps a grounded, separately priced item clean and asks only about the remaining clauses", () => {
+    expect(splitMissingAmounts(reading({ events: [ready, missing, missingBill] }), {
+      ...ctx, sentence: `${sentence}، وسددت فاتورة الميه`,
+    })).toMatchObject({
+      ready: [{ amount: 300, needsReview: false, confidence: 100 }],
+      missing: [missing.quote, missingBill.quote],
+    });
+  });
+
+  it.each(["context_incomplete", "foreign_currency", "auto_save_off", "model_asked", "number_unaccounted", "many_events"] as const)(
+    "keeps the whole reading together when policy also reported %s", (reason) => {
+      expect(splitMissingAmounts(reading({ reasons: ["amount_missing", reason] }), context)).toBeNull();
+    },
+  );
+
+  it("keeps the whole reading together when a ready or missing event needs a second decision", () => {
+    const doubtfulReady = { ...ready, doubt: "category", flags: ["model_doubt:category"], reasons: ["model_doubt:category"] } satisfies UnderstoodEvent;
+    expect(splitMissingAmounts(reading({ events: [doubtfulReady, missing] }), context)).toBeNull();
+    expect(splitMissingAmounts(reading({ events: [ready, { ...missing, reasons: ["amount_missing", "person_needed"] }] }), context)).toBeNull();
+    expect(splitMissingAmounts(reading({ askAbout: "purpose" }), context)).toBeNull();
+  });
+
+  it("withholds repeated, overlapping or ungrounded quotes and unresolved numeric clues", () => {
+    expect(splitMissingAmounts(reading(), { ...ctx, sentence: `${sentence} واشتريت دوا` })).toBeNull();
+    expect(splitMissingAmounts(reading({ events: [{ ...ready, quote: sentence }, missing] }), context)).toBeNull();
+    expect(splitMissingAmounts(reading({ ignored: [{ quote: sentence, why: "planned" }] }), context)).toBeNull();
+    expect(splitMissingAmounts(reading(), { ...ctx, sentence: "دفعت 300 نت وجبت دوا" })).toBeNull();
+    expect(splitMissingAmounts(reading({ events: [ready, { ...missing, quote: "اشتريت دوا 50" }] }), {
+      ...ctx, sentence: `${sentence} 50`,
+    })).toBeNull();
+  });
+
+  it("requires a reliable result and at least one event on each side", () => {
+    expect(splitMissingAmounts(reading({ events: [missing] }), context)).toBeNull();
+    expect(splitMissingAmounts(reading({ events: [ready] }), context)).toBeNull();
+    const complete = reading();
+    expect(splitMissingAmounts({ ...complete, usage: { ...complete.usage, degradedSchema: true } }, context)).toBeNull();
+    expect(splitMissingAmounts(reading({ problems: ["reply repaired"] }), context)).toBeNull();
   });
 });

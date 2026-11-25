@@ -8,7 +8,7 @@ import { classificationLogs, financialGoals, expenses, userContacts, userProfile
 import { db } from "../../queries/connection";
 import type { Artifact, DataNeed, DataNeedKind, ResolvedFact } from "../ai-kernel/types";
 import { collectFinanceCacheTrace, financeCacheKey, financeCacheTtl, withFinanceCache } from "./cache";
-import { canonicalCategoryForRow, getCategoryAliases, displayFinanceCategory, financeCategoryId, financeCategoryIds } from "./category-matcher";
+import { getCategoryAliases, displayFinanceCategory, financeCategoryId, financeCategoryIds, financeRowCategoryId, financeRowCategoryName, financeRowMatchesCategory, financeRowSubCategory, namedPurpose } from "./category-matcher";
 import { createFinanceChartArtifact } from "./chart-artifacts";
 import {
   amountOf,
@@ -52,6 +52,9 @@ const ROW_COLUMNS = {
   amount: expenses.amount,
   category: expenses.category,
   subCategory: expenses.subCategory,
+  purposeCategoryId: expenses.purposeCategoryId,
+  purposeSubId: expenses.purposeSubId,
+  purposeVersion: expenses.purposeVersion,
   description: expenses.description,
   rawText: expenses.rawText,
   placeHint: expenses.placeHint,
@@ -63,6 +66,7 @@ type ExpenseRow = Pick<InferSelectModel<typeof expenses>, keyof typeof ROW_COLUM
 
 /** The personal ledger, as Home counts it: the expenses of a business (the B2B module) are that business's own. */
 const personalLedger = () => or(isNull(expenses.businessId), eq(expenses.businessId, 0));
+const confirmedLedgerRow = or(isNull(expenses.status), eq(expenses.status, "confirmed"));
 /** The ledger a context reads: one business's own when it names one, else the personal ledger. */
 const ledgerOf = (ctx: FinanceContext) => (ctx.businessId ? eq(expenses.businessId, ctx.businessId) : personalLedger());
 /** A cached answer belongs to its ledger: a business's results never share a key with the personal ones. */
@@ -90,37 +94,6 @@ function dateString(value: unknown): string {
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) return value.trim();
   const date = value instanceof Date ? value : new Date(value as string);
   return Number.isNaN(date.getTime()) ? "" : businessDateKey(date);
-}
-
-function rowCanonicalCategory(row: {
-  category?: string | null;
-  subCategory?: string | null;
-  description?: string | null;
-  rawText?: string | null;
-  placeHint?: string | null;
-}): string {
-  return canonicalCategoryForRow(row.category, row.subCategory, row.description, row.rawText, row.placeHint);
-}
-
-function rowMatchesCategory(row: {
-  category?: string | null;
-  subCategory?: string | null;
-  description?: string | null;
-  rawText?: string | null;
-  placeHint?: string | null;
-}, category: string): boolean {
-  // Callers name a category as the user did ("أكل", "الدخل"); rows carry the registry's id ("food", "salary").
-  return financeCategoryIds(category).includes(rowCanonicalCategory(row));
-}
-
-function rowMatchesAnyCategory(row: {
-  category?: string | null;
-  subCategory?: string | null;
-  description?: string | null;
-  rawText?: string | null;
-  placeHint?: string | null;
-}, categories: string[]): boolean {
-  return categories.some((category) => rowMatchesCategory(row, category));
 }
 
 function sourceOf(kind: DataNeedKind): DataNeedKind {
@@ -161,6 +134,7 @@ async function loadRowsForPeriod(
         eq(expenses.userId, ctx.userId),
         eq(expenses.userType, ctx.userType),
         ledgerOf(ctx),
+        confirmedLedgerRow,
         gte(expenses.date, period.startDate),
         lte(expenses.date, period.endDate),
       ),
@@ -220,6 +194,7 @@ export async function getFinanceSummary(
           eq(expenses.userId, ctx.userId),
           eq(expenses.userType, ctx.userType),
           ledgerOf(ctx),
+          confirmedLedgerRow,
           gte(expenses.date, period.startDate),
           lte(expenses.date, period.endDate),
         ),
@@ -324,15 +299,16 @@ export async function getCategoryTotal(
   input: FinancePeriodInput = {},
 ): Promise<FinanceCategoryTotal> {
   const period = resolveFinancePeriod(input, ctx);
-  const aliases = getCategoryAliases(financeCategoryId(category));
+  const purpose = namedPurpose(category);
+  const aliases = purpose ? [purpose.id, purpose.nameAr, purpose.nameEn] : getCategoryAliases(financeCategoryId(category));
   // Keyed by the ids the name covers, so "أكل" and "الأكل" share one cached answer and "الدخل" does not share one
   // with "other_income".
-  const key = financeCacheKey(ctx.userId, ctx.userType, scoped(ctx, "category_total"), period.key, financeCategoryIds(category).join("+"));
+  const key = financeCacheKey(ctx.userId, ctx.userType, scoped(ctx, "category_total"), period.key, purpose ? `purpose_${purpose.id}` : financeCategoryIds(category).join("+"));
 
   return withFinanceCache(key, financeCacheTtl(period.key), async () => {
     const loaded = await loadRowsForPeriod(ctx, period);
     const partial = loaded.length >= ROW_LIMIT;
-    const rows = loaded.filter((row) => rowMatchesCategory(row, category));
+    const rows = loaded.filter((row) => financeRowMatchesCategory(row, category));
     const subCategories = new Map<string, { amount: number; count: number }>();
     let totalExpense = 0;
     let totalIncome = 0;
@@ -343,7 +319,7 @@ export async function getCategoryTotal(
         totalIncome += amount;
       } else if (financialBucket(row) === "expense") {
         totalExpense += amount;
-        const name = row.subCategory || "general";
+        const name = financeRowSubCategory(row) || "general";
         const existing = subCategories.get(name) ?? { amount: 0, count: 0 };
         existing.amount += amount;
         existing.count += 1;
@@ -456,15 +432,16 @@ export async function getFinanceBreakdown(
     let rows = await loadRowsForPeriod(ctx, period);
     const partial = rows.length >= ROW_LIMIT;
     if (input.category) {
-      rows = rows.filter((row) => rowMatchesCategory(row, input.category!));
+      rows = rows.filter((row) => financeRowMatchesCategory(row, input.category!));
     }
     return { ...buildBreakdown(rows, period, granularity, limit), ...(partial ? { partial } : {}) };
   });
 }
 
 /** The words a row is found by: what the user typed, its description, shop and category. */
-function rowText(row: Pick<ExpenseRow, "description" | "rawText" | "placeHint" | "category" | "subCategory">): string {
-  return normalizeLookupText([row.description, row.rawText, row.placeHint, row.category, row.subCategory].filter(Boolean).join(" "))
+function rowText(row: ExpenseRow): string {
+  return normalizeLookupText([row.description, row.rawText, row.placeHint, row.category, row.subCategory,
+    financeRowCategoryName(row), financeRowSubCategory(row)].filter(Boolean).join(" "))
     .replace(/\s+/g, "");
 }
 
@@ -510,7 +487,7 @@ export async function getFinanceTransactions(
       rows = rows.filter((row) => transactionTypes.includes(financialBucket(row)));
     }
     if (categories.length > 0) {
-      rows = rows.filter((row) => rowMatchesAnyCategory(row, categories));
+      rows = rows.filter((row) => categories.some(category => financeRowMatchesCategory(row, category)));
     }
     if (amount !== undefined) {
       rows = rows.filter((row) => Math.abs(Math.abs(amountOf(row)) - amount) < 0.5);
@@ -523,8 +500,8 @@ export async function getFinanceTransactions(
       id: row.id,
       type: financialBucket(row),
       amount: numeric(row.amount),
-      category: canonicalCategoryForRow(row.category, row.subCategory, row.description, row.rawText, row.placeHint),
-      subCategory: row.subCategory,
+      category: financeRowCategoryId(row),
+      subCategory: financeRowSubCategory(row),
       description: row.description,
       paymentMethod: row.paymentMethod,
       placeHint: row.placeHint,
@@ -643,7 +620,7 @@ export async function getChartData(
       return buildMultiCategoryChartData(rows, period, categories, granularity, limit);
     }
     if (categories[0]) {
-      rows = rows.filter((row) => rowMatchesCategory(row, categories[0]));
+      rows = rows.filter((row) => financeRowMatchesCategory(row, categories[0]));
     }
     return buildChartData(rows, period, granularity, limit);
   });
@@ -914,7 +891,7 @@ export async function getBusinessCashflow(
   const expenseByCategory = new Map<string, number>();
   for (const row of allRows) {
     const amount = amountOf(row);
-    const cat = canonicalCategoryForRow(row.category, row.subCategory, row.description, row.rawText, row.placeHint);
+    const cat = financeRowCategoryName(row);
     if (financialBucket(row) === "income") {
       incomeByCategory.set(cat, (incomeByCategory.get(cat) ?? 0) + amount);
     } else if (isSpendingRow(row)) {
@@ -984,8 +961,7 @@ export async function getCategoryInclusion(
 ): Promise<FinanceCategoryInclusion> {
   const period = resolveFinancePeriod(input, ctx);
   const rows = await loadRowsForPeriod(ctx, period);
-  const matched = rows.filter((row) => rowMatchesCategory(row, category));
-  const aliases = getCategoryAliases(category);
+  const matched = rows.filter((row) => financeRowMatchesCategory(row, category));
   const merchants = new Set<string>();
 
   for (const row of matched) {
@@ -1001,7 +977,7 @@ export async function getCategoryInclusion(
       amount: amountOf(row),
       date: dateString(row.date),
     })),
-    ruleExplanation: `كل العمليات اللي فيها: ${aliases.slice(0, 8).join("، ")} بتتصنف تحت ${displayFinanceCategory(category)}.`,
+    ruleExplanation: `العمليات اتحسبت حسب الفئة اللي اتسجلت بيها تحت ${displayFinanceCategory(category)}.`,
     totalMatched: matched.length,
   };
 }
@@ -1087,23 +1063,16 @@ export async function getTransactionLookup(
   const normalizedQuery = normalizeLookupText(String(query ?? ""));
   const candidates = rows.filter((row) => {
     if (allowedTypes.size > 0 && !allowedTypes.has(financialBucket(row))) return false;
-    if (category && !rowMatchesCategory(row, category)) return false;
+    if (category && !financeRowMatchesCategory(row, category)) return false;
     return true;
   });
 
   const scored = candidates
     .map((row, index) => {
-      const haystack = normalizeLookupText(
-        [
-          row.description,
-          row.rawText,
-          row.category,
-          row.subCategory,
-          row.placeHint,
-        ]
-          .filter(Boolean)
-          .join(" "),
-      );
+      const haystack = normalizeLookupText([
+        row.description, row.rawText, row.category, row.subCategory, row.placeHint,
+        financeRowCategoryName(row), financeRowSubCategory(row),
+      ].filter(Boolean).join(" "));
       const tokenScore = tokens.reduce((score, token) => score + (haystack.includes(token) ? 1 : 0), 0);
       const phraseScore = normalizedQuery && haystack.includes(normalizedQuery) ? 3 : 0;
       return { row, index, score: tokenScore + phraseScore };
@@ -1117,8 +1086,8 @@ export async function getTransactionLookup(
       id: latest.id,
       type: financialBucket(latest),
       amount: amountOf(latest),
-      category: latest.category ?? "uncategorized",
-      subCategory: latest.subCategory,
+      category: financeRowCategoryName(latest),
+      subCategory: financeRowSubCategory(latest),
       description: latest.description,
       placeHint: latest.placeHint,
       date: dateString(latest.date),

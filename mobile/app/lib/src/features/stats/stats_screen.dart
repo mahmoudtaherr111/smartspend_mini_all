@@ -149,6 +149,14 @@ class StatsScreen extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
     final words = DateWords.of(context);
     final change = stats.changePercent;
+    final categoriesByPart = {
+      for (final category in stats.categories)
+        ProportionPart(
+          label: category.name,
+          amount: category.amount,
+          color: categoryColor(context, category.name),
+        ): category,
+    };
     final story = switch ((change, stats.comparison)) {
       (null, _) => l10n.statsNoComparison,
       (0, _) => l10n.statsSameAsLastMonth,
@@ -216,17 +224,18 @@ class StatsScreen extends ConsumerWidget {
                 maxRows: math.max(6, stats.categories.length),
                 otherLabel: l10n.statsOther,
                 refundLabel: l10n.statsRefund,
-                onPartTap: (part) => context.go(
-                  CategoryTransactionsScreen.pathFor(part.label, month: month),
-                ),
-                parts: [
-                  for (final category in stats.categories)
-                    ProportionPart(
-                      label: category.name,
-                      amount: category.amount,
-                      color: categoryColor(context, category.name),
+                onPartTap: (part) {
+                  final category = categoriesByPart[part]!;
+                  context.go(
+                    CategoryTransactionsScreen.pathFor(
+                      category.name,
+                      month: month,
+                      purposeCategoryId: category.purposeCategoryId,
+                      legacyCategory: category.legacyCategory,
                     ),
-                ],
+                  );
+                },
+                parts: categoriesByPart.keys.toList(),
               ),
             ),
 

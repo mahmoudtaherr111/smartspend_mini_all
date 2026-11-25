@@ -36,14 +36,21 @@ void announceSaved(
   List<ParsedItem> items,
   List<int> ids, {
   bool automatic = false,
+  bool partial = false,
 }) {
   if (!context.mounted) return;
   final l10n = AppLocalizations.of(context);
   SmartSpendHaptics.success();
-  final single = items.length == 1 ? items.single : null;
+  final arabic = Localizations.localeOf(context).languageCode == 'ar';
   // moneyText: «•••• ج.م» while amounts are hidden.
-  final summary = single != null
-      ? '${moneyText(context, single.amount)} · ${inlineName(single.purposeLabels?.label(arabic: Localizations.localeOf(context).languageCode == 'ar') ?? single.categoryLabel)}'
+  String savedItem(ParsedItem item) {
+    final label =
+        item.purposeLabels?.label(arabic: arabic) ?? item.categoryLabel;
+    return '${moneyText(context, item.amount)} · ${inlineName(label)}';
+  }
+
+  final summary = partial || items.length == 1
+      ? items.map(savedItem).join('\n')
       : l10n.savedItemsSummary(
           items.length,
           moneyText(
@@ -58,7 +65,7 @@ void announceSaved(
     onUndo: ids.isEmpty ? null : () => _undo(context, ref, ids),
   );
   // A payment of a commitment: says which one it counted for, or asks which one it is (decision 0051).
-  unawaited(announceCommitmentLinks(context, ref, ids));
+  if (!partial) unawaited(announceCommitmentLinks(context, ref, ids));
 }
 
 Future<void> _undo(BuildContext context, WidgetRef ref, List<int> ids) async {
@@ -197,6 +204,67 @@ Future<void> answerAndSave(
         .firstOrNull;
     if (waiting == null) return;
     current = waiting;
+  }
+}
+
+/// Opens a server-owned question from a partial booking. The pending list retains
+/// the question when the person leaves it for later or the answer cannot be sent.
+Future<void> answerPartialQuestion(
+  BuildContext context,
+  WidgetRef ref,
+  PendingClarification first,
+) async {
+  final l10n = AppLocalizations.of(context);
+  var question = first;
+  while (context.mounted) {
+    final answer = await showSmartSpendSheet<String>(
+      context: context,
+      scrollable: true,
+      builder: (sheetContext) => MoneyPrivacy(
+        hidden: false,
+        child: _ClarifySheet(
+          question: question.question,
+          answerLabel: l10n.clarifyAnswerLabel,
+          sendLabel: l10n.clarifySend,
+          laterLabel: l10n.clarifyLater,
+        ),
+      ),
+    );
+    if (answer == null || answer.trim().isEmpty || !context.mounted) return;
+    try {
+      final result = await ref
+          .read(ledgerApiProvider)
+          .answer(question.id, answer.trim());
+      if (!context.mounted) return;
+      refreshLedger(ref);
+      if (result.savedIds.isNotEmpty) {
+        announceSaved(
+          context,
+          ref,
+          result.savedItems,
+          result.savedIds,
+          partial: true,
+        );
+      }
+      final next = result.nextQuestion;
+      if (next == null) return;
+      question = PendingClarification(
+        id: result.clarificationId ?? question.id,
+        originalText: question.originalText,
+        question: next,
+      );
+    } on ApiException catch (error) {
+      if (context.mounted) {
+        ref.invalidate(pendingClarificationsProvider);
+        showSmartSpendNotice(context, error.message);
+      }
+      return;
+    } on ApiNetworkException {
+      if (context.mounted) {
+        showSmartSpendNotice(context, l10n.monWeCouldnTSaveIt);
+      }
+      return;
+    }
   }
 }
 

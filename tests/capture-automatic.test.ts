@@ -538,6 +538,19 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
         .where(own(captureUsage));
       expect(usage.reserved).toBe(2);
     });
+    it("refiles a bank payment by exact purpose without changing its amount or creating a second purchase", async () => {
+      await send("synthetic-bank-purpose-id");
+      const question = await caller.nextQuestion();
+      expect(question).toBeTruthy();
+      await caller.answerQuestion({ questionId: question!.questionId, action: "set",
+        selectedPurpose: { category: "groceries", sub: "packaged_snacks" } });
+      const [entry] = await db.select().from(expenses).where(and(own(expenses), eq(expenses.id, question!.expenseId)));
+      expect(entry).toMatchObject({ purposeCategoryId: "groceries", purposeSubId: "packaged_snacks" });
+      expect(Number(entry.amount)).toBe(question!.amountEgp);
+      await caller.answerQuestion({ questionId: question!.questionId, action: "set", selectedPurpose: { category: "dining", sub: "cafe" } });
+      const [same] = await db.select().from(expenses).where(and(own(expenses), eq(expenses.id, entry.id)));
+      expect(same.purposeSubId).toBe("packaged_snacks");
+    });
     it("shows one post-save question across devices, edits the same row and learns the merchant only for this user", async () => {
       await send("synthetic-question-first");
       const questions = await Promise.all([caller.nextQuestion(), caller.nextQuestion(), caller.nextQuestion()]);

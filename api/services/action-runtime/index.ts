@@ -7,6 +7,7 @@ import { recordAICostMetric } from "../ai-cost-policy";
 import type { ActionDraft, Artifact } from "../ai-kernel/types";
 import { actionConfirmationArtifact, actionSummary, goalSummary } from "./artifacts";
 import { confirmationPhraseFor, matchesConfirmationPhrase } from "./confirmation-phrases";
+import { confirmChatReading } from "./chat-recording";
 import {
   createBudgetSuggestionFromGoal,
   createPhase8PayloadFromMessage,
@@ -221,18 +222,20 @@ export async function createPendingGoalAction(
 export async function maybeCreateActionDraftFromMessage(
   ctx: ActionRuntimeContext,
   message: string,
+  options: { allowExpense?: boolean } = {},
 ): Promise<ActionDraftResult | null> {
   const payload = createGoalPayloadFromMessage(message);
   if (payload) return createPendingGoalAction(ctx, payload);
 
   const phase8 = createPhase8PayloadFromMessage(message);
-  if (!phase8) return null;
+  if (!phase8 || (phase8.actionName === "expense.create" && options.allowExpense === false)) return null;
   return createPendingRuntimeAction(ctx, phase8.actionName, phase8.payload);
 }
 
 async function loadPendingAction(
   ctx: ActionRuntimeContext,
   actionId: number,
+  allowCompletedRecording = false,
 ): Promise<PendingActionRecord> {
   const [row] = await db
     .select()
@@ -247,14 +250,15 @@ async function loadPendingAction(
     .limit(1);
 
   if (!row) throw new Error("Action not found");
-  if (row.status !== "pending_confirmation") throw new Error(`Action is ${row.status}`);
+  const recordingReplay = allowCompletedRecording && row.status === "executed" && row.idempotencyKey?.startsWith("chat-recording:");
+  if (row.status !== "pending_confirmation" && !recordingReplay) throw new Error(`Action is ${row.status}`);
   if (
     ctx.conversationId !== undefined &&
     Number(row.conversationId) !== Number(ctx.conversationId)
   ) {
     throw new Error("Action does not belong to this conversation");
   }
-  if (row.expiresAt && new Date(row.expiresAt).getTime() < Date.now()) {
+  if (!recordingReplay && row.expiresAt && new Date(row.expiresAt).getTime() < Date.now()) {
     throw new Error("Action expired");
   }
 
@@ -284,7 +288,7 @@ export async function confirmAction(
   proof: { phrase?: string } = {},
   options: { suggestFollowUp?: boolean } = {},
 ): Promise<ActionExecutionResult> {
-  const action = await loadPendingAction(ctx, actionId);
+  const action = await loadPendingAction(ctx, actionId, true);
   const phrase = confirmationPhraseFor(action.actionName, action.risk);
   if (phrase && !matchesConfirmationPhrase(proof.phrase, phrase)) {
     await audit(ctx, actionId, action.actionName, "confirmation_refused", "pending_confirmation", {
@@ -294,6 +298,11 @@ export async function confirmAction(
       code: "PRECONDITION_FAILED",
       message: `العملية دي مش بترجع. اكتب «${phrase}» عشان تأكدها.`,
     });
+  }
+  if (action.actionName === "expense.create" && "recordingLogId" in action.payload) {
+    const recording = await confirmChatReading(ctx, actionId);
+    if (!recording) throw new TRPCError({ code: "NOT_FOUND", message: "التسجيل مش موجود." });
+    return recording;
   }
   const [updateResult] = await db
     .update(aiPendingActions)
@@ -326,7 +335,7 @@ export async function confirmAction(
   });
 
   try {
-    const output =
+    const output: Record<string, unknown> =
       action.actionName === "goal.create"
         ? await executeGoalCreate(ctx, action.payload as GoalCreatePayload).then((result) => ({
             goalId: result.goalId,
@@ -452,10 +461,12 @@ export async function cancelAction(
   actionId: number,
 ): Promise<ActionExecutionResult> {
   const action = await loadPendingAction(ctx, actionId);
-  await db
+  const [cancelled] = await db
     .update(aiPendingActions)
     .set({ status: "cancelled", cancelledAt: new Date() })
-    .where(eq(aiPendingActions.id, actionId));
+    .where(and(eq(aiPendingActions.id, actionId), eq(aiPendingActions.userId, ctx.userId),
+      eq(aiPendingActions.userType, ctx.userType), eq(aiPendingActions.status, "pending_confirmation")));
+  if (cancelled?.affectedRows === 0) throw new TRPCError({ code: "CONFLICT", message: "العملية دي اتنفذت أو اتلغت بالفعل." });
   await audit(ctx, actionId, action.actionName, "cancelled", "cancelled");
   void recordAICostMetric({
     userId: ctx.userId,

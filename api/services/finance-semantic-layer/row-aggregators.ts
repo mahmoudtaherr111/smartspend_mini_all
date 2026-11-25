@@ -7,21 +7,16 @@ import type {
   FinanceSummary,
   ResolvedFinancePeriod,
 } from "./types";
-import { canonicalCategoryForRow, displayFinanceCategory } from "./category-matcher";
+import { displayFinanceCategory, financeRowCategoryName, financeRowMatchesCategory, financeRowSubCategory, type FinanceCategoryRow } from "./category-matcher";
 import { businessDateKey } from "../../lib/app-time";
 import { financialBucket } from "../../../contracts/ledger-movement";
 
-export interface FinanceRowLike {
+export interface FinanceRowLike extends FinanceCategoryRow {
   parsedMetadata?: unknown;
   id?: number | null;
   type?: string | null;
   amount?: string | number | null;
-  category?: string | null;
-  subCategory?: string | null;
-  description?: string | null;
-  rawText?: string | null;
   paymentMethod?: string | null;
-  placeHint?: string | null;
   date?: Date | string | null;
 }
 
@@ -170,14 +165,12 @@ export function buildBreakdown(
       granularity === "day" || granularity === "week" || granularity === "month"
         ? dateKey(row.date, granularity)
         : granularity === "sub_category"
-          ? row.subCategory || "general"
+          ? financeRowSubCategory(row) || "general"
           : granularity === "merchant"
             ? row.placeHint || row.description || "unknown"
             : granularity === "payment_method"
               ? row.paymentMethod || "unknown"
-        : displayFinanceCategory(
-            canonicalCategoryForRow(row.category, row.subCategory, row.description, row.rawText, row.placeHint),
-          );
+              : financeRowCategoryName(row);
     const existing = grouped.get(name) ?? { amount: 0, count: 0 };
     existing.amount += amountOf(row);
     existing.count += 1;
@@ -253,10 +246,6 @@ function uniqueCategories(values: Array<string | undefined>): string[] {
   return [...new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean))];
 }
 
-function canonicalCategoryOf(row: FinanceRowLike): string {
-  return canonicalCategoryForRow(row.category, row.subCategory, row.description, row.rawText, row.placeHint);
-}
-
 export function buildMultiCategoryChartData(
   rows: FinanceRowLike[],
   period: ResolvedFinancePeriod,
@@ -269,7 +258,7 @@ export function buildMultiCategoryChartData(
 
   for (const row of rows) {
     if (!isSpendingRow(row)) continue;
-    const matchedCategory = series.find((category) => canonicalCategoryOf(row) === category);
+    const matchedCategory = series.find((category) => financeRowMatchesCategory(row, category));
     if (!matchedCategory) continue;
 
     const label = dateKey(row.date, granularity);

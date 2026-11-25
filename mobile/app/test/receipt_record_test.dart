@@ -100,6 +100,7 @@ void main() {
         'description': 'مشتريات بقالة',
         'category': 'أكل وشرب',
         'subCategory': 'سوبرماركت',
+        'purpose': {'category': 'groceries', 'sub': 'supermarket'},
         'type': 'expense',
         'merchant': 'سوبرماركت زهران',
         'confidence': 0.95,
@@ -151,6 +152,10 @@ void main() {
     // Sheet dismissed and saved notification shown
     expect(find.byType(ReceiptReviewSheet), findsNothing);
     expect(find.byType(SnackBar), findsOneWidget);
+    expect(
+      fakeApi.lastInput('expense.create'),
+      containsPair('purpose', {'category': 'groceries', 'sub': 'supermarket'}),
+    );
   });
 
   testWidgets('unreadable receipt image shows notice offering retake', (

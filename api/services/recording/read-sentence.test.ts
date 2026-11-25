@@ -25,7 +25,7 @@ const h = vi.hoisted(() => {
     select: vi.fn(() => {
       const chain: Record<string, unknown> = {};
       for (const name of ["from", "where", "orderBy"]) chain[name] = () => chain;
-      chain.limit = async () => [{ id: 9 }];
+      chain.limit = async () => [{ id: 9, tokens: 250 }];
       return chain;
     }),
   };
@@ -58,9 +58,22 @@ vi.mock("../../lib/ai-usage-policy", async (importOriginal) => {
 });
 vi.mock("../../lib/ai-ledger", () => ({ recordModelCalls: vi.fn() }));
 vi.mock("../ai-cost-policy", () => ({ recordAICostMetric: vi.fn(async () => undefined) }));
+vi.mock("./admission", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./admission")>();
+  return {
+    ...actual,
+    reserveRecording: vi.fn(async (...[user, , settings, planTokens]: Parameters<typeof actual.reserveRecording>) => {
+      h.order.push("admission");
+      const limits = actual.recordingLimits(settings, user);
+      if (h.dailyCount >= limits.daily) throw new TRPCError({ code: "FORBIDDEN", message: `(${limits.daily})` });
+      return { lease: { owner: user, attempt: 1, id: 1 }, plan: planTokens(h.budget.remaining).plan };
+    }),
+    settleRecording: vi.fn(async () => undefined),
+  };
+});
 
 import { recordModelCalls } from "../../lib/ai-ledger";
-import { assertAiBudget, estimateTokensFromText, trackAiTokens } from "../../lib/ai-usage-policy";
+import { assertAiBudget, estimateTokensFromText, getAiBudget, trackAiTokens } from "../../lib/ai-usage-policy";
 import { readSentence, READING_LOG_VERSION, UNAVAILABLE_MESSAGE, type ReadSentenceDeps } from "./read-sentence";
 
 const user = { id: 31, type: "local" as const, plan: "free" };
@@ -122,7 +135,7 @@ describe("admission", () => {
   it("checks the plan switch, the daily limit and the budget, in that order, before the engine reads", async () => {
     const d = deps(understanding());
     await readSentence({ user, text: "دفعت مصاريف المدرسة 6500", channel: "text" }, d);
-    expect(h.order).toEqual(["settings", "daily", "budget", "understand"]);
+    expect(h.order).toEqual(["settings", "budget", "admission", "understand"]);
     expect(d.seen[0]).toMatchObject({ text: "دفعت مصاريف المدرسة 6500", settings: h.settings, maxOutputTokens: 384 });
     expect(d.seen[0].context).toBe(context);
   });
@@ -135,12 +148,12 @@ describe("admission", () => {
     expect(h.inserts).toEqual([]);
   });
 
-  it("refuses at the daily limit with the plan's own limit, before the budget", async () => {
+  it("refuses at the daily limit with the plan's own limit, before reading", async () => {
     h.settings = { free_daily_limit: "3" };
     h.dailyCount = 3;
     const d = deps(understanding());
     await expect(readSentence({ user, text: "x 5", channel: "voice" }, d)).rejects.toThrow("(3)");
-    expect(h.order).toEqual(["settings", "daily"]);
+    expect(h.order).toEqual(["settings", "budget", "admission"]);
   });
 
   it("stops at the budget, and skips the gate a recording already passed", async () => {
@@ -157,7 +170,10 @@ describe("admission", () => {
     const d = deps(understanding());
     h.budget = { ...h.budget, plan, remaining: 5_000, perRequestMax: plan === "free" ? 384 : 1_024 };
     await expect(readSentence({ user: planUser, text, channel: "voice", gateChecked: true }, d)).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(assertAiBudget).toHaveBeenCalledWith(planUser, "parse", estimateTokensFromText(text), h.settings);
+    expect(assertAiBudget).toHaveBeenCalledTimes(1);
+    expect(assertAiBudget).toHaveBeenCalledWith(planUser, "parse", estimateTokensFromText(text), h.settings, {
+      recordingQuality: true, recordingBudget: { limit: plan === "free" ? 50_000 : 500_000, used: 0 },
+    });
     expect(d.understand).not.toHaveBeenCalled();
     expect(h.inserts).toEqual([]);
 
@@ -183,6 +199,29 @@ describe("admission", () => {
     h.budget.remaining = 20_000;
     await readSentence({ user, text, channel: "text" }, d);
     expect(d.seen[1].routes).toEqual([first, second]);
+  });
+});
+
+describe("recording quality budget", () => {
+  const shared = { recordingQuality: true };
+  const pro = { ...user, plan: "pro" };
+
+  it("shares the higher parse request cap while preserving each account's balance", async () => {
+    const settings = { free_token_limit: "30000", pro_token_limit: "300000", free_max_per_request: "1150", pro_max_per_request: "1000" };
+    await expect(getAiBudget(user, "parse", settings, shared)).resolves.toMatchObject({
+      limit: 30_000, remaining: 29_750, plan: "free", perRequestMax: 1_150,
+    });
+    await expect(getAiBudget(pro, "parse", settings, shared)).resolves.toMatchObject({
+      limit: 300_000, remaining: 299_750, plan: "pro", perRequestMax: 1_150,
+    });
+    await expect(getAiBudget(pro, "parse", settings)).resolves.toMatchObject({ perRequestMax: 1_000 });
+    await expect(getAiBudget(user, "speech", settings, shared)).resolves.toMatchObject({ perRequestMax: 1_150 });
+  });
+
+  it("shares the default cap while respecting a disabled plan or Ultra's separate cap", async () => {
+    await expect(getAiBudget(user, "parse", {}, shared)).resolves.toMatchObject({ perRequestMax: 1_024 });
+    await expect(getAiBudget(user, "parse", { free_max_per_request: "0" }, shared)).resolves.toMatchObject({ perRequestMax: 0 });
+    await expect(getAiBudget({ ...user, plan: "ultra" }, "parse", {}, shared)).resolves.toMatchObject({ perRequestMax: 1_536 });
   });
 });
 

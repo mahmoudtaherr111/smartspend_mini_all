@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { exportRow } from "./export-router";
+import { TAXONOMY_VERSION, taxonomyCategory, taxonomySub } from "../contracts/taxonomy";
 
 describe("an exported row", () => {
   const base = { amount: "150.00", category: "أكل وشرب", subCategory: "مطعم", description: "غدا", source: "ai_parsed" };
@@ -24,5 +25,14 @@ describe("an exported row", () => {
     expect(exportRow({ ...base, type: "expense", source: "sms", date: at }).المصدر).toBe("رسالة بنك");
     expect(exportRow({ ...base, type: "expense", source: "image", date: at }).المصدر).toBe("إيصال");
     expect(exportRow({ ...base, type: "expense", date: at })["الفئة الفرعية"]).toBe("مطعم");
+  });
+
+  it("exports the saved purpose when known and falls back to the original filing", () => {
+    const row = { ...base, type: "expense", date: new Date("2026-09-20T10:00:00Z"), purposeCategoryId: "dining", purposeSubId: "other" };
+    expect(exportRow({ ...row, purposeVersion: TAXONOMY_VERSION })).toMatchObject({
+      الفئة: taxonomyCategory("dining")!.nameAr,
+      "الفئة الفرعية": taxonomySub("dining", "other")!.nameAr,
+    });
+    expect(exportRow({ ...row, purposeVersion: "unknown" })).toMatchObject({ الفئة: base.category, "الفئة الفرعية": base.subCategory });
   });
 });

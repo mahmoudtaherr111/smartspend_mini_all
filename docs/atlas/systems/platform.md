@@ -81,6 +81,7 @@ flowchart LR
     tbl_pro_subscriptions[("pro_subscriptions")]
     tbl_profile_learning_events[("profile_learning_events")]
     tbl_push_subscriptions[("push_subscriptions")]
+    tbl_recording_requests[("recording_requests")]
     tbl_scheduled_cashflows[("scheduled_cashflows")]
     tbl_scheduled_job_runs[("scheduled_job_runs")]
     tbl_seo_pages[("seo_pages")]
@@ -165,7 +166,6 @@ flowchart LR
   mod_api_routers --> sys_notifications
   mod_api_routers --> sys_voice_calls
   mod_api_routers -.-> tbl_admin_audit_logs
-  mod_api_routers -.-> tbl_ai_pending_actions
   mod_api_routers -.-> tbl_ai_token_ledgers
   mod_api_routers -.-> tbl_api_key_errors
   mod_api_routers -.-> tbl_capture_devices
@@ -182,6 +182,7 @@ flowchart LR
   mod_api_routers ==> tbl_ai_memory_embeddings
   mod_api_routers ==> tbl_ai_memory_items
   mod_api_routers ==> tbl_ai_models
+  mod_api_routers ==> tbl_ai_pending_actions
   mod_api_routers ==> tbl_ai_providers
   mod_api_routers ==> tbl_ai_summaries
   mod_api_routers ==> tbl_auth_challenges
@@ -231,6 +232,7 @@ flowchart LR
   mod_jobs --> sys_ai_center
   mod_jobs --> sys_ai_platform
   mod_jobs --> sys_bank_messages
+  mod_jobs --> sys_expense_capture
   mod_jobs --> sys_insights
   mod_jobs --> sys_money
   mod_jobs --> sys_notifications
@@ -263,6 +265,7 @@ flowchart LR
   mod_jobs ==> tbl_pending_clarifications
   mod_jobs ==> tbl_pro_subscriptions
   mod_jobs ==> tbl_profile_learning_events
+  mod_jobs ==> tbl_recording_requests
   mod_jobs ==> tbl_scheduled_job_runs
   mod_jobs ==> tbl_store_purchases
   mod_jobs ==> tbl_user_analytics
@@ -339,7 +342,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ai_memory_embeddings` | F | `api-routers` | — |
 | `ai_memory_items` | F | `api-routers` | `api-routers` |
 | `ai_models` | A | `api-routers` | `api-routers` |
-| `ai_pending_actions` | D | `jobs` | `api-routers` |
+| `ai_pending_actions` | D | `api-routers`, `jobs` | `api-routers` |
 | `ai_providers` | A | `api-routers` | `api-routers`, `platform` |
 | `ai_summaries` | C | `api-routers` | `api-routers` |
 | `ai_token_ledgers` | E | `jobs` | `api-routers`, `jobs` |
@@ -377,6 +380,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `pro_subscriptions` | A | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `profile_learning_events` | E | `jobs` | — |
 | `push_subscriptions` | A | `api-routers` | `api-routers` |
+| `recording_requests` | D | `jobs` | — |
 | `scheduled_cashflows` | C | `api-routers` | `api-routers` |
 | `scheduled_job_runs` | E | `jobs`, `platform` | `platform` |
 | `seo_pages` | A | `api-routers` | `api-routers` |

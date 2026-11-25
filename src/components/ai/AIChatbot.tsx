@@ -680,6 +680,7 @@ export default function AIChatbot() {
   );
   const [rateLimitCooldown, setRateLimitCooldown] = useState<number>(0);
   const [lastFailedPrompt, setLastFailedPrompt] = useState<string | null>(null);
+  const retryTurnRef = useRef<{ message: string; conversationId?: number; id: string } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -841,6 +842,11 @@ export default function AIChatbot() {
         Object.prototype.hasOwnProperty.call(options, "conversationId")
           ? options.conversationId
           : conversationId;
+      const retryTurn = retryTurnRef.current;
+      const clientTurnId = retryTurn?.message === messageText && retryTurn.conversationId === targetConversationId
+        ? retryTurn.id
+        : crypto.randomUUID();
+      retryTurnRef.current = { message: messageText, conversationId: targetConversationId, id: clientTurnId };
 
       lightTap();
       setInput("");
@@ -867,11 +873,15 @@ export default function AIChatbot() {
         const result = await sendMessage.mutateAsync({
           message: messageText,
           conversationId: targetConversationId,
+          clientTurnId,
           devQaBypassDailyLimit:
             options?.devQaBypassDailyLimit === true || undefined,
         });
 
         clearTimeout(timeoutId);
+        retryTurnRef.current = null;
+        if (("recordedExpenseIds" in result && result.recordedExpenseIds?.length)
+          || ("ledgerChanged" in result && result.ledgerChanged)) refreshLedgerViews(utils);
 
         // Set conversation ID for future messages
         if (!targetConversationId && result.conversationId) {

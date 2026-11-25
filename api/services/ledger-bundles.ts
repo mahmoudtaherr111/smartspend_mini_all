@@ -5,7 +5,7 @@ import Decimal from "decimal.js";
 import { expenses } from "../../db/schema";
 import { movementOf } from "../../contracts/ledger-movement";
 import type { LedgerRow } from "./ledger-writer";
-import { savedPurposeLabels } from "./recording/saved-reading";
+import { labelsFromColumns, savedPurposeLabels, type PurposeColumns } from "./recording/saved-reading";
 
 export const linkedLedgerFee = alias(expenses, "linked_ledger_fee");
 export const ledgerBundleColumns = { entry: expenses, fee: { id: linkedLedgerFee.id, amount: linkedLedgerFee.amount, walletId: linkedLedgerFee.walletId } };
@@ -19,12 +19,13 @@ export const standaloneLedgerRowSql = sql`NOT EXISTS (SELECT 1 FROM expenses AS 
   AND bundle_parent.id = JSON_EXTRACT(${expenses.parsedMetadata}, '$.capture.parentExpenseId')
   AND ${expenses.clientRequestId} = CONCAT('cap:e', JSON_UNQUOTE(JSON_EXTRACT(bundle_parent.parsed_metadata, '$.capture.eventId')), ':fee'))`;
 
-export function ledgerEntryWithPurpose<T extends Pick<LedgerRow, "type" | "category" | "subCategory" | "parsedMetadata">>(row: T) {
+export function ledgerEntryWithPurpose<T extends Pick<LedgerRow, "type" | "category" | "subCategory" | "parsedMetadata"> & PurposeColumns>(row: T) {
+  const reportPurposeCategoryId = labelsFromColumns(row) ? row.purposeCategoryId : null;
   const purposeLabels = savedPurposeLabels(row);
-  return { ...row, ...(purposeLabels ? { purposeLabels } : {}) };
+  return { ...row, reportPurposeCategoryId, ...(purposeLabels ? { purposeLabels } : {}) };
 }
 
-export function ledgerBundle<T extends Pick<LedgerRow, "id" | "type" | "amount" | "walletId" | "parsedMetadata" | "category" | "subCategory">>(row: T, child: { id: number; amount: string; walletId: number | null } | null, contextWalletId?: number) {
+export function ledgerBundle<T extends Pick<LedgerRow, "id" | "type" | "amount" | "walletId" | "parsedMetadata" | "category" | "subCategory"> & PurposeColumns>(row: T, child: { id: number; amount: string; walletId: number | null } | null, contextWalletId?: number) {
   const event = (row.parsedMetadata as { capture?: { eventId?: unknown } } | null)?.capture?.eventId;
   const eligible = typeof event === "number" && Number.isSafeInteger(event) && event > 0;
   const feeRow = child && (contextWalletId === undefined || child.walletId === contextWalletId) ? child : null;

@@ -319,3 +319,5 @@ Capture's automatic-consent scope has its own version and never inherits the old
 revokes the prior active version atomically. Newly introduced optional capture question/resource tables are checked
 through the same transaction before account purge, allowing a disabled expand/contract deployment to retain account
 deletion. Private three-digit card/account tails now receive the same redaction treatment as four-digit tails.
+
+Deleting an account also deletes its recording admission rows for the matching identity pair.

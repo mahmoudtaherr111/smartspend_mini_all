@@ -34,14 +34,15 @@ export const StatsView = memo(function StatsView({
   refreshInferences: _refreshInferences,
   refreshingInferences: _refreshingInferences,
 }: StatsViewProps) {
-  const topCategory = stats?.topCategories?.[0];
+  const categoryBreakdown = stats?.purposeBreakdown ?? stats?.categoryBreakdown ?? [];
+  const topCategories = (stats?.purposeBreakdown ?? stats?.topCategories ?? []).slice(0, 5);
+  const topCategory = topCategories[0];
   const changePercent = stats?.behavioralInsights?.expenseChangePercent;
   const isUp = typeof changePercent === "number" && changePercent > 0;
   const comparisonType =
     stats?.behavioralInsights?.comparisonType || "monthly";
   const weekNumber = stats?.behavioralInsights?.weekNumber || 1;
   const dailyAvg = stats?.dailyAverage || 0;
-  const topCategories = stats?.topCategories?.slice(0, 5) || [];
   const totalExpense = stats?.totalExpense || 0;
 
   if (loading && !stats) {
@@ -201,7 +202,8 @@ export const StatsView = memo(function StatsView({
                 fallback={<Skeleton className="h-[320px] w-full rounded-lg" />}
               >
                 <ExpenseChart
-                  categoryData={stats?.categoryBreakdown || []}
+                  categoryData={categoryBreakdown}
+                  purposePeriod={stats?.purposePeriod}
                   subCategoryData={stats?.subCategoryBreakdown || []}
                   familyBreakdown={stats?.familyBreakdown || []}
                   hourTrend={stats?.hourTrend || []}
@@ -282,7 +284,7 @@ export const StatsView = memo(function StatsView({
                       : 0;
                   const catColor = getCategoryColor(cat.name, i);
                   return (
-                    <div key={cat.name} className="space-y-1">
+                    <div key={cat.category?.kind === "purpose" ? `purpose:${cat.category.id}` : `legacy:${cat.category?.name ?? cat.name}`} className="space-y-1">
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground w-4 text-center font-bold">

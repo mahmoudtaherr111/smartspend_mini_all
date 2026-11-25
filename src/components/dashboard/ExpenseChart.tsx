@@ -43,6 +43,7 @@ import { getTransactionDisplayMeta } from "@/lib/transactionDisplay";
 interface ExpenseChartProps {
   categoryData: any[];
   subCategoryData?: any[];
+  purposePeriod?: { startDate: string; endDate: string; businessId?: number };
   hourTrend?: any[];
   dayOfWeekTrend?: any[];
   dayTrend?: any[];
@@ -50,11 +51,14 @@ interface ExpenseChartProps {
   familyBreakdown?: any[];
 }
 
+type ChartCategory = { name: string; category?: { kind: "purpose"; id: string } | { kind: "legacy"; name: string } };
+
 // Colors are now handled by getCategoryColor in utils.ts
 
 export function ExpenseChart({
   categoryData,
   subCategoryData = [],
+  purposePeriod,
   hourTrend = [],
   dayOfWeekTrend = [],
   dayTrend = [],
@@ -72,11 +76,18 @@ export function ExpenseChart({
       setActiveTab("budget");
     }
   }, [location.hash]);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(
-    null,
-  );
+  const [selectedCategory, setSelectedCategory] = useState<ChartCategory | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const usesPurposeDrilldown = !!(selectedCategory?.category && purposePeriod);
+  const categoryTransactions = trpc.expense.list.useInfiniteQuery({
+    limit: 50,
+    spendingCategory: selectedCategory?.category,
+    ...purposePeriod,
+  }, {
+    enabled: isModalOpen && usesPurposeDrilldown,
+    getNextPageParam: (page, pages) => pages.reduce((count, next) => count + next.items.length, 0) < page.total
+      ? page.items.at(-1)?.id : undefined,
+  });
 
   // New Wallet States
   const [showBalances, setShowBalances] = useState<Record<string, boolean>>({});
@@ -219,7 +230,7 @@ export function ExpenseChart({
     });
 
     if (othersValue > 0) {
-      result.push({ name: "أخرى", value: othersValue });
+      result.push({ name: "أخرى", value: othersValue, isRemainder: true });
     }
 
     return result.sort((a, b) => b.value - a.value);
@@ -350,9 +361,8 @@ export function ExpenseChart({
                         fill={getCategoryColor(entry.name, index)}
                         className="cursor-pointer hover:opacity-80 transition-opacity"
                         onClick={() => {
-                          if (entry.name !== "أخرى") {
-                            setSelectedCategory(entry.name);
-                            setSelectedSubCategory(null);
+                          if (!entry.isRemainder) {
+                            setSelectedCategory(entry);
                             setIsModalOpen(true);
                           }
                         }}
@@ -414,15 +424,14 @@ export function ExpenseChart({
                   <div
                     key={index}
                     onClick={() => {
-                      if (entry.name !== "أخرى") {
-                        setSelectedCategory(entry.name);
-                        setSelectedSubCategory(null);
+                      if (!entry.isRemainder) {
+                        setSelectedCategory(entry);
                         setIsModalOpen(true);
                       }
                     }}
                     className={cn(
                       "group flex flex-col gap-2 p-3 rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all cursor-pointer shadow-sm",
-                      entry.name === "أخرى" &&
+                      entry.isRemainder &&
                         "cursor-default hover:bg-white/50 dark:hover:bg-slate-900/30",
                     )}
                   >
@@ -917,7 +926,7 @@ export function ExpenseChart({
         >
           <AdaptiveDialogHeader>
             <AdaptiveDialogTitle className="text-xl">
-              تفاصيل الفئة: {selectedCategory || selectedSubCategory}
+              تفاصيل الفئة: {selectedCategory?.name}
             </AdaptiveDialogTitle>
           </AdaptiveDialogHeader>
           <div
@@ -925,14 +934,20 @@ export function ExpenseChart({
             dir="rtl"
           >
             {(() => {
-              const filteredItems = items
+              if (usesPurposeDrilldown && categoryTransactions.isPending) {
+                return <p className="py-4 text-center">بنحمّل العمليات…</p>;
+              }
+              if (usesPurposeDrilldown && categoryTransactions.isError && !categoryTransactions.data) {
+                return <button type="button" onClick={() => void categoryTransactions.refetch()}>ماقدرناش نحمّل العمليات. جرّب تاني</button>;
+              }
+              const filteredItems = (usesPurposeDrilldown
+                ? categoryTransactions.data?.pages.flatMap(page => page.items) ?? []
+                : items
                 .filter(
                   (i) =>
                     financialBucket(i) === "expense" &&
-                    (selectedCategory
-                      ? i.category === selectedCategory
-                      : i.subCategory === selectedSubCategory),
-                )
+                    i.category === selectedCategory?.name,
+                ))
                 .sort(
                   (a, b) =>
                     new Date(b.date).getTime() - new Date(a.date).getTime(),
@@ -950,10 +965,10 @@ export function ExpenseChart({
               if (selectedCategory) {
                 const grouped = filteredItems.reduce(
                   (acc, item) => {
-                    const sub =
+                    const sub = (item.reportPurposeCategoryId ? item.purposeLabels?.subAr : undefined) ?? (
                       item.subCategory && item.subCategory !== "عام"
                         ? item.subCategory
-                        : "أخرى";
+                        : "أخرى");
                     if (!acc[sub]) acc[sub] = { total: 0, items: [] };
                     acc[sub].total += Number(item.amount);
                     acc[sub].items.push(item);
@@ -987,7 +1002,7 @@ export function ExpenseChart({
                           >
                             <div className="flex flex-col min-w-0 flex-1">
                               <span className="font-medium text-xs truncate">
-                                {item.description || item.category}
+                                {item.description || (item.reportPurposeCategoryId && item.purposeLabels?.categoryAr) || item.category}
                               </span>
                               <span className="text-[10px] text-muted-foreground truncate">
                                 {format(new Date(item.date), "dd MMM yyyy", {
@@ -995,7 +1010,8 @@ export function ExpenseChart({
                                 })}
                               </span>
                             </div>
-                            <div className="font-bold text-xs text-red-500">
+                            <div className={cn("font-bold text-xs", Number(item.amount) < 0 ? "text-emerald-600" : "text-red-500")}>
+                              {Number(item.amount) < 0 ? "+" : ""}
                               {Math.abs(Number(item.amount)).toLocaleString("en-US", {
                                 minimumFractionDigits: 0,
                                 maximumFractionDigits: 0,
@@ -1035,6 +1051,11 @@ export function ExpenseChart({
                 </div>
               ));
             })()}
+            {usesPurposeDrilldown && categoryTransactions.hasNextPage && (
+              <button type="button" disabled={categoryTransactions.isFetchingNextPage} onClick={() => void categoryTransactions.fetchNextPage()}>
+                {categoryTransactions.isFetchingNextPage ? "بنحمّل العمليات…" : "عرض عمليات أكتر"}
+              </button>
+            )}
           </div>
         </AdaptiveDialogContent>
       </AdaptiveDialog>

@@ -389,7 +389,7 @@ model {
     }
     expenses = table 'expenses' {
       #classB #dualOwner
-      description '22 columns, 11 indexes, storage class B.'
+      description '25 columns, 12 indexes, storage class B.'
       metadata {
         export 'expenses'
         storageClass 'B'
@@ -497,6 +497,14 @@ model {
       metadata {
         export 'pushSubscriptions'
         storageClass 'A'
+      }
+    }
+    recording_requests = table 'recording_requests' {
+      #classD #dualOwner
+      description '14 columns, 3 indexes, storage class D.'
+      metadata {
+        export 'recordingRequests'
+        storageClass 'D'
       }
     }
     referrals = table 'referrals' {
@@ -621,7 +629,7 @@ model {
     }
     user_correction_rules = table 'user_correction_rules' {
       #classF #dualOwner
-      description '15 columns, 2 indexes, storage class F.'
+      description '16 columns, 2 indexes, storage class F.'
       metadata {
         export 'userCorrectionRules'
         storageClass 'F'

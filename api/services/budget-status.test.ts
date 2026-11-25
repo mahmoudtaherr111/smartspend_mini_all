@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { budgetCycle, budgetStanding, dueBudgetAlerts, type BudgetRow } from "./budget-status";
+import { TAXONOMY_VERSION, taxonomyCategory } from "../../contracts/taxonomy";
 
 const budget = (overrides: Partial<BudgetRow> = {}): BudgetRow => ({
   id: 1,
@@ -45,6 +46,20 @@ describe("a budget's standing", () => {
 
   it("counts all spending when it names no category", () => {
     expect(budgetStanding(budget({ category: null }), rows, cycle).currentSpent).toBe(1250);
+  });
+
+  it("nets refunds into an exact purpose budget without guessing the purpose of legacy filings", () => {
+    const dated = { date: new Date("2026-09-06T10:00:00Z"), category: "أكل وشرب", purposeVersion: TAXONOMY_VERSION, purposeSubId: "other" };
+    const categorized = [
+      ...rows,
+      { ...dated, purposeCategoryId: "dining", amount: 200 },
+      { ...dated, purposeCategoryId: "dining", amount: -40 },
+      { ...dated, purposeCategoryId: "groceries", amount: 100 },
+      { ...dated, purposeCategoryId: "dining", purposeSubId: "invalid", amount: 100 },
+    ];
+    const exact = budgetStanding(budget({ metadata: { purposeCategoryId: "dining" } }), categorized, cycle);
+    expect(exact).toMatchObject({ currentSpent: 160, purposeCategoryId: "dining", purposeCategory: taxonomyCategory("dining")!.nameAr });
+    expect(budgetStanding(budget(), categorized, cycle).currentSpent).toBe(1210);
   });
 
   it("warns once near the limit and once past it", () => {

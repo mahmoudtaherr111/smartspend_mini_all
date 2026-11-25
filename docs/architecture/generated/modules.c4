@@ -13,7 +13,7 @@ model {
     ai-actions = module 'AI action runtime' {
       description 'Actions the assistant proposes, such as recording an expense, updating a wallet or creating a goal: stored as pending drafts and executed only after the user confirms, with the artifacts shown in chat.'
       metadata {
-        files '6'
+        files '7'
         paths 'api/services/action-runtime/**'
       }
     }
@@ -34,7 +34,7 @@ model {
     ai-kernel = module 'AI Center kernel' {
       description 'Plans each AI Center turn without a model (intent, data needs, clarifying questions), packs the context, applies the capability registry and retrieval policy, words the answer with at most one model call, and logs traces.'
       metadata {
-        files '11'
+        files '12'
         paths 'api/services/ai-kernel/**'
       }
     }
@@ -202,7 +202,7 @@ model {
     understanding = module 'Sentence understanding engine' {
       description 'Reads a typed or spoken sentence into money events with a model and verifies the reading in code: the reply contract and its parser, the numbers and quotes the code reads on its own, the guard’s exact checks, the save, show or ask policy, the prompt built from taxonomy v2, the user’s context for a reading, route resolution, the bridge from taxonomy v2 to the names the ledger stores, and the recording service that puts a reading behind the entry points.'
       metadata {
-        files '17'
+        files '18'
         paths 'api/lib/understanding/**, api/services/recording/**'
       }
     }

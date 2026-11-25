@@ -4,16 +4,19 @@
 views {
   dynamic view flow_record_expense {
     title 'Flow · record an expense from text'
-    description 'The expense form on the home screen sends the sentence to ai.parseExpense. runSmartPipeline splits it into financial events, then tries the result cache, muscle memory and the rule engine, and asks a model only to name the category of clauses it could not settle. auto_save items are saved at once, review items after the user confirms, and clarify returns a question. One item is saved with expense.create, several with expense.batchCreate; both write through the ledger writer, which locks the owner and, after a guarded cashflow cutover, separates movement kind from income/expense before inserting rows with their daily rollup delta, contact counts and streak in one transaction.'
+    description 'The expense form on the home screen sends the sentence to ai.parseExpense. The understanding setting sends it to a model reader and validates the evidence, then the user or a compatible client can commit independently verified items and keep the questions for missing amounts. Under the default rules setting, runSmartPipeline splits it into financial events, then tries the result cache, muscle memory and the rule engine, and asks a model only to name the category of clauses it could not settle. auto_save items are saved at once, review items after the user confirms, and clarify returns a question. One item is saved with expense.create, several with expense.batchCreate; both write through the ledger writer, which locks the owner and, after a guarded cashflow cutover, separates movement kind from income/expense before inserting rows with their daily rollup delta, contact counts and streak in one transaction.'
 
     user -> smartspend.web.pages.Home 'types or dictates a spending sentence' // intent: the person opens the page
     smartspend.web.pages.Home -> smartspend.api.trpc.ai.parseExpense 'parse the text'
+    smartspend.api.trpc.ai.parseExpense -> smartspend.api.modules.understanding 'understanding setting: read and verify the financial events'
     smartspend.api.trpc.ai.parseExpense -> smartspend.api.modules.classification 'runSmartPipeline: events, cache, muscle memory, rules'
     smartspend.api.modules.classification -> smartspend.api.modules.ai-providers 'category of the clauses the local pass could not settle'
     smartspend.api.modules.ai-providers -> gemini 'provider chain, Gemini unless configured otherwise'
     smartspend.api.trpc.ai.parseExpense -> smartspend.mysql.classification_logs 'decision trace'
     smartspend.api.trpc.ai.parseExpense -> smartspend.mysql.pending_clarifications 'when the decision is clarify'
     smartspend.web.pages.Home <- smartspend.api.trpc.ai.parseExpense 'items and decision: auto_save, review or clarify'
+    smartspend.web.pages.Home -> smartspend.api.trpc.expense.commitPartialReading 'book independent items and open their outstanding questions'
+    smartspend.api.trpc.expense.commitPartialReading -> smartspend.api.modules.ledger 'commit the verified subset once'
     smartspend.web.pages.Home -> smartspend.api.trpc.expense.create 'save one item'
     smartspend.web.pages.Home -> smartspend.api.trpc.expense.batchCreate 'save several items'
     smartspend.api.trpc.expense.create -> smartspend.api.modules.ledger 'createLedgerEntry: one row in one transaction'

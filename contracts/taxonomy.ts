@@ -466,6 +466,18 @@ export function categoryAllowsKind(categoryId: string, kind: MovementKind): bool
   return taxonomyCategory(categoryId)?.kinds.includes(kind) ?? false;
 }
 
+/** A manually selected transfer or investment purpose specifies its economic kind. The direction is a separate input. */
+export function movementKindForPurpose(categoryId: string, subId: string): MovementKind | undefined {
+  const category = taxonomyCategory(categoryId);
+  if (category?.group !== "movement" || !taxonomySub(categoryId, subId)) return;
+  if (categoryId === "own_money") {
+    if (subId === "cash") return "cash_transfer";
+    if (subId === "card_payment") return "card_payment";
+    return "own_transfer";
+  }
+  return category.kinds[0];
+}
+
 /** The category an event of a movement kind belongs to; undefined for spending, refund and income. */
 export function categoryOfMovementKind(kind: MovementKind): TaxonomyCategory | undefined {
   return TAXONOMY.find((category) => category.group === "movement" && category.kinds.includes(kind));

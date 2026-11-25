@@ -126,6 +126,8 @@ export function Person() {
         <Fact label="توكنز داخلة / خارجة" value={`${count(p.aiThisMonth.input)} / ${count(p.aiThisMonth.output)}`} />
         <Fact label="تكلفة الذكاء الشهر ده" value={usd(p.aiThisMonth.usd)} />
         <Fact label="آخر دخول" value={day(p.lastSignInAt)} />
+        <Fact label="التسجيلات الذكية الشهر ده" value={`${count(p.recordingThisMonth.requests)} / ${p.recordingThisMonth.limits.monthly ? count(p.recordingThisMonth.limits.monthly) : "من غير حد"}`} />
+        <Fact label="توكنز التسجيل الذكي" value={`${count(p.recordingThisMonth.chargedTokens)} / ${count(p.recordingThisMonth.limits.tokens)}`} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">

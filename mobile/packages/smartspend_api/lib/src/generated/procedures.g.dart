@@ -202,6 +202,7 @@ final class ExpenseProcedures {
 
   ApiMutation get answerClarification => const ApiMutation('expense.answerClarification', builder: 'authedProcedure', hasInput: true);
   ApiMutation get batchCreate => const ApiMutation('expense.batchCreate', builder: 'authedProcedure', hasInput: true);
+  ApiMutation get commitPartialReading => const ApiMutation('expense.commitPartialReading', builder: 'authedProcedure', hasInput: true);
   ApiMutation get create => const ApiMutation('expense.create', builder: 'authedProcedure', hasInput: true);
   ApiMutation get createCategory => const ApiMutation('expense.createCategory', builder: 'authedProcedure', hasInput: true);
   ApiMutation get createInstallmentPlan => const ApiMutation('expense.createInstallmentPlan', builder: 'authedProcedure', hasInput: true);

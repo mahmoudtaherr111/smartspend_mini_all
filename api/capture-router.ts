@@ -37,8 +37,9 @@ const ownerOf = (ctx: { user: { id: number; type: string } | null }) => ({ userI
 export const captureRouter = router({
   nextQuestion: authedProcedure.mutation(({ ctx }) => nextPurposeQuestion(ownerOf(ctx))),
   answerQuestion: authedProcedure.input(z.object({ questionId: z.number().int().positive(), action: z.enum(["set", "keep", "skip"]),
+    selectedPurpose: z.object({ category: z.string().min(1).max(64), sub: z.string().min(1).max(64) }).optional(),
     categoryId: z.string().max(60).optional(), subCategoryId: z.string().max(60).optional(), purpose: z.string().trim().min(1).max(200).optional(), movementKind: z.enum(MOVEMENT_KINDS).optional(), contactId: z.number().int().positive().nullable().optional(),
-  }).refine((input) => input.action !== "set" || !!input.categoryId || !!input.purpose || !!input.movementKind, "اختار فئة أو اكتب الغرض من العملية.")).mutation(({ ctx, input }) => answerPurposeQuestion(ownerOf(ctx), input.questionId, input)),
+  }).refine((input) => input.action !== "set" || !!input.selectedPurpose || !!input.categoryId || !!input.purpose || !!input.movementKind, "اختار فئة أو اكتب الغرض من العملية.")).mutation(({ ctx, input }) => answerPurposeQuestion({ ...ownerOf(ctx), plan: ctx.user.plan }, input.questionId, input)),
   activity: authedProcedure.input(z.object({ limit: z.number().int().min(1).max(50).default(30) }).optional()).query(({ ctx, input }) => captureActivity(ownerOf(ctx), input?.limit)),
   walletKind: authedProcedure.input(z.object({ walletId: z.number().int().positive() })).query(({ ctx, input }) => walletBalanceKind(ownerOf(ctx), input.walletId)),
   setWalletKind: authedProcedure.input(z.object({ walletId: z.number().int().positive(), kind: z.enum(CAPTURE_WALLET_KINDS) })).mutation(async ({ ctx, input }) => {

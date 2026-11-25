@@ -20,18 +20,32 @@ class CategoryTransactionsScreen extends ConsumerStatefulWidget {
     super.key,
     required this.category,
     this.month,
+    this.purposeCategoryId,
+    this.legacyCategory,
   });
 
   static const subPath = 'category';
   static const path = '${StatsScreen.path}/$subPath';
 
-  static String pathFor(String category, {String? month}) => Uri(
+  static String pathFor(
+    String category, {
+    String? month,
+    String? purposeCategoryId,
+    String? legacyCategory,
+  }) => Uri(
     path: path,
-    queryParameters: {'name': category, 'month': ?month},
+    queryParameters: {
+      'name': category,
+      'month': ?month,
+      'purpose': ?purposeCategoryId,
+      'legacyCategory': ?legacyCategory,
+    },
   ).toString();
 
   final String category;
   final String? month;
+  final String? purposeCategoryId;
+  final String? legacyCategory;
 
   @override
   ConsumerState<CategoryTransactionsScreen> createState() =>
@@ -99,11 +113,21 @@ class _CategoryTransactionsScreenState
       );
     }
 
-    final query = (category: widget.category, month: resolvedMonth);
+    final query = (
+      category: widget.category,
+      month: resolvedMonth,
+      purposeCategoryId: widget.purposeCategoryId,
+      legacyCategory: widget.legacyCategory,
+    );
     final list = ref.watch(categoryTransactionsProvider(query));
     final stats = ref.watch(monthStatsByMonthProvider(resolvedMonth)).value;
     final fromStats = stats?.categories
-        .where((item) => item.name == widget.category)
+        .where(
+          (item) =>
+              item.name == widget.category &&
+              item.purposeCategoryId == widget.purposeCategoryId &&
+              item.legacyCategory == widget.legacyCategory,
+        )
         .firstOrNull
         ?.amount;
     final monthLabel = words.month(resolvedMonth);

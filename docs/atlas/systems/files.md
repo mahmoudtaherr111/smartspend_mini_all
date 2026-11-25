@@ -27,7 +27,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/coach-router.ts` | [money](money.md) |
 | `api/commitments-router.ts` | [money](money.md) |
 | `api/context.ts` | [platform](platform.md) |
-| `api/expense-router.ts` | [expense-capture](expense-capture.md): `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `expense.createCategory`, `expense.dismissClarification`, `expense.getCategoryList`, `expense.getPendingClarifications` · [money](money.md): `expense.createInstallmentPlan`, `expense.delete`, `expense.deleteInstallmentPlan`, `expense.getById`, `expense.getDebtBalances`, `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getSeasonSpending`, `expense.getYearlyStats`, `expense.list`, `expense.listInstallmentPlans`, `expense.previewCategory`, `expense.searchTransactions`, `expense.update` · rest of the file: [expense-capture](expense-capture.md), [money](money.md) |
+| `api/expense-router.ts` | [expense-capture](expense-capture.md): `expense.answerClarification`, `expense.batchCreate`, `expense.commitPartialReading`, `expense.create`, `expense.createCategory`, `expense.dismissClarification`, `expense.getCategoryList`, `expense.getPendingClarifications` · [money](money.md): `expense.createInstallmentPlan`, `expense.delete`, `expense.deleteInstallmentPlan`, `expense.getById`, `expense.getDebtBalances`, `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getSeasonSpending`, `expense.getYearlyStats`, `expense.list`, `expense.listInstallmentPlans`, `expense.previewCategory`, `expense.searchTransactions`, `expense.update` · rest of the file: [expense-capture](expense-capture.md), [money](money.md) |
 | `api/export-router.ts` | [admin](admin.md): `export.allUsers` · [insights](insights.md): `export.monthlyReportHtml` · [money](money.md): `export.myExpenses` · rest of the file: [admin](admin.md), [insights](insights.md), [money](money.md) |
 | `api/goals-router.ts` | [money](money.md) |
 | `api/image-router.ts` | [expense-capture](expense-capture.md) |
@@ -198,6 +198,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/seo-router.ts` | [admin](admin.md) |
 | `api/server.ts` | [voice-calls](voice-calls.md): `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
 | `api/services/action-runtime/artifacts.ts` | [ai-center](ai-center.md) |
+| `api/services/action-runtime/chat-recording.ts` | [ai-center](ai-center.md) |
 | `api/services/action-runtime/confirmation-phrases.ts` | [ai-center](ai-center.md) |
 | `api/services/action-runtime/extended-actions.ts` | [ai-center](ai-center.md) |
 | `api/services/action-runtime/goal-create.ts` | [ai-center](ai-center.md) |
@@ -215,6 +216,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/ai-kernel/data-need-compiler.ts` | [ai-center](ai-center.md) |
 | `api/services/ai-kernel/index.ts` | [ai-center](ai-center.md) |
 | `api/services/ai-kernel/intent-router.ts` | [ai-center](ai-center.md) |
+| `api/services/ai-kernel/recording-intent.ts` | [ai-center](ai-center.md) |
 | `api/services/ai-kernel/response-normalizer.ts` | [ai-center](ai-center.md) |
 | `api/services/ai-kernel/retrieval-policy.ts` | [ai-center](ai-center.md) |
 | `api/services/ai-kernel/types.ts` | [ai-center](ai-center.md) |
@@ -265,6 +267,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/personal-context-builder.ts` | [insights](insights.md) |
 | `api/services/phone-challenge.ts` | [accounts](accounts.md) |
 | `api/services/pro-report-engine.ts` | [insights](insights.md) |
+| `api/services/recording/admission.ts` | [expense-capture](expense-capture.md) |
 | `api/services/recording/engine-switch.ts` | [expense-capture](expense-capture.md) |
 | `api/services/recording/items.ts` | [expense-capture](expense-capture.md) |
 | `api/services/recording/read-sentence.ts` | [expense-capture](expense-capture.md) |

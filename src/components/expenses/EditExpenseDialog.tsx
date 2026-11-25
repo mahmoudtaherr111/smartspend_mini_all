@@ -14,11 +14,16 @@ import {
   AdaptiveDialogTitle,
 } from "@/components/ui/adaptive-dialog";
 import { ExpenseInputLimits } from "@contracts/constants";
-import { financialBucket } from "@contracts/ledger-movement";
+import { financialBucket, financialMovement, movementOf } from "@contracts/ledger-movement";
+import { movementKindForPurpose } from "@contracts/taxonomy";
 import {
+  defaultPurposeSub,
   defaultSubCategory,
   getCategoryOptionsForType,
+  getPurposeOptionsForType,
   getSubCategoryOptions,
+  purposeOptionValue,
+  selectedPurposeOption,
 } from "@/lib/financial-taxonomy";
 
 export interface EditableExpense {
@@ -29,6 +34,8 @@ export interface EditableExpense {
   type: string;
   category: string;
   subCategory: string | null;
+  reportPurposeCategoryId?: string | null;
+  purposeSubId?: string | null;
   description: string | null;
   date: string | Date;
 }
@@ -46,6 +53,8 @@ type ExpenseType = (typeof TYPE_OPTIONS)[number]["value"];
 /** A refund is stored as a negative expense (ledgerAmount on the server). */
 function kindOf(expense: EditableExpense): ExpenseType {
   if (expense.type === "expense" && Number(expense.amount) < 0) return "refund";
+  const movement = financialMovement(expense);
+  if (movement && ["personal_transfer", "loan", "gam3eya", "cash_transfer", "own_transfer", "card_payment"].includes(movement.kind)) return "transfer";
   return (financialBucket(expense) as ExpenseType) || "expense";
 }
 
@@ -74,13 +83,23 @@ export function EditExpenseDialog({
   const utils = trpc.useUtils();
   const originalKind = kindOf(expense);
   const originalAmount = Math.abs(Number(expense.amount));
+  const originalCategory = expense.reportPurposeCategoryId ? purposeOptionValue(expense.reportPurposeCategoryId) : expense.category;
+  const originalSubCategory = expense.reportPurposeCategoryId && expense.purposeSubId ? expense.purposeSubId : expense.subCategory || "عام";
+  const originalFlow = movementOf(expense);
+  const originalDirection = originalFlow === "in" ? "incoming" : originalFlow === "out" ? "outgoing" : "";
   const [amount, setAmount] = useState(String(originalAmount));
   const [fee, setFee] = useState(String(Number(expense.bundle?.feeAmount ?? 0)));
   const [type, setType] = useState<ExpenseType>(originalKind);
-  const [category, setCategory] = useState(expense.category);
-  const [subCategory, setSubCategory] = useState(expense.subCategory || "عام");
+  const [category, setCategory] = useState(originalCategory);
+  const [subCategory, setSubCategory] = useState(originalSubCategory);
+  const [direction, setDirection] = useState<"incoming" | "outgoing" | "">(originalDirection);
   const [day, setDay] = useState(dayOf(expense.date));
   const [description, setDescription] = useState(expense.description ?? "");
+  const ledgerType = type === "refund" ? "expense" : type;
+  const hasDirection = type === "transfer" || type === "investment";
+  const purposeOptions = getPurposeOptionsForType(type);
+  const purposeCategory = selectedPurposeOption(category);
+  const categoryChanged = category !== originalCategory || subCategory !== originalSubCategory;
 
   const update = trpc.expense.update.useMutation({
     onSuccess: () => {
@@ -105,14 +124,24 @@ export function EditExpenseDialog({
       changes.linkedFeeAmount = Number(fee);
     }
     if (value !== originalAmount) changes.amount = value;
+    const purpose = purposeCategory && categoryChanged ? { category: purposeCategory.id, sub: subCategory } : undefined;
+    const purposeMovementKind = purpose && movementKindForPurpose(purpose.category, purpose.sub);
     if (type !== originalKind) {
-      changes.movementKind = type === "refund" ? "refund" : type === "transfer" ? "personal_transfer" : type === "investment" ? "investment" : type === "income" ? "income" : "spending";
-      const storedType = type === "refund" ? "expense" : type;
-      if (storedType !== expense.type) changes.type = storedType;
+      changes.movementKind = purposeMovementKind ?? (type === "refund" ? "refund" : type === "transfer" ? "personal_transfer" : type === "investment" ? "investment" : type === "income" ? "income" : "spending");
+      if (ledgerType !== expense.type) changes.type = ledgerType;
       changes.refund = type === "refund";
     }
-    if (category !== expense.category) changes.category = category;
-    if (subCategory !== (expense.subCategory || "عام") || changes.category) changes.subCategory = subCategory;
+    if (hasDirection && (direction !== originalDirection || type !== originalKind || purposeMovementKind)) {
+      if (!direction) { toast.error("حدد الفلوس داخلة ولا خارجة"); return; }
+      changes.direction = direction;
+    }
+    if (purpose) {
+      changes.purpose = purpose;
+      if (purposeMovementKind) changes.movementKind = purposeMovementKind;
+    } else if (categoryChanged) {
+      changes.category = category;
+      changes.subCategory = subCategory;
+    }
     if (day !== dayOf(expense.date)) changes.date = new Date(`${day}T12:00:00`).toISOString();
     if (description !== (expense.description ?? "")) changes.description = description.slice(0, ExpenseInputLimits.descriptionMax);
     if (Object.keys(changes).length === 1) {
@@ -122,7 +151,7 @@ export function EditExpenseDialog({
     update.mutate(changes);
   };
 
-  const categories = getCategoryOptionsForType(type === "refund" ? "expense" : type, category);
+  const legacyCategories = getCategoryOptionsForType(ledgerType, purposeCategory ? null : category);
 
   return (
     <AdaptiveDialog open={open} onOpenChange={onOpenChange}>
@@ -153,11 +182,12 @@ export function EditExpenseDialog({
               onChange={(event) => {
                 const nextType = event.target.value as ExpenseType;
                 setType(nextType);
-                const options = getCategoryOptionsForType(nextType === "refund" ? "expense" : nextType);
-                if (!options.includes(category)) {
-                  setCategory(options[0]);
-                  setSubCategory(defaultSubCategory(options[0]));
+                const options = getPurposeOptionsForType(nextType);
+                if (!purposeCategory || !options.some(option => option.id === purposeCategory.id)) {
+                  setCategory(purposeOptionValue(options[0].id));
+                  setSubCategory(defaultPurposeSub(options[0]).id);
                 }
+                if (nextType === "transfer" || nextType === "investment") setDirection("");
               }}
               className="h-10 w-full rounded-md border bg-background px-2 text-sm"
             >
@@ -168,18 +198,32 @@ export function EditExpenseDialog({
               ))}
             </select>
           </div>
+          {hasDirection && <div className="space-y-1">
+            <Label htmlFor={`edit-direction-${expense.id}`}>حركة الفلوس</Label>
+            <select id={`edit-direction-${expense.id}`} value={direction} onChange={event => {
+              const next = event.target.value;
+              if (next === "" || next === "incoming" || next === "outgoing") setDirection(next);
+            }} className="h-10 w-full rounded-md border bg-background px-2 text-sm">
+              <option value="">حدد الاتجاه</option>
+              <option value="outgoing">فلوس خارجة</option>
+              <option value="incoming">فلوس داخلة</option>
+            </select>
+          </div>}
           <div className="space-y-1">
             <Label htmlFor={`edit-category-${expense.id}`}>الفئة</Label>
             <select
               id={`edit-category-${expense.id}`}
               value={category}
               onChange={(event) => {
-                setCategory(event.target.value);
-                setSubCategory(defaultSubCategory(event.target.value));
+                const next = event.target.value;
+                const purpose = selectedPurposeOption(next);
+                setCategory(next);
+                setSubCategory(purpose ? defaultPurposeSub(purpose).id : defaultSubCategory(next));
               }}
               className="h-10 w-full rounded-md border bg-background px-2 text-sm"
             >
-              {categories.map((option) => (
+              {purposeOptions.map(option => <option key={option.id} value={purposeOptionValue(option.id)}>{option.nameAr}</option>)}
+              {legacyCategories.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -194,7 +238,8 @@ export function EditExpenseDialog({
               onChange={(event) => setSubCategory(event.target.value)}
               className="h-10 w-full rounded-md border bg-background px-2 text-sm"
             >
-              {[...new Set([subCategory, ...getSubCategoryOptions(category)])].map((option) => (
+              {purposeCategory?.subs.map(sub => <option key={sub.id} value={sub.id}>{sub.nameAr}</option>)}
+              {!purposeCategory && [...new Set([subCategory, ...getSubCategoryOptions(category)])].map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>

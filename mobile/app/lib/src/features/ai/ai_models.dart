@@ -23,7 +23,7 @@ final class ChatMessage {
         (json['structured'] as Map<String, Object?>?);
 
     if (structured != null) {
-      final actionData = structured['action'] as Map<String, Object?>?;
+      final actionData = chatActionData(structured);
       if (actionData != null) {
         draft = AiActionDraft.fromJson(actionData);
       }
@@ -79,6 +79,24 @@ final class ChatMessage {
   }
 }
 
+Map<String, Object?>? chatActionData(Map<String, Object?> structured) {
+  final actions = structured['actions'] as List?;
+  final action =
+      structured['action'] ??
+      (actions == null || actions.isEmpty ? null : actions.first);
+  if (action is Map<String, Object?>) return action;
+  final artifacts = structured['artifacts'];
+  if (artifacts is List<Object?>) {
+    for (final artifact in artifacts.whereType<Map<String, Object?>>()) {
+      final payload = artifact['payload'];
+      if (artifact['type'] == 'action_confirmation' &&
+          payload is Map<String, Object?>)
+        return payload;
+    }
+  }
+  return null;
+}
+
 /// An action draft proposed by the AI requiring user confirmation (AI-02).
 final class AiActionDraft {
   const AiActionDraft({
@@ -103,6 +121,7 @@ final class AiActionDraft {
 
     final actionName =
         (json['actionName'] as String?) ??
+        (json['name'] as String?) ??
         (json['action'] as String?) ??
         'record.expense';
     final isHighRisk =
@@ -127,20 +146,23 @@ final class AiActionDraft {
     if (expiresRaw != null) {
       expiresAt = DateTime.tryParse(expiresRaw);
     }
+    final actionId =
+        int.tryParse((json['actionId'] ?? json['id']).toString()) ?? 0;
+    final status = json['status'] as String?;
 
     return AiActionDraft(
       id:
           (json['id'] as String?) ??
           (json['actionId'] != null ? 'act_${json['actionId']}' : 'act_0'),
       actionName: actionName,
-      actionId: (json['actionId'] as num?)?.toInt() ?? 0,
+      actionId: actionId,
       summary:
           (json['summary'] as String?) ??
           (json['title'] as String?) ??
           'إجراء مقترح',
       amounts: amounts,
       date: json['date'] as String?,
-      status: (json['status'] as String?) ?? 'pending',
+      status: status == 'executed' ? 'confirmed' : status ?? 'pending',
       isHighRisk: isHighRisk,
       confirmationPhrase: phrase,
       expiresAt: expiresAt,

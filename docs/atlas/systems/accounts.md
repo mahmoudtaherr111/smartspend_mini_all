@@ -90,6 +90,7 @@ flowchart LR
     tbl_pro_subscriptions[("pro_subscriptions")]
     tbl_profile_learning_events[("profile_learning_events")]
     tbl_push_subscriptions[("push_subscriptions")]
+    tbl_recording_requests[("recording_requests")]
     tbl_referrals[("referrals")]
     tbl_scheduled_cashflows[("scheduled_cashflows")]
     tbl_sessions[("sessions")]
@@ -174,6 +175,7 @@ flowchart LR
   mod_accounts ==> tbl_pro_subscriptions
   mod_accounts ==> tbl_profile_learning_events
   mod_accounts ==> tbl_push_subscriptions
+  mod_accounts ==> tbl_recording_requests
   mod_accounts ==> tbl_referrals
   mod_accounts ==> tbl_scheduled_cashflows
   mod_accounts ==> tbl_sessions
@@ -377,6 +379,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `pro_subscriptions` | A | `accounts` | — |
 | `profile_learning_events` | E | `accounts` | — |
 | `push_subscriptions` | A | `accounts` | — |
+| `recording_requests` | D | `accounts` | — |
 | `referrals` | A | `accounts` | — |
 | `scheduled_cashflows` | C | `accounts` | — |
 | `sessions` | D | `accounts`, `auth` | `auth`, `session.listAll`, `session.listMine`, `session.stats` |

@@ -26,7 +26,7 @@ deals with, and the expense export. Saving a new item belongs to [Recording spen
 | Commitments and plans | `api/coach-router.ts`, `api/services/coach/`, the page `src/pages/PlanPage.tsx#PlanPage` at `/plan` | Scheduled commitments and expected income, which payment paid which due date, what is free until payday, the coaching plan the user accepted, and its reminders ([below](#commitments-and-plans)) |
 | Commitments hub (التزاماتي) | `api/commitments-router.ts`, `api/services/coach/commitments.ts`, `api/services/coach/matcher.ts`, `api/services/coach/reminders.ts`; the app's `mobile/app/lib/src/features/commitments/` | Installments, subscriptions, school fees, rent, bills, debts and gam3eyas in five shapes, payments linked to them on their own only when certain, the questions asked otherwise, and reminders before each date ([below](#commitments-hub-التزاماتي), decision 0051) |
 | People | the contact procedures in `api/profile-router.ts` (`profile.listContacts`, `profile.addContact`, `profile.updateContact`, `profile.deleteContact`, `profile.mergeContacts`) | The people behind transfers and family spending |
-| Export | `export.myExpenses` in `api/export-router.ts`, the "نزّل مصاريفك" card of the More page (`src/components/expenses/ExportExpensesCard.tsx`) | The user's items, up to 10,000 newest first, as Excel or CSV (JSON too through the API), protected against spreadsheet formulas: each row dated by Cairo's day, named by its kind (دخل، مصروف، تحويل، استثمار، مرتجع for a refund, with its signed amount), with its subcategory and its source (`exportRow`) |
+| Export | `export.myExpenses` in `api/export-router.ts`, the "نزّل مصاريفك" card of the More page (`src/components/expenses/ExportExpensesCard.tsx`) | The user's items, up to 10,000 newest first, as Excel or CSV (JSON too through the API), protected against spreadsheet formulas. Each row carries its Cairo day, kind, signed amount, category and subcategory labels, and source. The labels come from the saved purpose when known and the original filing otherwise. An API caller may specify a business or the personal ledger. |
 
 Screens of other systems use these APIs: people in `src/components/settings/PeopleSettingsView.tsx`, the business in
 `src/components/settings/BusinessSettingsView.tsx`.
@@ -42,6 +42,10 @@ Screens of other systems use these APIs: people in `src/components/settings/Peop
   breakdown, budgets and the AI Center net it without knowing about refunds. `expense.update` takes `refund` and keeps
   the stored sign in line with the kind; the list, calendar, search and edit dialog show the magnitude as "مرتجع"
   (docs/decisions/0010-refunds-net-their-category.md).
+- **Saved purposes.** A transaction can carry a taxonomy version and category and subcategory ids alongside its
+  original ledger filing. The Flutter manual record and edit pickers load the shared `taxonomy.get` catalog for
+  spending, income and investment, and cache it on the device. The app can queue a chosen purpose with a manual
+  entry. A transaction with no known purpose keeps its original filing in reports. (decision 0054)
 - Every write that adds, changes or removes an item runs in a transaction that applies a delta to
   `expense_daily_rollups`, one row per user, business (0 for personal) and Cairo business day
   (`expenseToRollupDelta`, `applyExpenseRollupDelta`). Only confirmed items count; items recorded from bank messages
@@ -103,6 +107,10 @@ Screens of other systems use these APIs: people in `src/components/settings/Peop
   - totals and automated totals from the rollups, and the previous period's totals;
   - category and subcategory breakdowns from the confirmed items, with their change from the previous period, and
     likely recurring items (subscriptions, packages, instalments, internet, electricity);
+  - `purposeBreakdown` groups those same spending rows by stored purpose ids, with a group for each remaining
+    legacy filing. Flutter uses it for the category list and passes its selector to `expense.list` for drilldown.
+    The selector uses confirmed spending from the same personal or business ledger. The legacy breakdown is still
+    available for clients using the original filing;
   - spending per day, week of the month and weekday, and per Cairo hour from all of the month's items;
   - a comparison with the same week of the previous period until day 24, and with the whole previous period after;
   - money sent to and received from each family member;
@@ -144,8 +152,9 @@ so, never taken for today's.
 A budget has a title, an optional category, a monthly limit, the day its cycle starts, an alert threshold (80% by
 default), an optional linked goal and a status. `budget.list` returns every budget with what was spent in its current
 cycle, counted in Cairo business days, and whether it is near or over its limit. `budget.create`, `budget.update` and
-`budget.delete` check ownership and bump the finance cache; a budget's category is stored through the registry
-(`storageCategoryName`), so it matches what the ledger stores. The statistics tab shows them first
+`budget.delete` check ownership and bump the finance cache. A budget can select a saved purpose id in Flutter. Its
+cycle counts confirmed personal spending with that purpose, including refunds. A legacy category budget still
+matches the original filing, including its historical rows. The statistics tab shows them first
 (`src/components/budgets/BudgetsPanel.tsx`): a progress bar per budget, a form to add one for a category or for all
 spending, and delete. The assistant can also create them. The standing of each budget comes from
 `api/services/budget-status.ts#listBudgetStatuses` (expense rows only, in the budget's own cycle).

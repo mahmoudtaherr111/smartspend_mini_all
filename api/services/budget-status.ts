@@ -7,10 +7,12 @@ import { spendingRowSql } from "./ledger-semantics";
  * Each budget warns once per cycle when it reaches its alert threshold and once when it
  * passes its limit; the cycles already warned are kept in the budget's metadata.
  */
-import { and, eq, gte, lt } from "drizzle-orm";
+import { and, eq, gte, isNull, lt, or, sql } from "drizzle-orm";
 import { db } from "../queries/connection";
 import { expenses, userBudgets } from "../../db/schema";
 import { businessDateKey, startOfBusinessDay } from "../lib/app-time";
+import { taxonomyCategory } from "../../contracts/taxonomy";
+import { labelsFromColumns, type PurposeColumns } from "./recording/saved-reading";
 
 /** The cycle of a budget that contains `reference`, in Cairo business days. */
 export function budgetCycle(reference: Date, periodStartDay: number): { startDate: Date; endDate: Date } {
@@ -42,6 +44,8 @@ export function budgetCycle(reference: Date, periodStartDay: number): { startDat
 export type BudgetRow = typeof userBudgets.$inferSelect;
 
 export interface BudgetStatus extends BudgetRow {
+  purposeCategoryId: string | null;
+  purposeCategory: string | null;
   currentSpent: number;
   percentage: number;
   isExceeded: boolean;
@@ -53,17 +57,23 @@ export interface BudgetStatus extends BudgetRow {
 /** Pure: a budget's standing given the expense rows of its cycle. */
 export function budgetStanding(
   budget: BudgetRow,
-  rows: Array<{ category: string; amount: string | number; date: Date }>,
+  rows: Array<PurposeColumns & { category: string; amount: string | number; date: Date }>,
   cycle: { startDate: Date; endDate: Date },
 ): BudgetStatus {
+  const purposeId = (budget.metadata as { purposeCategoryId?: unknown } | null)?.purposeCategoryId;
+  const purpose = typeof purposeId === "string" ? taxonomyCategory(purposeId) : undefined;
   const spent = rows
     .filter((row) => row.date >= cycle.startDate && row.date < cycle.endDate)
-    .filter((row) => !budget.category || row.category === budget.category)
+    .filter((row) => purpose
+      ? row.purposeCategoryId === purpose.id && labelsFromColumns(row)
+      : !budget.category || row.category === budget.category)
     .reduce((total, row) => total + Number(row.amount), 0);
   const limit = Number(budget.monthlyLimit) || 1;
   const percentage = Math.round((spent / limit) * 100);
   return {
     ...budget,
+    purposeCategoryId: purpose?.id ?? null,
+    purposeCategory: purpose?.nameAr ?? null,
     currentSpent: spent,
     percentage,
     isExceeded: spent > limit,
@@ -85,12 +95,17 @@ export async function listBudgetStatuses(userId: number, userType: string, now =
   const starts = [...cycles.values()].map((cycle) => cycle.startDate.getTime());
   const ends = [...cycles.values()].map((cycle) => cycle.endDate.getTime());
   const rows = await db
-    .select({ category: expenses.category, amount: expenses.amount, date: expenses.date })
+    .select({
+      category: expenses.category, amount: expenses.amount, date: expenses.date,
+      purposeCategoryId: expenses.purposeCategoryId, purposeSubId: expenses.purposeSubId, purposeVersion: expenses.purposeVersion,
+    })
     .from(expenses)
     .where(
       and(
         eq(expenses.userId, userId),
         eq(expenses.userType, userType),
+        or(isNull(expenses.businessId), eq(expenses.businessId, 0)),
+        or(isNull(expenses.status), eq(expenses.status, "confirmed")),
         spendingRowSql,
         gte(expenses.date, new Date(Math.min(...starts))),
         lt(expenses.date, new Date(Math.max(...ends))),
@@ -140,7 +155,7 @@ export async function checkBudgetAlerts(
     // Only the current cycle is kept: older ones can never be sent again.
     await db
       .update(userBudgets)
-      .set({ metadata: { ...metadata, alerts: { [key]: [...sent, ...due] } } })
+      .set({ metadata: sql`JSON_SET(COALESCE(${userBudgets.metadata}, JSON_OBJECT()), '$.alerts', CAST(${JSON.stringify({ [key]: [...sent, ...due] })} AS JSON))` })
       .where(and(eq(userBudgets.id, status.id), eq(userBudgets.userId, userId), eq(userBudgets.userType, userType)));
     sentCount += due.length;
   }

@@ -121,6 +121,7 @@ export interface RecordCorrectionInput {
   type: string;
   amount: number;
   sourceLogId?: number | null;
+  purpose?: { category: string; sub: string; version: string };
 }
 
 /**
@@ -163,6 +164,7 @@ export async function recordCorrection(input: RecordCorrectionInput): Promise<bo
         type: input.type,
         amountMin: band ? String(band.min) : null,
         amountMax: band ? String(band.max) : null,
+        purpose: input.purpose ?? null,
         sourceLogId: input.sourceLogId ?? null,
         isActive: true,
       })
@@ -177,6 +179,7 @@ export async function recordCorrection(input: RecordCorrectionInput): Promise<bo
           amountMax: band ? String(band.max) : null,
           isActive: true,
           timesOverridden: 0,
+          purpose: input.purpose ?? null,
         },
       });
 

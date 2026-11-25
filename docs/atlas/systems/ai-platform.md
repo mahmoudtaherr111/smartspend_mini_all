@@ -41,6 +41,7 @@ flowchart LR
   ext_groq{{"Groq"}}
   ext_nvidia{{"NVIDIA NIM"}}
   ext_openrouter{{"OpenRouter"}}
+  sys_expense_capture[["Recording spending (system)"]]
   sys_platform[["Server platform and data (system)"]]
   sys_voice_calls[["Live voice assistant (system)"]]
   mod_ai_governance --> mod_ai_providers
@@ -64,6 +65,7 @@ flowchart LR
   mod_ai_providers ==> tbl_local_users
   mod_ai_providers ==> tbl_users
   router_ai --> mod_ai_governance
+  router_ai --> sys_expense_capture
   router_ai --> sys_platform
   router_ai --> sys_voice_calls
   router_ai -.-> tbl_voice_usage
@@ -118,7 +120,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 ## Other systems
 
-Depends on: [Server platform and data](platform.md), [Live voice assistant](voice-calls.md).
+Depends on: [Recording spending](expense-capture.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md).
 
 Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 

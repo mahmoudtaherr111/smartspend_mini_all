@@ -331,17 +331,22 @@ at the plan's per-recording limit and at the seconds left this month.
 uses `stt_api_key_2`, the second speech key the console edits, and falls back to `ai_api_key_2`.
 
 ## Receipts
-`image.parseReceipt` is gated by the plan's receipts switch (`receiptsProcedure`, `feature_receipts_<plan>`). It checks the payload size and the image signature (JPEG, PNG or WebP),
-reserves the image budget and calls `api/lib/receipt-image-parser.ts#parseReceiptImage`: with an OCR text hint it
-reads the amount locally and runs the pipeline on a short sentence; otherwise a Gemini vision call (the
-`ai_model_pro` setting, else `GEMINI_MODEL_PRO`, whose default is `gemini-3.5-flash`, through `mapModelName`) reads
-the receipt and the pipeline runs on its OCR text: the category comes from the pipeline's first item, the amount is
-the total the vision model read (the first item of the OCR text is often one line of the receipt). An image over the
-parser's cap (`MAX_IMAGE_BASE64_CHARS`) is refused by the procedure, never cut short. The category is normalized
-against the registry. The entry form
-asks with `saveExpense: false`, so nothing is saved: the item opens the review card like a typed sentence, and saving
-it there stores it with source `image` through `expense.batchCreate`. (`saveExpense: true`, the default, still saves
-at once; nothing in the app calls it that way.) The form offers the camera only when `pro.myPlan` reports the receipts feature for the plan, and only online.
+`image.parseReceipt` uses the plan's receipts switch (`receiptsProcedure`, `feature_receipts_<plan>`), verifies the
+image signature (JPEG, PNG or WebP), rejects images over `MAX_IMAGE_BASE64_CHARS` and checks the image budget.
+The vision route uses `ai_model_pro` or `GEMINI_MODEL_PRO` through `mapModelName`.
+
+- With `recording_engine=understanding`, vision transcribes the image and identifies the final EGP total and its
+  printed evidence. The amount must match that span in the OCR. The structured reader checks the literal OCR using
+  the same provider chain and evidence guard as a typed entry. A single filing covers the total when all verified
+  parts share that filing and their amounts add up to the total. Mixed or unreconciled filings receive a general
+  category for explicit review. Both paid stages count toward image usage, including a failed classification
+  attempt that reports usage. Only a verified reading with a save decision can write directly.
+- With `recording_engine=rules`, the OCR-hint shortcut and legacy vision-plus-pipeline classification are
+  available. The legacy vision path takes the category from the pipeline's first item and the amount from vision.
+
+Both current entry forms use `saveExpense: false` to open the review and write with source `image` after approval.
+The public default `saveExpense: true` also returns `saved: false` if an understanding-mode receipt needs review.
+The camera is available online when the plan reports the receipts feature.
 
 ## Clarifications
 `expense.answerClarification` works in one of two modes, chosen by what the clarification stored:
@@ -477,7 +482,7 @@ the same shapes through `api/services/recording/`, so both apps need no change:
   the items the apps read: the stored category names from the bridge, a date only when the sentence named one, the
   person and relation, and an optional `reading` (v2 ids, kind, flow, commitment and wallet ids, flags).
 - `expense.create` and `expense.batchCreate`: an item saved with its `classificationLogId` is matched to its reading
-  in the user's own log row (`api/services/recording/saved-reading.ts#readingItemFor`: the only item, or the one
+  in the user's own log row (`api/services/recording/saved-reading.ts#readingItemFor`: the only item, or the item with its server-issued id when supplied, or for older clients the one
   item with the same amount). When the person kept the reading's category, subcategory and type, the row gets the
   reading's ledger kind, its wallet when none was sent, and `parsed_metadata.reading`. A `reading` a client sends is
   dropped: only the log's is used.
@@ -536,3 +541,11 @@ The reading schema requires the person, their role and stated relationship, with
 ### Choosing a spending purpose
 
 Both prompt profiles classify a supermarket bill with one total and unrelated products, or no product details, as groceries/supermarket. A purchase that names a purpose takes its specific leaf: chips at a kiosk are groceries/packaged_snacks, a supermarket detergent purchase is housing/supplies, and an order from a restaurant is dining even when eaten at home. When separate items state separate prices, each gets its own purpose. The classifier retains the basket total when it is the only price. Historical generic grocery corrections enter the reading context as groceries/supermarket. A historic grocery filing alone cannot establish a specific product.
+
+### Independent purchases in one reading
+
+The understanding reader gives each complete item its own server-issued id. The review card and Flutter outbox carry that id when saving, including after a retry. Saves match the owner's recorded items before applying their wallet, commitment or purpose. Clients that only send amounts still use the original unambiguous-match rule.
+
+When a compatible client requests partial booking, automatic saving is enabled and the only missing information is the price of independent purchases, the reader stores a plan in the owner's reading log. Overlapping quotes, missing context, other financial uncertainty or a shared commitment keep the reading together for review. The client persists the log id before requesting `expense.commitPartialReading`. Its transaction books the complete items, opens separate questions for the unpriced clauses and stores the result for replay. An answer continues with the pending clause. A global mismatch or a foreign currency stays a review or a question for the whole reading.
+
+A long entry with explicit sentence boundaries can be read in bounded pieces. The service budgets for each piece before calling the provider, retains the usage of earlier attempts on a failure, and checks the combined numbers and amounts. A complete combined proposal is shown for review. An unresolved part returns the whole entry to the user for clarification.

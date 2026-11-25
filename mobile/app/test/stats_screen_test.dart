@@ -88,6 +88,44 @@ void main() {
     },
   );
 
+  testWidgets('canonical breakdown sends a stored purpose id for drilldown', (
+    tester,
+  ) async {
+    final api = FakeApi();
+    answerSampleMonth(api);
+    api.answer(
+      'expense.getMonthlyStats',
+      (_) => {
+        'totalExpense': 200,
+        'totalTxnCount': 2,
+        'categoryBreakdown': [
+          {'name': 'أكل وشرب', 'value': 200, 'count': 2},
+        ],
+        'purposeBreakdown': [
+          {
+            'name': 'أكل برّه',
+            'value': 200,
+            'count': 2,
+            'category': {'kind': 'purpose', 'id': 'dining'},
+          },
+        ],
+      },
+    );
+    await _openStats(tester, api);
+
+    final category = find.text('أكل برّه');
+    expect(find.text('أكل وشرب'), findsNothing);
+    await tester.ensureVisible(category);
+    await tester.pumpAndSettle();
+    await tester.tap(category);
+    await tester.pumpAndSettle();
+
+    final input = api.lastInput('expense.list')! as Map;
+    expect(input['spendingCategory'], {'kind': 'purpose', 'id': 'dining'});
+    expect(input['category'], isNull);
+    expect(input['groupLinkedFees'], false);
+  });
+
   testWidgets(
     'a refund-netted negative category shows a plus sign and word, and opens its rows',
     (tester) async {

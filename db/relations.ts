@@ -26,6 +26,7 @@ import {
   userBusinesses,
   businessCategories,
   classificationLogs,
+  recordingRequests,
   userCorrectionRules,
   pendingClarifications,
   monthlyReports,
@@ -271,6 +272,11 @@ export const classificationLogsRelations = relations(classificationLogs, ({ one,
     references: [users.id],
   }),
   expenses: many(expenses),
+}));
+
+export const recordingRequestsRelations = relations(recordingRequests, ({ one }) => ({
+  localUser: one(localUsers, { fields: [recordingRequests.userId], references: [localUsers.id] }),
+  oauthUser: one(users, { fields: [recordingRequests.userId], references: [users.id] }),
 }));
 
 export const userBusinessesRelations = relations(userBusinesses, ({ one, many }) => ({

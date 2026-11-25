@@ -105,6 +105,7 @@ import {
 import { buildParserTrace } from "./services/parser-trace";
 import { currentRecordingEngine, recordingEngineOf } from "./services/recording/engine-switch";
 import { assertSentenceAllowed, readSentence } from "./services/recording/read-sentence";
+import { getRecordingReply, getRecordingUsage, recordingKey, recordingLimits, reserveRecording, settleRecording } from "./services/recording/admission";
 import { planNumber } from "../contracts/plan-features";
 import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
 
@@ -163,6 +164,9 @@ export async function runSTTPipeline(
     return {
        text: data.text || "",
        tokensUsed: 0,
+       inputTokens: 0,
+       outputTokens: 0,
+       cachedTokens: 0,
        modelUsed: modelName,
     };
   }
@@ -188,6 +192,9 @@ export async function runSTTPipeline(
   return {
     text,
     tokensUsed,
+    inputTokens: response.usageMetadata?.promptTokenCount ?? 0,
+    outputTokens: response.usageMetadata?.candidatesTokenCount ?? 0,
+    cachedTokens: response.usageMetadata?.cachedContentTokenCount ?? 0,
     modelUsed: modelName,
   };
 }
@@ -558,6 +565,8 @@ export const aiRouter = router({
         inputChannel: z.enum(["text", "voice"]).default("text"),
         voiceModelUsed: z.string().optional(),
         sttTokensUsed: z.number().optional(),
+        partialBooking: z.boolean().optional(),
+        clientRequestId: z.string().min(1).max(64).optional(),
         businessMode: z.boolean().optional(),
       }),
     )
@@ -570,6 +579,8 @@ export const aiRouter = router({
           user: ctx.user,
           text: input.text,
           channel: input.inputChannel,
+          partialBooking: input.partialBooking,
+          requestKey: input.clientRequestId ? recordingKey(`parse:${input.inputChannel}`, input.clientRequestId) : undefined,
           businessMode: input.businessMode,
           skipClarification: input.skipClarification,
           ...(input.voiceModelUsed ? { stt: { model: input.voiceModelUsed, tokensUsed: input.sttTokensUsed ?? 0, seconds: 0 } } : {}),
@@ -947,6 +958,7 @@ export const aiRouter = router({
   // ─── Get User Limits (Voice, AI) ───
   getUserLimits: authedProcedure.query(async ({ ctx }) => {
     const cfg = await getSystemSettings();
+    const understandingEngine = recordingEngineOf(cfg) === "understanding";
 
     const voiceLimits: Record<string, number> = {
       free: parseInt(cfg.voice_limit_free || "300"),
@@ -965,7 +977,12 @@ export const aiRouter = router({
     // computed here was never what the count read.
     const usedVoiceSeconds = await getVoiceSecondsThisMonth(ctx.user.id, ctx.user.type);
     const voiceLimit = planValue(voiceLimits, ctx.user.plan, 300);
-    const aiBudget = await getAiBudget(ctx.user, "parse", cfg);
+    const recording = understandingEngine ? await getRecordingUsage(ctx.user) : undefined;
+    const limits = recordingLimits(cfg, ctx.user);
+    const aiBudget = await getAiBudget(ctx.user, "parse", cfg, {
+      recordingQuality: understandingEngine,
+      ...(recording ? { recordingBudget: { limit: limits.tokens, used: recording.chargedTokens + recording.reservedTokens } } : {}),
+    });
     // offline_limit_<plan>; Ultra used to read Pro's value because it had no key.
     const offlineLimit = planNumber(cfg, ctx.user.plan, "offline_limit");
 
@@ -976,6 +993,7 @@ export const aiRouter = router({
         remaining: aiBudget.limit > 0 ? aiBudget.remaining : -1,
         maxPerRequest: aiBudget.perRequestMax,
       },
+      ...(recording ? { recording: { ...recording, limits, resetDate: businessMonthRange().endExclusive.toISOString() } } : {}),
       voice: {
         limit: voiceLimit,
         used: usedVoiceSeconds,
@@ -1206,6 +1224,8 @@ export const aiRouter = router({
   parseVoiceExpense: aiProcedure
     .input(
       z.object({
+        partialBooking: z.boolean().optional(),
+        clientRequestId: z.string().min(1).max(64).optional(),
         audioBase64: z.string(),
         mimeType: z.string().default("audio/webm"),
         durationSeconds: z.number().default(0),
@@ -1227,9 +1247,14 @@ export const aiRouter = router({
       //
       // `speechToText` did all four correctly. There is now one policy instead of two
       // — see api/lib/voice-intake-gate.ts.
-      const usedSeconds = await getVoiceSecondsThisMonth(ctx.user.id, ctx.user.type);
-
       const cfg = await getSystemSettings();
+      const understandingEngine = recordingEngineOf(cfg) === "understanding";
+      const key = recordingKey("voice-note", input.clientRequestId);
+      if (understandingEngine && input.clientRequestId) {
+        const reply = await getRecordingReply(ctx.user, key);
+        if (reply) return reply;
+      }
+      const usedSeconds = await getVoiceSecondsThisMonth(ctx.user.id, ctx.user.type);
       const voiceVerdict = checkVoiceIntake({
         plan: ctx.user.plan || "free",
         mimeType: input.mimeType,
@@ -1252,14 +1277,15 @@ export const aiRouter = router({
 
       // Under the understanding engine a recording is admitted as typed text is (the plan's parse switch and the
       // daily limit), and before the transcription is paid for.
-      const understandingEngine = recordingEngineOf(cfg) === "understanding";
-      if (understandingEngine) await assertSentenceAllowed(ctx.user, cfg);
+      if (understandingEngine) assertSentenceAllowed(ctx.user, cfg);
 
-      // The spend is reserved before the network call, not reconciled after it.
+      const estimated = estimateSpeechTokens(input.audioBase64, voiceVerdict.billableSeconds);
       await assertAiBudget(
         ctx.user,
         "speech",
-        estimateSpeechTokens(input.audioBase64, voiceVerdict.billableSeconds),
+        estimated,
+        cfg,
+        understandingEngine ? { recordingBudget: { limit: recordingLimits(cfg, ctx.user).tokens, used: 0 } } : undefined,
       );
 
       const plan = ctx.user.plan === "ultra" ? "pro" : ctx.user.plan || "free";
@@ -1273,16 +1299,49 @@ export const aiRouter = router({
       };
       const cleanMimeType = input.mimeType.split(";")[0];
       const pureBase64 = input.audioBase64.includes(",") ? input.audioBase64.split(",")[1] : input.audioBase64;
+      const speechAdmission = understandingEngine
+        ? await reserveRecording(ctx.user, key, cfg, () => ({ reservedTokens: estimated * 2, plan: null }), new Date(startTime))
+        : undefined;
+      if (speechAdmission?.reply) return speechAdmission.reply;
+      const speechLease = speechAdmission?.lease;
+      let speechTokens = 0;
+      let speechAttempts = 0;
+
+      const transcribe = async (model: string) => {
+        if (!speechLease) return runSTTPipeline(pureBase64, cleanMimeType, getSTTKey(model), model, "standard");
+        const providerSlug = isGroqModel(model) ? "groq" : "gemini";
+        const started = Date.now();
+        const apiKey = getSTTKey(model);
+        if (!apiKey) throw new Error("STT provider unavailable");
+        const attempt = ++speechAttempts;
+        const usage = { userId: ctx.user.id, userType: ctx.user.type, channel: "speech", providerSlug, modelId: model };
+        try {
+          const result = await runSTTPipeline(pureBase64, cleanMimeType, apiKey, model, "standard");
+          speechTokens += result.tokensUsed || estimated;
+          const inputTokens = result.inputTokens || (result.tokensUsed ? 0 : estimated);
+          void recordAiLedger({ ...usage, promptTokens: inputTokens,
+            completionTokens: Math.max(result.outputTokens, result.tokensUsed - inputTokens), cachedTokens: result.cachedTokens,
+            latencyMs: Date.now() - started, metadata: { attempt, estimated: result.tokensUsed === 0 } });
+          return result;
+        } catch (error) {
+          // Without provider usage we keep the reserved estimate for an ambiguous paid attempt.
+          speechTokens += estimated;
+          void recordAiLedger({ ...usage, promptTokens: estimated, completionTokens: 0, httpStatus: 0,
+            latencyMs: Date.now() - started, finishReason: "failed", metadata: { attempt, estimated: true } });
+          throw error;
+        }
+      };
 
       // 1. Run STT and DB Logic Concurrently
       const sttPromise = (async () => {
         try {
-          return await runSTTPipeline(pureBase64, cleanMimeType, getSTTKey(sttModel), sttModel, "standard");
+          return await transcribe(sttModel);
         } catch (e: any) {
-           console.error("[STT Error First Attempt]:", e?.message || e);
+           if (!speechLease) console.error("[STT Error First Attempt]:", e?.message || e);
            try {
-              return await runSTTPipeline(pureBase64, cleanMimeType, getSTTKey("gemini-2.0-flash"), "gemini-2.0-flash", "standard");
+              return await transcribe("gemini-2.0-flash");
            } catch (e2: any) {
+              if (speechLease) throw new TRPCError({ code: "SERVICE_UNAVAILABLE", message: "مش قادرين نسمع التسجيل دلوقتي. جرّب كمان شوية." });
               throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "فشل تحويل الصوت: " + e2.message });
            }
         }
@@ -1293,11 +1352,18 @@ export const aiRouter = router({
         getSmartProfile(ctx.user.id, ctx.user.type)
       ]);
 
-      const [sttResult, [userDictRows, smartProfile]] = await Promise.all([sttPromise, dbPromise]);
+      const [sttResult, [userDictRows, smartProfile]] = await Promise.all([sttPromise, dbPromise]).catch(async error => {
+        if (speechLease) {
+          await sttPromise.catch(() => undefined);
+          await settleRecording(speechLease, speechTokens);
+        }
+        throw error;
+      });
       
       const transcribedText = sttResult.text;
 
       if (!transcribedText || transcribedText.trim() === "") {
+        if (speechLease) await settleRecording(speechLease, speechTokens);
         throw new TRPCError({ code: "BAD_REQUEST", message: "لم نتمكن من سماع شيء. حاول مرة أخرى." });
       }
 
@@ -1315,9 +1381,8 @@ export const aiRouter = router({
         });
       } catch (e) {}
 
-      if (understandingEngine) {
+      if (speechLease) {
         const sttProvider = isGroqModel(sttResult.modelUsed) ? "groq" : "gemini";
-        recordModelCalls(ctx.user, "speech", undefined, { model: sttResult.modelUsed, tokens: sttResult.tokensUsed, providerSlug: sttProvider });
         void recordAICostMetric({
           userId: ctx.user.id,
           userType: ctx.user.type,
@@ -1325,25 +1390,27 @@ export const aiRouter = router({
           plan: ctx.user.plan || "free",
           intentKind: "stt",
           model: sttResult.modelUsed,
-          inputTokens: 0,
-          outputTokens: sttResult.tokensUsed,
-          totalTokens: sttResult.tokensUsed,
+          inputTokens: sttResult.inputTokens,
+          outputTokens: sttResult.outputTokens,
+          totalTokens: speechTokens,
           embeddingCalls: 0,
-          llmCalls: 0,
+          llmCalls: speechAttempts,
           toolCalls: 0,
           latencyMs: Date.now() - startTime,
           metadata: { durationSeconds: voiceVerdict.billableSeconds, claimedDurationSeconds: input.durationSeconds, mimeType: cleanMimeType, provider: sttProvider },
         });
-        // The daily limit and the plan switch were checked before the transcription.
+        // The same logical request now reserves the reading stage.
         return readSentence({
           user: ctx.user,
           text: transcribedText,
           channel: "voice",
+          partialBooking: input.partialBooking,
           businessMode: input.businessMode,
           skipClarification: false,
-          stt: { model: sttResult.modelUsed, tokensUsed: sttResult.tokensUsed, seconds: voiceVerdict.billableSeconds },
+          stt: { model: sttResult.modelUsed, tokensUsed: speechTokens, seconds: voiceVerdict.billableSeconds },
           startedAt: startTime,
           gateChecked: true,
+          reservation: speechLease,
         });
       }
 

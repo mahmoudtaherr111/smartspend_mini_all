@@ -10,6 +10,7 @@
  * The bounds are the scale contract (SPEC section 9): a reading's context never grows with a
  * user's history, whatever the user has stored.
  */
+import { TAXONOMY_VERSION, taxonomySub } from "../../../contracts/taxonomy";
 import { isUnambiguousFiling, storedFiling, v2OfStored } from "./bridge";
 import type { GuardContext } from "./guard";
 import { foldForMatch } from "./numbers";
@@ -90,6 +91,7 @@ export interface WalletRow {
 }
 
 export interface VocabularyRow {
+  purpose?: { category: string; sub: string; version: string } | null;
   phrase: string;
   /** As stored today: `contracts/categories.ts` names. */
   category: string;
@@ -222,7 +224,8 @@ function vocabularyOf(rows: readonly VocabularyRow[]): PromptVocabulary[] {
     const phrase = String(row.phrase ?? "").trim();
     const folded = foldForMatch(phrase);
     if (!folded || seen.has(folded)) continue;
-    const v2 = v2OfStored(row.category, row.subCategory);
+    const v2 = row.purpose?.version === TAXONOMY_VERSION && taxonomySub(row.purpose.category, row.purpose.sub)
+      ? row.purpose : v2OfStored(row.category, row.subCategory);
     if (!v2) continue;
     seen.add(folded);
     out.push({ phrase, category: v2.category, sub: v2.sub });

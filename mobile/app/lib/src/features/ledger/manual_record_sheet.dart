@@ -12,6 +12,7 @@ import 'category_style.dart';
 import 'ledger_models.dart';
 import 'ledger_providers.dart';
 import 'offline/outbox.dart';
+import 'taxonomy_catalog.dart';
 
 /// Opens the sheet that records a transaction by hand (REC-12).
 /// Returns true when the entry was saved or queued offline.
@@ -43,6 +44,8 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
   String _amountBuffer = '';
   late String _category;
   String? _subCategory;
+  TaxonomyPurpose? _purposeCategory;
+  String? _purposeSubId;
   late DateTime _date;
   int? _walletId;
   ContactSummary? _selectedContact;
@@ -139,6 +142,8 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
       final canonical = categoriesForType(ledgerType);
       _category = canonical.isNotEmpty ? canonical.first : 'أكل وشرب';
       _subCategory = defaultSubCategory(_category);
+      _purposeCategory = null;
+      _purposeSubId = null;
     });
   }
 
@@ -146,12 +151,26 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
     if (_saving) return;
     final custom = ref.read(customCategoriesProvider).value ?? const <String>[];
     final ledgerType = _ledgerType;
+    final catalog =
+        ref.read(taxonomyCatalogProvider).value ?? const <TaxonomyPurpose>[];
+    final purposes = {
+      for (final purpose in purposesForType(catalog, ledgerType))
+        purpose.name: purpose,
+    };
     final available = <CategoryTaxonomy>[
-      for (final tax in categoryTaxonomy)
-        if (tax.type == ledgerType) tax,
+      if (purposes.isEmpty)
+        ...categoryTaxonomy.where((tax) => tax.type == ledgerType)
+      else
+        for (final purpose in purposes.values)
+          CategoryTaxonomy(
+            name: purpose.name,
+            type: ledgerType,
+            subcategories: [for (final sub in purpose.subs) sub.name],
+          ),
       if (ledgerType == 'expense')
         for (final name in custom)
-          if (!categoryTaxonomy.any((t) => t.name == name))
+          if (!purposes.containsKey(name) &&
+              !categoryTaxonomy.any((t) => t.name == name))
             CategoryTaxonomy(
               name: name,
               type: 'expense',
@@ -173,14 +192,21 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
       unawaited(SmartSpendHaptics.selection());
       setState(() {
         _category = picked;
-        _subCategory = defaultSubCategory(picked);
+        _purposeCategory = purposes[picked];
+        _purposeSubId = _purposeCategory?.defaultSub.id;
+        _subCategory =
+            _purposeCategory?.defaultSub.name ?? defaultSubCategory(picked);
       });
     }
   }
 
+  List<String> get _subcategories =>
+      _purposeCategory?.subs.map((sub) => sub.name).toList() ??
+      subcategoriesForCategory(_category, current: _subCategory);
+
   Future<void> _pickSubCategory() async {
     if (_saving) return;
-    final subs = subcategoriesForCategory(_category, current: _subCategory);
+    final subs = _subcategories;
     if (subs.isEmpty) return;
 
     final picked = await showSmartSpendSheet<String>(
@@ -222,7 +248,13 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
 
     if (picked != null && mounted) {
       unawaited(SmartSpendHaptics.selection());
-      setState(() => _subCategory = picked);
+      setState(() {
+        _subCategory = picked;
+        _purposeSubId = _purposeCategory?.subs
+            .where((sub) => sub.name == picked)
+            .firstOrNull
+            ?.id;
+      });
     }
   }
 
@@ -275,11 +307,16 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
 
     try {
       final outbox = ref.read(outboxProvider.notifier);
+      final purposeCategory = _purposeCategory;
+      final purposeSubId = _purposeSubId;
       final outcome = await outbox.submitManual(
         amount: amount.toDouble(),
         type: _ledgerType,
         category: _category,
         subCategory: _subCategory,
+        purpose: purposeCategory != null && purposeSubId != null
+            ? SpendingPurpose(category: purposeCategory.id, sub: purposeSubId)
+            : null,
         description: _noteController.text.trim().isNotEmpty
             ? _noteController.text.trim()
             : null,
@@ -352,15 +389,13 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(taxonomyCatalogProvider);
     final l10n = AppLocalizations.of(context);
     final colors = context.smartSpendColors;
     final walletsAsync = ref.watch(walletsProvider);
     final contacts =
         ref.watch(contactsProvider).value ?? const <ContactSummary>[];
-    final subcategories = subcategoriesForCategory(
-      _category,
-      current: _subCategory,
-    );
+    final subcategories = _subcategories;
     final hideCustomKeypad = _noteFocusNode.hasFocus;
 
     return PopScope(

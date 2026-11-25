@@ -10,6 +10,7 @@
  */
 
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import { router, authedProcedure, aiProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
@@ -24,6 +25,7 @@ import {
   aiMemoryItems,
   aiMemoryEmbeddings,
   aiConversationSummaries,
+  pendingClarifications,
   users,
   localUsers,
 } from "../db/schema";
@@ -41,6 +43,13 @@ import {
   type AIResponse,
 } from "./services/ai-kernel";
 import { routeIntent } from "./services/ai-kernel/intent-router";
+import {
+  explicitRecordingSentence, isNonRecordingReference, isOwnRecordedNarration, isRecordingClarificationReply, splitRecordingQuestion,
+} from "./services/ai-kernel/recording-intent";
+import {
+  activeChatRecordingQuestion, addChatRecordingAnswer, chatRecordingReplay, runChatRecordingTurn,
+} from "./services/action-runtime/chat-recording";
+import { recordingEngineOf } from "./services/recording/engine-switch";
 import {
   createClarificationState,
   isClarificationExpired,
@@ -555,6 +564,7 @@ async function resolveTextActionReply(
   tokensUsed: number;
   model: string;
   toolsUsed: string[];
+  ledgerChanged?: boolean;
 } | null> {
   const typedPhrase = HIGH_RISK_PHRASES.has(normalizeConfirmation(message));
   const kind = typedPhrase ? "confirm" : actionReplyKind(message);
@@ -604,6 +614,8 @@ async function resolveTextActionReply(
     tokensUsed: 0,
     model: "server-action-runtime",
     toolsUsed: [`action.${kind}`],
+    ledgerChanged: kind === "confirm" && (result.actionName === "expense.create"
+      || result.actionName === "expense.recategorize" || result.actionName === "action.undo"),
   };
 }
 
@@ -618,6 +630,7 @@ export const chatRouter = router({
       z.object({
         message: z.string().min(1).max(2000),
         conversationId: z.number().optional(),
+        clientTurnId: z.string().regex(/^[A-Za-z0-9_-]{12,80}$/).optional(),
         devQaBypassDailyLimit: z.boolean().optional(),
       }),
     )
@@ -666,6 +679,53 @@ export const chatRouter = router({
         });
       }
 
+      const recordingInput = { ...input, clientTurnId: input.clientTurnId ?? randomUUID() };
+      const recordingUser = { id: user.id, type: user.type, plan };
+      const understandingRecording = recordingEngineOf(config.settings) === "understanding";
+      const mixed = splitRecordingQuestion(input.message);
+      const questionIntent = mixed ? routeIntent(mixed.question) : null;
+      const mixedRead = mixed && ["finance_query", "finance_analysis", "report_request", "chart_request"].includes(questionIntent?.kind ?? "")
+        ? mixed : null;
+      const asChatReply = async (base: Awaited<ReturnType<typeof runChatRecordingTurn>>) => {
+        let reply = base;
+        if (mixedRead && base.awaitingReadAnswer) {
+          // Read the question after the recording transaction and the ledger cache invalidation.
+          const answer = await (async () => {
+            await assertAiBudget(recordingUser, "parse", estimateTokensFromText(mixedRead.question), config.settings);
+            const result = await runAIKernelActive({
+              channel: "chat", userId: user.id, userType: user.type, userPlan: plan,
+              message: mixedRead.question, conversationId: base.conversationId,
+            }, {
+              apiKey: config.apiKey, baseUrl: config.baseUrl, model: config.model, protocol: config.protocol,
+              fallbacks: config.fallbacks, maxTokens: Math.min(chatPolicy.maxOutputTokens, config.maxTokens[plan] || chatPolicy.maxOutputTokens),
+            });
+            if (result.llmUsage) {
+              await recordAiLedger({
+                userId: user.id, userType: user.type, channel: "chat", conversationId: base.conversationId,
+                providerSlug: providerSlugForBaseUrl(result.llmUsage.baseUrl), modelId: result.llmUsage.model,
+                promptTokens: result.llmUsage.promptTokens, completionTokens: result.llmUsage.completionTokens,
+              });
+            }
+            const tokensUsed = result.tokensUsed ?? 0;
+            if (tokensUsed) await trackAiTokens(recordingUser, tokensUsed, "parse", result.model);
+            return { response: result.content, artifacts: result.artifacts, toolsUsed: dataNeedKinds(result), tokensUsed };
+          })().catch((err: unknown) => {
+            log.warn({ err, event: "chat.recording.read_failed" }, "Mixed turn ledger question failed");
+            return { response: "ماقدرناش نجاوب على السؤال دلوقتي. جرّب تسأله تاني.", artifacts: [], toolsUsed: [], tokensUsed: 0 };
+          });
+          reply = await addChatRecordingAnswer(recordingUser, recordingInput, answer, minimalStructuredResponse);
+        }
+        return {
+          response: reply.response, conversationId: reply.conversationId, tokensUsed: reply.tokensUsed, model: reply.model,
+          toolsUsed: reply.toolsUsed, recordedExpenseIds: reply.recordedExpenseIds,
+          structured: minimalStructuredResponse(reply.response, reply.artifacts, reply.actions),
+        };
+      };
+      if (input.clientTurnId) {
+        const replay = await chatRecordingReplay(recordingUser, recordingInput);
+        if (replay) return asChatReply(replay);
+      }
+
       // 2. Check daily limit
       const todayCount = await getTodayMessageCount(user.id, user.type);
       const dailyLimit = config.dailyLimits[plan] || 20;
@@ -685,6 +745,36 @@ export const chatRouter = router({
           message: `وصلت الحد اليومي (${dailyLimit} رسالة). جرب بكره أو ترقي خطتك! 💎`,
           cause: { retryAfterSeconds, isDailyLimit: true },
         });
+      }
+
+      if (aiKernelActive && understandingRecording) {
+        const conversation = input.conversationId
+          ? await requireOwnedConversation(input.conversationId, user.id, user.type)
+          : null;
+        const question = input.conversationId
+          ? await activeChatRecordingQuestion(recordingUser, input.conversationId, conversation?.metadata)
+          : undefined;
+        const metadata = conversation?.metadata as { clarificationState?: Parameters<typeof isClarificationExpired>[0] } | null;
+        const kernelQuestion = metadata?.clarificationState;
+        const normalized = normalizeActionReply(input.message);
+        const cancelRecording = /^(?:الغي التسجيل|الغاء التسجيل|خلاص)$/u.test(normalized)
+          || (question && input.conversationId && normalized === "الغاء"
+            && !await findLatestPendingAction(user.id, user.type, input.conversationId));
+        const ownNarration = isOwnRecordedNarration(input.message);
+        const explicit = explicitRecordingSentence(input.message);
+        if (question && (cancelRecording || isRecordingClarificationReply(input.message, question.question))) {
+          await assertAiSwitchOn("chat", config.settings);
+          return asChatReply(await runChatRecordingTurn(recordingUser, recordingInput, {
+            kind: cancelRecording ? "dismiss" : "answer", questionId: question.id,
+          }, minimalStructuredResponse));
+        }
+        if ((!kernelQuestion || isClarificationExpired(kernelQuestion)) && (ownNarration || explicit || mixedRead)) {
+          await assertAiSwitchOn("chat", config.settings);
+          return asChatReply(await runChatRecordingTurn(recordingUser, recordingInput, {
+            kind: "record", sentence: mixedRead?.sentence ?? explicit ?? input.message,
+            requireReview: Boolean(explicit) || !input.clientTurnId, includesQuestion: Boolean(mixedRead),
+          }, minimalStructuredResponse));
+        }
       }
 
       // 3. Get or create conversation
@@ -997,6 +1087,7 @@ export const chatRouter = router({
           tokensUsed: textActionResult.tokensUsed,
           model: textActionResult.model,
           toolsUsed: textActionResult.toolsUsed,
+          ledgerChanged: textActionResult.ledgerChanged,
           structured: textActionResult.structured,
         };
       }
@@ -1142,7 +1233,9 @@ export const chatRouter = router({
           userPlan: plan,
           conversationId: activeConversationId,
         };
-        const proposedAction = shadow?.proposedActions?.[0];
+        const recordingReference = understandingRecording || isNonRecordingReference(input.message);
+        const proposal = shadow?.proposedActions?.[0];
+        const proposedAction = proposal?.name === "expense.create" && recordingReference ? undefined : proposal;
         actionDraft = await (
           proposedAction
             ? proposedAction.name === "goal.create"
@@ -1155,7 +1248,9 @@ export const chatRouter = router({
                   proposedAction.name as RuntimeActionName,
                   proposedAction.payload as RuntimeActionPayload,
                 )
-            : maybeCreateActionDraftFromMessage(actionCtx, input.message)
+            : recordingReference
+              ? maybeCreateActionDraftFromMessage(actionCtx, input.message, { allowExpense: false })
+              : maybeCreateActionDraftFromMessage(actionCtx, input.message)
         ).catch((error: unknown) => {
           actionDraftError =
             error instanceof Error ? error.message : String(error);
@@ -1505,6 +1600,16 @@ export const chatRouter = router({
       await withMemoryOwnerLock(
         { userId: ctx.user.id, userType: ctx.user.type },
         async (tx) => {
+          await tx.update(pendingClarifications).set({ status: "ignored" }).where(and(
+            eq(pendingClarifications.userId, ctx.user.id), eq(pendingClarifications.userType, ctx.user.type),
+            eq(pendingClarifications.status, "pending"),
+            sql`JSON_EXTRACT(${pendingClarifications.contextData}, '$.chatConversationId') = ${input.conversationId}`,
+          ));
+          await tx.update(aiPendingActions).set({ status: "cancelled", cancelledAt: new Date() }).where(and(
+            eq(aiPendingActions.userId, ctx.user.id), eq(aiPendingActions.userType, ctx.user.type),
+            eq(aiPendingActions.conversationId, input.conversationId), eq(aiPendingActions.status, "pending_confirmation"),
+            sql`${aiPendingActions.idempotencyKey} LIKE 'chat-recording:%'`,
+          ));
           await tx
             .delete(chatMessages)
             .where(eq(chatMessages.conversationId, input.conversationId));

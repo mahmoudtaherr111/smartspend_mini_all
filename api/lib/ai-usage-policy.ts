@@ -36,6 +36,12 @@ export interface AiBudget {
   perRequestMax: number;
 }
 
+interface AiBudgetOptions {
+  /** The shared quality limits for typed sentences and voice transcripts. */
+  recordingQuality?: boolean;
+  recordingBudget?: { limit: number; used: number };
+}
+
 /** Hard per-request token ceiling — prevents 10k+ spikes regardless of admin settings */
 const HARD_REQUEST_TOKEN_CAP: Record<PlanId, Record<AiUsageChannel, number>> = {
   free: {
@@ -74,6 +80,11 @@ const HARD_REQUEST_TOKEN_CAP: Record<PlanId, Record<AiUsageChannel, number>> = {
 
 export function asPlan(plan: string | undefined): PlanId {
   return plan === "pro" || plan === "ultra" ? plan : "free";
+}
+
+/** Free and Pro use the same recording quality tier. Usage still belongs to the actual plan. */
+export function recordingQualityTier(plan: string | null | undefined): "pro" | "ultra" {
+  return plan === "ultra" ? "ultra" : "pro";
 }
 
 export function parseSafeInt(
@@ -232,22 +243,30 @@ export async function getAiBudget(
   user: AiUsageUser,
   channel: AiUsageChannel,
   cfg?: Record<string, string>,
+  options?: AiBudgetOptions,
 ): Promise<AiBudget> {
   const plan = asPlan(user.plan);
   const config = cfg ?? (await loadSystemConfig());
   const overrideLimit = parseSafeInt(config[userLimitKey(user)], -1);
-  const limit =
-    overrideLimit >= 0 ? overrideLimit : resolvePlanTokenLimit(config, plan);
-  const used = await getStoredTokenUsage(user);
+  const limit = options?.recordingBudget?.limit ??
+    (overrideLimit >= 0 ? overrideLimit : resolvePlanTokenLimit(config, plan));
+  const used = options?.recordingBudget?.used ?? await getStoredTokenUsage(user);
   const remaining =
     limit > 0 ? Math.max(0, limit - used) : Number.MAX_SAFE_INTEGER;
   const adminMax = resolvePlanMaxPerRequest(config, plan, channel);
+  const actualCap = capRequestOutputTokens(plan, channel, adminMax);
+  let perRequestMax = actualCap;
+  if (options?.recordingQuality && channel === "parse" && plan !== "ultra" && actualCap > 0) {
+    const otherPlan = plan === "free" ? "pro" : "free";
+    const otherCap = capRequestOutputTokens(otherPlan, channel, resolvePlanMaxPerRequest(config, otherPlan, channel));
+    perRequestMax = Math.max(actualCap, otherCap);
+  }
   return {
     limit,
     used,
     remaining,
     plan,
-    perRequestMax: capRequestOutputTokens(plan, channel, adminMax),
+    perRequestMax,
   };
 }
 
@@ -276,12 +295,13 @@ export async function assertAiBudget(
   channel: AiUsageChannel,
   estimatedInputTokens = 0,
   cfg?: Record<string, string>,
+  options?: AiBudgetOptions,
 ): Promise<AiBudget> {
   // Bank messages have their own switch and cap (api/lib/capture/ai-reader.ts).
   if (channel !== "sms") await assertAiSwitchOn(channel, cfg);
   await assertDailyAiCost(cfg);
   await assertAiAbuseGuard(user, channel);
-  const budget = await getAiBudget(user, channel, cfg);
+  const budget = await getAiBudget(user, channel, cfg, options);
 
   if (budget.limit === 0 || budget.perRequestMax === 0) {
     throw new TRPCError({
@@ -290,7 +310,8 @@ export async function assertAiBudget(
     });
   }
 
-  const hardCap = HARD_REQUEST_TOKEN_CAP[budget.plan][channel];
+  const qualityTier = options?.recordingQuality && channel === "parse" ? recordingQualityTier(budget.plan) : budget.plan;
+  const hardCap = HARD_REQUEST_TOKEN_CAP[qualityTier][channel];
   if (estimatedInputTokens > hardCap) {
     throw new TRPCError({
       code: "BAD_REQUEST",

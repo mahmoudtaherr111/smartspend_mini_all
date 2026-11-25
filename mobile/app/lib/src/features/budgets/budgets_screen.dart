@@ -231,7 +231,7 @@ class BudgetsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: SmartSpendSpacing.sm),
                 ...budgets.map((budget) {
-                  final cat = budget.category;
+                  final cat = budget.categoryLabel;
                   final icon = cat != null && cat.isNotEmpty
                       ? categoryIcon(cat)
                       : Icons.account_balance_wallet_rounded;
@@ -272,10 +272,9 @@ class BudgetsScreen extends ConsumerWidget {
                                         color: colors.foreground,
                                       ),
                                     ),
-                                    if (budget.category != null &&
-                                        budget.category != budget.title)
+                                    if (cat != null && cat != budget.title)
                                       Text(
-                                        budget.category!,
+                                        cat,
                                         style: textTheme.bodySmall?.copyWith(
                                           color: colors.mutedForeground,
                                         ),

@@ -32,14 +32,16 @@ import { createLogger } from "../../lib/log";
 import { getSystemSettings } from "../../lib/settings-cache";
 import { loadReadingContext } from "../../lib/understanding/context";
 import { READING_CONTRACT_VERSION, READING_SCHEMA } from "../../lib/understanding/contract";
-import { outputTokensFor, understand, UnderstandingUnavailableError, type Understanding, type UnderstandingUsage } from "../../lib/understanding/engine";
+import { recordingChunks, outputTokensFor, understand, UnderstandingUnavailableError, type Understanding, type UnderstandingUsage } from "../../lib/understanding/engine";
 import type { LlmAttempt, LlmRoute } from "../../lib/llm-router";
 import { buildSystemPrompt, buildUserPrompt, MAX_SENTENCE_CHARS, promptFingerprint } from "../../lib/understanding/prompt";
 import { toPromptContext, type ReadingContext } from "../../lib/understanding/reading-context";
 import { resolveUnderstandingRoutes } from "../../lib/understanding/routes";
 import { getDb } from "../../queries/connection";
 import { recordAICostMetric } from "../ai-cost-policy";
-import { decisionOf, overallConfidenceOf, toParsedItems } from "./items";
+import { randomUUID } from "node:crypto";
+import { decisionOf, overallConfidenceOf, splitMissingAmounts, toParsedItems } from "./items";
+import { advanceRecording, getRecordingReply, recordingKey, recordingLimits, reserveRecording, settleRecording, type RecordingLease } from "./admission";
 import type { ParseDecision, ParseResponse, RecordedItem, UnderstandingTrace } from "./types";
 
 const log = createLogger("recording.read-sentence");
@@ -69,8 +71,19 @@ export interface ReadSentenceInput {
   startedAt?: number;
   /** The plan switch and the daily limit were checked already (voice checks them before paying for speech). */
   gateChecked?: boolean;
+  requestKey?: string;
+  reservation?: RecordingLease;
+  /** Bank-capture follow-up questions keep their existing admission rules. */
+  captureContinuation?: boolean;
   /** False: a question is returned without opening a clarification (the caller updates its own). */
   openClarification?: boolean;
+  partialBooking?: boolean;
+  /** Chat owns the transaction that publishes questions and saves their ready siblings. */
+  chatRecording?: boolean;
+  /** Server-issued identity of a single item waiting for the user's reply. */
+  continuationItemId?: string;
+  /** Owned original business on a server-side continuation. */
+  businessIdForContinuation?: number;
 }
 
 export interface ReadSentenceDeps {
@@ -90,11 +103,21 @@ function providerReplyHeadroom(route: LlmRoute): number {
   return route.suppressReasoning && /gpt-oss/i.test(route.model) ? 1_024 : 0;
 }
 
-function budgetReading(text: string, context: ReadingContext, settings: Record<string, string>, routes: LlmRoute[], budget: AiBudget) {
+export function budgetReading(text: string, context: ReadingContext, settings: Record<string, string>, routes: LlmRoute[], budget: AiBudget): { routes: LlmRoute[]; maxOutputTokens: number; reservedTokens: number } {
   const sentence = text.trim();
   const ordered = routes.filter((route) => route.apiKey && route.model).sort((a, b) => a.priority - b.priority);
+  if (sentence.length > MAX_SENTENCE_CHARS) {
+    const chunks = recordingChunks(sentence);
+    if (chunks.length) {
+      const allowance = { ...budget, remaining: Math.floor(budget.remaining / chunks.length) };
+      const plans = chunks.map(chunk => budgetReading(chunk, context, settings, ordered, allowance));
+      return { routes: ordered.slice(0, Math.min(...plans.map(plan => plan.routes.length))),
+        maxOutputTokens: Math.min(...plans.map(plan => plan.maxOutputTokens)),
+        reservedTokens: plans.reduce((total, plan) => total + plan.reservedTokens, 0) };
+    }
+  }
   if (!sentence || sentence.length > MAX_SENTENCE_CHARS || !ordered.length) {
-    return { routes: ordered, maxOutputTokens: budget.perRequestMax };
+    return { routes: ordered, maxOutputTokens: budget.perRequestMax, reservedTokens: 0 };
   }
 
   const detail = settings.understanding_prompt_detail === "compact" ? "compact" : "full";
@@ -116,34 +139,13 @@ function budgetReading(text: string, context: ReadingContext, settings: Record<s
     left -= tokens;
     affordable.push(route);
   }
-  return { routes: affordable, maxOutputTokens };
+  return { routes: affordable, maxOutputTokens, reservedTokens: budget.remaining - left };
 }
 
-function dailyLimitOf(settings: Record<string, string>, plan: string): number {
-  const defaults: Record<string, number> = { free: 10, pro: 100, ultra: 500 };
-  // Read as the pipeline's gate reads it (`getAiClient` in `api/ai-router.ts`): digits only, else the plan's default.
-  const raw = String(settings[`${plan}_daily_limit`] || defaults[plan] || "10").replace(/[^\d]/g, "");
-  const parsed = parseInt(raw, 10);
-  return (Number.isNaN(parsed) ? defaults[plan] : parsed) || 10;
-}
-
-/**
- * The plan's parse switch and the daily limit, with the messages the pipeline's gate gives.
- * Voice calls this before it pays for the transcription.
- */
-export async function assertSentenceAllowed(user: SentenceUser, settings: Record<string, string>): Promise<void> {
-  const plan = planOf(user);
-  if (settings[`${plan}_ai_parse`] === "false") {
+/** Voice checks this switch before it pays for transcription. Count limits are checked while reserving. */
+export function assertSentenceAllowed(user: SentenceUser, settings: Record<string, string>): void {
+  if (settings[`${planOf(user)}_ai_parse`] === "false") {
     throw new TRPCError({ code: "FORBIDDEN", message: PARSE_OFF_MESSAGE });
-  }
-  const dailyLimit = dailyLimitOf(settings, plan);
-  const todayUsage = await countDailyAiRequests(user as AiUsageUser, "parse");
-  if (todayUsage >= dailyLimit) {
-    const upgrade = plan === "free" ? " تقدر ترقّي لـ Pro عشان تسجّل أكتر." : plan === "pro" ? " تقدر ترقّي لـ Ultra عشان تسجّل أكتر." : "";
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: `وصلت لحد التسجيلات الذكية بتاعة النهارده (${dailyLimit}). الحد بيتجدد بكرة.${upgrade}`,
-    });
   }
 }
 
@@ -256,6 +258,26 @@ const insertIdOf = (result: unknown): number | undefined => {
 };
 
 export async function readSentence(input: ReadSentenceInput, deps: ReadSentenceDeps = {}): Promise<ParseResponse> {
+  if (input.requestKey && !input.reservation) {
+    const reply = await getRecordingReply(input.user, input.requestKey, input.text);
+    if (reply) return reply;
+  }
+  let lease = input.reservation;
+  let paidTokens: number | null = input.stt?.tokensUsed ?? null;
+  try {
+    const response = await readWithReservation(input, deps, (reservation, actual) => {
+      lease = reservation;
+      paidTokens = actual;
+    });
+    if (lease) await settleRecording(lease, paidTokens, response);
+    return response;
+  } catch (error) {
+    if (lease) await settleRecording(lease, paidTokens);
+    throw error;
+  }
+}
+
+async function readWithReservation(input: ReadSentenceInput, deps: ReadSentenceDeps, checkpoint: (lease: RecordingLease, paidTokens: number | null) => void): Promise<ParseResponse> {
   const startedAt = input.startedAt ?? Date.now();
   const understandFn = deps.understand ?? understand;
   const loadContext = deps.loadContext ?? loadReadingContext;
@@ -265,7 +287,7 @@ export async function readSentence(input: ReadSentenceInput, deps: ReadSentenceD
 
   // What the reading needs whatever admission decides starts now; a refusal leaves no unhandled rejection behind.
   const settingsLoad = getSystemSettings();
-  const businessLoad = input.businessMode
+  const businessLoad = input.businessIdForContinuation ? Promise.resolve(input.businessIdForContinuation) : input.businessMode
     ? activeBusinessId(user).catch((err: unknown) => {
       log.warn({ err, event: "recording.business_load_failed", userId: user.id, userType: user.type }, "The active business could not be read");
       return null;
@@ -276,12 +298,30 @@ export async function readSentence(input: ReadSentenceInput, deps: ReadSentenceD
   contextLoad.catch(() => undefined);
 
   const settings = await settingsLoad;
-  if (!input.gateChecked) await assertSentenceAllowed(user, settings);
-  const budget = await assertAiBudget(user as AiUsageUser, "parse", estimateTokensFromText(text), settings);
+  if (!input.gateChecked) assertSentenceAllowed(user, settings);
+  const limits = recordingLimits(settings, user);
+  if (input.captureContinuation && await countDailyAiRequests(user, "parse") >= limits.daily) {
+    throw new TRPCError({ code: "FORBIDDEN", message: `وصلت لحد التسجيلات الذكية بتاعة النهارده (${limits.daily}). الحد بيتجدد بكرة.` });
+  }
+  const budget = await assertAiBudget(user as AiUsageUser, "parse", estimateTokensFromText(text), settings, {
+    recordingQuality: true, ...(input.captureContinuation ? {} : { recordingBudget: { limit: limits.tokens, used: 0 } }),
+  });
 
   const [context, businessId] = await Promise.all([contextLoad, businessLoad]);
   const resolvedRoutes = await resolveRoutes(planOf(user), settings);
-  const { routes, maxOutputTokens } = budgetReading(text, context, settings, resolvedRoutes, budget);
+  const planTokens = (remaining: number) => {
+    const plan = budgetReading(text, context, settings, resolvedRoutes, { ...budget, remaining: Math.min(budget.remaining, remaining) });
+    return { plan, reservedTokens: plan.reservedTokens };
+  };
+  const reservation = input.captureContinuation ? {
+    lease: null, plan: planTokens(budget.remaining).plan,
+  } : input.reservation ? {
+    lease: input.reservation,
+    plan: await advanceRecording(input.reservation, settings, input.stt?.tokensUsed ?? 0, planTokens),
+  } : await reserveRecording(user, input.requestKey ?? recordingKey(input.channel), settings, planTokens, new Date(startedAt), text);
+  if ("reply" in reservation && reservation.reply) return reservation.reply;
+  const { lease, plan: { routes, maxOutputTokens } } = reservation;
+  if (lease) checkpoint(lease, null);
 
   let understanding: Understanding;
   try {
@@ -290,6 +330,7 @@ export async function readSentence(input: ReadSentenceInput, deps: ReadSentenceD
     const failed = err instanceof UnderstandingUnavailableError ? err : null;
     const attempts = failed?.attempts ?? [];
     const tokens = failed?.tokens ?? { promptTokens: 0, completionTokens: 0, cachedTokens: 0, totalTokens: 0 };
+    if (lease && failed) checkpoint(lease, tokens.totalTokens);
     await recordSpend(user, input, {
       attempts, model: attempts.at(-1)?.model ?? null, servedBy: attempts.at(-1)?.slug ?? null, ...tokens, latencyMs: Date.now() - startedAt,
     }, { outcome: "unavailable" });
@@ -304,8 +345,15 @@ export async function readSentence(input: ReadSentenceInput, deps: ReadSentenceD
     );
     throw new TRPCError({ code: "SERVICE_UNAVAILABLE", message: UNAVAILABLE_MESSAGE, cause: err });
   }
+  if (lease) checkpoint(lease, understanding.usage.totalTokens);
 
-  const items: RecordedItem[] = toParsedItems(understanding, { people: context.people, businessId });
+  const itemContext = { people: context.people, businessId };
+  const split = input.partialBooking && !input.skipClarification && (input.openClarification !== false || input.chatRecording)
+    && settings.understanding_auto_save === "true"
+    ? splitMissingAmounts(understanding, { ...itemContext, sentence: text })
+    : null;
+  const items: RecordedItem[] = split?.ready ?? toParsedItems(understanding, itemContext);
+  if (input.continuationItemId && items.length === 1) items[0].readingItemId = input.continuationItemId;
   const decision = decisionOf(understanding.outcome, input.skipClarification);
   const overallConfidence = overallConfidenceOf(decision, items);
   const question = decision === "clarify" ? understanding.question || "ممكن توضح أكتر؟" : undefined;
@@ -331,6 +379,11 @@ export async function readSentence(input: ReadSentenceInput, deps: ReadSentenceD
         classificationVersion: READING_LOG_VERSION,
         reasoningTraceLight: {
           outcome: understanding.outcome,
+          ...(input.chatRecording ? { chatRecording: true } : {}),
+          ...(split ? { partialBooking: {
+            missing: split.missing.map(clause => ({ clause, itemId: randomUUID() })),
+            businessId,
+          } } : {}),
           ...(input.skipClarification ? { clarificationSuppressed: true } : {}),
           reasons: understanding.reasons,
           flags,
@@ -398,6 +451,7 @@ export async function readSentence(input: ReadSentenceInput, deps: ReadSentenceD
   return {
     text,
     items,
+    ...(split ? { partialReady: true } : {}),
     model: parseModel,
     parsedBy: "ai",
     decision,

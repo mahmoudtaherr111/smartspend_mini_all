@@ -186,6 +186,110 @@ void main() {
       },
     );
 
+    testWidgets('books a complete item and opens the first server question', (
+      tester,
+    ) async {
+      var booked = false;
+      final questions = [
+        {'id': 91, 'question': 'الدواء كان بكام؟'},
+        {'id': 92, 'question': 'المياه كانت بكام؟'},
+      ];
+      final api = FakeApi()
+        ..answer(
+          'ai.parseExpense',
+          (_) => {
+            ..._parsed('review', [_item(300, 'إنترنت')]),
+            'partialReady': true,
+          },
+        )
+        ..answer('expense.commitPartialReading', (_) {
+          booked = true;
+          return {
+            'savedIds': [77],
+            'questions': questions,
+          };
+        })
+        ..answer(
+          'expense.getPendingClarifications',
+          (_) => booked ? questions : [],
+        )
+        ..answer('expense.delete', (_) => {'success': true});
+      final app = await _signedIn(tester, api);
+      await _send(tester, 'دفعت 300 نت واشتريت دوا ودفعت الميه');
+
+      expect(
+        api.lastInput('ai.parseExpense'),
+        containsPair('partialBooking', true),
+      );
+      expect(api.lastInput('expense.commitPartialReading'), {
+        'classificationLogId': 901,
+      });
+      expect(api.paths, isNot(contains('expense.create')));
+      expect(api.paths, isNot(contains('expense.batchCreate')));
+      expect(app.ledgerStore.ledger.outbox, isEmpty);
+      expect(find.text('الدواء كان بكام؟'), findsWidgets);
+      await tester.tap(find.text('بعدين'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('pending-clarification-91')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('pending-clarification-92')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('إنترنت'), findsWidgets);
+      await tester.tap(find.text('تراجع'));
+      await tester.pumpAndSettle();
+      expect(api.lastInput('expense.delete'), {'id': 77});
+    });
+
+    testWidgets('retries a lost partial booking reply with the persisted log', (
+      tester,
+    ) async {
+      var attempts = 0;
+      final api = FakeApi()
+        ..answer(
+          'ai.parseExpense',
+          (_) => {
+            ..._parsed('review', [_item(300, 'إنترنت')]),
+            'partialReady': true,
+          },
+        )
+        ..answer('expense.commitPartialReading', (_) {
+          if (++attempts == 1) throw http.ClientException('Lost reply');
+          return {
+            'savedIds': [77],
+            'questions': <Object?>[],
+          };
+        });
+      final app = await _signedIn(tester, api);
+      await _send(tester, 'دفعت 300 نت واشتريت دوا');
+      final waiting = OutboxItem.fromJson(
+        app.ledgerStore.ledger.outbox.single.toJson(),
+      );
+      expect(waiting.state, OutboxState.queued);
+      expect(waiting.parse?.partialReady, true);
+      expect(waiting.parse?.classificationLogId, 901);
+
+      app.connection.add(true);
+      await tester.pumpAndSettle();
+      expect(app.ledgerStore.ledger.outbox, isEmpty);
+      expect(
+        api.paths.where((path) => path == 'ai.parseExpense'),
+        hasLength(1),
+      );
+      final writes = api.calls
+          .where((call) => call.path == 'expense.commitPartialReading')
+          .map((call) => call.input)
+          .toList();
+      expect(writes, [
+        {'classificationLogId': 901},
+        {'classificationLogId': 901},
+      ]);
+      expect(find.textContaining('إنترنت'), findsWidgets);
+    });
+
     testWidgets(
       'a sentence is kept, shown at once, and saved when the internet returns',
       (tester) async {

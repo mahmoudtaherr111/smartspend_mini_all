@@ -201,6 +201,7 @@ _None._
 | `capture.status` | useQuery | `src/components/bank-capture/CaptureOverview.tsx` |
 | `expense.answerClarification` | useMutation | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
 | `expense.batchCreate` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
+| `expense.commitPartialReading` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.create` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.createInstallmentPlan` | useMutation | `src/components/installments/InstallmentsPanel.tsx` |
 | `expense.delete` | useMutation | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/components/expenses/RecentExpenses.tsx` |
@@ -211,7 +212,7 @@ _None._
 | `expense.getMonthlyStats` | useQuery, utils.invalidate, utils.prefetch | `src/pages/Home.tsx` |
 | `expense.getPendingClarifications` | useQuery, utils.invalidate | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
 | `expense.getSeasonSpending` | useQuery | `src/components/seasons/SeasonsPanel.tsx` |
-| `expense.list` | useQuery, utils.cancel, utils.getData, utils.setData | `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
+| `expense.list` | useInfiniteQuery, useQuery, utils.cancel, utils.getData, utils.setData | `src/components/dashboard/ExpenseChart.tsx`, `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
 | `expense.listInstallmentPlans` | useQuery, utils.invalidate | `src/components/installments/InstallmentsPanel.tsx` |
 | `expense.previewCategory` | useQuery | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.searchTransactions` | useQuery | `src/components/dashboard/GlobalSearch.tsx` |

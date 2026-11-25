@@ -15,6 +15,7 @@ final class AiApi {
   Future<Map<String, Object?>> sendMessage({
     required String message,
     int? conversationId,
+    String? clientTurnId,
     bool? devQaBypassDailyLimit,
   }) async {
     final res = await _client.mutate(
@@ -22,6 +23,7 @@ final class AiApi {
       input: {
         'message': message,
         'conversationId': ?conversationId,
+        'clientTurnId': ?clientTurnId,
         if (devQaBypassDailyLimit == true)
           'devQaBypassDailyLimit': devQaBypassDailyLimit,
       },

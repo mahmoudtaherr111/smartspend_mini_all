@@ -173,12 +173,21 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
           return const SubmitEmpty();
         }
         final isBiz = ref.read(isBusinessModeActiveProvider);
-        parse = await api.parseVoice(
+        final requestId = api.newRequestId();
+        Future<ParseResult> send() => api.parseVoice(
           audioBase64: result.audioBase64,
           mimeType: result.mimeType,
           durationSeconds: duration > 0 ? duration : result.durationSeconds,
           businessMode: isBiz ? true : null,
+          requestId: requestId,
         );
+        ParseResult received;
+        try {
+          received = await send();
+        } on ApiNetworkException {
+          received = await send();
+        }
+        parse = received;
       } on ApiException catch (e) {
         final msg = e.message.toLowerCase();
         if (e.code == 'FORBIDDEN' ||
@@ -235,9 +244,27 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
     final l10n = _l10n;
     final outbox = ref.read(outboxProvider.notifier);
     switch (outcome) {
-      case SubmitSaved(:final items, :final ids, :final automatic):
+      case SubmitSaved(
+        :final items,
+        :final ids,
+        :final automatic,
+        :final partial,
+      ):
         if (!isVoice) _text.clear();
-        announceSaved(context, ref, items, ids, automatic: automatic);
+        if (partial == null || ids.isNotEmpty) {
+          announceSaved(
+            context,
+            ref,
+            items,
+            ids,
+            automatic: automatic,
+            partial: partial != null,
+          );
+        }
+        final firstQuestion = partial?.questions.firstOrNull;
+        if (firstQuestion != null) {
+          await answerPartialQuestion(context, ref, firstQuestion);
+        }
       case SubmitNeedsReview(:final item):
         final saved = await reviewAndSave(context, ref, item);
         if (saved == false) {
@@ -284,6 +311,20 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(outboxProvider, (previous, current) {
+      final receipt = current.value?.recoveredBooking;
+      if (receipt == null || receipt == previous?.value?.recoveredBooking) {
+        return;
+      }
+      announceSaved(
+        context,
+        ref,
+        receipt.items,
+        receipt.ids,
+        automatic: true,
+        partial: true,
+      );
+    });
     final stopped = ref.watch(remoteConfigProvider).value?.aiOff ?? const {};
     final l10n = AppLocalizations.of(context);
     final colors = context.smartSpendColors;

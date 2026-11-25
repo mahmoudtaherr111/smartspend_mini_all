@@ -6,7 +6,9 @@
  * names, row type and direction. Each item keeps what the engine read in `reading`, so a save
  * can be enriched from the server's own copy of it later (`saved-reading.ts`). Pure.
  */
+import { randomUUID } from "node:crypto";
 import type { Understanding, UnderstoodEvent } from "../../lib/understanding/engine";
+import { foldForMatch, normalizeNumbersForMatching, numberMentions } from "../../lib/understanding/numbers";
 import { TAXONOMY_VERSION } from "../../../contracts/taxonomy";
 import { personResolver } from "../../lib/understanding/reading-context";
 import type { PromptPerson } from "../../lib/understanding/prompt";
@@ -47,6 +49,7 @@ export function toParsedItem(event: UnderstoodEvent, ctx: ItemContext, sentenceR
   const reasons = [...new Set([...sentenceReasons, ...event.reasons])];
   const clean = reasons.length === 0;
   const item: RecordedItem = {
+    readingItemId: randomUUID(),
     amount: event.amount,
     category: event.stored.category,
     subCategory: event.stored.subCategory,
@@ -81,6 +84,67 @@ export function toParsedItem(event: UnderstoodEvent, ctx: ItemContext, sentenceR
 
 export function toParsedItems(understanding: Pick<Understanding, "events" | "reasons">, ctx: ItemContext): RecordedItem[] {
   return understanding.events.filter((event) => event.amount > 0).map((event) => toParsedItem(event, ctx, understanding.reasons));
+}
+
+const quoteKey = (text: string) => foldForMatch(normalizeNumbersForMatching(text));
+
+function uniqueQuoteSpan(sentence: string, quote: string): { start: number; end: number } | null {
+  if (!quote) return null;
+  let found: { start: number; end: number } | null = null;
+  for (let start = sentence.indexOf(quote); start >= 0; start = sentence.indexOf(quote, start + 1)) {
+    const end = start + quote.length;
+    const before = sentence[start - 1];
+    const attached = (before === "و" || before === "ف") && (start === 1 || sentence[start - 2] === " ");
+    if (start > 0 && before !== " " && !attached) continue;
+    if (end < sentence.length && sentence[end] !== " ") continue;
+    if (found) return null;
+    found = { start: attached ? start - 1 : start, end };
+  }
+  return found;
+}
+
+const missingAmountReason = (reason: string) => reason === "amount_missing" || reason === "model_doubt:amount";
+
+/** A split is safe only when the rest of the reading would pass the normal save policy on its own. */
+export function splitMissingAmounts(
+  understanding: Understanding,
+  ctx: ItemContext & { sentence: string },
+): { ready: RecordedItem[]; missing: string[] } | null {
+  if (
+    understanding.outcome !== "show" || understanding.source !== "model" ||
+    understanding.usage.degradedSchema || understanding.problems.length ||
+    !understanding.reasons.includes("amount_missing") || understanding.reasons.some((reason) => reason !== "amount_missing") ||
+    (understanding.askAbout !== undefined && understanding.askAbout !== "amount") ||
+    (understanding.question && understanding.askAbout !== "amount")
+  ) return null;
+
+  const sentence = quoteKey(ctx.sentence);
+  const quotes = [...understanding.events, ...understanding.ignored].map(({ quote }) => uniqueQuoteSpan(sentence, quoteKey(quote)));
+  if (quotes.some((span) => span === null)) return null;
+  const ordered = quotes.flatMap((span) => span ? [span] : []).sort((a, b) => a.start - b.start);
+  if (ordered.some((span, index) => index > 0 && ordered[index - 1].end > span.start)) return null;
+
+  const ready: UnderstoodEvent[] = [];
+  const missing: string[] = [];
+  const commitments = new Set<number>();
+  for (const event of understanding.events) {
+    if (event.commitmentId !== null) {
+      if (commitments.has(event.commitmentId)) return null;
+      commitments.add(event.commitmentId);
+    }
+    if (Number.isFinite(event.amount) && event.amount > 0 && event.doubt === "none" && !event.flags.length && !event.reasons.length) {
+      ready.push(event);
+    } else if (
+      event.amount === 0 && (event.doubt === "none" || event.doubt === "amount") &&
+      event.flags.includes("amount_missing") && event.flags.every(missingAmountReason) &&
+      event.reasons.every(missingAmountReason) && numberMentions(event.quote).length === 0
+    ) {
+      missing.push(event.quote);
+    } else {
+      return null;
+    }
+  }
+  return ready.length && missing.length ? { ready: ready.map((event) => toParsedItem(event, ctx)), missing } : null;
 }
 
 /**

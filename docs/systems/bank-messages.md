@@ -4,7 +4,7 @@ Automatic capture of bank, wallet and payment messages: the user pays any way (a
 Vodafone Cash, a bank transfer), the phone sends the message, and the ledger shows it as spending or income with its
 details, without the user typing anything. One path since [decision 0049](../decisions/0049-one-capture-path-model-decides.md):
 the phone sends what holds a keyword, the model decides what it means, and the code only keeps the model honest.
-Android captures SMS (the SMS build) and bank and wallet app notifications; iPhone capture is not built.
+Android captures SMS (the SMS build) and bank and wallet app notifications; iOS 17+ can submit a signal from a configured Shortcuts automation via the RecordBankMessageIntent App Intent.
 
 - Facts generated from the code, with diagrams: [docs/atlas/systems/bank-messages.md](../atlas/systems/bank-messages.md)
 - The same story for readers who do not read code: [docs/ar/systems/bank-messages.md](../ar/systems/bank-messages.md)
@@ -190,8 +190,7 @@ the memory, undo, the breaker and the bulk undo, access, consent, fees, own tran
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Gap.** iPhone capture is not built: iOS gives apps no SMS. Nothing has run on a real phone: this machine cannot
-   run an Android emulator, so the path was proved from the phone's HTTP calls to the ledger with a real model.
+1. **Gap.** Physical-device acceptance of the capture journey is outstanding. The iOS entry uses Shortcuts, and the server path has been exercised from an HTTP signal to the ledger.
 2. **Gap.** The SMS build (`-Psmartspend.sms=true`, the `smartspend-sms-apk` artifact of `.github/workflows/android-release.yml`) may not
    go to Google Play before the SMS declaration is approved; the store build has notifications only.
 3. **Gap.** A payment announced by the bank's SMS and its app's notification is joined when both name the same card,
@@ -208,3 +207,5 @@ Checked against the code; each one names where it lives.
 - [AI providers and usage limits](ai-platform.md): the routes, budgets and the cost ledger.
 - [Admin console, support and growth tools](admin.md): the capture section, the catalog and the numbers.
 - [Server platform and data](platform.md): background jobs, retention and storage classes.
+
+A post-save purpose answer accepts an explicit taxonomy purpose. When the understanding engine is active, a free-text answer is read against the owned payment amount and direction before the update transaction. A reading with conflicting evidence leaves the question open. The transaction checks that the original filing is still current and edits the existing payment.

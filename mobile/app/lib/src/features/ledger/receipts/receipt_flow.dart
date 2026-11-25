@@ -162,6 +162,7 @@ Future<void> startReceiptIntake({
         type: parsedReceipt.type,
         category: parsedReceipt.category,
         subCategory: parsedReceipt.subCategory,
+        purpose: parsedReceipt.purpose,
         description: parsedReceipt.description.isNotEmpty
             ? parsedReceipt.description
             : (parsedReceipt.merchant ??

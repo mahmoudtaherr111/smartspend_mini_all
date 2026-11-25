@@ -1,4 +1,5 @@
 import { CATEGORIES } from "@contracts/categories";
+import { TAXONOMY, taxonomyCategory, type TaxonomyCategory } from "@contracts/taxonomy";
 
 /**
  * The category picker's options, read from the one taxonomy the server uses
@@ -34,6 +35,24 @@ export function getSubCategoryOptions(category: string): string[] {
 export function defaultSubCategory(category: string): string {
   const options = getSubCategoryOptions(category);
   return options.includes("عام") ? "عام" : options[0] || "عام";
+}
+
+export function getPurposeOptionsForType(type: string) {
+  return TAXONOMY.filter(category => {
+    if (type === "income" || type === "investment") return category.kinds.includes(type);
+    if (type === "transfer") return category.group === "movement" && !category.kinds.includes("investment");
+    return category.group === "spending";
+  });
+}
+
+export const purposeOptionValue = (id: string) => `purpose:${id}`;
+
+export function selectedPurposeOption(value: string) {
+  return value.startsWith("purpose:") ? taxonomyCategory(value.slice("purpose:".length)) : undefined;
+}
+
+export function defaultPurposeSub(category: TaxonomyCategory) {
+  return category.subs.find(sub => sub.id === "other") ?? category.subs[0];
 }
 
 /** Icon and colour of a stored category, from the taxonomy; unknown names get the neutral pair. */

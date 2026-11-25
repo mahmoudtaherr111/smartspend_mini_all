@@ -93,6 +93,8 @@ final appTabs = <AppTab>[
         builder: (context, state) => CategoryTransactionsScreen(
           category: state.uri.queryParameters['name'] ?? '',
           month: state.uri.queryParameters['month'],
+          purposeCategoryId: state.uri.queryParameters['purpose'],
+          legacyCategory: state.uri.queryParameters['legacyCategory'],
         ),
       ),
     ],

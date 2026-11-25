@@ -1,4 +1,5 @@
 import { MOVEMENT_KINDS, type MovementKind } from "../contracts/ledger-movement";
+import { TAXONOMY, TAXONOMY_VERSION } from "../contracts/taxonomy";
 import { spendingRowSql, ledgerBucketSql } from "./services/ledger-semantics";
 import { ledgerBundle, ledgerBundleColumns, ledgerBundleJoin, ledgerEntryWithPurpose, linkedLedgerFee, standaloneLedgerRowSql } from "./services/ledger-bundles";
 import { z } from "zod";
@@ -30,6 +31,7 @@ import { CacheKeys } from "./lib/cache-keys";
 import { toDayString } from "./services/expense-rollups";
 import { businessDateKey, parseBusinessInstant } from "./lib/app-time";
 import { installmentProgress, installmentProgressFromLinked, installmentProgressFromRecorded } from "./services/installments";
+import { storedFiling } from "./lib/understanding/bridge";
 import { runRuleEngine } from "./lib/rule-engine";
 import { normalizeV2 } from "./lib/normalizer-v2";
 import { expandArabicSearchVariants } from "./lib/unified-normalizer";
@@ -45,7 +47,7 @@ import {
   createLedgerEntry,
   deleteLedgerEntry,
   insertLedgerEntriesInTx,
-  isDuplicateEntryError,
+  lockLedgerOwner,
   ledgerEntriesByRequestId,
   updateLedgerEntry,
   type LedgerTx,
@@ -53,7 +55,8 @@ import {
 import { currentRecordingEngine } from "./services/recording/engine-switch";
 import { loadReadingLogItems } from "./services/recording/reading-log";
 import { readSentence } from "./services/recording/read-sentence";
-import { movementKindFor, readingItemFor, readingOf, savedAsRead, savedPurposeLabels, withReadingMetadata } from "./services/recording/saved-reading";
+import { recordingKey } from "./services/recording/admission";
+import { labelsFromColumns, matchLogItem, movementKindFor, readingItemFor, storedReadingItemId, readingOf, savedAsRead, savedPurposeLabels, withReadingMetadata } from "./services/recording/saved-reading";
 import type { PurposeLabels } from "./services/recording/types";
 
 const reviewLog = createLogger("expense-review");
@@ -191,6 +194,7 @@ type ClarifiedItem = {
   person_relationship?: string;
   /** What the understanding engine read, on items it produced. */
   reading?: unknown;
+  readingItemId?: string;
 };
 
 export type SavedEntry = {
@@ -219,7 +223,7 @@ export function clarifiedItemDate(item: { date?: string }, askedAt: Date | null 
  * transaction (`api/services/ledger-writer.ts`). Returns what was saved so the app can show it
  * and offer undo.
  */
-async function saveClarifiedItems(
+export async function saveClarifiedItems(
   tx: LedgerTx,
   items: ClarifiedItem[],
   options: {
@@ -240,7 +244,8 @@ async function saveClarifiedItems(
   const saved: SavedEntry[] = [];
   for (const item of items) {
     const references = await resolveExpenseReferences(
-      { category: item.category, subCategory: item.subCategory ?? undefined, classificationLogId: options.classificationLogId },
+      { category: item.category, subCategory: item.subCategory ?? undefined, classificationLogId: options.classificationLogId,
+        personName: item.person_mentioned, personRelationship: item.person_relationship },
       options.userId,
       options.userType,
     );
@@ -248,7 +253,7 @@ async function saveClarifiedItems(
     const fromReading: ReadingEnrichment = reading
       ? {
         movementKind: movementKindFor(reading, item.type),
-        parsedMetadata: withReadingMetadata(undefined, item.direction, reading),
+        parsedMetadata: withReadingMetadata(undefined, item.direction, reading, item.readingItemId),
         ...(reading.walletId ? { walletId: reading.walletId } : {}),
       }
       : {};
@@ -304,25 +309,15 @@ async function addMentionedContacts(
 
 /**
  * What the user changed on the review card before saving, compared with what the parser
- * proposed. Only a sentence the parser read as ONE item teaches a rule: its whole text is
- * the pattern, and a multi-item sentence would teach one category for all of its parts.
+ * proposed. A multi-item sentence teaches only from the matched item's own clause.
  */
 export function reviewCorrection(
   parsed: unknown,
-  saved: { category: string; subCategory?: string | null; type: string; amount: number },
+  saved: { category: string; subCategory?: string | null; type: string; amount: number; readingItemId?: string },
 ): { previousCategory: string; previousSubCategory: string | null; clause?: string } | null {
   if (!Array.isArray(parsed) || parsed.length === 0) return null;
-  type Proposed = { category?: string; subCategory?: string | null; amount?: unknown; clause?: unknown };
-  let proposed: Proposed | undefined;
-  if (parsed.length === 1) {
-    proposed = parsed[0] as Proposed;
-  } else {
-    // Several items: the saved row is the one parsed item with its amount, and it teaches from its own clause. An
-    // amount two items share, or an item without its clause, teaches nothing rather than guess.
-    const sameAmount = (parsed as Proposed[]).filter((item) => Number(item?.amount) === saved.amount);
-    if (sameAmount.length !== 1 || typeof sameAmount[0].clause !== "string" || !sameAmount[0].clause.trim()) return null;
-    proposed = sameAmount[0];
-  }
+  const proposed = matchLogItem(parsed, saved);
+  if (parsed.length > 1 && (typeof proposed?.clause !== "string" || !proposed.clause.trim())) return null;
   if (!proposed?.category || (proposed.category === saved.category && (proposed.subCategory || "عام") === (saved.subCategory || "عام"))) return null;
   return {
     previousCategory: proposed.category,
@@ -339,7 +334,7 @@ async function learnFromReview(
   userId: number,
   userType: string,
   logId: number | null | undefined,
-  saved: { category: string; subCategory?: string | null; type: string; amount: number },
+  saved: { category: string; subCategory?: string | null; type: string; amount: number; readingItemId?: string },
 ): Promise<void> {
   if (!logId) return;
   try {
@@ -651,6 +646,88 @@ function normalizeStatsCategory(value: unknown): string {
   return statsCategoryDisplayNames[raw.toLowerCase()] ?? raw;
 }
 
+const statsPurposeColumns = {
+  purposeCategoryId: expenses.purposeCategoryId,
+  purposeSubId: expenses.purposeSubId,
+  purposeVersion: expenses.purposeVersion,
+};
+const statsCategoryColumns = { category: expenses.category, subCategory: expenses.subCategory, ...statsPurposeColumns };
+const statsCategoryGroup = Object.values(statsCategoryColumns);
+const confirmedExpense = sql`(${expenses.status} IS NULL OR ${expenses.status} = 'confirmed')`;
+
+const spendingCategorySchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("purpose"), id: z.string().max(64) }),
+  z.object({ kind: z.literal("legacy"), name: z.string().max(ExpenseInputLimits.categoryMax) }),
+]);
+
+function spendingCategoryFilter(category: z.infer<typeof spendingCategorySchema>) {
+  const purposeMatches = (id: string, subs: readonly { id: string }[]) =>
+    and(eq(expenses.purposeCategoryId, id), inArray(expenses.purposeSubId, subs.map(sub => sub.id)));
+  if (category.kind === "purpose") {
+    const purpose = TAXONOMY.find(item => item.id === category.id);
+    return purpose ? and(eq(expenses.purposeVersion, TAXONOMY_VERSION), purposeMatches(purpose.id, purpose.subs)) : sql`FALSE`;
+  }
+  const knownPurpose = and(
+    eq(expenses.purposeVersion, TAXONOMY_VERSION),
+    or(...TAXONOMY.map(purpose => purposeMatches(purpose.id, purpose.subs))),
+  );
+  return and(eq(expenses.category, category.name), sql`NOT COALESCE(${knownPurpose}, 0)`);
+}
+
+type SpendingGroupRow = {
+  category: string;
+  subCategory: string | null;
+  purposeCategoryId: string | null;
+  purposeSubId: string | null;
+  purposeVersion: string | null;
+  totalAmount: string;
+  count?: number;
+};
+
+function spendingPurposeBreakdown(rows: SpendingGroupRow[], previousRows: SpendingGroupRow[]) {
+  function group(period: SpendingGroupRow[]) {
+    const result = new Map<string, {
+      name: string;
+      category: z.infer<typeof spendingCategorySchema>;
+      value: number;
+      count: number;
+      children: Map<string, { id?: string; name: string; value: number; count: number }>;
+    }>();
+    for (const row of period) {
+      const labels = labelsFromColumns(row);
+      const category = labels
+        ? { kind: "purpose" as const, id: row.purposeCategoryId! }
+        : { kind: "legacy" as const, name: row.category };
+      const key = labels ? `purpose:${row.purposeCategoryId}` : `legacy:${row.category}`;
+      const entry = result.get(key) ?? {
+        name: labels?.categoryAr ?? normalizeStatsCategory(row.category), category, value: 0, count: 0,
+        children: new Map(),
+      };
+      const value = Number(row.totalAmount || 0);
+      const count = Number(row.count || 0);
+      entry.value += value;
+      entry.count += count;
+      result.set(key, entry);
+      const childName = labels?.subAr ?? row.subCategory;
+      if (!childName || (!labels && childName === "عام")) continue;
+      const childKey = labels ? row.purposeSubId! : childName;
+      const child = entry.children.get(childKey) ?? { ...(labels ? { id: childKey } : {}), name: childName, value: 0, count: 0 };
+      child.value += value;
+      child.count += count;
+      entry.children.set(childKey, child);
+    }
+    return result;
+  }
+  const previous = group(previousRows);
+  return [...group(rows)].map(([key, entry]) => ({
+    ...entry,
+    previous: previous.get(key)?.value ?? 0,
+    children: [...entry.children].map(([childKey, child]) => ({
+      ...child, previous: previous.get(key)?.children.get(childKey)?.value ?? 0,
+    })).sort((a, b) => b.value - a.value),
+  })).sort((a, b) => b.value - a.value);
+}
+
 /**
  * How long a month's or a year's figures may be served from Redis. Every write bumps the
  * user's generation, so a hit is normally current; but a bump lost to a Redis error would
@@ -671,7 +748,7 @@ function ledgerCacheTtl(period: { month?: string; year?: string }): number {
 }
 
 /** Links what was just saved to the commitment it pays, when certain (docs/decisions/0051-commitments-ecosystem.md). */
-async function commitmentLinksFor(owner: { userId: number; userType: string }, ids: Array<number | undefined>) {
+export async function commitmentLinksFor(owner: { userId: number; userType: string }, ids: Array<number | undefined>) {
   const { matchSavedExpenses } = await import("./services/coach/commitments");
   return matchSavedExpenses(owner, ids.filter((id): id is number => typeof id === "number" && id > 0));
 }
@@ -683,6 +760,7 @@ type ReadableSave = {
   category: string;
   subCategory?: string;
   classificationLogId?: number;
+  readingItemId?: string;
   movementKind?: MovementKind;
   walletId?: number;
   direction?: "incoming" | "outgoing";
@@ -704,9 +782,10 @@ async function enrichFromReadings(owner: { userId: number; userType: string }, i
     const found = item.classificationLogId && logs.has(item.classificationLogId)
       ? readingItemFor(logs.get(item.classificationLogId), item)
       : null;
-    return found && savedAsRead(found, item) ? found.reading : null;
+    if (item.readingItemId && !found) throw new TRPCError({ code: "BAD_REQUEST", message: "البند مش موجود في التسجيل ده." });
+    return found;
   });
-  const wanted = [...new Set(matched.flatMap((reading, index) => (reading?.walletId && !items[index].walletId ? [reading.walletId] : [])))];
+  const wanted = [...new Set(matched.flatMap((reading, index) => (reading?.reading.walletId && !items[index].walletId ? [reading.reading.walletId] : [])))];
   const owned = new Set<number>();
   for (const walletId of wanted) {
     try {
@@ -717,10 +796,11 @@ async function enrichFromReadings(owner: { userId: number; userType: string }, i
     }
   }
   return items.map((item, index) => {
-    const reading = matched[index];
-    const clientReading = Boolean(item.parsedMetadata && "reading" in item.parsedMetadata);
+    const found = matched[index];
+    const reading = found && savedAsRead(found, item) ? found.reading : null;
+    const clientReading = Boolean(item.parsedMetadata && ("reading" in item.parsedMetadata || "readingItemId" in item.parsedMetadata));
     const enrichment: ReadingEnrichment = {};
-    if (reading || clientReading) enrichment.parsedMetadata = withReadingMetadata(item.parsedMetadata, item.direction, reading);
+    if (reading || found?.readingItemId || clientReading) enrichment.parsedMetadata = withReadingMetadata(item.parsedMetadata, item.direction, reading, found?.readingItemId);
     if (reading && !item.movementKind) enrichment.movementKind = movementKindFor(reading, item.type);
     if (reading?.walletId && !item.walletId && owned.has(reading.walletId)) enrichment.walletId = reading.walletId;
     return enrichment;
@@ -730,6 +810,16 @@ async function enrichFromReadings(owner: { userId: number; userType: string }, i
 /** Questions asked again after the first; past this a reading that still asks saves what it can. */
 const MAX_FOLLOW_UPS = 2;
 const NOT_ENOUGH_ANSWER = "التوضيح لسه مش كافي لتسجيل العملية بدقة.";
+type ReadingAnswer = {
+  success: boolean;
+  savedCount: number;
+  saved: SavedEntry[];
+  needsClarification: boolean;
+  clarificationQuestion?: string;
+  clarificationId?: number;
+  enrichedText?: string;
+  newlyAddedContact: null;
+};
 
 /**
  * `expense.answerClarification` under the understanding engine: one mode. The answer is added to the sentence and
@@ -737,11 +827,12 @@ const NOT_ENOUGH_ANSWER = "التوضيح لسه مش كافي لتسجيل ال
  * question. A clean reading can be saved. A reading that needs review becomes an explicit confirmation of the
  * displayed entries, which uses the stored proposal without a second model call.
  */
-async function answerByReading(
+export async function prepareReadingAnswer(
   user: { id: number; type: "oauth" | "local"; plan?: string },
   input: { clarificationId: number; answer: string },
   clarification: typeof pendingClarifications.$inferSelect,
   ctxData: Record<string, unknown>,
+  options: { requireReview?: boolean } = {},
 ) {
   const owner = { userId: user.id, userType: user.type };
   const answer = input.answer.trim();
@@ -762,6 +853,8 @@ async function answerByReading(
     }
   }
 
+  const partialBusinessId = typeof ctxData.partialBusinessId === "number" ? ctxData.partialBusinessId : undefined;
+  if (partialBusinessId) await assertEntityOwnership({ ...owner, businessId: partialBusinessId });
   const awaitingReview = ctxData.awaitingReadingReview === true;
   const confirmed = awaitingReview && answer === "احفظ";
   const text = confirmed ? clarification.originalText
@@ -769,10 +862,14 @@ async function answerByReading(
   const read = confirmed ? null : await readSentence({
     user,
     text,
+    requestKey: recordingKey(`clarification:${input.clarificationId}`, text),
     channel: source === "voice" ? "voice" : "text",
     businessMode: ctxData.businessMode === true,
     skipClarification: false,
     openClarification: false,
+    chatRecording: Boolean(ctxData.chatConversationId),
+    businessIdForContinuation: partialBusinessId,
+    continuationItemId: typeof ctxData.continuationItemId === "string" ? ctxData.continuationItemId : undefined,
   });
   const classificationLogId = confirmed
     ? (typeof ctxData.classificationLogId === "number" ? ctxData.classificationLogId : undefined)
@@ -780,8 +877,8 @@ async function answerByReading(
   const items: ClarifiedItem[] = read?.items ?? (confirmed && Array.isArray(ctxData.items) ? ctxData.items : []);
   const savable = items.filter(item => item.amount > 0);
 
-  if (read && read.decision !== "auto_save") {
-    const review = read.decision === "review" && savable.length > 0;
+  if (read && (read.decision !== "auto_save" || options.requireReview)) {
+    const review = read.decision !== "clarify" && savable.length > 0;
     const question = review
       ? `${savable.map(item => {
         const incoming = item.type === "income" || item.direction === "incoming";
@@ -790,14 +887,18 @@ async function answerByReading(
         return `${incoming ? "داخل" : "خارج"} ${item.amount} جنيه، ${purpose}${day}`;
       }).join("\n")}\nلو التفاصيل صح اكتب «احفظ»، أو اكتب العملية كاملة بعد التعديل.`
       : read.clarificationQuestion || "ممكن تكتب العملية تاني بالغرض والمبلغ؟";
-    const [updated] = await getDb()
+    const apply = async (tx: LedgerTx): Promise<ReadingAnswer> => {
+      const [updated] = await tx
       .update(pendingClarifications)
       .set({
         originalText: text,
         question,
         contextData: {
           recordingEngine: "understanding",
+          ...(ctxData.chatConversationId ? { chatConversationId: ctxData.chatConversationId } : {}),
+          ...(ctxData.requireReview === true ? { requireReview: true } : {}),
           ...(review ? { awaitingReadingReview: true } : {}),
+          ...(typeof ctxData.continuationItemId === "string" ? { continuationItemId: ctxData.continuationItemId, partialBusinessId } : {}),
           ...(read.restateSentence ? { restateSentence: true } : {}),
           items,
           classificationLogId,
@@ -814,26 +915,27 @@ async function answerByReading(
         eq(pendingClarifications.originalText, clarification.originalText),
         eq(pendingClarifications.question, clarification.question),
       ));
-    if (updated.affectedRows !== 1) throw new TRPCError({ code: "CONFLICT", message: "السؤال اتغيّر. افتحه تاني." });
-    return {
-      success: false,
-      savedCount: 0,
-      saved: [] as SavedEntry[],
-      needsClarification: true,
-      clarificationQuestion: question,
-      clarificationId: input.clarificationId,
-      enrichedText: text,
-      newlyAddedContact: null,
+      if (updated.affectedRows !== 1) throw new TRPCError({ code: "CONFLICT", message: "السؤال اتغيّر. افتحه تاني." });
+      return {
+        success: false,
+        savedCount: 0,
+        saved: [] as SavedEntry[],
+        needsClarification: true,
+        clarificationQuestion: question,
+        clarificationId: input.clarificationId,
+        enrichedText: text,
+        newlyAddedContact: null,
+      };
     };
+    return { savable, apply };
   }
 
   if (savable.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: NOT_ENOUGH_ANSWER });
 
-  let saved: SavedEntry[] = [];
-  await getDb().transaction(async (tx) => {
+  const apply = async (tx: LedgerTx): Promise<ReadingAnswer> => {
     // The answer is taken once: a second tap, or a retry, finds it resolved and saves nothing.
     await claimClarification(tx, input.clarificationId, user.id, user.type, clarification);
-    saved = await saveClarifiedItems(tx, savable, {
+    const saved = await saveClarifiedItems(tx, savable, {
       userId: user.id,
       userType: user.type,
       rawText: text,
@@ -842,33 +944,121 @@ async function answerByReading(
       classificationLogId,
       fromReading: true,
     });
-  });
-  const newlyAddedContact = await addMentionedContacts(savable, user.id, user.type);
-  await afterLedgerWrite(owner, { spending: savable.some((item) => item.type === "expense") });
-
-  return {
-    success: true,
-    savedCount: saved.length,
-    saved,
-    needsClarification: false,
-    clarificationQuestion: undefined,
-    clarificationId: undefined,
-    enrichedText: undefined,
-    newlyAddedContact,
-    commitmentLinks: await commitmentLinksFor(owner, saved.map((entry) => entry.id)),
+    return {
+      success: true,
+      savedCount: saved.length,
+      saved,
+      needsClarification: false,
+      clarificationQuestion: undefined,
+      clarificationId: undefined,
+      enrichedText: undefined,
+      newlyAddedContact: null,
+    };
   };
+  return { savable, apply };
+}
+
+async function answerByReading(
+  user: Parameters<typeof prepareReadingAnswer>[0],
+  input: Parameters<typeof prepareReadingAnswer>[1],
+  clarification: Parameters<typeof prepareReadingAnswer>[2],
+  ctxData: Record<string, unknown>,
+) {
+  if (ctxData.chatConversationId) throw new TRPCError({ code: "NOT_FOUND", message: "كمّل التسجيل من المحادثة." });
+  const owner = { userId: user.id, userType: user.type };
+  const { apply, savable } = await prepareReadingAnswer(user, input, clarification, ctxData);
+  const result = await getDb().transaction(apply);
+  if (!result.saved.length) return result;
+  const newlyAddedContact = await addMentionedContacts(savable, user.id, user.type);
+  await afterLedgerWrite(owner, { spending: savable.some(item => item.type === "expense") });
+  return { ...result, newlyAddedContact, commitmentLinks: await commitmentLinksFor(owner, result.saved.map(entry => entry.id)) };
 }
 
 /** The category installment payments are filed under, read from the registry. */
 const INSTALLMENTS_CATEGORY = CATEGORIES.find((category) => category.id === "installments")!.name_ar;
 
+// Only the server writes this plan to the owner's reading log. The log row is the
+// durable idempotency key for one submission, including its follow-up questions.
+const selectedPurposeSchema = z.object({ category: z.string().min(1).max(64), sub: z.string().min(1).max(64) });
+
+const partialPlanSchema = z.object({
+  missing: z.array(z.object({ clause: z.string().min(1), itemId: z.string().uuid() })).min(1),
+  businessId: z.number().int().positive().nullable(),
+  booked: z.object({
+    ids: z.array(z.number().int().positive()),
+    questionIds: z.array(z.number().int().positive()).min(1),
+  }).optional(),
+});
+
+export async function commitPartialReadingInTx(
+  tx: LedgerTx,
+  owner: { userId: number; userType: string },
+  classificationLogId: number,
+  chatConversationId?: number,
+) {
+  await lockLedgerOwner(tx, owner);
+  const own = and(eq(classificationLogs.id, classificationLogId),
+    eq(classificationLogs.userId, owner.userId), eq(classificationLogs.userType, owner.userType));
+  const [log] = await tx.select().from(classificationLogs).where(own).for("update");
+  if (!log) throw new TRPCError({ code: "NOT_FOUND", message: "التسجيل مش موجود." });
+  const trace = log.reasoningTraceLight as Record<string, unknown> | null;
+  if (Boolean(trace?.chatRecording) !== Boolean(chatConversationId)) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "التسجيل مش موجود." });
+  }
+  const plan = partialPlanSchema.safeParse(trace?.partialBooking);
+  if (!plan.success || !Array.isArray(log.finalResult) || !log.finalResult.length) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "التسجيل ده محتاج مراجعة كاملة." });
+  }
+  const { booked, missing, businessId } = plan.data;
+  if (booked) return { ...booked, replay: true };
+  const settings = await getSystemSettings();
+  if (settings.recording_engine !== "understanding" || settings.understanding_auto_save !== "true") {
+    throw new TRPCError({ code: "PRECONDITION_FAILED", message: "الحفظ التلقائي متوقف. راجع التسجيل من جديد." });
+  }
+  if (businessId) await assertEntityOwnership({ ...owner, businessId });
+  const source = log.inputChannel === "voice" ? "voice" : "ai_parsed";
+  const items = log.finalResult as ClarifiedItem[];
+  const saved = await saveClarifiedItems(tx, items, { ...owner, source, rawText: log.originalText,
+    classificationLogId: log.id, askedAt: log.createdAt, fromReading: true });
+  const ids = saved.map(item => item.id);
+  const questionIds: number[] = [];
+  for (const { clause, itemId } of missing) {
+    const [row] = await tx.insert(pendingClarifications).values({
+      ...owner, originalText: clause, question: `«${clause}» كان بكام؟`,
+      contextData: { recordingEngine: "understanding", continuationItemId: itemId, source, businessMode: !!businessId, partialBusinessId: businessId,
+        ...(chatConversationId ? { chatConversationId } : {}) },
+    });
+    questionIds.push(Number(row.insertId));
+  }
+  await tx.update(classificationLogs).set({ reasoningTraceLight: { ...trace,
+    partialBooking: { ...plan.data, booked: { ids, questionIds } } } }).where(own);
+  return { ids, questionIds, replay: false };
+}
+
 export const expenseRouter = router({
+  commitPartialReading: authedProcedure
+    .input(z.object({ classificationLogId: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      const owner = { userId: ctx.user.id, userType: ctx.user.type };
+      const result = await getDb().transaction(tx => commitPartialReadingInTx(tx, owner, input.classificationLogId));
+      if (!result.replay) {
+        await afterLedgerWrite(owner, { spending: true });
+        await commitmentLinksFor(owner, result.ids);
+      }
+      const pending = await getDb().select({ id: pendingClarifications.id, question: pendingClarifications.question })
+        .from(pendingClarifications).where(and(eq(pendingClarifications.userId, owner.userId),
+          eq(pendingClarifications.userType, owner.userType), eq(pendingClarifications.status, "pending"),
+          inArray(pendingClarifications.id, result.questionIds))).orderBy(pendingClarifications.id);
+      return { savedIds: result.ids, questions: pending };
+    }),
+
   create: authedProcedure
     .input(
       z.object({
         amount: expenseAmount,
         type: transactionTypeSchema.default("expense"),
         category: expenseCategory,
+        purpose: selectedPurposeSchema.optional(),
         subCategory: z
           .string()
           .max(ExpenseInputLimits.subCategoryMax)
@@ -884,6 +1074,7 @@ export const expenseRouter = router({
         date: z.string().optional(),
         contactId: z.number().int().positive().optional(),
         classificationLogId: z.number().int().positive().optional(),
+        readingItemId: z.string().uuid().optional(),
         businessId: z.number().int().positive().optional(),
         counterWalletId: z.number().int().positive().optional(),
         movementKind: z.enum(MOVEMENT_KINDS).optional(),
@@ -934,7 +1125,7 @@ export const expenseRouter = router({
       const references = await resolveExpenseReferences(input, userId, requestUserType);
 
       // Under the understanding engine the item takes what its reading knew (the user's own log row, not the client).
-      const fromReading: ReadingEnrichment = (await currentRecordingEngine()) === "understanding"
+      const fromReading: ReadingEnrichment = (input.readingItemId || (await currentRecordingEngine()) === "understanding")
         ? (await enrichFromReadings(owner, [input]))[0]
         : { parsedMetadata: withReadingMetadata(input.parsedMetadata, input.direction, null) };
 
@@ -959,6 +1150,7 @@ export const expenseRouter = router({
           counterWalletId: input.counterWalletId,
           movementKind: input.movementKind,
           clientRequestId: input.clientRequestId,
+          purpose: input.purpose,
           parsedMetadata: input.parsedMetadata,
           ...fromReading,
         },
@@ -984,6 +1176,7 @@ export const expenseRouter = router({
           amount: expenseAmount,
           type: transactionTypeSchema.default("expense"),
           category: expenseCategory,
+          purpose: selectedPurposeSchema.optional(),
           subCategory: z.string().max(ExpenseInputLimits.subCategoryMax).optional(),
           description: z.string().max(ExpenseInputLimits.descriptionMax).optional(),
           rawText: expenseRawText,
@@ -991,6 +1184,7 @@ export const expenseRouter = router({
           date: z.string().optional(),
           contactId: z.number().int().positive().optional(),
           classificationLogId: z.number().int().positive().optional(),
+          readingItemId: z.string().uuid().optional(),
           businessId: z.number().int().positive().optional(),
           counterWalletId: z.number().int().positive().optional(),
           movementKind: z.enum(MOVEMENT_KINDS).optional(),
@@ -1028,6 +1222,9 @@ export const expenseRouter = router({
         .map((i) => i.clientRequestId)
         .filter((id): id is string => typeof id === "string" && id.length > 0);
 
+      if (new Set(clientRequestIds).size !== clientRequestIds.length) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "كل بند محتاج معرّف طلب مستقل." });
+      }
       const existingClientMap = new Map<string, typeof expenses.$inferSelect>();
       for (const row of await ledgerEntriesByRequestId(owner, clientRequestIds)) {
         if (row.clientRequestId) {
@@ -1044,6 +1241,7 @@ export const expenseRouter = router({
         return {
           success: true,
           count: existingClientMap.size,
+          ids: input.map(item => existingClientMap.get(item.clientRequestId!)!.id),
           duplicate: true,
           newlyAddedContact: null,
         };
@@ -1052,7 +1250,7 @@ export const expenseRouter = router({
       const references = await resolveExpenseReferences(itemsToInsert, userId, requestUserType);
 
       // Under the understanding engine each item takes what its reading knew (the user's own log rows, loaded once).
-      const fromReadings: ReadingEnrichment[] = (await currentRecordingEngine()) === "understanding"
+      const fromReadings: ReadingEnrichment[] = itemsToInsert.some(item => item.readingItemId) || (await currentRecordingEngine()) === "understanding"
         ? await enrichFromReadings(owner, itemsToInsert)
         : itemsToInsert.map(() => ({}));
 
@@ -1073,41 +1271,45 @@ export const expenseRouter = router({
         counterWalletId: item.counterWalletId,
         movementKind: item.movementKind,
         clientRequestId: item.clientRequestId,
+        purpose: item.purpose,
         ...fromReadings[index],
       }));
 
       // ─── ACID Transaction: batch insert + rollups + contact counts + streak (api/services/ledger-writer.ts) ───
       // The ids let the app offer "undo" for exactly what it just saved.
-      let insertedIds: number[] = [];
-      try {
-        await db.transaction(async (tx) => {
-          insertedIds = await insertLedgerEntriesInTx(tx, owner, entries);
-          await bumpStreakInTx(tx, owner);
-        });
-      } catch (err: unknown) {
-        if (clientRequestIds.length > 0 && isDuplicateEntryError(err)) {
-          const allExisting = await ledgerEntriesByRequestId(owner, clientRequestIds);
-          return {
-            success: true,
-            count: allExisting.length,
-            duplicate: true,
-            newlyAddedContact: references[0]?.newlyAddedContact ?? null,
-          };
+      const { inserted, ids } = await db.transaction(async (tx) => {
+        await lockLedgerOwner(tx, owner);
+        const seen = new Map<string, number>();
+        if (clientRequestIds.length) {
+          const rows = await tx.select({ id: expenses.id, key: expenses.clientRequestId }).from(expenses)
+            .where(and(eq(expenses.userId, userId), eq(expenses.userType, requestUserType),
+              inArray(expenses.clientRequestId, clientRequestIds))).for("update");
+          for (const row of rows) if (row.key) seen.set(row.key, row.id);
         }
-        throw err;
-      }
+        const pending = entries.flatMap((entry, index) => entry.clientRequestId && seen.has(entry.clientRequestId) ? [] : [index]);
+        const newIds = await insertLedgerEntriesInTx(tx, owner, pending.map(i => entries[i]));
+        if (newIds.length) await bumpStreakInTx(tx, owner);
+        const saved = new Map<(typeof input)[number], number>();
+        pending.forEach((index, n) => saved.set(itemsToInsert[index], newIds[n]));
+        const ids = input.map(item => {
+          const id = saved.get(item) ?? (item.clientRequestId ? seen.get(item.clientRequestId) : undefined);
+          if (!id) throw new TRPCError({ code: "CONFLICT", message: "القائمة اتغيّرت. جرّب تحفظها تاني." });
+          return id;
+        });
+        return { inserted: pending, ids };
+      });
 
-      // Non-critical side effects (outside transaction)
-      // Each item teaches from its own clause of the sentence (reviewCorrection).
-      for (const item of itemsToInsert) {
-        await learnFromReview(userId as number, requestUserType, item.classificationLogId, item);
+      for (const index of inserted) {
+        const item = itemsToInsert[index];
+        await learnFromReview(userId, requestUserType, item.classificationLogId, item);
       }
-      await afterLedgerWrite(owner, { spending: input.some((item) => item.type === "expense") });
-
+      if (inserted.length) await afterLedgerWrite(owner, { spending: inserted.some(i => itemsToInsert[i].type === "expense") });
+      const insertedIds = inserted.map(i => ids[input.indexOf(itemsToInsert[i])]);
       return {
         success: true,
-        count: entries.length + existingClientMap.size,
-        ids: insertedIds,
+        count: ids.length,
+        ids,
+        ...(inserted.length ? {} : { duplicate: true }),
         newlyAddedContact: references.find((reference) => reference.newlyAddedContact)?.newlyAddedContact || null,
         commitmentLinks: await commitmentLinksFor(owner, insertedIds),
       };
@@ -1120,6 +1322,8 @@ export const expenseRouter = router({
           startDate: z.string().optional(),
           endDate: z.string().optional(),
           category: z.string().max(ExpenseInputLimits.categoryMax).optional(),
+          spendingCategory: spendingCategorySchema.optional(),
+          businessId: z.number().int().positive().optional(),
           type: transactionTypeSchema.optional(),
           limit: z.number().min(1).max(100).default(50),
           cursor: z.number().optional(),
@@ -1146,15 +1350,21 @@ export const expenseRouter = router({
           conditions.push(lte(expenses.date, parseBusinessInstant(input.endDate)));
         if (input?.category)
           conditions.push(eq(expenses.category, input.category));
+        if (input?.spendingCategory) {
+          const scope = input.businessId
+            ? eq(expenses.businessId, input.businessId)
+            : sql`(${expenses.businessId} IS NULL OR ${expenses.businessId} = 0)`;
+          conditions.push(scope, confirmedExpense, spendingRowSql, spendingCategoryFilter(input.spendingCategory)!);
+        }
         if (input?.type) conditions.push(eq(ledgerBucketSql, input.type));
         if (input?.groupLinkedFees) conditions.push(standaloneLedgerRowSql);
-        if (input?.cursor) conditions.push(lt(expenses.id, input.cursor));
+        const pageConditions = input?.cursor ? [...conditions, lt(expenses.id, input.cursor)] : conditions;
 
         const items = await db
           .select(ledgerBundleColumns)
           .from(expenses)
           .leftJoin(linkedLedgerFee, ledgerBundleJoin)
-          .where(and(...conditions))
+          .where(and(...pageConditions))
           .orderBy(desc(expenses.id))
           .limit(input?.limit || 50)
           .offset(input?.offset || 0);
@@ -1162,7 +1372,7 @@ export const expenseRouter = router({
         const countResult = await db
           .select({ count: sql`count(*)` })
           .from(expenses)
-          .where(and(...conditions));
+          .where(and(...(input?.spendingCategory ? conditions : pageConditions)));
 
         return {
           items: items.map(({ entry, fee }) => input?.groupLinkedFees ? ledgerBundle(entry, fee) : ({ ...ledgerEntryWithPurpose(entry), bundle: null })),
@@ -1243,6 +1453,7 @@ export const expenseRouter = router({
         /** An expense whose money came back; stored negative (ledgerAmount). */
         refund: z.boolean().optional(),
         category: expenseCategory.optional(),
+        purpose: selectedPurposeSchema.optional(),
         subCategory: z
           .string()
           .max(ExpenseInputLimits.subCategoryMax || 100)
@@ -1277,17 +1488,16 @@ export const expenseRouter = router({
 
       // An edit stores a category the taxonomy holds, as every other write does: free text
       // and old names are resolved against the registry (a person category keeps its name).
-      const category =
-        input.category !== undefined ? normalizeCategoryName(input.category) : undefined;
-      const subCategory =
-        input.subCategory !== undefined
-          ? normalizeSubCategoryName(category ?? input.category ?? "", input.subCategory)
-          : undefined;
+      const selectedFiling = input.purpose && storedFiling(input.purpose.category, input.purpose.sub);
+      const category = selectedFiling?.category ?? (input.category !== undefined ? normalizeCategoryName(input.category) : undefined);
+      const subCategory = selectedFiling?.subCategory ?? (input.subCategory !== undefined
+        ? normalizeSubCategoryName(category ?? input.category ?? "", input.subCategory) : undefined);
 
       // The row, its stored sign, what it paid toward and its rollup move in one transaction; then muscle
       // memory and the ledger caches forget it (api/services/ledger-writer.ts). A correction has to clear every
       // layer that could replay the old answer, not only the one that learns from it.
       const originalExpense = await updateLedgerEntry({ userId, userType }, input.id, {
+        purpose: input.purpose,
         linkedFeeAmount: input.linkedFeeAmount,
         type: input.type,
         amount: input.amount,
@@ -1338,7 +1548,8 @@ export const expenseRouter = router({
       // ── Strategy 6: Auto-Learning Muscle Memory ──
       // When user corrects a category, extract keywords from rawText
       // and auto-save them to user_dictionaries for instant future matching.
-      const filingChanged = originalExpense && (
+      const purposeChanged = input.purpose && (originalExpense.purposeCategoryId !== input.purpose.category || originalExpense.purposeSubId !== input.purpose.sub);
+      const filingChanged = originalExpense && (purposeChanged ||
         (category !== undefined && originalExpense.category !== category) ||
         (subCategory !== undefined && originalExpense.subCategory !== subCategory)
       );
@@ -1356,6 +1567,7 @@ export const expenseRouter = router({
           const parsed = linkedLog?.finalResult;
           const multiItem = Array.isArray(parsed) && parsed.length > 1;
           const change = reviewCorrection(parsed, {
+            readingItemId: storedReadingItemId(originalExpense.parsedMetadata),
             category: newCategory, subCategory: newSubCategory, amount: Math.abs(Number(originalExpense.amount)), type: originalExpense.type,
           });
 
@@ -1384,11 +1596,16 @@ export const expenseRouter = router({
           // guaranteed to miss, so every correction made here vanished on write — which,
           // together with muscle memory skipping corrected rows outright, is why
           // correcting a category never changed anything.
-          if (multiItem && !change?.clause) return { success: true, newlyAddedContact };
+          const sameFilingClause = purposeChanged ? matchLogItem(parsed, {
+            amount: Math.abs(Number(originalExpense.amount)), readingItemId: storedReadingItemId(originalExpense.parsedMetadata),
+          })?.clause : undefined;
+          const clause = change?.clause ?? (typeof sameFilingClause === "string" ? sameFilingClause : undefined);
+          if (multiItem && !clause) return { success: true, newlyAddedContact };
           await recordCorrection({
             userId,
             userType,
-            originalText: change?.clause ?? originalExpense.rawText,
+            purpose: input.purpose && { ...input.purpose, version: TAXONOMY_VERSION },
+            originalText: clause ?? originalExpense.rawText,
             category: newCategory,
             subCategory: newSubCategory,
             type: input.type ?? originalExpense.type,
@@ -1699,7 +1916,7 @@ export const expenseRouter = router({
         input.month,
         input.salaryDay || 0,
         bizFilter ?? "all",
-      );
+      ) + `:purpose:v2:${TAXONOMY_VERSION}`;
       
       return withCache(cacheKey, ledgerCacheTtl({ month: input.month }), async () => {
         const { getFinancialMonthDayRange } =
@@ -1839,8 +2056,7 @@ export const expenseRouter = router({
         // 3. Category & subCategory breakdown using covering composite index
         const categoryRows = await db
           .select({
-            category: expenses.category,
-            subCategory: expenses.subCategory,
+            ...statsCategoryColumns,
             totalAmount: sql<string>`COALESCE(SUM(${expenses.amount}), 0)`,
             count: sql<number>`COUNT(*)`,
           })
@@ -1858,7 +2074,7 @@ export const expenseRouter = router({
               spendingRowSql,
             ),
           )
-          .groupBy(expenses.category, expenses.subCategory);
+          .groupBy(...statsCategoryGroup);
 
         const categoryMap: Record<string, { value: number; count: number }> = {};
         const subCategoryMap: Record<string, { value: number; count: number }> = {};
@@ -1951,32 +2167,16 @@ export const expenseRouter = router({
         .sort((a, b) => b.value - a.value);
 
       // Build children directly from SQL-aggregated categoryRows (§3.2 / Requirement 7)
-      const categoryToChildren = new Map<
-        string,
-        Array<{ name: string; value: number; count: number; avg: number; percentage: number }>
-      >();
+      const categoryToChildren = new Map<string, Map<string, { value: number; count: number }>>();
       for (const row of categoryRows) {
         if (!row.subCategory || row.subCategory === "عام") continue;
         const catName = normalizeStatsCategory(row.category);
-        if (!categoryToChildren.has(catName)) {
-          categoryToChildren.set(catName, []);
-        }
-        const val = Number(row.totalAmount || 0);
-        const cnt = Number(row.count || 0);
-        categoryToChildren.get(catName)!.push({
-          name: row.subCategory,
-          value: val,
-          count: cnt,
-          avg: cnt > 0 ? Math.round(val / cnt) : 0,
-          percentage:
-            totalExpense > 0
-              ? Math.round((val / totalExpense) * 100)
-              : 0,
-        });
-      }
-
-      for (const children of categoryToChildren.values()) {
-        children.sort((a, b) => b.value - a.value);
+        const children = categoryToChildren.get(catName) ?? new Map();
+        const child = children.get(row.subCategory) ?? { value: 0, count: 0 };
+        child.value += Number(row.totalAmount || 0);
+        child.count += Number(row.count || 0);
+        children.set(row.subCategory, child);
+        categoryToChildren.set(catName, children);
       }
 
       const sortedCategories = [...categoryBreakdown].sort(
@@ -1986,7 +2186,11 @@ export const expenseRouter = router({
         name: main.name,
         value: main.value,
         count: main.count,
-        children: categoryToChildren.get(main.name) || [],
+        children: [...(categoryToChildren.get(main.name) ?? [])].map(([name, { value, count }]) => ({
+          name, value, count,
+          avg: count > 0 ? Math.round(value / count) : 0,
+          percentage: totalExpense > 0 ? Math.round((value / totalExpense) * 100) : 0,
+        })).sort((a, b) => b.value - a.value),
       }));
 
       const recurringHints = subCategoryBreakdown
@@ -2113,8 +2317,7 @@ export const expenseRouter = router({
 
       const prevCategoryRows = await db
         .select({
-          category: expenses.category,
-          subCategory: expenses.subCategory,
+          ...statsCategoryColumns,
           totalAmount: sql<string>`COALESCE(SUM(${expenses.amount}), 0)`,
         })
         .from(expenses)
@@ -2131,7 +2334,7 @@ export const expenseRouter = router({
             spendingRowSql,
           ),
         )
-        .groupBy(expenses.category, expenses.subCategory);
+        .groupBy(...statsCategoryGroup);
 
       const previousCategoryMap: Record<string, number> = {};
       const previousSubCategoryMap: Record<string, number> = {};
@@ -2264,6 +2467,12 @@ export const expenseRouter = router({
         count: items.length,
         dailyAverage,
         categoryBreakdown: sortedCategories,
+        purposeBreakdown: spendingPurposeBreakdown(categoryRows, prevCategoryRows),
+        purposePeriod: {
+          startDate: startDate.toISOString(),
+          endDate: new Date(endDate.getTime() - 1).toISOString(),
+          businessId: bizFilter ?? undefined,
+        },
         subCategoryBreakdown,
         topCategories: sortedCategories.slice(0, 5),
         highestDay: highestDay
@@ -2468,6 +2677,7 @@ export const expenseRouter = router({
             eq(pendingClarifications.userId, userId),
             eq(pendingClarifications.userType, userType),
             eq(pendingClarifications.status, "pending"),
+            sql`JSON_EXTRACT(${pendingClarifications.contextData}, '$.chatConversationId') IS NULL`,
           ),
         )
         .orderBy(desc(pendingClarifications.createdAt));
@@ -2488,6 +2698,7 @@ export const expenseRouter = router({
             eq(pendingClarifications.userId, ctx.user!.id),
             eq(pendingClarifications.userType, ctx.user!.type),
             eq(pendingClarifications.status, "pending"),
+            sql`JSON_EXTRACT(${pendingClarifications.contextData}, '$.chatConversationId') IS NULL`,
           ),
         );
       return { success: Number((result as { affectedRows?: number })?.affectedRows ?? 0) === 1 };

@@ -36,6 +36,8 @@ const FEATURES: Row[] = [
 const AI_LIMITS: Row[] = [
   { kind: "number", label: "توكنز الذكاء في الشهر", hint: "كل القنوات مع بعض. بعدها الذكاء بيقف لحد أول الشهر الجاي.", key: (plan) => `${plan}_token_limit`, unit: "توكن" },
   { kind: "number", label: "جمل بتتفهم بالذكاء في اليوم", key: (plan) => `${plan}_daily_limit`, unit: "جملة" },
+  { kind: "number", label: "تسجيلات ذكية في الشهر", hint: "الكتابة والصوت والتسجيل من الشات. 0 = من غير حد.", key: (plan) => `recording_monthly_request_limit_${plan}`, unit: "تسجيل" },
+  { kind: "number", label: "توكنز التسجيل الذكي في الشهر", hint: "بما فيها قراءة التسجيل وتحويل الصوت لكلام. 0 = التسجيل الذكي مقفول.", key: (plan) => `recording_monthly_token_limit_${plan}`, unit: "توكن" },
   { kind: "number", label: "أطول رد في فهم الجملة", key: (plan) => `${plan}_max_per_request`, unit: "توكن" },
   { kind: "number", label: "طلبات ذكاء في الدقيقة", hint: "حماية من حد بيبعت طلبات ورا بعض.", key: (plan) => `burst_limit_per_minute_${plan}`, unit: "طلب" },
   { kind: "number", label: "رسايل الشات في اليوم", key: (plan) => `chatbot_daily_limit_${plan}`, unit: "رسالة" },

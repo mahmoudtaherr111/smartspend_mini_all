@@ -18,6 +18,7 @@ import {
   chatConversations,
   chatMessages,
   classificationLogs,
+  recordingRequests,
   expenseCategories,
   expenseDailyRollups,
   expenses,
@@ -200,6 +201,7 @@ export async function purgeUserData(
   await tx.delete(monthlyBehaviorSnapshots).where(userScope(monthlyBehaviorSnapshots, userId, userType));
   await tx.delete(userDictionaries).where(userScope(userDictionaries, userId, userType));
   await tx.delete(classificationLogs).where(userScope(classificationLogs, userId, userType));
+  await tx.delete(recordingRequests).where(userScope(recordingRequests, userId, userType));
   await tx.delete(voiceUsage).where(userScope(voiceUsage, userId, userType));
   await tx.delete(voiceCallIncidents).where(userScope(voiceCallIncidents, userId, userType));
   await tx.delete(voiceCalls).where(userScope(voiceCalls, userId, userType));

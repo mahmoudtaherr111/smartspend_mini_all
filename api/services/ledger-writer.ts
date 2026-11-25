@@ -11,6 +11,8 @@
  * Callers still decide what is written: the ownership of referenced wallets, businesses and contacts
  * (`assertEntityOwnership`), finding or creating the contact, and the category the taxonomy holds stay with them.
  */
+import { TAXONOMY_VERSION } from "../../contracts/taxonomy";
+import { purposeColumnsFor, selectPurpose, type SelectedPurpose } from "./recording/saved-reading";
 import { TRPCError } from "@trpc/server";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { captureAiJobs, captureEvents, expenses, localUsers, userContacts, users, userWallets } from "../../db/schema";
@@ -44,6 +46,7 @@ export interface LedgerOwner {
 
 /** One row to add. `amount` is a magnitude: the stored sign follows `type` and `direction` (`ledgerAmount`). */
 export interface NewLedgerEntry {
+  purpose?: SelectedPurpose;
   counterWalletId?: number | null;
   placeHint?: string | null;
   paymentMethod?: string | null;
@@ -70,6 +73,7 @@ export interface NewLedgerEntry {
 
 /** What an edit changes; anything left undefined is kept. `amount` is a magnitude. */
 export interface LedgerEntryChange {
+  purpose?: SelectedPurpose;
   /** Internal post-save capture feedback; HTTP callers expose only the purpose-question contract. */
   capturePurpose?: string;
   captureCategoryResolved?: boolean;
@@ -150,7 +154,8 @@ export async function insertLedgerEntriesInTx(tx: LedgerTx, owner: LedgerOwner, 
   await lockLedgerOwner(tx, owner);
   await assertWalletsInTx(tx, owner, entries.flatMap((entry) => [entry.walletId, entry.counterWalletId, financialMovement(entry)?.counterWalletId]));
   const financialEnabled = (await getSystemSettings(tx, { keys: ["capture_financial_version"], lock: true })).capture_financial_version === "cashflow-v1";
-  const normalized = entries.map((entry) => {
+  const normalized = entries.map((input) => {
+    const entry = input.purpose ? { ...input, ...selectPurpose(input.purpose, input, input.movementKind) } : input;
     if (!financialEnabled) {
       if (entry.counterWalletId) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "التحويل بين المحافظ لسه بيتجهز." });
       const metadata = { ...entry.parsedMetadata };
@@ -175,6 +180,7 @@ export async function insertLedgerEntriesInTx(tx: LedgerTx, owner: LedgerOwner, 
     amount: ledgerAmount(entry.type, entry.direction, entry.amount).toString(),
     category: entry.category,
     subCategory: entry.subCategory || "عام",
+    ...(entry.purpose ? { purposeVersion: TAXONOMY_VERSION, purposeCategoryId: entry.purpose.category, purposeSubId: entry.purpose.sub } : purposeColumnsFor(entry)),
     description: entry.description,
     rawText: entry.rawText ?? null,
     placeHint: entry.placeHint ?? null,
@@ -387,7 +393,9 @@ export async function updateLedgerEntryInTx(tx: LedgerTx, owner: LedgerOwner, id
   if (!financialEnabled && change.direction) set.parsedMetadata = { ...(row.parsedMetadata as Record<string, unknown> | null), direction: change.direction };
 
   const capturedMetadata = row.parsedMetadata as { capture?: { details?: Record<string, unknown> } } | null;
-  const filingChanged = (change.category !== undefined && change.category !== row.category) || (change.subCategory !== undefined && change.subCategory !== row.subCategory);
+  if (change.purpose) Object.assign(set, selectPurpose(change.purpose, { ...row, ...set, direction }, financial?.financial.kind ?? kind));
+  const purposeChanged = !!change.purpose && (set.purposeCategoryId !== row.purposeCategoryId || set.purposeSubId !== row.purposeSubId);
+  const filingChanged = purposeChanged || (change.category !== undefined && change.category !== row.category) || (change.subCategory !== undefined && change.subCategory !== row.subCategory);
   if (capturedMetadata?.capture && (change.captureCategoryResolved || change.capturePurpose || filingChanged)) {
     set.parsedMetadata = { ...(set.parsedMetadata as Record<string, unknown> | undefined ?? row.parsedMetadata as Record<string, unknown> | null),
       capture: { ...capturedMetadata.capture, provisional: false, details: { ...capturedMetadata.capture.details, categoryPending: false,
@@ -396,14 +404,16 @@ export async function updateLedgerEntryInTx(tx: LedgerTx, owner: LedgerOwner, id
 
   // Keep the original reading for history, but a later refiling must take precedence, even if
   // the row is eventually filed back under the same legacy pair.
-  if (filingChanged || (set.type !== undefined && set.type !== row.type)) {
+  const meaningChanged = financial && (financialMovement(row)?.kind !== financial.financial.kind ||
+    financialMovement(row)?.movement !== financial.financial.movement);
+  if (filingChanged || meaningChanged || (set.type !== undefined && set.type !== row.type)) {
     const metadata = (set.parsedMetadata ?? row.parsedMetadata) as Record<string, unknown> | null;
     const reading = metadata?.reading;
     if (reading && typeof reading === "object" && !Array.isArray(reading)) {
       set.parsedMetadata = { ...metadata, reading: { ...reading, superseded: true } };
     }
+    if (!change.purpose) Object.assign(set, purposeColumnsFor({ ...row, ...set }));
   }
-
   await tx.update(expenses).set(set).where(own);
   if (change.contactId !== undefined && change.contactId !== row.contactId) {
     if (row.contactId) await tx.update(userContacts).set({ transactionCount: sql`GREATEST(COALESCE(${userContacts.transactionCount}, 1) - 1, 0)` }).where(and(eq(userContacts.id, row.contactId), eq(userContacts.userId, owner.userId), eq(userContacts.userType, owner.userType)));

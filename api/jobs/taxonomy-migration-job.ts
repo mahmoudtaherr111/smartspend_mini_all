@@ -19,6 +19,7 @@
  */
 import { and, eq, inArray, or, sql, type SQL } from "drizzle-orm";
 import { financialMovement, normalizeFinancialMovement } from "../../contracts/ledger-movement";
+import { purposeColumnsFor } from "../services/recording/saved-reading";
 import { getSystemSettings } from "../lib/settings-cache";
 import { db } from "../queries/connection";
 import {
@@ -156,7 +157,7 @@ export async function runTaxonomyMigrationJob(batchSize = 500): Promise<{
         type: financial?.type ?? change.type,
         amount: financial ? ledgerAmount(financial.type, financial.financial.movement === "in" ? "incoming" : "outgoing", current.amount).toString() : current.amount,
         parsedMetadata: metadata };
-      await tx.update(expenses).set({ category: after.category, subCategory: after.subCategory, type: after.type, amount: after.amount, parsedMetadata: metadata }).where(own);
+      await tx.update(expenses).set({ ...purposeColumnsFor(after), category: after.category, subCategory: after.subCategory, type: after.type, amount: after.amount, parsedMetadata: metadata }).where(own);
       await applyExpenseRollupDelta(tx, expenseToRollupDelta(current, -1));
       await applyExpenseRollupDelta(tx, expenseToRollupDelta(after, 1));
       return true;

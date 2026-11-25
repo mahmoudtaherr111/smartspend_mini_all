@@ -170,6 +170,7 @@ flowchart LR
   router_expense ==> tbl_classification_logs
   router_expense ==> tbl_installment_plans
   router_export --> mod_ledger
+  router_export --> sys_expense_capture
   router_export --> sys_platform
   router_export -.-> tbl_expenses
   router_goals --> mod_ledger

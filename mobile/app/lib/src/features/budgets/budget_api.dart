@@ -23,6 +23,7 @@ class BudgetApi {
   Future<int> createBudget({
     required String title,
     String? category,
+    String? purposeCategoryId,
     required double monthlyLimit,
     int periodStartDay = 1,
     int? linkedGoalId,
@@ -32,6 +33,7 @@ class BudgetApi {
       'title': title.trim(),
       if (category != null && category.trim().isNotEmpty)
         'category': category.trim(),
+      'purposeCategoryId': ?purposeCategoryId,
       'monthlyLimit': monthlyLimit,
       'periodStartDay': periodStartDay,
       'linkedGoalId': ?linkedGoalId,
@@ -47,6 +49,7 @@ class BudgetApi {
     required int budgetId,
     String? title,
     String? category,
+    String? purposeCategoryId,
     double? monthlyLimit,
     int? periodStartDay,
     int? linkedGoalId,
@@ -57,6 +60,9 @@ class BudgetApi {
     if (title != null) args['title'] = title.trim();
     if (category != null) {
       args['category'] = category.trim().isEmpty ? '' : category.trim();
+    }
+    if (category != null || purposeCategoryId != null) {
+      args['purposeCategoryId'] = purposeCategoryId;
     }
     if (monthlyLimit != null) args['monthlyLimit'] = monthlyLimit;
     if (periodStartDay != null) args['periodStartDay'] = periodStartDay;

@@ -221,3 +221,7 @@ default; only a disposable local MySQL was migrated. Question display/answers an
 identity lock with ledger writes. No network/model call is made while that transaction is held.
 
 Authenticated clients can read the purpose catalog through taxonomy.get, including its version, stable ids, Arabic and English labels, icons and group. Version 2.1 adds packaged snacks and drinks under groceries and marketing and shipping under work. Marketing and shipping also have stored work subcategories. Shared save inputs retain the stated direction of investment movements.
+
+Migration 0053 adds versioned purpose ids to expenses. When the saved evidence establishes a purpose, the ledger writer stores the ids alongside the existing filing. Nullable ids retain broad historical meanings. The maintenance command `npx tsx scripts/agent/backfill-recording-purpose.ts local 123` previews one account. Adding `--apply` locks each batch, sets only unversioned purpose fields and preserves ledger dates, amounts and update timestamps. Repeating the command skips completed rows.
+
+Migration 0054 adds the versioned purpose of an explicit user correction to a learned rule. This preserves the selected leaf when two leaves share an accounting name.

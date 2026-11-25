@@ -31,7 +31,7 @@ import { db } from "../../queries/connection";
 import { createLedgerEntry, updateLedgerEntry } from "../ledger-writer";
 import { recordingEngineOf } from "../recording/engine-switch";
 import { loadReadingLogItems } from "../recording/reading-log";
-import { readingItemFor } from "../recording/saved-reading";
+import { readingItemFor, storedReadingItemId } from "../recording/saved-reading";
 import { addDynamicContact } from "../user-profile-service";
 import { GAM3EYA_SUBCATEGORY, LOAN_CATEGORY, LOAN_SUBCATEGORY } from "../debt-ledger";
 import {
@@ -772,7 +772,7 @@ export async function matchSavedExpenses(user: CoachUser, expenseIds: number[]):
     const hints = await db.select().from(commitmentHints).where(and(eq(commitmentHints.userId, user.userId), eq(commitmentHints.userType, user.userType)));
     const catalog = await catalogFor(active.map((row) => row.catalogSlug));
     // Under the understanding engine a payment's reading may name its commitment: read from the user's own log rows.
-    const readings = recordingEngineOf(settings) === "understanding"
+    const readings = payments.some(payment => storedReadingItemId(payment.parsedMetadata)) || recordingEngineOf(settings) === "understanding"
       ? await loadReadingLogItems(user, payments.map((payment) => payment.classificationLogId))
       : new Map<number, unknown>();
     const results: CommitmentLinkResult[] = [];
@@ -799,7 +799,7 @@ export async function matchSavedExpenses(user: CoachUser, expenseIds: number[]):
       }
       const magnitude = Math.abs(Number(payment.amount));
       const read = payment.classificationLogId && readings.has(payment.classificationLogId)
-        ? readingItemFor(readings.get(payment.classificationLogId), { amount: magnitude })
+        ? readingItemFor(readings.get(payment.classificationLogId), { amount: magnitude, readingItemId: storedReadingItemId(payment.parsedMetadata) })
         : null;
       const decision = decideMatch({
         id: payment.id, amount: magnitude, text: `${payment.description ?? ""} ${payment.rawText ?? ""}`,

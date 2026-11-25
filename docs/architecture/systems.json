@@ -17,6 +17,7 @@
         "expense.create",
         "expense.batchCreate",
         "expense.answerClarification",
+        "expense.commitPartialReading",
         "expense.getPendingClarifications",
         "expense.dismissClarification",
         "expense.createCategory",

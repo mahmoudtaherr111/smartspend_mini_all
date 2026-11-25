@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../ledger_models.dart';
+
 /// Data extracted from a scanned receipt (`image.parseReceipt`).
 @immutable
 final class ReceiptData {
@@ -13,6 +15,7 @@ final class ReceiptData {
     this.confidence = 1.0,
     this.ocrText,
     this.expenseId,
+    this.purpose,
   });
 
   final num amount;
@@ -24,6 +27,7 @@ final class ReceiptData {
   final num confidence;
   final String? ocrText;
   final int? expenseId;
+  final SpendingPurpose? purpose;
 
   factory ReceiptData.fromJson(Map<String, dynamic> json) {
     return ReceiptData(
@@ -36,6 +40,7 @@ final class ReceiptData {
       confidence: json['confidence'] as num? ?? 1.0,
       ocrText: json['ocrText'] as String?,
       expenseId: json['expenseId'] as int?,
+      purpose: SpendingPurpose.fromJson(json['purpose']),
     );
   }
 }

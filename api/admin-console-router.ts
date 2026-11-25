@@ -21,6 +21,7 @@ import { dailyAiCapUsd } from "./lib/feature-switches";
 import { businessDayRange, businessMonthRange, startOfBusinessDay } from "./lib/app-time";
 import { getCacheRuntimeStatus } from "./lib/redis-client";
 import { getSystemSettings } from "./lib/settings-cache";
+import { getRecordingUsage, recordingLimits } from "./services/recording/admission";
 import { SETTINGS } from "./lib/system-settings-registry";
 import { adminProcedure, moderatorProcedure, router } from "./middleware";
 import { listAdminAlerts, markAdminAlertsRead } from "./services/admin-alerts";
@@ -213,7 +214,8 @@ export const adminConsoleRouter = router({
     // The Cairo month (golden rule 6).
     const monthStart = businessMonthRange().start;
 
-    const [recent, totals, monthCount, aiMonth, aiCalls, devices, captures, purchases, tickets] = await Promise.all([
+    const recordingOwner = { id: input.id, type: input.type, plan: profile.plan ?? undefined };
+    const [recent, totals, monthCount, aiMonth, aiCalls, devices, captures, purchases, tickets, recordingUsage, settings] = await Promise.all([
       db
         .select({
           id: expenses.id,
@@ -278,6 +280,8 @@ export const adminConsoleRouter = router({
         .where(mine(supportTickets))
         .orderBy(desc(supportTickets.createdAt))
         .limit(10),
+      getRecordingUsage(recordingOwner),
+      getSystemSettings(),
     ]);
 
     return {
@@ -300,6 +304,7 @@ export const adminConsoleRouter = router({
         output: Number(aiMonth[0]?.output ?? 0),
         usd: Number(aiMonth[0]?.usd ?? 0),
       },
+      recordingThisMonth: { ...recordingUsage, limits: recordingLimits(settings, recordingOwner) },
       recent,
       aiCalls,
       devices: devices.map((device) => ({ ...device, ...readClient(device.userAgent) })),

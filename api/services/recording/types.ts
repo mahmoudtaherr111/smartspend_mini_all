@@ -31,6 +31,7 @@ export interface ReadingSummary {
 export type PurposeLabels = { categoryAr: string; subAr: string; categoryEn: string; subEn: string };
 
 export type RecordedItem = ParsedTransaction & {
+  readingItemId?: string;
   reading?: ReadingSummary;
   purposeLabels?: PurposeLabels;
 };
@@ -82,4 +83,6 @@ export interface ParseResponse {
   processingTimeMs: number;
   trace: UnderstandingTrace;
   classificationLogId?: number;
+  /** A compatible client may atomically book the complete items and open amount questions. */
+  partialReady?: boolean;
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:smartspend_app/src/features/ledger/offline/ledger_store.dart';
 import 'package:smartspend_app/src/features/ledger/record_composer.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
@@ -163,6 +164,84 @@ void main() {
       'answer': '500',
     });
     expect(restarted.ledgerStore.ledger.outbox, isEmpty);
+  });
+
+  testWidgets('voice partial booking survives a lost reply and restart', (
+    tester,
+  ) async {
+    var attempts = 0;
+    final fakeApi = FakeApi()..answer('localAuth.me', (_) => phoneUser());
+    answerSampleMonth(fakeApi);
+    fakeApi
+      ..answer(
+        'ai.parseVoiceExpense',
+        (_) => {
+          'text': 'دفعت 150 سوبرماركت ودفعت الكهربا',
+          'decision': 'review',
+          'classificationLogId': 789,
+          'partialReady': true,
+          'items': [
+            {'amount': 150, 'type': 'expense', 'category': 'أكل وشرب'},
+          ],
+        },
+      )
+      ..answer('expense.commitPartialReading', (_) {
+        if (++attempts == 1) throw http.ClientException('Lost reply');
+        return {
+          'savedIds': [101],
+          'questions': [
+            {'id': 32, 'question': 'الكهربا كانت بكام؟'},
+          ],
+        };
+      })
+      ..answer('expense.getPendingClarifications', (_) {
+        if (attempts < 2) return <Object?>[];
+        return [
+          {'id': 32, 'question': 'الكهربا كانت بكام؟'},
+        ];
+      });
+    final app = TestApp(token: 'stored-token', api: fakeApi);
+    await app.pump(tester);
+    await _recordVoice(tester);
+
+    expect(
+      fakeApi.lastInput('ai.parseVoiceExpense'),
+      containsPair('partialBooking', true),
+    );
+    final stored = app.ledgerStore.ledger.toJson();
+    expect(
+      stored.toString(),
+      isNot(contains('دفعت 150 سوبرماركت ودفعت الكهربا')),
+    );
+    expect(
+      app.ledgerStore.ledger.outbox.single.parse?.classificationLogId,
+      789,
+    );
+    expect(app.ledgerStore.ledger.outbox.single.state, OutboxState.queued);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    final restarted = TestApp(token: 'stored-token', api: fakeApi);
+    restarted.ledgerStore.ledger = StoredLedger.fromJson(stored);
+    await restarted.pump(tester);
+
+    expect(restarted.ledgerStore.ledger.outbox, isEmpty);
+    expect(
+      fakeApi.paths.where((path) => path == 'ai.parseVoiceExpense'),
+      hasLength(1),
+    );
+    expect(
+      fakeApi.calls
+          .where((call) => call.path == 'expense.commitPartialReading')
+          .map((call) => call.input),
+      [
+        {'classificationLogId': 789},
+        {'classificationLogId': 789},
+      ],
+    );
+    expect(
+      find.byKey(const ValueKey('pending-clarification-32')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('voice review survives a failed save with the same request id', (

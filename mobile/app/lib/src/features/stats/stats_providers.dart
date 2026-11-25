@@ -123,7 +123,12 @@ final monthStatsProvider = FutureProvider<MonthStats>((ref) async {
 });
 
 /// Identifies one category's transactions in one month ("2026-10").
-typedef CategoryMonthQuery = ({String category, String month});
+typedef CategoryMonthQuery = ({
+  String category,
+  String month,
+  String? purposeCategoryId,
+  String? legacyCategory,
+});
 
 /// One category's expense rows in one month (`expense.list`), a page at a time, with optimistic hide/restore for
 /// undoable deletion.
@@ -140,6 +145,29 @@ class CategoryTransactions extends AsyncNotifier<LedgerListState> {
   static const pageSize = 30;
   final CategoryMonthQuery query;
 
+  Map<String, String>? get _spendingCategory {
+    if (query.purposeCategoryId case final String id) {
+      return {'kind': 'purpose', 'id': id};
+    }
+    if (query.legacyCategory case final String name) {
+      return {'kind': 'legacy', 'name': name};
+    }
+    return null;
+  }
+
+  bool _inCategory(LedgerEntry entry) {
+    if (_spendingCategory == null) return entry.category == query.category;
+    if ((entry.businessId ?? 0) != 0 ||
+        (entry.status != null && entry.status != 'confirmed')) {
+      return false;
+    }
+    final id = query.purposeCategoryId;
+    return id != null
+        ? entry.reportPurposeCategoryId == id
+        : entry.reportPurposeCategoryId == null &&
+              entry.category == query.legacyCategory;
+  }
+
   @override
   Future<LedgerListState> build() async {
     final scope = ref.watch(_statsSessionScopeProvider);
@@ -153,7 +181,8 @@ class CategoryTransactions extends AsyncNotifier<LedgerListState> {
           .watch(ledgerApiProvider)
           .list(
             limit: pageSize,
-            category: query.category,
+            category: _spendingCategory == null ? query.category : null,
+            spendingCategory: _spendingCategory,
             type: 'expense',
             startDate: range.startDay,
             endDate: '${range.endDay}T23:59:59.999',
@@ -171,8 +200,8 @@ class CategoryTransactions extends AsyncNotifier<LedgerListState> {
       if (recent != null) {
         final matching = [
           for (final entry in recent.entries)
-            if (entry.type == 'expense' &&
-                entry.category == query.category &&
+            if (entry.displayType == 'expense' &&
+                _inCategory(entry) &&
                 _inRange(entry.date, range))
               entry,
         ];
@@ -207,7 +236,8 @@ class CategoryTransactions extends AsyncNotifier<LedgerListState> {
           .list(
             limit: pageSize,
             before: current.entries.last.id,
-            category: query.category,
+            category: _spendingCategory == null ? query.category : null,
+            spendingCategory: _spendingCategory,
             type: 'expense',
             startDate: range.startDay,
             endDate: '${range.endDay}T23:59:59.999',

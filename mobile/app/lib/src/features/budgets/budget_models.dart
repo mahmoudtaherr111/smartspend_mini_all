@@ -6,6 +6,8 @@ final class BudgetStatus {
     required this.id,
     required this.title,
     this.category,
+    this.purposeCategoryId,
+    this.purposeCategory,
     required this.monthlyLimit,
     this.periodStartDay = 1,
     this.linkedGoalId,
@@ -22,6 +24,9 @@ final class BudgetStatus {
   final int id;
   final String title;
   final String? category;
+  final String? purposeCategoryId;
+  final String? purposeCategory;
+  String? get categoryLabel => purposeCategory ?? category;
   final double monthlyLimit;
   final int periodStartDay;
   final int? linkedGoalId;
@@ -34,7 +39,7 @@ final class BudgetStatus {
   final DateTime? cycleStart;
   final DateTime? cycleEnd;
 
-  bool get isOverall => category == null || category!.trim().isEmpty;
+  bool get isOverall => categoryLabel?.trim().isNotEmpty != true;
   bool get isActive => status == 'active';
   double get remaining => math.max(0.0, monthlyLimit - currentSpent);
   double get overspent => math.max(0.0, currentSpent - monthlyLimit);
@@ -44,6 +49,8 @@ final class BudgetStatus {
       id: (json['id'] as num).toInt(),
       title: json['title'] as String? ?? '',
       category: json['category'] as String?,
+      purposeCategoryId: json['purposeCategoryId'] as String?,
+      purposeCategory: json['purposeCategory'] as String?,
       monthlyLimit: (num.tryParse(json['monthlyLimit']?.toString() ?? '0') ?? 0)
           .toDouble(),
       periodStartDay: (json['periodStartDay'] as num?)?.toInt() ?? 1,

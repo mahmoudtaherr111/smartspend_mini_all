@@ -4,7 +4,7 @@
 views {
   dynamic view flow_ai_chat {
     title 'Flow · a question in the AI Center'
-    description 'chat.sendMessage stores the message and, while the AI kernel is enabled in settings, runs it. The kernel plans the turn without a model (intent, data needs, a clarifying question when something is missing), resolves the facts through the finance semantic layer, and makes at most one model call to word the answer, whose numbers are then checked against the facts. Actions are drafted as pending and run only after the user confirms them.'
+    description 'The AI kernel plans questions without a model, resolves facts through the finance semantic layer, and can make one model call to word an answer. When understanding is enabled, chat sends completed narration through the shared sentence reader. A clean narration can save automatically and the chat offers undo. An explicit request or a reading that needs review waits for confirmation. A mixed turn answers its ledger question after the recording result is committed.'
 
     user -> smartspend.web.pages.AICenter 'asks a question or requests an action' // intent: the person opens the page
     smartspend.web.pages.AICenter -> smartspend.api.trpc.chat.sendMessage 'send the message'
@@ -13,7 +13,7 @@ views {
     smartspend.api.modules.ai-kernel -> smartspend.api.modules.finance-semantic-layer 'resolve the facts'
     smartspend.api.modules.ai-kernel -> smartspend.api.modules.ai-providers 'at most one call, only when the facts need wording'
     smartspend.api.modules.ai-providers -> fireworks 'the chat models the admin assigned, then the chatbot settings (DeepSeek V4 Flash on Fireworks by default), then Gemini'
-    smartspend.api.trpc.chat.sendMessage -> smartspend.api.modules.ai-actions 'draft an action for confirmation'
+    smartspend.api.trpc.chat.sendMessage -> smartspend.api.modules.ai-actions 'record completed narration or draft an action for confirmation'
     smartspend.api.modules.ai-actions -> smartspend.mysql.ai_pending_actions 'pending action'
     smartspend.web.pages.AICenter <- smartspend.api.trpc.chat.sendMessage 'answer, artifacts and any draft action'
     smartspend.web.pages.AICenter -> smartspend.api.trpc.chat.confirmAction 'user confirms the draft'

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { chatRouter } from "./chat-router";
-import { aiConversationSummaries, aiMemoryItems } from "../db/schema";
+import { aiConversationSummaries, aiMemoryItems, aiPendingActions, pendingClarifications } from "../db/schema";
 
 const { dbMock, selectQueries, updateQueries, deleteQueries } = vi.hoisted(
   () => {
@@ -48,7 +48,7 @@ const { dbMock, selectQueries, updateQueries, deleteQueries } = vi.hoisted(
       update: vi.fn((table: unknown) => {
       return {
         set: vi.fn((values: Record<string, unknown>) => {
-          updateQueries.push(values);
+          updateQueries.push({ table, values });
           return {
             where: vi.fn(() => Promise.resolve([{ affectedRows: 1 }])),
           };
@@ -144,8 +144,10 @@ describe("chat router phase 6 memory controls & privacy", () => {
 
     expect(result).toEqual({ success: true });
     expect(deleteQueries.length).toBe(3); // chatMessages, summaries, and chatConversations
-    // Check that updateQueries or deleteQueries do not target aiMemoryItems for deletion
-    const touchedMemory = updateQueries.some((q) => "status" in q);
-    expect(touchedMemory).toBe(false);
+    expect([...updateQueries, ...deleteQueries].some(query => query.table === aiMemoryItems)).toBe(false);
+    expect(updateQueries).toEqual([
+      { table: pendingClarifications, values: { status: "ignored" } },
+      { table: aiPendingActions, values: expect.objectContaining({ status: "cancelled" }) },
+    ]);
   });
 });

@@ -71,6 +71,8 @@ final isAssistantTypingProvider =
 
 /// Messages in the active conversation thread (AI-01).
 class ChatMessagesNotifier extends Notifier<AsyncValue<List<ChatMessage>>> {
+  ({String text, int? conversationId, String id})? _retryTurn;
+
   @override
   AsyncValue<List<ChatMessage>> build() {
     final convId = ref.watch(activeConversationIdProvider);
@@ -122,11 +124,22 @@ class ChatMessagesNotifier extends Notifier<AsyncValue<List<ChatMessage>>> {
     ref.read(dailyLimitErrorProvider.notifier).clear();
 
     final activeConvId = ref.read(activeConversationIdProvider);
+    final retryTurn = _retryTurn;
+    final turnId =
+        retryTurn?.text == cleanText &&
+            retryTurn?.conversationId == activeConvId
+        ? retryTurn!.id
+        : ref.read(ledgerApiProvider).newRequestId();
+    _retryTurn = (text: cleanText, conversationId: activeConvId, id: turnId);
 
     try {
       final res = await ref
           .read(aiApiProvider)
-          .sendMessage(message: cleanText, conversationId: activeConvId);
+          .sendMessage(
+            message: cleanText,
+            conversationId: activeConvId,
+            clientTurnId: turnId,
+          );
 
       final newConvId = (res['conversationId'] as num?)?.toInt();
       if (newConvId != null && activeConvId == null) {
@@ -135,12 +148,16 @@ class ChatMessagesNotifier extends Notifier<AsyncValue<List<ChatMessage>>> {
       }
 
       final responseText = (res['response'] as String?) ?? '';
+      if (res['ledgerChanged'] == true ||
+          ((res['recordedExpenseIds'] as List?)?.isNotEmpty ?? false)) {
+        refreshLedgerViews(ref);
+      }
       AiActionDraft? actionDraft;
       AiClarification? clarification;
 
       final structured = res['structured'] as Map<String, Object?>?;
       if (structured != null) {
-        final actionData = structured['action'] as Map<String, Object?>?;
+        final actionData = chatActionData(structured);
         if (actionData != null) {
           actionDraft = AiActionDraft.fromJson(actionData);
         }
@@ -161,6 +178,7 @@ class ChatMessagesNotifier extends Notifier<AsyncValue<List<ChatMessage>>> {
       );
 
       state = AsyncValue.data([...state.value ?? [], assistantMessage]);
+      _retryTurn = null;
       ref.read(chatDraftProvider.notifier).clear();
       ref.read(isAssistantTypingProvider.notifier).set(false);
       return true;
@@ -196,6 +214,35 @@ class ChatMessagesNotifier extends Notifier<AsyncValue<List<ChatMessage>>> {
       return msg;
     }).toList();
     state = AsyncValue.data(updated);
+  }
+
+  void showActionFollowUp(String content, List<Object?> artifacts) {
+    for (final artifact in artifacts.whereType<Map<String, Object?>>()) {
+      if (artifact['type'] != 'action_confirmation') continue;
+      final payload = artifact['payload'];
+      if (payload is! Map<String, Object?> ||
+          payload['actionName'] != 'action.undo')
+        continue;
+      final draft = AiActionDraft.fromJson(payload);
+      final messages = state.value ?? [];
+      if (draft.actionId == 0 ||
+          messages.any(
+            (message) => message.actionDraft?.actionId == draft.actionId,
+          ))
+        return;
+      final now = DateTime.now();
+      state = AsyncValue.data([
+        ...messages,
+        ChatMessage(
+          id: now.microsecondsSinceEpoch,
+          role: 'assistant',
+          content: content,
+          createdAt: now,
+          actionDraft: draft,
+        ),
+      ]);
+      return;
+    }
   }
 
   void clearLocal() {

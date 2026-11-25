@@ -6,16 +6,24 @@ final class CategoryAmount {
     required this.name,
     required this.amount,
     required this.count,
+    this.purposeCategoryId,
+    this.legacyCategory,
   });
 
   final String name;
   final num amount;
   final int count;
+  final String? purposeCategoryId;
+  final String? legacyCategory;
 
   Map<String, Object?> toJson() => {
     'name': name,
     'value': amount,
     'count': count,
+    if (purposeCategoryId case final String id)
+      'category': {'kind': 'purpose', 'id': id}
+    else if (legacyCategory case final String name)
+      'category': {'kind': 'legacy', 'name': name},
   };
 }
 
@@ -77,14 +85,22 @@ final class MonthStats {
     );
     final topDay = _object(insights['topSpendingDay']);
     final recurring = _object(insights['mostRecurringExpense']);
+    final breakdown = json['purposeBreakdown'] ?? json['categoryBreakdown'];
     final categories = [
-      for (final raw
-          in (json['categoryBreakdown'] as List<Object?>? ?? const []))
+      for (final raw in (breakdown as List<Object?>? ?? const []))
         if (raw case {'name': final String name, 'value': final Object? value})
           CategoryAmount(
             name: name,
             amount: readAmount(value) ?? 0,
             count: (raw['count'] as num?)?.toInt() ?? 0,
+            purposeCategoryId: switch (raw['category']) {
+              {'kind': 'purpose', 'id': final String id} => id,
+              _ => null,
+            },
+            legacyCategory: switch (raw['category']) {
+              {'kind': 'legacy', 'name': final String category} => category,
+              _ => null,
+            },
           ),
     ];
     final dayTrend = [

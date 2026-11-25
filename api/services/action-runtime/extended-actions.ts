@@ -23,6 +23,7 @@ import { classifyText } from "../../lib/classify-text";
 import { bumpFinanceCacheGen, invalidateFinanceUserCache } from "../finance-semantic-layer";
 import { getSmartProfile, saveSmartProfile } from "../user-profile-service";
 import { releaseSettlementsOf } from "../coach/cashflows";
+import { undoChatReading } from "./chat-recording";
 import type {
   ActionRuntimeContext,
   BudgetCreatePayload,
@@ -978,6 +979,11 @@ async function undoAction(
   }
 
   if (target.actionName === "expense.create") {
+    if (Array.isArray(targetPayload.expenseIds) && targetPayload.expenseIds.length) {
+      const expenseIds = z.array(z.number().int().positive()).parse(targetPayload.expenseIds);
+      const questionIds = z.array(z.number().int().positive()).optional().parse(targetPayload.questionIds);
+      return undoChatReading(ctx, target, { expenseIds, questionIds });
+    }
     const expenseId = Number(targetPayload.expenseId);
     if (!expenseId) throw new Error("Expense action has no expenseId to undo");
 

@@ -50,6 +50,7 @@ flowchart LR
   sys_ai_center --> sys_insights
   sys_ai_center --> sys_money
   sys_ai_center --> sys_voice_calls
+  sys_ai_platform --> sys_expense_capture
   sys_ai_platform --> sys_voice_calls
   sys_bank_messages --> sys_accounts
   sys_bank_messages --> sys_ai_center

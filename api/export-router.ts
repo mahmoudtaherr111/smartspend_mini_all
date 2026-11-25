@@ -9,11 +9,12 @@ import {
 import { wrapReportAsPrintableHtml } from "./services/pro-report-engine";
 import { db } from "./queries/connection";
 import { expenses, users, localUsers } from "../db/schema";
-import { eq, and, desc, gte, lte } from "drizzle-orm";
+import { eq, and, desc, gte, lte, isNull, or } from "drizzle-orm";
 import { businessDateKey, parseBusinessInstant } from "./lib/app-time";
 import ExcelJS from "exceljs";
 import { financialBucket } from "../contracts/ledger-movement";
 import { ledgerBucketSql } from "./services/ledger-semantics";
+import { labelsFromColumns, type PurposeColumns } from "./services/recording/saved-reading";
 
 export const FORMULA_TRIGGERS = ["=", "+", "-", "@", "\t", "\r"];
 
@@ -121,7 +122,7 @@ const SOURCE_LABELS: Record<string, string> = {
  * spending, a refund (an expense saved negative, decision 0010) is named مرتجع with its signed amount so a column sum
  * is still the net, and every source keeps its own name.
  */
-export function exportRow(e: {
+export function exportRow(e: PurposeColumns & {
   parsedMetadata?: unknown;
   date: Date;
   type: string;
@@ -132,12 +133,13 @@ export function exportRow(e: {
   source?: string | null;
 }): Record<string, string | number> {
   const amount = Number(e.amount);
+  const purpose = labelsFromColumns(e);
   return {
     التاريخ: businessDateKey(e.date),
     النوع: e.type === "expense" && amount < 0 ? "مرتجع" : (TYPE_LABELS[financialBucket(e)] ?? e.type),
     المبلغ: amount,
-    الفئة: e.category,
-    "الفئة الفرعية": e.subCategory || "",
+    الفئة: purpose?.categoryAr ?? e.category,
+    "الفئة الفرعية": purpose?.subAr ?? (e.subCategory || ""),
     الوصف: e.description || "",
     المصدر: SOURCE_LABELS[e.source ?? "manual"] ?? e.source ?? "",
   };
@@ -152,6 +154,7 @@ export const exportRouter = router({
         startDate: z.string().optional(),
         endDate: z.string().optional(),
         type: z.enum(["income", "expense", "all"]).default("all"),
+        businessId: z.number().int().positive().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -165,6 +168,8 @@ export const exportRouter = router({
       if (input.endDate)
         conditions.push(lte(expenses.date, parseBusinessInstant(input.endDate)));
       if (input.type !== "all") conditions.push(eq(ledgerBucketSql, input.type));
+      if (input.businessId === null) conditions.push(or(isNull(expenses.businessId), eq(expenses.businessId, 0))!);
+      else if (input.businessId !== undefined) conditions.push(eq(expenses.businessId, input.businessId));
 
       const data = await db
         .select()

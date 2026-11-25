@@ -29,6 +29,7 @@ class BudgetsNotifier extends AsyncNotifier<List<BudgetStatus>> {
   Future<int> createBudget({
     required String title,
     String? category,
+    String? purposeCategoryId,
     required double monthlyLimit,
     int periodStartDay = 1,
     int? linkedGoalId,
@@ -38,6 +39,7 @@ class BudgetsNotifier extends AsyncNotifier<List<BudgetStatus>> {
     final id = await api.createBudget(
       title: title,
       category: category,
+      purposeCategoryId: purposeCategoryId,
       monthlyLimit: monthlyLimit,
       periodStartDay: periodStartDay,
       linkedGoalId: linkedGoalId,
@@ -51,6 +53,7 @@ class BudgetsNotifier extends AsyncNotifier<List<BudgetStatus>> {
     required int budgetId,
     String? title,
     String? category,
+    String? purposeCategoryId,
     double? monthlyLimit,
     int? periodStartDay,
     int? linkedGoalId,
@@ -62,6 +65,7 @@ class BudgetsNotifier extends AsyncNotifier<List<BudgetStatus>> {
       budgetId: budgetId,
       title: title,
       category: category,
+      purposeCategoryId: purposeCategoryId,
       monthlyLimit: monthlyLimit,
       periodStartDay: periodStartDay,
       linkedGoalId: linkedGoalId,
@@ -84,6 +88,7 @@ class BudgetsNotifier extends AsyncNotifier<List<BudgetStatus>> {
     await api.createBudget(
       title: budget.title,
       category: budget.category,
+      purposeCategoryId: budget.purposeCategoryId,
       monthlyLimit: budget.monthlyLimit,
       periodStartDay: budget.periodStartDay,
       linkedGoalId: budget.linkedGoalId,

@@ -1,10 +1,10 @@
 # AI Center
 
-The chat assistant in the AI Center: it plans every turn without a model, answers finance questions from the user's
-own ledger, remembers what the user said across conversations, answers how-to questions from a built-in guide, and
-drafts actions (a goal, an expense, a budget, a wallet change) that run only after the user confirms. A model is
-called at most once per turn, only to word an analysis or advice, and the numbers in its reply are checked against the
-facts.
+The chat assistant answers finance questions from the user's ledger, helps record completed transactions, remembers
+what the user said across conversations and answers how-to questions from a built-in guide. The kernel plans questions
+without a model and checks the numbers in its optional model-written answers against ledger facts. Recording uses the
+same sentence reader as the entry form when the understanding engine is enabled. Actions such as goals, budgets,
+wallet changes and unsettled recordings wait for confirmation.
 
 - Facts generated from the code, with diagrams: [docs/atlas/systems/ai-center.md](../atlas/systems/ai-center.md)
 - The same story for readers who do not read code: [docs/ar/systems/ai-center.md](../ar/systems/ai-center.md)
@@ -40,6 +40,25 @@ checks that the given one belongs to the user (`requireOwnedConversation`), load
 
 When `ai_kernel_enabled` is `false`, steps 2 to 5 are skipped and every message gets a fixed reply saying the
 assistant is paused.
+
+### Recording a transaction in chat
+
+With `recording_engine=understanding`, `chat.sendMessage` separates clear past-tense narration from questions,
+quotes, plans and negations. It passes the recording clause to `readSentence`, with the recording plan's limits and
+token budget. A clean narration on a client that supplies a turn ID can save automatically when the automatic-save
+setting permits it. An explicit recording command, a review decision or a client without a turn ID gets a preview and
+must confirm it. The confirmation uses the server's stored reading. It does not run the classifier again.
+
+A narration with several clearly separated items can save the complete items and ask about an item missing an
+amount. Chat keeps those questions in the conversation and only routes matching replies back to recording. A ledger
+question asked while a recording question is open still goes through the read-only kernel. A turn with a clearly
+separated completed narration and ledger question reports what was recorded or needs review, then answers the
+question after the ledger transaction and cache invalidation. Ambiguous wording can require the user to state the
+recording separately.
+
+The ledger changes, chat messages, pending questions and undo record commit together. The client turn ID scopes
+retries to the owner, so a lost response or a concurrent retransmission replays the same recording result. Confirming
+the same preview twice also replays its result. Automatic saves offer the existing phrase-protected undo action.
 
 ### 2. A confirmation typed as text
 When the message is a short confirmation or cancellation with no numbers ("موافق", "تمام نفذ", "الغي", "لا") and the
@@ -179,13 +198,11 @@ the finance caches are cleared.
   happens on business days and only the boundaries become instants, and a custom "YYYY-MM-DD" is read as that
   business day. Chart buckets (`api/services/finance-semantic-layer/row-aggregators.ts`) and the dates of
   transactions in facts (`api/services/finance-semantic-layer/resolvers.ts`) use the same business day.
-- Categories are matched through the category registry (`api/services/finance-semantic-layer/category-matcher.ts`).
-  A category may be named as the user says it ("أكل", "المطاعم") or by its id (`food`): `financeCategoryId` turns
-  the name into the registry's id before rows are compared, and a name the registry does not know matches nothing
-  rather than the uncategorized rows; a group name sweeps its members (`financeCategoryIds`: "الدخل" every income
-  category, "فواتير" bills and daily commitments). A question about income sweeps every income category (مرتب، عمل حر، عوائد استثمار، هدايا وعيديات، دخل آخر). A
-  row counts under its stored category; its text is read only when it is stored as uncategorized or متنوعات
-  (`canonicalCategoryForRow`).
+- Categories are matched through `api/services/finance-semantic-layer/category-matcher.ts`. Breakdowns, charts and
+  transaction facts prefer the stored category and subcategory purpose. A question naming a specific purpose can
+  use its taxonomy id or name. Broad queries such as "أكل" or "الدخل" can still use the legacy category registry
+  (`financeCategoryIds`). Rows with no known purpose retain their legacy filing, including the existing fallback
+  for uncategorized rows. They do not gain a specific purpose from their descriptions.
 - Spending is an expense row, as on Home (`isSpendingRow` in `api/services/finance-semantic-layer/row-aggregators.ts`):
   breakdowns, charts, comparison drivers and the business cash flow leave transfers (a gam3eya payment, a loan, an
   ATM withdrawal) and investments out.

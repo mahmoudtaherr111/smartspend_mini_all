@@ -68,6 +68,24 @@ function scripted(...steps: Array<(routes: LlmRoute[], req: LlmRequest) => LlmRe
 }
 
 describe("understand", () => {
+  it("reads whole paragraphs, keeps independent amounts and requires review of the combined reading", async () => {
+    const first = "تفاصيل ".repeat(147) + "دفعت ٢٠ مواصلات";
+    const second = "تفاصيل ".repeat(147) + "اشتريت خبز بـ٣٠";
+    const readFirst = () => response(A, replyOf([ev({ quote: first, what: "مواصلات", amount: 20, category: "transport", sub: "metro" })]));
+    const readSecond = () => response(A, replyOf([ev({ quote: second, what: "خبز", amount: 30, category: "groceries", sub: "bakery" })]));
+    const execute = scripted(readFirst, readSecond);
+    const result = await understand(input(first + "\n" + second), { execute });
+    expect(execute).toHaveBeenCalledTimes(2);
+    expect(result.outcome).toBe("show");
+    expect(result.events.map(event => event.amount)).toEqual([20, 30]);
+    expect(result.usage.attempts).toHaveLength(2);
+    const ambiguous = await understand(input(first + "\n" + second), {
+      execute: scripted(readFirst, () => response(A, replyOf([], { ask: "تقصد أنهي مبلغ؟", ask_about: "amount" }))),
+    });
+    expect(ambiguous.outcome).toBe("ask");
+    expect(ambiguous.events).toEqual([]);
+  });
+
   it.each(["دفعت 20 دولار اشتراك", "دفعت 20USD ومعاهم 15 جنيه توصيل", "دفعت £٤٠ للاشتراك", "دفعت ١٠ جنيه إسترليني"])(
     "asks for an EGP restatement before offering a ledger amount for %s", async (text) => {
       const execute = scripted(() => response(A, replyOf([ev({ amount: 20, category: "bills", sub: "other" })])));

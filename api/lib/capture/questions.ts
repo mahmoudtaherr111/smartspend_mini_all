@@ -17,6 +17,8 @@ import {
   type LedgerTx,
 } from "../../services/ledger-writer";
 import { businessDateKey } from "../app-time";
+import { readSentence } from "../../services/recording/read-sentence";
+import { storedFiling } from "../understanding/bridge";
 import { classifyText } from "../classify-text";
 import { getSystemSettings } from "../settings-cache";
 import { idsOfNames, rememberFiling } from "./memory";
@@ -114,7 +116,8 @@ export async function nextPurposeQuestion(
   owner: CaptureOwner,
   now = new Date(),
 ) {
-  if ((await getSystemSettings()).capture_questions_enabled === "false")
+  const settings = await getSystemSettings();
+  if (settings.capture_questions_enabled === "false")
     return null;
   if (!(await captureConsentsOf(owner, undefined, CAPTURE_CONSENT_TEXT_VERSION)).questions) return null;
   return getDb().transaction(async (tx) => {
@@ -207,6 +210,7 @@ export async function nextPurposeQuestion(
 }
 
 export interface PurposeAnswer {
+  selectedPurpose?: { category: string; sub: string };
   action: "set" | "keep" | "skip";
   categoryId?: string;
   subCategoryId?: string;
@@ -215,21 +219,47 @@ export interface PurposeAnswer {
   contactId?: number | null;
 }
 export async function answerPurposeQuestion(
-  owner: CaptureOwner,
+  owner: CaptureOwner & { plan?: string | null },
   id: number,
   answer: PurposeAnswer,
   now = new Date(),
 ) {
-  if ((await getSystemSettings()).capture_questions_enabled === "false")
+  const settings = await getSystemSettings();
+  if (settings.capture_questions_enabled === "false")
     throw new TRPCError({
       code: "PRECONDITION_FAILED",
       message: "تعديل التصنيف لسه بيتجهز.",
     });
-  // Local classification only; its direction/amount are discarded. Never hold a transaction over a model call.
+  // The bank owns the amount and direction; the user supplies the missing purpose.
   const purpose =
     answer.action === "set" ? answer.purpose?.trim().slice(0, 200) : undefined;
+  let selected = answer.selectedPurpose;
+  if (purpose && !selected && !answer.categoryId && settings.recording_engine === "understanding") {
+    const [target] = await getDb().select({ amount: expenses.amount, type: expenses.type, parsedMetadata: expenses.parsedMetadata,
+      status: captureQuestions.status, expenseId: expenses.id })
+      .from(captureQuestions).innerJoin(expenses, and(eq(expenses.id, captureQuestions.expenseId),
+        eq(expenses.userId, owner.userId), eq(expenses.userType, owner.userType)))
+      .where(and(scope(owner), eq(captureQuestions.id, id))).limit(1);
+    if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "السؤال ده مش موجود." });
+    if (target.status !== "shown") return { result: target.status, expenseId: target.expenseId };
+    const amount = Math.abs(Number(target.amount));
+    const flow = movementOf(target);
+    const proposal = await readSentence({
+      user: { id: owner.userId, type: owner.userType === "oauth" ? "oauth" : "local", plan: owner.plan ?? undefined },
+      text: `${flow === "in" ? "استلمت" : "دفعت"} ${amount} جنيه، ${purpose}`, channel: "text",
+      openClarification: false, skipClarification: true, captureContinuation: true,
+    });
+    const [item] = proposal.items;
+    if (proposal.items.length !== 1 || item.amount !== amount || !item.reading || item.reading.flow !== flow ||
+        item.reading.flags.length || item.reviewReasons?.some(reason => reason !== "auto_save_off")) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "الغرض محتاج توضيح. اختار الفئة الأقرب للعملية." });
+    }
+    selected = { category: item.reading.category, sub: item.reading.sub };
+  }
+  const canonicalFiling = selected && storedFiling(selected.category, selected.sub);
+  const canonicalIds = canonicalFiling && idsOfNames(canonicalFiling.category, canonicalFiling.subCategory);
   const classified =
-    purpose && !answer.categoryId
+    purpose && !selected && !answer.categoryId
       ? await classifyText(purpose, { amount: 1 })
       : null;
   let wrote = false;
@@ -286,7 +316,7 @@ export async function answerPurposeQuestion(
           ? "investment"
           : undefined;
       const categoryId =
-        answer.categoryId ?? intentCategory ?? inferred?.categoryId;
+        canonicalIds?.categoryId ?? answer.categoryId ?? intentCategory ?? inferred?.categoryId;
       const category = categoryId
         ? CATEGORIES.find((item) => item.id === categoryId)
         : null;
@@ -312,7 +342,7 @@ export async function answerPurposeQuestion(
                 ? "bank_transfer"
                 : undefined;
       const subId =
-        answer.subCategoryId ?? intentSub ?? inferred?.subCategoryId;
+        canonicalIds?.subCategoryId ?? answer.subCategoryId ?? intentSub ?? inferred?.subCategoryId;
       const sub = fits
         ? category.subcategories.find((item) => item.id === subId)
         : null;
@@ -346,6 +376,7 @@ export async function answerPurposeQuestion(
           ? { category: category.name_ar, subCategory: sub?.name_ar ?? "عام" }
           : {}),
         movementKind: kind,
+        purpose: selected,
         capturePurpose: purpose,
         captureCategoryResolved: true,
         contactId: answer.contactId,

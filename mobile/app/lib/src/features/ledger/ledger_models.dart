@@ -55,6 +55,24 @@ final class ParsedPurposeLabels {
   };
 }
 
+/// A selected spending category and subcategory, identified by their taxonomy ids.
+final class SpendingPurpose {
+  const SpendingPurpose({required this.category, required this.sub});
+
+  static SpendingPurpose? fromJson(Object? json) {
+    return switch (json) {
+      {'category': final String category, 'sub': final String sub} =>
+        SpendingPurpose(category: category, sub: sub),
+      _ => null,
+    };
+  }
+
+  final String category;
+  final String sub;
+
+  Map<String, Object?> toJson() => {'category': category, 'sub': sub};
+}
+
 /// One transaction read from a sentence (`api/lib/rule-engine.ts#ParsedTransaction`), as `expense.create` takes it.
 final class ParsedItem {
   const ParsedItem({
@@ -71,6 +89,8 @@ final class ParsedItem {
     this.source,
     this.reviewReasons = const [],
     this.purposeLabels,
+    this.purpose,
+    this.readingItemId,
   });
 
   factory ParsedItem.fromJson(Map<String, Object?> json) => ParsedItem(
@@ -89,6 +109,8 @@ final class ParsedItem {
       final List<Object?> reasons => reasons.whereType<String>().toList(),
       _ => const [],
     },
+    readingItemId: json['readingItemId'] as String?,
+    purpose: SpendingPurpose.fromJson(json['purpose']),
     purposeLabels: switch (json['purposeLabels']) {
       final Map<String, Object?> labels => ParsedPurposeLabels.fromJson(labels),
       _ => null,
@@ -112,6 +134,8 @@ final class ParsedItem {
   final String? source;
   final List<String> reviewReasons;
   final ParsedPurposeLabels? purposeLabels;
+  final SpendingPurpose? purpose;
+  final String? readingItemId;
 
   /// The same keys [ParsedItem.fromJson] reads, so an item can wait in the outbox.
   Map<String, Object?> toJson() => {
@@ -128,6 +152,8 @@ final class ParsedItem {
     'source': source,
     if (reviewReasons.isNotEmpty) 'reviewReasons': reviewReasons,
     if (purposeLabels != null) 'purposeLabels': purposeLabels!.toJson(),
+    'purpose': ?purpose?.toJson(),
+    if (readingItemId != null) 'readingItemId': readingItemId,
   };
 
   /// Whether `expense.create` would accept it (`api/expense-router.ts`: a positive amount and a category).
@@ -175,6 +201,7 @@ final class ParseResult {
     this.clarificationId,
     this.classificationLogId,
     this.alertMessage,
+    this.partialReady = false,
   });
 
   factory ParseResult.fromJson(Map<String, Object?> json) => ParseResult(
@@ -191,6 +218,7 @@ final class ParseResult {
     clarificationId: (json['clarificationId'] as num?)?.toInt(),
     classificationLogId: (json['classificationLogId'] as num?)?.toInt(),
     alertMessage: json['alertMessage'] as String?,
+    partialReady: json['partialReady'] == true,
   );
 
   final ParseDecision decision;
@@ -206,6 +234,9 @@ final class ParseResult {
   /// A note the pipeline wants the person to read, such as an amount it was unsure of.
   final String? alertMessage;
 
+  /// The server has a separate, idempotent booking for the complete items.
+  final bool partialReady;
+
   /// The same keys [ParseResult.fromJson] reads, so a parse can wait in the outbox for the person.
   Map<String, Object?> toJson() => {
     'decision': switch (decision) {
@@ -218,7 +249,28 @@ final class ParseResult {
     'clarificationId': clarificationId,
     'classificationLogId': classificationLogId,
     'alertMessage': alertMessage,
+    if (partialReady) 'partialReady': true,
   };
+}
+
+/// The committed items and questions still pending after a partial booking.
+final class PartialBookingResult {
+  const PartialBookingResult({required this.savedIds, required this.questions});
+
+  factory PartialBookingResult.fromJson(Map<String, Object?> json) =>
+      PartialBookingResult(
+        savedIds: [
+          for (final id in json['savedIds'] as List<Object?>? ?? const [])
+            if (id is num) id.toInt(),
+        ],
+        questions: [
+          for (final row in json['questions'] as List<Object?>? ?? const [])
+            if (row is Map<String, Object?>) PendingClarification.fromJson(row),
+        ],
+      );
+
+  final List<int> savedIds;
+  final List<PendingClarification> questions;
 }
 
 /// `expense.answerClarification`'s answer: saved, or another question.
@@ -272,6 +324,9 @@ final class LedgerEntry {
     this.contactId,
     this.parsedMetadata,
     this.purposeLabels,
+    this.reportPurposeCategoryId,
+    this.businessId,
+    this.status,
     this.bundleFee,
     this.bundleTotal,
   });
@@ -294,6 +349,9 @@ final class LedgerEntry {
       final Map<String, Object?> labels => ParsedPurposeLabels.fromJson(labels),
       _ => null,
     },
+    reportPurposeCategoryId: json['reportPurposeCategoryId'] as String?,
+    businessId: (json['businessId'] as num?)?.toInt(),
+    status: json['status'] as String?,
     bundleFee: json['bundle'] is Map<String, Object?>
         ? readAmount((json['bundle'] as Map<String, Object?>)['feeAmount'])
         : null,
@@ -323,6 +381,9 @@ final class LedgerEntry {
   final int? contactId;
   final Map<String, Object?>? parsedMetadata;
   final ParsedPurposeLabels? purposeLabels;
+  final String? reportPurposeCategoryId;
+  final int? businessId;
+  final String? status;
   final num? bundleFee;
   final num? bundleTotal;
   num get displayAmount => bundleTotal ?? amount.abs();
@@ -386,6 +447,10 @@ final class LedgerEntry {
     'contactId': contactId,
     if (parsedMetadata != null) 'parsedMetadata': parsedMetadata,
     if (purposeLabels != null) 'purposeLabels': purposeLabels!.toJson(),
+    if (reportPurposeCategoryId != null)
+      'reportPurposeCategoryId': reportPurposeCategoryId,
+    'businessId': ?businessId,
+    'status': ?status,
     if (bundleTotal != null)
       'bundle': {'feeAmount': bundleFee, 'totalAmount': bundleTotal},
     'date': date.toUtc().toIso8601String(),

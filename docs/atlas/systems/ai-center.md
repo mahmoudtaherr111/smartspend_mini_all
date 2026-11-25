@@ -42,6 +42,7 @@ flowchart LR
     tbl_financial_goals[("financial_goals")]
     tbl_local_users[("local_users")]
     tbl_monthly_behavior_snapshots[("monthly_behavior_snapshots")]
+    tbl_pending_clarifications[("pending_clarifications")]
     tbl_user_budgets[("user_budgets")]
     tbl_user_contacts[("user_contacts")]
     tbl_user_profiles[("user_profiles")]
@@ -64,11 +65,15 @@ flowchart LR
   mod_ai_actions --> sys_insights
   mod_ai_actions --> sys_money
   mod_ai_actions --> sys_platform
+  mod_ai_actions -.-> tbl_classification_logs
   mod_ai_actions ==> tbl_ai_action_audit_logs
   mod_ai_actions ==> tbl_ai_action_memory
   mod_ai_actions ==> tbl_ai_pending_actions
+  mod_ai_actions ==> tbl_chat_conversations
+  mod_ai_actions ==> tbl_chat_messages
   mod_ai_actions ==> tbl_expenses
   mod_ai_actions ==> tbl_financial_goals
+  mod_ai_actions ==> tbl_pending_clarifications
   mod_ai_actions ==> tbl_user_budgets
   mod_ai_actions ==> tbl_user_wallets
   mod_ai_kernel --> mod_ai_memory
@@ -110,13 +115,14 @@ flowchart LR
   router_chat --> sys_expense_capture
   router_chat --> sys_platform
   router_chat --> sys_voice_calls
-  router_chat -.-> tbl_ai_pending_actions
   router_chat ==> tbl_ai_conversation_summaries
   router_chat ==> tbl_ai_memory_embeddings
   router_chat ==> tbl_ai_memory_items
+  router_chat ==> tbl_ai_pending_actions
   router_chat ==> tbl_chat_conversations
   router_chat ==> tbl_chat_messages
   router_chat ==> tbl_local_users
+  router_chat ==> tbl_pending_clarifications
   router_chat ==> tbl_users
   screens_web_app --> router_chat
 ```
@@ -125,7 +131,7 @@ flowchart LR
 
 ### a question in the AI Center
 
-chat.sendMessage stores the message and, while the AI kernel is enabled in settings, runs it. The kernel plans the turn without a model (intent, data needs, a clarifying question when something is missing), resolves the facts through the finance semantic layer, and makes at most one model call to word the answer, whose numbers are then checked against the facts. Actions are drafted as pending and run only after the user confirms them.
+The AI kernel plans questions without a model, resolves facts through the finance semantic layer, and can make one model call to word an answer. When understanding is enabled, chat sends completed narration through the shared sentence reader. A clean narration can save automatically and the chat offers undo. An explicit request or a reading that needs review waits for confirmation. A mixed turn answers its ledger question after the recording result is committed.
 
 ```mermaid
 sequenceDiagram
@@ -148,7 +154,7 @@ sequenceDiagram
   p5->>p6: resolve the facts
   p5->>p7: at most one call, only when the facts need wording
   p7->>p8: the chat models the admin assigned, then the chatbot settings (DeepSeek V4 Flash on Fireworks by default), then Gemini
-  p3->>p9: draft an action for confirmation
+  p3->>p9: record completed narration or draft an action for confirmation
   p9->>p10: pending action
   p3-->>p2: answer, artifacts and any draft action
   p2->>p11: user confirms the draft
@@ -162,8 +168,8 @@ Drawn in `docs/architecture/flows/ai-chat.c4`; in the interactive map it is the 
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `ai-actions` — AI action runtime | Actions the assistant proposes, such as recording an expense, updating a wallet or creating a goal: stored as pending drafts and executed only after the user confirms, with the artifacts shown in chat. | 6 |
-| `ai-kernel` — AI Center kernel | Plans each AI Center turn without a model (intent, data needs, clarifying questions), packs the context, applies the capability registry and retrieval policy, words the answer with at most one model call, and logs traces. | 11 |
+| `ai-actions` — AI action runtime | Actions the assistant proposes, such as recording an expense, updating a wallet or creating a goal: stored as pending drafts and executed only after the user confirms, with the artifacts shown in chat. | 7 |
+| `ai-kernel` — AI Center kernel | Plans each AI Center turn without a model (intent, data needs, clarifying questions), packs the context, applies the capability registry and retrieval policy, words the answer with at most one model call, and logs traces. | 12 |
 | `ai-memory` — AI memory | Long-term memory about each user: conversation capsules and running summaries, memories extracted by rules, optional embeddings stored in MySQL (from the providers the admin assigned, else Google) with a backfill, and retrieval that scores memories by words and, when embeddings are on, by vector similarity. The Qdrant and quantized on-disk stores are used only by tests. | 14 |
 | `finance-semantic-layer` — Finance semantic layer | Answers factual finance questions from the ledger: period resolution, category matching, row aggregation, monthly report facts, proactive insights, chart artifacts and a per-user cache. | 10 |
 | `site-guide` — Site guide | How-to answers about using SmartSpend (linking SMS, cards and wallets, goals, reports) from a built-in knowledge base, found by words and a small local hashed-token vector (no model call). | 5 |
@@ -175,7 +181,7 @@ Drawn in `docs/architecture/flows/ai-chat.c4`; in the interactive map it is the 
 | --- | --- | --- | --- | --- | --- |
 | `chat.cancelAction` | mutation | `aiProcedure` | — | — | `AICenter` |
 | `chat.clearAllMemories` | mutation | `authedProcedure` | `ai_memory_items` | `ai_memory_embeddings`, `ai_memory_items` | `AICenter`, `App shell` |
-| `chat.clearConversation` | mutation | `authedProcedure` | `chat_conversations` | `ai_conversation_summaries`, `chat_conversations`, `chat_messages` | `AICenter` |
+| `chat.clearConversation` | mutation | `authedProcedure` | `chat_conversations` | `ai_conversation_summaries`, `ai_pending_actions`, `chat_conversations`, `chat_messages`, `pending_clarifications` | `AICenter` |
 | `chat.confirmAction` | mutation | `aiProcedure` | — | — | `AICenter` |
 | `chat.forgetMemory` | mutation | `authedProcedure` | `ai_memory_items` | `ai_memory_embeddings`, `ai_memory_items` | `AICenter`, `App shell` |
 | `chat.getConversation` | query | `authedProcedure` | `chat_conversations`, `chat_messages` | — | `AICenter` |
@@ -201,14 +207,15 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ai_conversation_summaries` | F | `ai-memory`, `chat.clearConversation` | `ai-memory` |
 | `ai_memory_embeddings` | F | `ai-memory`, `chat.clearAllMemories`, `chat.forgetMemory` | `ai-memory` |
 | `ai_memory_items` | F | `ai-memory`, `chat.clearAllMemories`, `chat.forgetMemory` | `ai-memory`, `chat.clearAllMemories`, `chat.forgetMemory`, `chat.listMemories` |
-| `ai_pending_actions` | D | `ai-actions` | `ai-actions`, `chat.sendMessage` |
-| `chat_conversations` | G | `ai-memory`, `chat.clearConversation`, `chat.sendMessage` | `ai-memory`, `chat.clearConversation`, `chat.getConversation`, `chat.getConversations`, `chat.sendMessage` |
-| `chat_messages` | G | `chat.clearConversation`, `chat.sendMessage` | `ai-memory`, `chat.getConversation`, `chat.sendMessage` |
-| `classification_logs` | E | — | `finance-semantic-layer` |
+| `ai_pending_actions` | D | `ai-actions`, `chat.clearConversation` | `ai-actions`, `chat.sendMessage` |
+| `chat_conversations` | G | `ai-actions`, `ai-memory`, `chat.clearConversation`, `chat.sendMessage` | `ai-actions`, `ai-memory`, `chat.clearConversation`, `chat.getConversation`, `chat.getConversations`, `chat.sendMessage` |
+| `chat_messages` | G | `ai-actions`, `chat.clearConversation`, `chat.sendMessage` | `ai-memory`, `chat.getConversation`, `chat.sendMessage` |
+| `classification_logs` | E | — | `ai-actions`, `finance-semantic-layer` |
 | `expenses` | B | `ai-actions` | `ai-actions`, `finance-semantic-layer` |
 | `financial_goals` | C | `ai-actions` | `ai-actions`, `finance-semantic-layer` |
 | `local_users` | A | `chat.sendMessage` | `ai-memory` |
 | `monthly_behavior_snapshots` | C | — | `finance-semantic-layer` |
+| `pending_clarifications` | D | `ai-actions`, `chat.clearConversation` | `ai-actions` |
 | `user_budgets` | C | `ai-actions` | — |
 | `user_contacts` | A | — | `ai-kernel`, `finance-semantic-layer` |
 | `user_profiles` | A | — | `finance-semantic-layer` |
@@ -237,11 +244,12 @@ Used by: [Bank and wallet messages](bank-messages.md), [Recording spending](expe
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/ai-center.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>52 files and declarations</summary>
+<details><summary>54 files and declarations</summary>
 
 - `api/boot.ts#job:memory-embedding-backfill`
 - `api/chat-router.ts`
 - `api/services/action-runtime/artifacts.ts`
+- `api/services/action-runtime/chat-recording.ts`
 - `api/services/action-runtime/confirmation-phrases.ts`
 - `api/services/action-runtime/extended-actions.ts`
 - `api/services/action-runtime/goal-create.ts`
@@ -255,6 +263,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/ai-kernel/data-need-compiler.ts`
 - `api/services/ai-kernel/index.ts`
 - `api/services/ai-kernel/intent-router.ts`
+- `api/services/ai-kernel/recording-intent.ts`
 - `api/services/ai-kernel/response-normalizer.ts`
 - `api/services/ai-kernel/retrieval-policy.ts`
 - `api/services/ai-kernel/types.ts`

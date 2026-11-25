@@ -3,12 +3,23 @@ import { TRPCError } from "@trpc/server";
 import { router, authedProcedure } from "./middleware";
 import { db } from "./queries/connection";
 import { userBudgets } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
 import { listBudgetStatuses } from "./services/budget-status";
 import { storageCategoryName } from "./lib/category-registry";
 import { ExpenseInputLimits } from "../contracts/constants";
 import { assertEntityOwnership } from "./lib/ownership-guard";
+import { taxonomyCategory } from "../contracts/taxonomy";
+import { storedFiling } from "./lib/understanding/bridge";
+
+const spendingPurposeId = z.string().max(64).refine(id => taxonomyCategory(id)?.kinds.includes("spending"), {
+  message: "اختار فئة مصاريف للميزانية",
+});
+
+function budgetCategory(input: { category?: string; purposeCategoryId?: string | null }) {
+  if (input.purposeCategoryId) return storedFiling(input.purposeCategoryId, "other").category;
+  return input.category?.trim() ? storageCategoryName(input.category.trim()) : null;
+}
 
 export const budgetRouter = router({
   list: authedProcedure.query(async ({ ctx }) => {
@@ -20,6 +31,7 @@ export const budgetRouter = router({
       z.object({
         title: z.string().min(2).max(200),
         category: z.string().max(100).optional(),
+        purposeCategoryId: spendingPurposeId.optional(),
         monthlyLimit: z.number().positive().max(ExpenseInputLimits.amountMax),
         periodStartDay: z.number().int().min(1).max(31).default(1),
         linkedGoalId: z.number().int().positive().optional(),
@@ -39,8 +51,8 @@ export const budgetRouter = router({
         userId: ctx.user.id,
         userType: ctx.user.type,
         title: input.title.trim(),
-        // A budget names a category the ledger stores, or it would never see any spending.
-        category: input.category?.trim() ? storageCategoryName(input.category.trim()) : null,
+        category: budgetCategory(input),
+        ...(input.purposeCategoryId ? { metadata: { purposeCategoryId: input.purposeCategoryId } } : {}),
         monthlyLimit: String(input.monthlyLimit),
         periodStartDay: input.periodStartDay,
         linkedGoalId: input.linkedGoalId || null,
@@ -58,6 +70,7 @@ export const budgetRouter = router({
         budgetId: z.number().int().positive(),
         title: z.string().min(2).max(200).optional(),
         category: z.string().max(100).optional(),
+        purposeCategoryId: spendingPurposeId.nullable().optional(),
         monthlyLimit: z.number().positive().max(ExpenseInputLimits.amountMax).optional(),
         periodStartDay: z.number().int().min(1).max(31).optional(),
         linkedGoalId: z.number().int().positive().nullable().optional(),
@@ -75,7 +88,7 @@ export const budgetRouter = router({
       }
 
       const [existing] = await db
-        .select({ id: userBudgets.id })
+        .select({ id: userBudgets.id, category: userBudgets.category })
         .from(userBudgets)
         .where(
           and(
@@ -95,7 +108,15 @@ export const budgetRouter = router({
 
       const updateData: Record<string, unknown> = {};
       if (input.title !== undefined) updateData.title = input.title.trim();
-      if (input.category !== undefined) updateData.category = input.category.trim() ? storageCategoryName(input.category.trim()) : null;
+      if (input.category !== undefined || input.purposeCategoryId !== undefined) {
+        const category = budgetCategory(input);
+        updateData.category = category;
+        if (input.purposeCategoryId) {
+          updateData.metadata = sql`JSON_SET(COALESCE(${userBudgets.metadata}, JSON_OBJECT()), '$.purposeCategoryId', ${input.purposeCategoryId})`;
+        } else if (input.purposeCategoryId === null || category !== existing.category) {
+          updateData.metadata = sql`JSON_REMOVE(${userBudgets.metadata}, '$.purposeCategoryId')`;
+        }
+      }
       if (input.monthlyLimit !== undefined) updateData.monthlyLimit = String(input.monthlyLimit);
       if (input.periodStartDay !== undefined) updateData.periodStartDay = input.periodStartDay;
       if (input.linkedGoalId !== undefined) updateData.linkedGoalId = input.linkedGoalId;

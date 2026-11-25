@@ -3,6 +3,7 @@ import { createHash } from "crypto";
 import { withCacheStatus, cacheGet, cacheIncr } from "../../lib/redis-client";
 import { taxonomyVersion } from "../../lib/category-registry";
 import { businessDateKey } from "../../lib/app-time";
+import { TAXONOMY_VERSION } from "../../../contracts/taxonomy";
 
 const PREFIX = "finance_ai";
 // v4 (2026-09-24): summaries are one MySQL aggregate, and every result covers the personal ledger only (a business's
@@ -10,7 +11,8 @@ const PREFIX = "finance_ai";
 // v5 (2026-09-24): a category named in words ("أكل") matches its rows; v4 entries hold zeros for those.
 // v6 (2026-09-29): a key part with letters outside ASCII carries a hash of itself; before, every Arabic letter became
 // "_", so "فواتير" and "اشتراك" (six letters each) shared one cached answer.
-const CACHE_SCHEMA_VERSION = `schema_v6_${taxonomyVersion()}`;
+// v7: category facts and charts use the versioned purpose saved on each ledger row.
+const CACHE_SCHEMA_VERSION = `schema_v7_${taxonomyVersion()}_${TAXONOMY_VERSION}`;
 const financeCacheTrace = new AsyncLocalStorage<string[]>();
 
 /**

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import { TRPCClientError } from "@trpc/client";
 import { refreshLedgerViews } from "@/lib/ledger-refresh";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/providers/trpc";
 import { toast } from "sonner";
-import { announceSaved } from "@/lib/saved-toast";
+import { announceSaved, savedSummary, type SavedEntryView } from "@/lib/saved-toast";
 import {
   Mic,
   Plus,
@@ -27,12 +28,17 @@ import {
 import { validateOfflineInput } from "@/lib/clientRulesEngine";
 import { ExpenseInputLimits } from "@contracts/constants";
 import { directionToSave, personToSave } from "@contracts/expense-save";
+import { movementKindForPurpose } from "@contracts/taxonomy";
 import { cn } from "@/lib/utils";
 import {
   CATEGORY_OPTIONS,
   defaultSubCategory,
   getCategoryOptionsForType,
   getSubCategoryOptions,
+  defaultPurposeSub,
+  getPurposeOptionsForType,
+  purposeOptionValue,
+  selectedPurposeOption,
 } from "@/lib/financial-taxonomy";
 import { Badge } from "@/components/ui/badge";
 import { useHaptics } from "@/hooks/useHaptics";
@@ -50,6 +56,41 @@ interface ExpenseFormProps {
   businessMode?: boolean;
   businessId?: number;
   draftKey?: string;
+}
+
+type PartialReading = {
+  classificationLogId: number;
+  items: Omit<SavedEntryView, "id">[];
+};
+
+type OfflineText = {
+  id: string;
+  text: string;
+  timestamp: number;
+  status?: string;
+  partial?: PartialReading;
+};
+
+function partialReading(data: {
+  classificationLogId?: number;
+  items?: PartialReading["items"];
+}): PartialReading | undefined {
+  if (!data.classificationLogId || !data.items?.length) return;
+  return {
+    classificationLogId: data.classificationLogId,
+    items: data.items.map(({ amount, category, subCategory, direction }) => ({
+      amount, category, subCategory, direction,
+    })),
+  };
+}
+
+function storeQueuedText(entry: OfflineText) {
+  const queued: OfflineText[] = JSON.parse(localStorage.getItem("smartspend_offline_texts") || "[]");
+  const index = queued.findIndex((item) => item.id === entry.id);
+  if (index === -1) queued.push(entry);
+  else queued[index] = entry;
+  localStorage.setItem("smartspend_offline_texts", JSON.stringify(queued));
+  window.dispatchEvent(new Event("smartspend-offline-queue-changed"));
 }
 
 function readExpenseDraft(draftKey?: string): string {
@@ -225,17 +266,19 @@ export function ExpenseForm({
   const [pendingOfflineTextId, setPendingOfflineTextId] = useState<
     string | null
   >(null);
+  const [partialRetry, setPartialRetry] = useState<OfflineText | null>(null);
   const [latestParserTrace, setLatestParserTrace] =
     useState<ParserTraceRecord | null>(null);
   const syncInProgressRef = useRef(false);
   const lastAutoSaveSucceededRef = useRef(true);
   const activeOutboxRequestIdRef = useRef<string | null>(null);
+  const activePartialRetryId = useRef<string | null>(null);
   const expenseQaTextSentRef = useRef<string | null>(null);
 
   const removeQueuedText = (id: string | null) => {
     if (!id) return;
     try {
-      const offlineTexts = JSON.parse(
+      const offlineTexts: OfflineText[] = JSON.parse(
         localStorage.getItem("smartspend_offline_texts") || "[]",
       );
       localStorage.setItem(
@@ -249,7 +292,7 @@ export function ExpenseForm({
       // Keep the queue intact if storage is unavailable; the idempotency key
       // still prevents a retry from duplicating an expense on the server.
     }
-    setPendingOfflineTextId(null);
+    setPendingOfflineTextId((current) => current === id ? null : current);
   };
 
   useEffect(() => {
@@ -297,6 +340,94 @@ export function ExpenseForm({
   const isSubmittingMutationRef = useRef<boolean>(false);
 
   const utilsTrpc = trpc.useUtils();
+  const commitPartialMutation = trpc.expense.commitPartialReading.useMutation();
+
+  async function commitPartial(entry: OfflineText, reading: PartialReading) {
+    let data;
+    try {
+      data = await commitPartialMutation.mutateAsync({
+        classificationLogId: reading.classificationLogId,
+      });
+    } catch (error) {
+      // The server declined the write because automatic booking was turned off.
+      if (error instanceof TRPCClientError && error.data?.code === "PRECONDITION_FAILED") return false;
+      throw error;
+    }
+    removeQueuedText(entry.id);
+    if (activePartialRetryId.current === entry.id) {
+      activePartialRetryId.current = null;
+      setPartialRetry(null);
+      setText("");
+      setInputSource("text");
+      setClassificationLogId(null);
+    }
+    refreshLedgerViews(utilsTrpc);
+    if (data.savedIds.length > 0) {
+      const summary = reading.items.map((item) => savedSummary([{ ...item, id: 0 }])).join(" · ");
+      toast.success(`اتسجلت: ${summary}`, {
+        duration: 7000,
+        action: {
+          label: "تراجع",
+          onClick: () => {
+            void Promise.all(data.savedIds.map((id) => deleteSavedMutation.mutateAsync({ id })))
+              .then(() => toast.success("اترجعت"))
+              .catch(() => toast.error("ماقدرناش نرجعها، امسحها من القايمة"))
+              .finally(() => refreshLedgerViews(utilsTrpc));
+          },
+        },
+      });
+    }
+    if (data.questions.length > 0) {
+      toast.info("في عمليات محتاجة ردك. هتلاقيها في «محتاج ردك».");
+    }
+    onSuccess?.();
+    return true;
+  }
+
+  async function commitInteractivePartial(entry: OfflineText, reading: PartialReading) {
+    setParsedItems(null);
+    setDecision(null);
+    setFlowStage("processing");
+    activePartialRetryId.current = entry.id;
+    setPartialRetry(entry);
+    try {
+      storeQueuedText(entry);
+    } catch {
+      // Keep the same reading available on this screen if browser storage is full or disabled.
+    }
+    try {
+      if (await commitPartial(entry, reading)) {
+        hapticSuccess();
+      } else {
+        removeQueuedText(entry.id);
+        activePartialRetryId.current = null;
+        setPartialRetry(null);
+        toast.info("الحفظ التلقائي متوقف. راجع التسجيل من جديد.");
+      }
+    } catch {
+      hapticError();
+      toast.error("ماقدرناش نأكد التسجيل. جرّب الحفظ تاني.");
+    } finally {
+      setFlowStage("idle");
+    }
+  }
+
+  async function handlePartialBooking(data: Parameters<typeof partialReading>[0] & { text: string }) {
+    const reading = partialReading(data);
+    if (!reading) {
+      setParsedItems(null);
+      setDecision(null);
+      setFlowStage("idle");
+      toast.error("ماقدرناش نحفظ التسجيل. جرّب تاني.");
+      return;
+    }
+    await commitInteractivePartial({
+      id: pendingOfflineTextId || createOfflineItemId(),
+      text: data.text,
+      timestamp: Date.now(),
+      partial: reading,
+    }, reading);
+  }
 
   const showNewContactToast = (
     c?: { name?: string; totalContacts?: number } | null,
@@ -399,6 +530,7 @@ export function ExpenseForm({
           amount: data.amount,
           category: data.category,
           subCategory: data.subCategory,
+          purpose: data.purpose,
           type: data.type,
           description: data.description,
           merchant: data.merchant,
@@ -467,7 +599,8 @@ export function ExpenseForm({
 
   // ─── Voice Parsing (Combined STT + Parse) ───
   const parseVoiceMutation = trpc.ai.parseVoiceExpense.useMutation({
-    onSuccess: (data) => {
+    retry: (attempt, error) => attempt === 0 && !error.data,
+    onSuccess: async (data) => {
       const traceLogId =
         (data as { classificationLogId?: number }).classificationLogId ?? null;
       setClassificationLogId(traceLogId);
@@ -479,9 +612,9 @@ export function ExpenseForm({
       setText(data.text);
       setInputSource("voice");
       setFlowStage("parsed");
-      toast.success("تم فهم التسجيل!");
-
-      if (
+      if ("partialReady" in data && data.partialReady === true) {
+        await handlePartialBooking(data);
+      } else if (
         data.decision === "auto_save" &&
         data.items &&
         data.items.length > 0
@@ -524,7 +657,9 @@ export function ExpenseForm({
 
   // ─── Parsing Mutation ───
   const parseMutation = trpc.ai.parseExpense.useMutation({
+    retry: (attempt, error) => attempt === 0 && !error.data,
     onSuccess: async (data) => {
+      if ("partialReady" in data && data.partialReady === true && activeOutboxRequestIdRef.current) return;
       const traceLogId =
         (data as { classificationLogId?: number }).classificationLogId ?? null;
       setClassificationLogId(traceLogId);
@@ -534,7 +669,9 @@ export function ExpenseForm({
       setClarificationQuestion(null);
       setClarificationId(null);
 
-      if (
+      if ("partialReady" in data && data.partialReady === true) {
+        await handlePartialBooking(data);
+      } else if (
         data.decision === "auto_save" &&
         data.items &&
         data.items.length > 0
@@ -928,6 +1065,8 @@ export function ExpenseForm({
               mimeType: actualMimeType,
               durationSeconds: Math.max(1, durationRef.current),
               businessMode: businessMode || false,
+              partialBooking: true,
+              clientRequestId: createOfflineItemId(),
             });
           } catch (readErr) {
             console.error("Audio FileReader error:", readErr);
@@ -1121,6 +1260,8 @@ export function ExpenseForm({
           source: (inputSource === "voice" ? "voice" : inputSource === "image" ? "image" : "ai_parsed") as any,
           date: item.date,
           classificationLogId: traceLogId || undefined,
+          readingItemId: item.readingItemId,
+          purpose: item.purpose,
           businessId,
           direction: directionToSave(item),
           ...personToSave(item),
@@ -1142,6 +1283,8 @@ export function ExpenseForm({
           source: inputSource === "voice" ? "voice" : inputSource === "image" ? "image" : "ai_parsed",
           date: item.date,
           classificationLogId: traceLogId || undefined,
+          readingItemId: item.readingItemId,
+          purpose: item.purpose,
           businessId,
           direction: directionToSave(item),
           ...personToSave(item),
@@ -1197,7 +1340,12 @@ export function ExpenseForm({
   const handleUpdateParsedItem = (index: number, updates: any) => {
     if (!parsedItems) return;
     const newItems = [...parsedItems];
-    newItems[index] = { ...newItems[index], ...updates };
+    const previous = newItems[index];
+    const updated = { ...previous, ...updates };
+    if (updated.category !== previous.category || updated.subCategory !== previous.subCategory || updated.type !== previous.type) {
+      delete updated.purpose;
+    }
+    newItems[index] = updated;
     setParsedItems(newItems);
   };
 
@@ -1220,6 +1368,7 @@ export function ExpenseForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (partialRetry || commitPartialMutation.isPending) return;
     if (!text.trim()) return;
     if (text.length > ExpenseInputLimits.rawTextMax) {
       toast.error(
@@ -1271,6 +1420,8 @@ export function ExpenseForm({
       text,
       inputChannel: "text",
       businessMode: businessMode || false,
+      partialBooking: true,
+      clientRequestId: createOfflineItemId(),
     });
   };
 
@@ -1279,7 +1430,7 @@ export function ExpenseForm({
     const syncOfflineData = async () => {
       if (syncInProgressRef.current) return;
 
-      const offlineTexts = JSON.parse(
+      const offlineTexts: OfflineText[] = JSON.parse(
         localStorage.getItem("smartspend_offline_texts") || "[]",
       );
       const offlineManual = JSON.parse(
@@ -1288,21 +1439,24 @@ export function ExpenseForm({
 
       const totalToSync = offlineTexts.length + offlineManual.length;
       if (totalToSync === 0) return;
+      syncInProgressRef.current = true;
 
       // Wait 5 seconds connection cooldown for network stability
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
       // Check connection state again
-      if (!navigator.onLine) return;
+      if (!navigator.onLine) {
+        syncInProgressRef.current = false;
+        return;
+      }
 
-      syncInProgressRef.current = true;
       setIsSyncing(true);
       setSyncRemaining(totalToSync);
 
       // 1. Sync Text (AI) Transactions. An item that needs the user's review stays in the
       // queue marked, and the rest keep syncing; the first such item is reopened at the end
       // so its review card is the one on screen.
-      let firstForReview: { id: string; text: string } | null = null;
+      let firstForReview: OfflineText | null = null;
       let index = 0;
       while (index < offlineTexts.length) {
         const item = offlineTexts[index];
@@ -1317,27 +1471,45 @@ export function ExpenseForm({
             { id: "sync-toast" },
           );
 
-          lastAutoSaveSucceededRef.current = true;
-          activeOutboxRequestIdRef.current = item.id || createOfflineItemId();
-          item.id = activeOutboxRequestIdRef.current;
+          item.id ||= createOfflineItemId();
           let parseResult;
-          try {
-            parseResult = await parseMutation.mutateAsync({
-              text: item.text,
-              inputChannel: "text",
-              businessMode: businessMode || false,
-            });
-          } finally {
-            activeOutboxRequestIdRef.current = null;
+          if (!item.partial) {
+            lastAutoSaveSucceededRef.current = true;
+            activeOutboxRequestIdRef.current = item.id;
+            try {
+              parseResult = await parseMutation.mutateAsync({
+                text: item.text,
+                inputChannel: "text",
+                businessMode: businessMode || false,
+                partialBooking: true,
+                clientRequestId: item.id,
+              });
+            } finally {
+              activeOutboxRequestIdRef.current = null;
+            }
+            if ("partialReady" in parseResult && parseResult.partialReady === true) {
+              item.partial = partialReading(parseResult);
+              if (!item.partial) throw new Error("Missing partial reading");
+              storeQueuedText(item);
+            }
+          }
+
+          if (item.partial) {
+            if (await commitPartial(item, item.partial)) {
+              offlineTexts.splice(index, 1);
+              setSyncRemaining(offlineTexts.length + offlineManual.length);
+              continue;
+            }
+            delete item.partial;
           }
 
           if (
-            parseResult.decision !== "auto_save" ||
+            parseResult?.decision !== "auto_save" ||
             !lastAutoSaveSucceededRef.current
           ) {
             item.id ||= createOfflineItemId();
             item.status =
-              parseResult.decision === "clarify"
+              parseResult?.decision === "clarify"
                 ? "needs_clarification"
                 : "needs_review";
             localStorage.setItem(
@@ -1418,7 +1590,7 @@ export function ExpenseForm({
         );
         setPendingOfflineTextId(firstForReview.id);
         setText(firstForReview.text);
-        parseMutation.mutate({ text: firstForReview.text, inputChannel: "text", businessMode: businessMode || false });
+        parseMutation.mutate({ text: firstForReview.text, inputChannel: "text", businessMode: businessMode || false, partialBooking: true, clientRequestId: createOfflineItemId() });
       } else {
         toast.success("اتبعت كل اللي اتكتب أوفلاين", { id: "sync-toast" });
       }
@@ -1495,6 +1667,8 @@ export function ExpenseForm({
       inputChannel: "text",
       skipClarification,
       businessMode: businessMode || false,
+      partialBooking: true,
+      clientRequestId: createOfflineItemId(),
     });
   }, [createMutation.isPending, parseMutation]);
 
@@ -1526,6 +1700,8 @@ export function ExpenseForm({
       text: newText,
       inputChannel: inputSource === "voice" ? "voice" : "text",
       businessMode: businessMode || false,
+      partialBooking: true,
+      clientRequestId: createOfflineItemId(),
     });
   };
 
@@ -1550,6 +1726,7 @@ export function ExpenseForm({
   const isSubmitting =
     parseMutation.isPending ||
     parseVoiceMutation.isPending ||
+    commitPartialMutation.isPending ||
     createMutation.isPending ||
     answerClarificationMutation.isPending ||
     isProcessingVoice;
@@ -1590,6 +1767,24 @@ export function ExpenseForm({
       </div>
 
       <CardContent className="space-y-4 sm:space-y-5 p-4 sm:p-6 pt-2 sm:pt-3">
+        {partialRetry?.partial && !commitPartialMutation.isPending && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm" dir="rtl">
+            <span>ماقدرناش نأكد التسجيل.</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!isOnline || isSyncing}
+              onClick={() => {
+                if (partialRetry.partial && !syncInProgressRef.current) {
+                  void commitInteractivePartial(partialRetry, partialRetry.partial);
+                }
+              }}
+            >
+              جرّب الحفظ تاني
+            </Button>
+          </div>
+        )}
         {isSyncing && (
           <div
             className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs flex items-center justify-between gap-3 animate-pulse"
@@ -1626,7 +1821,7 @@ export function ExpenseForm({
                   : "border-slate-300 dark:border-slate-800 bg-white dark:bg-[#0c0e12] focus:border-slate-400 focus:ring-slate-400",
               )}
               dir="rtl"
-              disabled={isRecording || showSuccessAnim}
+              disabled={isRecording || showSuccessAnim || partialRetry !== null}
             />
             {showSuccessAnim && (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 dark:bg-[#0c0e12]/80 backdrop-blur-sm rounded-xl animate-in fade-in zoom-in-95 duration-300">
@@ -1665,7 +1860,7 @@ export function ExpenseForm({
                   size="sm"
                   onClick={() => {
                     mediumTap();
-                    if (!text.trim() || parseMutation.isPending) return;
+                    if (!text.trim() || isSubmitting || partialRetry) return;
                     if (!isOnline) {
                       toast.info(
                         "احفظها من زرار الإضافة العادي عشان تدخل قايمة الأوفلاين.",
@@ -1680,11 +1875,12 @@ export function ExpenseForm({
                     parseMutation.mutate({
                       text,
                       inputChannel: "text",
-                      skipClarification: true,
                       businessMode: businessMode || false,
+                      partialBooking: true,
+                      clientRequestId: createOfflineItemId(),
                     });
                   }}
-                  disabled={parseMutation.isPending}
+                  disabled={isSubmitting || partialRetry !== null}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-3.5 h-8 rounded-xl shrink-0"
                 >
                   حفظ سريع
@@ -1734,7 +1930,7 @@ export function ExpenseForm({
                         ? "border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/50 opacity-50 cursor-not-allowed"
                         : "border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c0e12] hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700",
                   )}
-                  disabled={showSuccessAnim || !isOnline}
+                  disabled={showSuccessAnim || !isOnline || isSubmitting || partialRetry !== null}
                 >
                   {!isRecording && isOnline && userLimits?.voice && userLimits.voice.remaining >= 0 && (
                     <span
@@ -1786,6 +1982,8 @@ export function ExpenseForm({
                   isRecording ||
                   isCompressing ||
                   parseReceiptMutation.isPending ||
+                  isSubmitting ||
+                  partialRetry !== null ||
                   showSuccessAnim ||
                   !isOnline
                 }
@@ -1821,7 +2019,7 @@ export function ExpenseForm({
                   stopRecording();
                 }
               }}
-              disabled={isSubmitting || (!text.trim() && !isRecording)}
+              disabled={isSubmitting || partialRetry !== null || (!text.trim() && !isRecording)}
               className={cn(
                 "flex-1 w-full h-12 sm:h-14 text-sm sm:text-base rounded-xl transition-all shadow-none gap-2 sm:gap-3 font-medium",
                 isRecording
@@ -2386,16 +2584,12 @@ function ManualForm({
   );
   const isSubmittingManualRef = useRef(false);
 
-  const categoryList = useMemo(() => {
-    const list =
-      Array.isArray(categories) && categories.length > 0
-        ? [...categories]
-        : [...CATEGORY_OPTIONS];
-    if (!list.includes("تحويل")) {
-      list.push("تحويل");
-    }
-    return list;
-  }, [categories]);
+  const purposeOptions = getPurposeOptionsForType(type);
+  const purposeCategory = selectedPurposeOption(category);
+  const purposeSub = purposeCategory?.subs.find(sub => sub.id === subCategory);
+  const customCategories: string[] = type === "expense" && Array.isArray(categories)
+    ? categories.filter((name): name is string => typeof name === "string" && !CATEGORY_OPTIONS.includes(name) && !purposeOptions.some(option => option.nameAr === name))
+    : [];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -2420,7 +2614,7 @@ function ManualForm({
       return;
     }
 
-    const effectiveCategory = type === "transfer" && !category ? "تحويل" : category;
+    const effectiveCategory = purposeCategory?.nameAr ?? category;
     if (!effectiveCategory || !effectiveCategory.trim()) {
       toast.error("اختار الفئة.");
       return;
@@ -2441,13 +2635,16 @@ function ManualForm({
     }
 
     isSubmittingManualRef.current = true;
-    const resolvedSubCategory = subCategory.trim() || "عام";
+    const resolvedSubCategory = purposeSub?.nameAr ?? (subCategory.trim() || "عام");
+    const purpose = purposeCategory && purposeSub ? { category: purposeCategory.id, sub: purposeSub.id } : undefined;
     const fingerprint = [
       parsedAmount,
       type,
       type === "transfer" ? transferDirection : "",
       effectiveCategory,
       resolvedSubCategory,
+      purpose?.category,
+      purpose?.sub,
       description,
       businessId ?? "",
     ].join("|");
@@ -2461,6 +2658,8 @@ function ManualForm({
       type,
       category: effectiveCategory,
       subCategory: resolvedSubCategory,
+      purpose,
+      movementKind: purpose && movementKindForPurpose(purpose.category, purpose.sub),
       description: description || undefined,
       rawText: `${parsedAmount} جنيه - ${effectiveCategory}`,
       source: "manual",
@@ -2490,7 +2689,7 @@ function ManualForm({
       offlineManual.push({
         ...payload,
         id: clientRequestId,
-        timestamp: Date.now(),
+        timestamp: new Date().getTime(),
       });
       localStorage.setItem(
         "smartspend_offline_manual",
@@ -2540,10 +2739,11 @@ function ManualForm({
               key={t.id}
               type="button"
               onClick={() => {
+                if (t.id === type) return;
                 setType(t.id);
-                if (t.id === "transfer" && !category) {
-                  setCategory("تحويل");
-                }
+                const next = t.id === "transfer" ? selectedPurposeOption(purposeOptionValue("people_transfer")) : undefined;
+                setCategory(next ? purposeOptionValue(next.id) : "");
+                setSubCategory(next ? defaultPurposeSub(next).id : "عام");
               }}
               className={cn(
                 "flex-1 min-h-[44px] flex items-center justify-center text-xs font-bold rounded-lg transition-all active:scale-[0.97] cursor-pointer",
@@ -2607,13 +2807,17 @@ function ManualForm({
             value={category}
             onChange={(e) => {
               const nextCategory = e.target.value;
+              const purpose = selectedPurposeOption(nextCategory);
               setCategory(nextCategory);
-              setSubCategory(defaultSubCategory(nextCategory));
+              setSubCategory(purpose ? defaultPurposeSub(purpose).id : defaultSubCategory(nextCategory));
             }}
             className="w-full h-11 rounded-md border text-sm px-2 bg-white dark:bg-slate-900"
           >
             <option value="">اختر...</option>
-            {categoryList.map((c: string) => (
+            {purposeOptions.map(option => (
+              <option key={option.id} value={purposeOptionValue(option.id)}>{option.nameAr}</option>
+            ))}
+            {customCategories.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
@@ -2626,11 +2830,15 @@ function ManualForm({
           <Label className="text-xs">الفئة الفرعية</Label>
           {subCategory && (
             <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
-              {subCategory}
+              {purposeSub?.nameAr ?? subCategory}
             </span>
           )}
         </div>
-        <Input
+        {purposeCategory ? (
+          <select value={subCategory} onChange={event => setSubCategory(event.target.value)} className="w-full h-11 rounded-md border text-sm px-2 bg-white dark:bg-slate-900" aria-label="الفئة الفرعية">
+            {purposeCategory.subs.map(sub => <option key={sub.id} value={sub.id}>{sub.nameAr}</option>)}
+          </select>
+        ) : <Input
           value={subCategory}
           onChange={(e) => setSubCategory(e.target.value)}
           maxLength={ExpenseInputLimits.subCategoryMax}
@@ -2641,8 +2849,8 @@ function ManualForm({
           }
           disabled={!category}
           className="h-11 text-sm bg-white dark:bg-slate-900"
-        />
-        {category && (
+        />}
+        {category && !purposeCategory && (
           <div className="flex flex-wrap gap-1.5 pt-1 max-h-24 overflow-y-auto">
             {getSubCategoryOptions(category).map((sub: string) => (
               <button

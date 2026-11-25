@@ -17,7 +17,8 @@
 import { TAXONOMY_VERSION } from "../../../contracts/taxonomy";
 import { executeLlmChain, LlmChainError, type LlmAttempt, type LlmRequest, type LlmResponse, type LlmRoute } from "../llm-router";
 import { storedShape, type StoredShape } from "./bridge";
-import { parseReply, READING_CONTRACT_VERSION, READING_SCHEMA, type AskAbout, type Reading } from "./contract";
+import { ExpenseInputLimits } from "../../../contracts/constants";
+import { MAX_EVENTS, parseReply, READING_CONTRACT_VERSION, READING_SCHEMA, type AskAbout, type Reading } from "./contract";
 import { guardReading, type GuardedEvent } from "./guard";
 import { foldForMatch, numberMentions } from "./numbers";
 import { mentionsForeignCurrency, EGP_RESTATEMENT } from "./currency";
@@ -95,6 +96,21 @@ export class UnderstandingUnavailableError extends Error {
 }
 
 export const VERSIONS = { contract: READING_CONTRACT_VERSION, prompt: PROMPT_VERSION, taxonomy: TAXONOMY_VERSION } as const;
+
+/** Keep whole sentences. Decimal points and short pauses never split a financial clause. */
+export function recordingChunks(text: string): string[] {
+  if (text.length <= MAX_SENTENCE_CHARS) return [text];
+  if (text.length > ExpenseInputLimits.rawTextMax) return [];
+  const sentences = text.split(/(?<=[.!؟!?؛])\s+|[\r\n]+/u).map(s => s.trim()).filter(Boolean);
+  if (sentences.some(s => s.length > MAX_SENTENCE_CHARS)) return [];
+  const chunks: string[] = [];
+  for (const sentence of sentences) {
+    const last = chunks.length - 1;
+    if (last >= 0 && chunks[last].length + sentence.length + 1 <= MAX_SENTENCE_CHARS) chunks[last] += " " + sentence;
+    else chunks.push(sentence);
+  }
+  return chunks;
+}
 
 /** Messages for a sentence the engine does not send to a model. */
 const EMPTY_TEXT = "مش لاقيين كلام نسجّله. اكتب دفعت إيه وبكام.";
@@ -180,7 +196,46 @@ export async function understand(input: UnderstandInput, deps: { execute?: typeo
   const execute = deps.execute ?? executeLlmChain;
   const text = String(input.text ?? "").trim();
   if (!text) return answeredWithoutModel(EMPTY_TEXT, "empty_text");
-  if (text.length > MAX_SENTENCE_CHARS) return answeredWithoutModel(TEXT_TOO_LONG, "text_too_long");
+  if (text.length > MAX_SENTENCE_CHARS) {
+    const chunks = recordingChunks(text);
+    if (!chunks.length) return answeredWithoutModel(TEXT_TOO_LONG, "text_too_long");
+    const usage = emptyUsage();
+    const events: UnderstoodEvent[] = [];
+    const ignored: Reading["ignored"] = [];
+    const numbers: Reading["numbers"] = [];
+    const unresolved = () => ({
+      ...answeredWithoutModel("محتاجين نقسم الحكاية عشان المبالغ تفضل مع عملياتها. ابعت كل مجموعة لوحدها، ولسه ما سجّلناش حاجة.", "long_reading_unresolved"),
+      source: "model" as const, usage,
+    });
+    for (const chunk of chunks) {
+      let part: Understanding;
+      try {
+        part = await understand({ ...input, text: chunk }, deps);
+      } catch (error) {
+        if (!(error instanceof UnderstandingUnavailableError)) throw error;
+        usage.attempts.push(...error.attempts);
+        addTotals(usage, error.tokens);
+        throw unavailable("Incomplete long reading", usage);
+      }
+      addTotals(usage, part.usage);
+      usage.attempts.push(...part.usage.attempts);
+      usage.latencyMs += part.usage.latencyMs;
+      usage.degradedSchema ||= part.usage.degradedSchema;
+      usage.model = part.usage.model;
+      usage.servedBy = part.usage.servedBy;
+      if (part.outcome === "ask" || !part.events.length || part.problems.length ||
+          part.events.some(event => event.flags.length) || part.ignored.length ||
+          part.reasons.some(reason => reason !== "auto_save_off")) return unresolved();
+      events.push(...part.events);
+      numbers.push(...part.numbers);
+      if (events.length > MAX_EVENTS) return unresolved();
+    }
+    const whole = guardReading({ events, ignored, numbers, ask: "", askAbout: "none" },
+      text, toGuardContext(input.context, input.settings));
+    if (whole.flags.length || whole.events.some(event => event.flags.length)) return unresolved();
+    return { outcome: "show", events, ignored, numbers, usage, reasons: ["long_reading_review"],
+      source: "model", versions: { ...VERSIONS }, problems: [] };
+  }
 
   const usage = emptyUsage();
   const problems: string[] = [];

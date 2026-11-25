@@ -184,12 +184,12 @@ export async function loadWalletRows(user: CoachUser): Promise<WalletRow[]> {
 export async function loadCorrectionRows(user: CoachUser): Promise<VocabularyRow[]> {
   // ucr_user_active_idx (user_id, user_type, is_active); its implicit id suffix serves the order
   const rows = await db
-    .select({ pattern: userCorrectionRules.pattern, category: userCorrectionRules.category, subCategory: userCorrectionRules.subCategory, createdAt: userCorrectionRules.createdAt })
+    .select({ pattern: userCorrectionRules.pattern, purpose: userCorrectionRules.purpose, category: userCorrectionRules.category, subCategory: userCorrectionRules.subCategory, createdAt: userCorrectionRules.createdAt })
     .from(userCorrectionRules)
     .where(and(owns(userCorrectionRules, user), eq(userCorrectionRules.isActive, true)))
     .orderBy(desc(userCorrectionRules.id))
     .limit(VOCABULARY_ROWS);
-  return rows.map((row) => ({ phrase: row.pattern, category: row.category, subCategory: row.subCategory, at: timeOf(row.createdAt) }));
+  return rows.map((row) => ({ phrase: row.pattern, purpose: row.purpose, category: row.category, subCategory: row.subCategory, at: timeOf(row.createdAt) }));
 }
 
 export async function loadDictionaryRows(user: CoachUser): Promise<VocabularyRow[]> {

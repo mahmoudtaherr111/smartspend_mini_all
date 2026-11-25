@@ -372,6 +372,27 @@
       "when": 1794271308539,
       "tag": "0052_catalog_ms_store",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "5",
+      "when": 1795458746190,
+      "tag": "0053_stored_recording_purpose",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "5",
+      "when": 1795563797251,
+      "tag": "0054_taught_recording_purpose",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "5",
+      "when": 1795583109133,
+      "tag": "0055_recording_admission",
+      "breakpoints": true
     }
   ]
 }

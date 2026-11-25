@@ -11,6 +11,8 @@ import {
   getCategoryAliasesById,
   comparableArabic,
 } from "../../lib/category-registry";
+import { TAXONOMY } from "../../../contracts/taxonomy";
+import { labelsFromColumns, type PurposeColumns } from "../recording/saved-reading";
 
 /**
  * Query expansion: asking about "فواتير" should also sweep related categories.
@@ -150,7 +152,53 @@ export function financeCategoryIds(category: string): string[] {
 
 export function displayFinanceCategory(category: unknown): string {
   const id = String(category ?? "").trim();
-  return arabicDisplayName(id);
+  return namedPurpose(id)?.nameAr ?? arabicDisplayName(id);
+}
+
+const purposeNames = new Map(TAXONOMY.flatMap(category =>
+  [category.id, category.nameAr, category.nameEn].map(name => [normalizeFinanceText(name), category] as const),
+));
+
+export function namedPurpose(category: string) {
+  return purposeNames.get(normalizeFinanceText(category));
+}
+
+export type FinanceCategoryRow = PurposeColumns & {
+  category?: string | null;
+  subCategory?: string | null;
+  description?: string | null;
+  rawText?: string | null;
+  placeHint?: string | null;
+};
+
+function legacyCategoryForRow(row: FinanceCategoryRow) {
+  return canonicalCategoryForRow(row.category, row.subCategory, row.description, row.rawText, row.placeHint);
+}
+
+export function financeRowCategoryId(row: FinanceCategoryRow): string {
+  return (labelsFromColumns(row) && row.purposeCategoryId) || legacyCategoryForRow(row);
+}
+
+export function financeRowCategoryName(row: FinanceCategoryRow): string {
+  return labelsFromColumns(row)?.categoryAr ?? arabicDisplayName(legacyCategoryForRow(row));
+}
+
+export function financeRowSubCategory(row: FinanceCategoryRow): string | null | undefined {
+  return labelsFromColumns(row)?.subAr ?? row.subCategory;
+}
+
+export function financeRowMatchesCategory(row: FinanceCategoryRow, category: string): boolean {
+  const purpose = namedPurpose(category);
+  if (purpose && labelsFromColumns(row)) return row.purposeCategoryId === purpose.id;
+  const legacyId = legacyCategoryForRow(row);
+  if (purpose) return legacyId === purpose.id;
+  // Older broad queries still cover both the legacy filing and corresponding stored purposes.
+  const included = financeCategoryIds(category);
+  if (included.includes(legacyId)) return true;
+  if (!labelsFromColumns(row)) return false;
+  return included.includes(row.purposeCategoryId!) ||
+    (included.includes("freelance") && row.purposeCategoryId === "business_income") ||
+    (included.includes("investment_income") && row.purposeCategoryId === "returns");
 }
 
 export function matchesCategory(

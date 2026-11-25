@@ -5,10 +5,12 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../ledger/category_style.dart';
+import '../ledger/taxonomy_catalog.dart';
 import 'budget_models.dart';
 import 'budget_providers.dart';
 
 const String _allCategories = '__all__';
+const String _purposePrefix = 'purpose:';
 
 /// Bottom sheet to create or edit a budget (`budget.create` / `budget.update`).
 class BudgetFormSheet extends ConsumerStatefulWidget {
@@ -48,7 +50,10 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
   void initState() {
     super.initState();
     final existing = widget.existing;
-    _selectedCategory = existing?.category ?? _allCategories;
+    final purposeCategoryId = existing?.purposeCategoryId;
+    _selectedCategory = purposeCategoryId == null
+        ? existing?.category ?? _allCategories
+        : '$_purposePrefix$purposeCategoryId';
     _initialCategory = _selectedCategory;
     _initialTitle =
         (existing?.title ??
@@ -121,22 +126,23 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
     super.dispose();
   }
 
-  void _onCategoryChanged(String value) {
+  void _onCategoryChanged(String value, Map<String, String> labels) {
     setState(() {
       _selectedCategory = value;
       // Auto-update title if user hasn't typed a custom title
       if (_titleController.text.trim().isEmpty ||
           _titleController.text.trim() ==
               AppLocalizations.of(context).monOverallBudget ||
+          labels.containsValue(_titleController.text.trim()) ||
           categoriesForType('expense').contains(_titleController.text.trim())) {
         _titleController.text = value == _allCategories
             ? AppLocalizations.of(context).monOverallBudget
-            : value;
+            : labels[value] ?? value;
       }
     });
   }
 
-  Future<void> _submit() async {
+  Future<void> _submit(Map<String, String> labels) async {
     final rawLimit = _limitController.text.trim();
     final limit = parseAmount(rawLimit)?.toDouble();
     if (limit == null || limit <= 0) {
@@ -149,12 +155,16 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
     final title = _titleController.text.trim().isEmpty
         ? (_selectedCategory == _allCategories
               ? AppLocalizations.of(context).monOverallBudget
-              : _selectedCategory)
+              : (labels[_selectedCategory] ?? _selectedCategory))
         : _titleController.text.trim();
 
-    final categoryArg = _selectedCategory == _allCategories
+    final purposeId = _selectedCategory.startsWith(_purposePrefix)
+        ? _selectedCategory.substring(_purposePrefix.length)
+        : null;
+    final categoryArg = _selectedCategory == _allCategories || purposeId != null
         ? null
         : _selectedCategory;
+    final categoryChanged = _selectedCategory != _initialCategory;
 
     setState(() {
       _submitting = true;
@@ -167,7 +177,10 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
         await notifier.updateBudget(
           budgetId: widget.existing!.id,
           title: title,
-          category: categoryArg,
+          category: categoryChanged && purposeId == null
+              ? categoryArg ?? ''
+              : null,
+          purposeCategoryId: categoryChanged ? purposeId : null,
           monthlyLimit: limit,
           periodStartDay: _periodStartDay,
           alertThresholdPercent: _alertThresholdPercent,
@@ -176,6 +189,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
         await notifier.createBudget(
           title: title,
           category: categoryArg,
+          purposeCategoryId: purposeId,
           monthlyLimit: limit,
           periodStartDay: _periodStartDay,
           alertThresholdPercent: _alertThresholdPercent,
@@ -200,7 +214,22 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
     final l10n = AppLocalizations.of(context);
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
-    final expenseCategories = categoriesForType('expense');
+    final catalog =
+        ref.watch(taxonomyCatalogProvider).value ?? const <TaxonomyPurpose>[];
+    final purposeCategories = purposesForType(catalog, 'expense');
+    final existingLabel = widget.existing?.categoryLabel;
+    final categoryLabels = <String, String>{
+      if (purposeCategories.isEmpty)
+        for (final label in categoriesForType('expense')) label: label
+      else
+        for (final purpose in purposeCategories)
+          '$_purposePrefix${purpose.id}': purpose.name,
+      if (_initialCategory != _allCategories && existingLabel != null)
+        _initialCategory: existingLabel,
+      if (_selectedCategory != _allCategories &&
+          !_selectedCategory.startsWith(_purposePrefix))
+        _selectedCategory: _selectedCategory,
+    };
     final isEditing = widget.existing != null;
 
     return PopScope(
@@ -285,19 +314,22 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  ...expenseCategories.map(
+                  ...categoryLabels.entries.map(
                     (cat) => DropdownMenuItem(
-                      value: cat,
+                      value: cat.key,
                       child: Row(
                         children: [
                           Icon(
-                            categoryIcon(cat),
+                            categoryIcon(cat.value),
                             size: 18,
                             color: colors.accent,
                           ),
                           const SizedBox(width: SmartSpendSpacing.sm),
                           Expanded(
-                            child: Text(cat, overflow: TextOverflow.ellipsis),
+                            child: Text(
+                              cat.value,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
@@ -305,7 +337,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
                   ),
                 ],
                 onChanged: (val) {
-                  if (val != null) _onCategoryChanged(val);
+                  if (val != null) _onCategoryChanged(val, categoryLabels);
                 },
               ),
               const SizedBox(height: SmartSpendSpacing.md),
@@ -374,7 +406,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
                 label: _submitting
                     ? l10n.monSaving
                     : (isEditing ? l10n.monSaveChanges : l10n.monAddTheBudget),
-                onPressed: _submitting ? null : _submit,
+                onPressed: _submitting ? null : () => _submit(categoryLabels),
               ),
             ],
           ),

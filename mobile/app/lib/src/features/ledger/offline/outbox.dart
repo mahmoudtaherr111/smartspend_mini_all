@@ -38,9 +38,10 @@ final outboxProvider = AsyncNotifierProvider<Outbox, OutboxView>(Outbox.new);
 
 /// The outbox as screens show it.
 final class OutboxView {
-  const OutboxView({this.items = const []});
+  const OutboxView({this.items = const [], this.recoveredBooking});
 
   final List<OutboxItem> items;
+  final SubmitSaved? recoveredBooking;
 }
 
 /// What happened to a sentence the person just sent.
@@ -50,12 +51,20 @@ sealed class SubmitOutcome {
 
 /// In the ledger: [ids] can be deleted to undo it.
 final class SubmitSaved extends SubmitOutcome {
-  const SubmitSaved(this.items, this.ids, {required this.automatic});
+  const SubmitSaved(
+    this.items,
+    this.ids, {
+    required this.automatic,
+    this.partial,
+  });
   final List<ParsedItem> items;
   final List<int> ids;
 
   /// Saved without asking, because the server was sure.
   final bool automatic;
+
+  /// The server has kept the incomplete transactions as pending questions.
+  final PartialBookingResult? partial;
 }
 
 /// Read; waits for the person to look at [OutboxItem.parse] and agree.
@@ -205,6 +214,7 @@ class Outbox extends AsyncNotifier<OutboxView> {
     required String type,
     required String category,
     String? subCategory,
+    SpendingPurpose? purpose,
     String? description,
     String? direction,
     String? personName,
@@ -232,6 +242,7 @@ class Outbox extends AsyncNotifier<OutboxView> {
             type: type,
             category: category,
             subCategory: subCategory,
+            purpose: purpose,
             description: description,
             direction: direction,
             personName: personName,
@@ -249,7 +260,8 @@ class Outbox extends AsyncNotifier<OutboxView> {
   Future<SubmitOutcome> _submitParsed(OutboxItem item) async {
     await _change((items) => [...items, item]);
     await flush();
-    if (item.parse?.decision == ParseDecision.autoSave &&
+    if ((item.parse?.decision == ParseDecision.autoSave ||
+            item.parse?.partialReady == true) &&
         (_offline || ref.read(connectivityProvider).value == false)) {
       await _replace(item.copyWith(state: OutboxState.queued));
       return const SubmitQueued();
@@ -274,6 +286,16 @@ class Outbox extends AsyncNotifier<OutboxView> {
       if (next == null) break;
       final outcome = await _process(next, interactive: false);
       if (outcome is SubmitQueued) break;
+      if (outcome is SubmitSaved &&
+          outcome.partial != null &&
+          outcome.ids.isNotEmpty) {
+        state = AsyncData(
+          OutboxView(
+            items: state.value?.items ?? const [],
+            recoveredBooking: outcome,
+          ),
+        );
+      }
     }
   }
 
@@ -356,8 +378,36 @@ class Outbox extends AsyncNotifier<OutboxView> {
       final isBiz = ref.read(isBusinessModeActiveProvider);
       final parse =
           item.parse ??
-          await api.parse(item.text, businessMode: isBiz ? true : null);
+          await api.parse(
+            item.text,
+            businessMode: isBiz ? true : null,
+            requestId: item.id,
+          );
       if (item.parse == null) _online();
+      if (parse.partialReady) {
+        // Persist the server's plan before the write. A lost reply retries the
+        // same plan ID without reading the sentence or recording voice again.
+        pending = item.copyWith(state: OutboxState.sending, parse: parse);
+        await _replace(pending);
+        final logId = parse.classificationLogId;
+        if (logId == null ||
+            logId <= 0 ||
+            parse.decision != ParseDecision.review) {
+          throw const ApiNetworkException(
+            FormatException('Invalid partial booking'),
+          );
+        }
+        final result = await api.commitPartialReading(logId);
+        _online();
+        await _remove(item.id);
+        _refreshLedger();
+        return SubmitSaved(
+          parse.items,
+          result.savedIds,
+          automatic: true,
+          partial: result,
+        );
+      }
       switch (parse.decision) {
         case ParseDecision.autoSave:
           final items = parse.items.where((entry) => entry.isSavable).toList();
@@ -405,7 +455,11 @@ class Outbox extends AsyncNotifier<OutboxView> {
       _wentOffline();
       return const SubmitQueued();
     } on ApiException catch (error) {
-      final kept = !interactive || item.isVoice || error.httpStatus >= 500;
+      final kept =
+          !interactive ||
+          item.isVoice ||
+          pending.parse?.partialReady == true ||
+          error.httpStatus >= 500;
       if (!kept) {
         // The person can fix a refusal while the sentence is still in the composer.
         await _remove(item.id);

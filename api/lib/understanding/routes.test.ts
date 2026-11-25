@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const gateway = vi.hoisted(() => ({ resolveAdminRoutes: vi.fn() }));
 vi.mock("../ai-gateway", () => gateway);
 
-import { builtinRouting, resolveUnderstandingRoutes, tierOf } from "./routes";
+import { builtinRouting, resolveUnderstandingRoutes } from "./routes";
 
 const adminRoute = (slug: string, model: string, priority: number) => ({
   slug, protocol: "openai", baseUrl: `https://${slug}.example/v1`, apiKey: `${slug}-key`, model, priority, providerId: priority + 1, suppressReasoning: false,
@@ -56,10 +56,21 @@ describe("resolveUnderstandingRoutes", () => {
     expect(builtinRouting("free", { ai_api_key: "a", ai_api_key_2: "b" }).keys).toMatchObject({ gemini: "a", geminiSecondary: "b" });
   });
 
-  it("maps any plan it does not know to free", () => {
-    expect(tierOf("pro")).toBe("pro");
-    expect(tierOf("ultra")).toBe("ultra");
-    expect(tierOf("enterprise")).toBe("free");
-    expect(tierOf(undefined)).toBe("free");
+  it("gives Free and Pro the same admin routes and built-in fallbacks", async () => {
+    const route = adminRoute("openrouter", "qwen/qwen3-235b", 0);
+    gateway.resolveAdminRoutes.mockResolvedValue({ preferred: route, routes: [route] });
+    const settings = { ai_api_key: "gem-key", ai_model_free: "gemini-3.1-flash-lite", ai_model_pro: "gemini-3.5-flash-lite" };
+
+    const free = await resolveUnderstandingRoutes("free", settings);
+    const pro = await resolveUnderstandingRoutes("pro", settings);
+    const unknown = await resolveUnderstandingRoutes("enterprise", settings);
+
+    expect(gateway.resolveAdminRoutes.mock.calls).toEqual(Array.from({ length: 3 }, () => ["classification", "pro"]));
+    expect(free).toEqual(pro);
+    expect(unknown).toEqual(pro);
+    gateway.resolveAdminRoutes.mockResolvedValue({ preferred: null, routes: [] });
+    const freeBuiltIn = await resolveUnderstandingRoutes("free", settings);
+    expect(freeBuiltIn).toEqual(await resolveUnderstandingRoutes("pro", settings));
+    expect(freeBuiltIn[0]).toMatchObject({ slug: "gemini", model: "gemini-3.5-flash-lite" });
   });
 });

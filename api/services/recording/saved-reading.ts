@@ -7,15 +7,17 @@
  * matched to a saved row the way a review correction is (`reviewCorrection` in
  * `api/expense-router.ts`): the only item, or the one item with the same amount. Pure.
  */
-import { MOVEMENT_KINDS, type MovementKind } from "../../../contracts/ledger-movement";
+import { TRPCError } from "@trpc/server";
+import { normalizeFinancialMovement, financialMovement, MOVEMENT_KINDS, type MovementKind } from "../../../contracts/ledger-movement";
 import { categoryAllowsKind, TAXONOMY_VERSION, taxonomyCategory, taxonomySub } from "../../../contracts/taxonomy";
-import { storedShape } from "../../lib/understanding/bridge";
+import { isUnambiguousFiling, storedFiling, storedShape, v2OfStored } from "../../lib/understanding/bridge";
 import type { PurposeLabels, ReadingSummary } from "./types";
 
 const FIRST_TAXONOMY_VERSION = "2.0";
 
 /** A log item: what the reading proposed, with its reading. */
 export interface ReadingItem {
+  readingItemId?: string;
   amount: number;
   category: string;
   subCategory: string;
@@ -54,6 +56,7 @@ function readingItemOf(value: unknown): ReadingItem | null {
   const amount = Number(raw.amount);
   if (!reading || !Number.isFinite(amount) || typeof raw.category !== "string" || typeof raw.type !== "string") return null;
   return {
+    ...(typeof raw.readingItemId === "string" ? { readingItemId: raw.readingItemId } : {}),
     amount,
     category: raw.category,
     subCategory: typeof raw.subCategory === "string" && raw.subCategory ? raw.subCategory : "عام",
@@ -64,12 +67,26 @@ function readingItemOf(value: unknown): ReadingItem | null {
 
 const cents = (value: number) => Math.round(Math.abs(value) * 100);
 
-/** The log item a saved row came from: the only item, or the one item with its amount. */
-export function readingItemFor(finalResult: unknown, saved: { amount: number }): ReadingItem | null {
-  if (!Array.isArray(finalResult) || finalResult.length === 0) return null;
-  if (finalResult.length === 1) return readingItemOf(finalResult[0]);
-  const same = finalResult.filter((item) => item && typeof item === "object" && cents(Number((item as { amount?: unknown }).amount)) === cents(saved.amount));
-  return same.length === 1 ? readingItemOf(same[0]) : null;
+type LogItem = { readingItemId?: string; amount?: unknown; category?: string; subCategory?: string | null; clause?: unknown };
+
+/** Match a server-issued item id within the owner's log. Older clients only provide an amount. */
+export function matchLogItem(finalResult: unknown, saved: { amount: number; readingItemId?: string }): LogItem | null {
+  if (!Array.isArray(finalResult)) return null;
+  const items = finalResult.filter((item): item is LogItem => item !== null && typeof item === "object");
+  if (!saved.readingItemId && finalResult.length === 1) return items[0] ?? null;
+  const matches = saved.readingItemId
+    ? items.filter(item => item.readingItemId === saved.readingItemId)
+    : items.filter(item => cents(Number(item.amount)) === cents(saved.amount));
+  return matches.length === 1 ? matches[0] : null;
+}
+
+export function readingItemFor(finalResult: unknown, saved: { amount: number; readingItemId?: string }): ReadingItem | null {
+  return readingItemOf(matchLogItem(finalResult, saved));
+}
+
+export function storedReadingItemId(metadata: unknown): string | undefined {
+  if (!metadata || typeof metadata !== "object" || !("readingItemId" in metadata)) return;
+  return typeof metadata.readingItemId === "string" ? metadata.readingItemId : undefined;
 }
 
 type Filing = { category: string; subCategory?: string | null; type: string };
@@ -86,16 +103,60 @@ export function purposeLabelsFor({ category, sub }: Pick<ReadingSummary, "catego
   return { categoryAr: purpose.nameAr, subAr: leaf.nameAr, categoryEn: purpose.nameEn, subEn: leaf.nameEn };
 }
 
-/** Use the original purpose only while the row still has the filing the reading produced. */
-export function savedPurposeLabels(row: Filing & { parsedMetadata: unknown }): PurposeLabels | undefined {
+export type PurposeColumns = { purposeCategoryId?: string | null; purposeSubId?: string | null; purposeVersion?: string | null };
+
+export function labelsFromColumns(row: PurposeColumns): PurposeLabels | undefined {
+  if (row.purposeVersion !== TAXONOMY_VERSION || !row.purposeCategoryId || !row.purposeSubId) return;
+  return purposeLabelsFor({ category: row.purposeCategoryId, sub: row.purposeSubId });
+}
+
+export type SelectedPurpose = Pick<ReadingSummary, "category" | "sub">;
+
+export function selectPurpose(purpose: SelectedPurpose, row: PurposeRow & { direction?: string | null; amount?: number | string }, movementKind?: MovementKind) {
+  const filing = storedFiling(purpose.category, purpose.sub);
+  const kind = movementKind ?? financialMovement(row)?.kind ?? normalizeFinancialMovement({ ...row, ...filing })?.financial.kind;
+  if (!kind || !categoryAllowsKind(purpose.category, kind) || !taxonomySub(purpose.category, purpose.sub)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "الغرض المختار مش مناسب لنوع الحركة." });
+  }
+  return { ...filing, purposeVersion: TAXONOMY_VERSION, purposeCategoryId: purpose.category, purposeSubId: purpose.sub };
+}
+
+type PurposeRow = Filing & { parsedMetadata?: unknown; businessId?: number | null };
+
+/** Only a current, unedited reading that still agrees with the ledger can recover its precise leaf. */
+function currentPurpose(row: PurposeRow): Pick<ReadingSummary, "category" | "sub"> | null {
   const metadata = row.parsedMetadata as { reading?: { v?: string; superseded?: boolean } } | null;
   const stored = metadata?.reading;
-  // Older rows can carry a broader meaning for the same leaf (2.0 dining/sweets_snacks
-  // included packaged snacks). Their accounting label remains a faithful fallback.
-  if (stored?.v !== TAXONOMY_VERSION || stored.superseded) return;
+  if (stored?.v !== TAXONOMY_VERSION || stored.superseded) return null;
   const reading = readingOf(stored);
-  if (!reading || !categoryAllowsKind(reading.category, reading.kind)) return;
-  if (savedAsRead(storedShape(reading), row)) return purposeLabelsFor(reading);
+  if (!reading || !taxonomySub(reading.category, reading.sub) || !categoryAllowsKind(reading.category, reading.kind)) return null;
+  const expected = storedShape(reading);
+  const movement = financialMovement(row);
+  const typeMatches = movement
+    ? movement.kind === movementKindFor(reading, expected.type) && movement.movement === reading.flow
+    : expected.type === row.type;
+  const businessLeaf = row.businessId && (reading.category === "work" || reading.category === "business_income");
+  return typeMatches && expected.category === row.category && (businessLeaf || expected.subCategory === (row.subCategory || "عام"))
+    ? reading : null;
+}
+
+export function savedPurposeLabels(row: PurposeRow & PurposeColumns): PurposeLabels | undefined {
+  const persisted = labelsFromColumns(row);
+  if (persisted) return persisted;
+  const reading = currentPurpose(row);
+  return reading ? purposeLabelsFor(reading) : undefined;
+}
+
+/** Historical names can recover a purpose only for a one-to-one filing with a compatible financial kind. */
+export function purposeColumnsFor(row: PurposeRow): Required<PurposeColumns> {
+  const filing = { category: row.category, subCategory: row.subCategory || "عام" };
+  let purpose = currentPurpose(row);
+  if (!purpose && isUnambiguousFiling(filing)) {
+    const pair = v2OfStored(filing.category, filing.subCategory);
+    const kind = financialMovement(row)?.kind ?? (row.type === "expense" ? "spending" : row.type === "income" ? "income" : row.type === "investment" ? "investment" : undefined);
+    if (pair && kind && categoryAllowsKind(pair.category, kind)) purpose = pair;
+  }
+  return { purposeVersion: TAXONOMY_VERSION, purposeCategoryId: purpose?.category ?? null, purposeSubId: purpose?.sub ?? null };
 }
 
 /**
@@ -121,9 +182,12 @@ export function withReadingMetadata(
   clientMetadata: Record<string, unknown> | undefined,
   direction: "incoming" | "outgoing" | undefined,
   reading: ReadingSummary | null,
+  readingItemId?: string,
 ): Record<string, unknown> | undefined {
   const base: Record<string, unknown> = clientMetadata ? { ...clientMetadata } : direction ? { direction } : {};
   delete base.reading;
+  delete base.readingItemId;
+  if (readingItemId) base.readingItemId = readingItemId;
   if (reading) base.reading = readingMetadata(reading);
   return Object.keys(base).length > 0 || clientMetadata ? base : undefined;
 }

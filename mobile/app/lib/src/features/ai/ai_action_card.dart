@@ -58,6 +58,12 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
 
         final msg =
             (res['message'] as String?) ?? AppLocalizations.of(context).aiDone;
+        final artifacts = res['artifacts'];
+        if (artifacts is List<Object?>) {
+          ref
+              .read(chatMessagesProvider.notifier)
+              .showActionFollowUp(msg, artifacts);
+        }
         showSmartSpendNotice(context, msg);
       }
     } catch (e) {
