@@ -717,87 +717,6 @@
       "count": 5
     }
   },
-  "src/components/admin/AdminAdsTab.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 4
-    }
-  },
-  "src/components/admin/AdminRulesTab.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
-  "src/components/admin/AdminSettingsTab.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "src/components/admin/AdminWhatsAppTab.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "src/components/admin/ClarificationsTab.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
-  "src/components/admin/NotificationsTab.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 7
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 3
-    },
-    "no-empty": {
-      "count": 2
-    }
-  },
-  "src/components/admin/ai-center/modals/TokenAnatomyModal.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 3
-    }
-  },
-  "src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 4
-    }
-  },
-  "src/components/admin/settings/AdminKeysTab.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "src/components/admin/settings/AdminPlansTab.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 11
-    }
-  },
   "src/components/ai/AIChatbot.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 4
@@ -1086,14 +1005,6 @@
   "src/pages/AICenter.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
-    }
-  },
-  "src/pages/Admin.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 21
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 11
     }
   },
   "src/pages/Home.tsx": {

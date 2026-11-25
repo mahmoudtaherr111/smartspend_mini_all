@@ -19,13 +19,6 @@ model {
         routes '/ai'
       }
     }
-    Admin = page 'Admin' {
-      description 'src/pages/Admin.tsx'
-      metadata {
-        file 'src/pages/Admin.tsx'
-        routes '/admin'
-      }
-    }
     AuthCallback = page 'AuthCallback' {
       description 'src/pages/AuthCallback.tsx'
       metadata {

@@ -24,7 +24,12 @@ export const CHANNEL: Record<string, string> = {
   voice: "مكالمة",
   embedding: "ذاكرة المساعد",
 };
-export const STORE: Record<string, string> = { google_play: "Google Play", app_store: "App Store" };
+export const STORE: Record<string, string> = {
+  google_play: "Google Play",
+  app_store: "App Store",
+  admin_grant: "منحة أدمن",
+  paymob: "Paymob (قديم)",
+};
 export const TICKET: Record<string, string> = {
   open: "مستنية رد",
   in_progress: "بنراجعها",
@@ -36,8 +41,12 @@ export const SUBSCRIPTION: Record<string, string> = {
   cancelled: "ملغي (شغال لحد نهايته)",
   expired: "خلص",
   grace: "مهلة دفع",
+  in_grace_period: "مهلة دفع",
   on_hold: "متوقف",
+  paused: "متوقف مؤقتًا",
+  refunded: "اترد فلوسه",
   revoked: "اترد فلوسه",
+  pending: "قيد التأكيد",
 };
 
 export const word = (map: Record<string, string>, value: string | null | undefined) =>

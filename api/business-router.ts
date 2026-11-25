@@ -41,7 +41,7 @@ const SUGGESTION_PROMPT = `أنت مساعد ذكي لتصنيف مصاريف ا
 
 async function getApiKey(): Promise<string> {
   const settings = await getSystemSettings();
-  return settings.gemini_api_key || env.GEMINI_API_KEY || "";
+  return settings.ai_api_key || settings.ai_api_key_2 || env.GEMINI_API_KEY || "";
 }
 
 export const businessRouter = router({

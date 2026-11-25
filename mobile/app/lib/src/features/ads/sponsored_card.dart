@@ -104,7 +104,7 @@ class _SponsoredCardState extends ConsumerState<SponsoredCard> {
   Widget build(BuildContext context) {
     final plan = ref.watch(userPlanProvider).value;
     final ad = ref.watch(sponsoredAdProvider).value;
-    if (plan == null || plan.isPro || ad == null) {
+    if (plan == null || !plan.adsEnabled || ad == null) {
       return const SizedBox.shrink();
     }
     _countImpression(ad);

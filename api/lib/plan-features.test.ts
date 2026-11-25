@@ -19,10 +19,14 @@ describe("plan features as admin settings", () => {
     }
     expect(isPlanFeatureEnabled(none, "pro", "whatsapp_report")).toBe(true);
     expect(isPlanFeatureEnabled(none, "ultra", "whatsapp_report")).toBe(true);
+    expect(isPlanFeatureEnabled(none, "free", "ads")).toBe(true);
+    expect(isPlanFeatureEnabled(none, "pro", "ads")).toBe(false);
+    expect(isPlanFeatureEnabled(none, "ultra", "ads")).toBe(false);
     expect(planNumber(none, "free", "goals_active_limit")).toBe(3);
     expect(planNumber(none, "pro", "goals_active_limit")).toBe(0);
     expect(planNumber(none, "free", "burst_limit_per_minute")).toBe(20);
     expect(planNumber(none, "ultra", "offline_limit")).toBe(30);
+    expect(planNumber(none, "pro", "business_max_tokens")).toBe(2048);
   });
 
   it("obeys the admin's switch and number", () => {
@@ -59,6 +63,8 @@ describe("the plans screen", () => {
     expect(value("pro", "daily_entries")).toBe("100 في اليوم");
     expect(value("free", "receipts")).toBe(false);
     expect(value("pro", "receipts")).toBe(true);
+    expect(value("free", "no_ads")).toBe(false);
+    expect(value("pro", "no_ads")).toBe(true);
     expect(value("free", "bank_messages")).toBe("50 عملية في الشهر");
     expect(buildPlanCatalog({ capture_enabled: "false" }).free.find((row) => row.key === "bank_messages")).toBeUndefined();
   });

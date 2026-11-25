@@ -18,8 +18,8 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
 | Notification center | `src/components/NotificationBell.tsx`, `src/components/notifications/NotificationList.tsx`, `src/pages/Notifications.tsx`, `profile.getInAppNotifications`, `profile.markInAppNotificationRead`, `profile.markAllInAppNotificationsRead` | The bell with the unread count, the list in a sheet and on `/notifications`, marking one or all read |
 | Settings | `src/components/notifications/NotificationSettings.tsx` | This device's push state and the budget-alerts switch |
 | WhatsApp Cloud API | `api/lib/whatsapp/` | Meta's official API: the client, the templates we submit, the signed webhook, and the outbox for verification and queued messages ([decision 0038](../decisions/0038-whatsapp-cloud-api.md)) |
-| WhatsApp admin | `api/admin-whatsapp-router.ts`, `src/components/admin/AdminWhatsAppTab.tsx` | Delivery counts and consent, templates, direct messages, template broadcasts to people who agreed, the verification switch |
-| Templates admin | the notification procedures of `api/admin-router.ts`, `src/components/admin/NotificationsTab.tsx` | Creating, scheduling and switching templates, running the activity check at once, logs and device statistics; see [admin](admin.md) |
+| WhatsApp admin | `api/admin-whatsapp-router.ts`, `admin/src/pages/comms/` | Delivery counts and consent, templates, direct messages, template broadcasts to people who agreed, the verification, report and marketing switches |
+| Templates admin | the notification procedures of `api/admin-router.ts`, `admin/src/pages/comms/` | Creating, scheduling and switching templates, running the activity check at once, logs and device statistics; see [admin](admin.md) |
 
 ## Delivering a notification
 - `sendPush` (one device) and `sendPushBatch` (many) send through Firebase Cloud Messaging when the subscription has a

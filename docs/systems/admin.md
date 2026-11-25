@@ -22,8 +22,8 @@ opens the console's page, `no-store` and `noindex`). `npm run dev` (or `admin:de
 - «الناس» (`admin/src/pages/People.tsx`, `adminConsole.searchPeople`) finds a person by name, phone or email across Google
   and phone accounts, and downloads everyone as CSV after a warning that it is personal data (`export.allUsers`, which
   now writes `EXPORT_ALL_USERS` to the audit log). A person's page (`admin/src/pages/Person.tsx`, `adminConsole.person`) shows their numbers this
-  month, their last 20 operations and last 10 AI calls with tokens and cost, their devices (platform read from the
-  user agent) with a sign-out per device, store subscriptions and tickets; plan, role, monthly AI limit, resetting AI
+  month, their monthly AI token quota (`used / limit`, noting a custom override), their last 20 operations and last 10 AI calls with tokens and cost, their devices (platform read from the
+  user agent) with a sign-out per device, store subscriptions, manual `pro_subscriptions` grants and tickets; plan (with a selectable grant duration in days for `pro`/`ultra` through `admin.updateUserPlanV2`), role, monthly AI limit, resetting AI
   usage and deleting go through the existing admin procedures after a confirmation that says what will happen, and
   making someone an admin or deleting asks for a typed word.
 - «نداءات الذكاء» (`admin/src/pages/AiCalls.tsx`, `adminConsole.aiCalls`) lists every row of the cost ledger with
@@ -71,15 +71,15 @@ opens the console's page, `no-store` and `noindex`). `npm run dev` (or `admin:de
   its runs and failures in the last day, the late and failing ones first ([platform](platform.md#jobs)); and the last
   30 entries of the audit log in plain words.
 - «الفلوس» (`admin/src/pages/Money.tsx`, `adminConsole.money`): a monthly revenue estimate from the list
-  prices in `contracts/plans.ts` (yearly divided by 12) over subscriptions that are active, cancelled but still paid,
-  or in grace, before the store's share; active subscriptions by store; subscriptions started this month and those
-  that expired or were refunded this month; the latest 40 with names.
+  prices in `contracts/plans.ts` (yearly divided by 12) over store subscriptions that are active, cancelled but still paid,
+  or in grace (`in_grace_period`), before the store's share; active subscriptions by store plus active manual grants; subscriptions started this month and those
+  that expired or were refunded this month; switches for the Google Play (`store_google_play_enabled`) and App Store (`store_app_store_enabled`) mobile billing gateways alongside their server credential readiness (`gateways`) and `usd_to_egp_rate`; the latest 40 store subscriptions, the latest 20 manual/web `pro_subscriptions` rows, and the latest 20 store webhook events (`store_events`).
 - «الباقات والحدود» (`admin/src/pages/plans/`): one table per kind of setting, a row per setting and a column per plan
   (`PlanMatrix`), saved with the save bar through `admin.updateSettings`. «المميزات»: AI parsing and the monthly analysis
   per plan (`<plan>_ai_parse`, `<plan>_ai_analysis`), the chat (`chatbot_enabled_<plan>`) and the switches of
-  `contracts/plan-features.ts`. «الحدود»: monthly tokens, daily parses, the reply caps of parsing, chat, receipts and
-  goals, AI calls a minute, voice-note seconds a month and per note, the wait between monthly analyses and their length,
-  active goals, offline items, payments recorded from bank messages and the phones that may send them. «المكالمة
+  `contracts/plan-features.ts` (including `feature_ads_<plan>`). «الحدود»: monthly tokens, daily parses, the reply caps of parsing, chat, receipts,
+  goals and business category suggestions (`business_max_tokens_<plan>`), AI calls a minute, voice-note seconds a month and per note, the wait between monthly analyses and their length,
+  active goals, active commitments, offline items, payments recorded from bank messages and the phones that may send them. «المكالمة
   الصوتية»: the kill switch, per plan whether calls are on, minutes a month, the longest call, the daily cost cap, «تفكير
   أعمق» and the model; the call, coach, thinking-tool, price-tool and memory models; the coach's rollout and test
   accounts; the capacity caps; and `voice.adminStats` for the last day, 7 or 30 days, with no word said in a call.
@@ -109,9 +109,9 @@ opens the console's page, `no-store` and `noindex`). `npm run dev` (or `admin:de
 - «حالة السيرفر» (`admin/src/pages/Status.tsx`, `adminConsole.status`): each outside system and setting the server
   needs, green, amber or red, with what it means for the app and what to set ([platform](platform.md)), refreshed every
   minute; a red one also appears on «النهارده».
-- «كل الإعدادات» (`admin/src/pages/AllSettings.tsx`, `adminConsole.settingsCatalog`): every key of the registry (193),
-  searchable, by group, with its default and a reset to it, the right control for its value (a switch, a number, a
-  choice for the settings that take a few values, a masked field for a secret) and the page that explains it; the 42
+- «كل الإعدادات» (`admin/src/pages/AllSettings.tsx`, `adminConsole.settingsCatalog`): every key of the registry,
+  searchable, by group (`plans`, `voice`, `capture`, `parser`, `ai`, `commitments`, `whatsapp`, `money`, `operations`), with its default and a reset to it, the right control for its value (a switch, a number, a
+  choice for the settings that take a few values, a masked field for a secret) and the page that explains it; the
   settings no other page edits carry Arabic words. `capture_financial_version` is shown and never edited: the cutover
   sets it. `admin/src/pages/AllSettings.test.ts` fails on a label for a key the server does not have.
 - «النهارده» also lists the admin's alerts (`adminConsole.alerts`, `adminConsole.markAlertsRead`), a red server check
@@ -159,15 +159,14 @@ opens the console's page, `no-store` and `noindex`). `npm run dev` (or `admin:de
 | Usage events | `api/analytics-router.ts` | Events the app records in `user_analytics` |
 | User export | `export.allUsers` in `api/export-router.ts` | Every account as JSON, CSV or Excel |
 
-The previous console (`src/pages/Admin.tsx`, `src/components/admin/`) is part of the parked website and is reached
-from nowhere ([decision 0050](../decisions/0050-backend-and-console-without-the-website.md)).
+The legacy web-app admin page and tab components were deleted once every workflow moved to `admin/`; visiting `/admin` in the parked website (`src/App.tsx`) redirects verified admins to `/admin/` ([decision 0050](../decisions/0050-backend-and-console-without-the-website.md)).
 
 ## How the important actions work
 - **Settings.** `admin.getSettings` starts from the registry defaults, overlays the saved values and replaces
   every secret with dots plus its last four characters (`maskSettingsForClient`). `admin.updateSettings`
   accepts only registry keys, skips a value that is still masked — so saving an unrelated field cannot
   overwrite a working key with dots — upserts the rest and clears this process's settings cache.
-- **Role, plan and sessions.** `admin.updateUserRole`, `admin.updateUserPlanV2`, `admin.revokeSession` and
+- **Role, plan and sessions.** `admin.updateUserRole`, `admin.updateUserPlanV2` (which also records or expires an `admin_grant` row in `pro_subscriptions` for the chosen `durationDays` so `pro.myPlan` preserves manual trials and grants until their end date), `admin.revokeSession` and
   `admin.deleteUser` go through `api/lib/access-control.ts`, which writes the row and invalidates the cached
   principal in the same call: a changed role, a changed plan and a revoked session take effect on the next
   request rather than up to fifteen minutes later.
@@ -183,7 +182,7 @@ from nowhere ([decision 0050](../decisions/0050-backend-and-console-without-the-
   `ai_providers.healthStatus`: grey until the breaker has seen the provider, and red for a key nothing opens. `admin.validateApiKey` proves a key the cheapest way there is — by listing the
   models it can reach — and works for any provider, not a fixed list. Discovery lists every model the key reaches,
   with a search box; only the ones the admin ticks are saved, with no purpose and the provider's published price when
-  one is known (`contracts/ai-models.ts`). "تعديل" on a saved model (`src/components/admin/ai-center/modals/AiModelEditDialog.tsx`)
+  one is known (`contracts/ai-models.ts`). Editing a saved model (`admin/src/pages/ai/`)
   sets what it serves (classification, chat, reports, embeddings, reading bank messages), its plans, whether it is the
   default, whether it is active, and its price per million tokens, which the [AI cost ledger](ai-platform.md#how-a-call-is-recorded)
   charges; a model without a price is marked so. The models table names each purpose by its label. Only the models
@@ -193,10 +192,9 @@ from nowhere ([decision 0050](../decisions/0050-backend-and-console-without-the-
   closable only by its owner or an admin.
 
 ## Ads, SEO and usage events
-- `ads.list` is public: active campaigns inside their dates for a placement, targeted at `all` or at the caller's own
-  plan — `free` for a visitor or a Free account, `pro` for Pro and Ultra. The `userPlan` the request names is ignored (the
-  app always sent `free`). `src/components/ads/AdBanner.tsx`
-  shows one and counts a click through `ads.click`, which also stores a row in `ad_clicks`.
+- `ads.list` is public: returns `[]` for admins or when the admin turned `feature_ads_<plan>` off, and otherwise returns active campaigns inside their dates for a placement, targeted at `all` or at the caller's own
+  plan — `free` for a visitor or a Free account, `pro` for Pro and Ultra (the `userPlan` the request names is ignored). `ads.update` edits title, text, links, placement, target plan, platform, daily cap, dates and active state (`admin/src/pages/comms/Ads.tsx`). `mobile/app/lib/src/features/ads/sponsored_card.dart` and `src/components/ads/AdBanner.tsx`
+  show one and count clicks through `ads.click`, which also stores a row in `ad_clicks`.
 - `seo.getPage` returns the saved metadata of a path, or a default Arabic title, description, keywords and
   canonical address; `SEOMeta` writes them into the document head of the public pages. `seo.sitemap` builds an
   XML sitemap of fixed routes and saved pages.

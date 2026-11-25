@@ -235,6 +235,7 @@ export const SETTINGS: SettingDef[] = [
   { key: "chatbot_base_url", default: "" },
   { key: "chatbot_model", default: "" },
   { key: "chatbot_max_history", default: "10" },
+  { key: "ai_kernel_enabled", default: "true" },
 
   // ── Embeddings (api/lib/embedding-provider.ts): the admin's providers for "embedding" first, then Google ──
   // Memory search by meaning; "false" leaves it to word matching.
@@ -297,6 +298,11 @@ export const SETTINGS: SettingDef[] = [
   { key: "capture_ai_tokens_free", default: "2000000" },
   { key: "capture_ai_concurrency", default: "64" },
   { key: "whatsapp_otp_enabled", default: "true" },
+  { key: "whatsapp_reports_enabled", default: "true" },
+  { key: "whatsapp_marketing_paused", default: "false" },
+  // Native mobile store billing switches (Google Play on Android, App Store on iOS).
+  { key: "store_google_play_enabled", default: "true" },
+  { key: "store_app_store_enabled", default: "true" },
   // EGP per USD for the AI cost ledger's EGP column (api/lib/ai-pricing.ts); the admin updates it as the rate moves.
   { key: "usd_to_egp_rate", default: "48.5" },
 

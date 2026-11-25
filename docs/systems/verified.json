@@ -60,9 +60,9 @@
     },
     "admin": {
       "files": {
-        "api/admin-console-router.ts": "fd4d1108cbe6",
-        "api/admin-router.ts": "e8201ba5d982",
-        "api/ads-router.ts": "ace6b064f74c",
+        "api/admin-console-router.ts": "29452d9181be",
+        "api/admin-router.ts": "c5821a9bac82",
+        "api/ads-router.ts": "4b92bd623916",
         "api/ai-setup-router.ts": "5c77cfe36acb",
         "api/analytics-router.ts": "5fd34da40d33",
         "api/boot.ts#GET /admin": "ecbf724126aa",
@@ -70,37 +70,11 @@
         "api/export-router.ts#rest-of-file": "8bc72b35b4e8",
         "api/seo-router.ts": "34739ab2bc7e",
         "api/support-router.ts": "c8460023ce73",
-        "src/components/admin/AdminAdsTab.tsx": "3a9364ae243b",
-        "src/components/admin/AdminAuditTab.tsx": "4d1826b3f408",
-        "src/components/admin/AdminRulesTab.tsx": "c133f73e05d9",
-        "src/components/admin/AdminSettingsTab.tsx": "e66be74b3a8b",
-        "src/components/admin/AdminUserMobileCard.tsx": "0b007a182bc9",
-        "src/components/admin/AdminWhatsAppTab.tsx": "79ad28d75a17",
-        "src/components/admin/ClarificationsTab.tsx": "5d7eeb83b615",
-        "src/components/admin/NotificationsTab.tsx": "a33c9be4867a",
-        "src/components/admin/ai-center/AiCommandCenter.tsx": "aa2535884807",
-        "src/components/admin/ai-center/modals/AiModelEditDialog.tsx": "42ec0771293d",
-        "src/components/admin/ai-center/modals/TokenAnatomyModal.tsx": "5d1eb48a7da5",
-        "src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx": "f709bf2923f7",
-        "src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx": "f776695feeb5",
-        "src/components/admin/ai-center/tabs/AiTelemetryTab.tsx": "c90405d7e803",
-        "src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx": "10ff32f1e785",
-        "src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx": "88d1c8cbcd39",
-        "src/components/admin/capture/AdminCaptureNumbers.tsx": "fc68fb7725a8",
-        "src/components/admin/capture/AdminCaptureTab.tsx": "7a3d0409d074",
-        "src/components/admin/settings/AdminCaptureSection.tsx": "b023c4a1b05c",
-        "src/components/admin/settings/AdminKeysTab.tsx": "326d1b6bb70a",
-        "src/components/admin/settings/AdminOperationsSection.tsx": "14f41844095f",
-        "src/components/admin/settings/AdminPlansTab.tsx": "0de7a93480c1",
-        "src/components/admin/settings/AdminSettingsShared.tsx": "a310475825d1",
-        "src/components/admin/settings/AdminSmsAiSection.tsx": "6b35a02ada7c",
-        "src/components/admin/settings/AdminVoiceCallSection.tsx": "ae339f527cf2",
-        "src/pages/Admin.tsx": "9444393be5fa",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-21 20483aa7",
-      "arabic": "8cef876941e3",
-      "arabicChecked": "2026-11-21 20483aa7"
+      "checked": "2026-11-25 1435873a",
+      "arabic": "14b3cccaa4a4",
+      "arabicChecked": "2026-11-25 1435873a"
     },
     "ai-center": {
       "files": {
@@ -163,13 +137,13 @@
     },
     "ai-platform": {
       "files": {
-        "api/ai-router.ts#ai.getUserLimits": "85e198fa737d",
+        "api/ai-router.ts#ai.getUserLimits": "52d3262b71b8",
         "api/ai-router.ts#rest-of-file": "fae3539a2daf",
         "api/lib/ai-gateway.ts": "8c9597ab30f2",
         "api/lib/ai-ledger.ts": "ccf8de3f1eb5",
         "api/lib/ai-pricing.ts": "23f9d247a58d",
         "api/lib/ai-provider-registry.ts": "da1562b6acdf",
-        "api/lib/ai-usage-policy.ts": "f5aaf100f275",
+        "api/lib/ai-usage-policy.ts": "15095a937fec",
         "api/lib/anthropic-client.ts": "17aa68662180",
         "api/lib/deepseek-client.ts": "25b94e78c4ee",
         "api/lib/embedding-provider.ts": "72fa42725bca",
@@ -185,9 +159,9 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "3185b204f24e"
       },
-      "checked": "2026-11-21 20483aa7",
-      "arabic": "a923ea3258a1",
-      "arabicChecked": "2026-11-21 20483aa7"
+      "checked": "2026-11-25 1435873a",
+      "arabic": "3e0057cbca61",
+      "arabicChecked": "2026-11-25 1435873a"
     },
     "bank-messages": {
       "files": {
@@ -231,14 +205,11 @@
         "api/lib/capture/simulator.ts": "12f6211f1f47",
         "api/lib/capture/vault.ts": "fae7d2695222",
         "api/lib/sms-ai-contract.ts": "34562a4b9e0c",
-        "src/components/bank-capture/CaptureOverview.tsx": "30e973b0cfd2",
-        "src/components/bank-sync/AndroidSetupFlow.tsx": "c46057e98049",
-        "src/components/bank-sync/IosSetupFlow.tsx": "e6b258d9e978",
-        "src/components/settings/SmsWebhookSettings.tsx": "88ccd3431d97"
+        "src/components/bank-capture/CaptureOverview.tsx": "30e973b0cfd2"
       },
-      "checked": "2026-11-21 0abf2ed4",
-      "arabic": "63ff63565a08",
-      "arabicChecked": "2026-11-21 0abf2ed4"
+      "checked": "2026-11-25 1435873a",
+      "arabic": "d056170c8ef9",
+      "arabicChecked": "2026-11-25 1435873a"
     },
     "billing": {
       "files": {
@@ -246,22 +217,22 @@
         "api/boot.ts#POST /api/webhooks/google-play": "0d1b18ecc8a9",
         "api/boot.ts#POST /api/webhooks/paymob": "aba41c93e38f",
         "api/boot.ts#job:daily-subscription-expiry": "3559570d054c",
-        "api/jobs/subscription-expiry-job.ts": "188c27a5cbe7",
+        "api/jobs/subscription-expiry-job.ts": "e14ed390535e",
         "api/lib/paymob.ts": "026fedc0cf46",
-        "api/lib/plan-catalog.ts": "26dd6a0605c2",
+        "api/lib/plan-catalog.ts": "76e329c0f380",
         "api/lib/store-billing/apple-app-store-verifier.ts": "b0702e56a260",
-        "api/lib/store-billing/entitlement.ts": "d74cc491ae6e",
+        "api/lib/store-billing/entitlement.ts": "8d5d28bf4d04",
         "api/lib/store-billing/google-play-verifier.ts": "56e6d0d49152",
         "api/lib/store-billing/index.ts": "7e292b91fe44",
-        "api/lib/store-billing/ledger.ts": "042d4243741a",
+        "api/lib/store-billing/ledger.ts": "9d0052160521",
         "api/lib/subscription-service.ts": "0713a862027e",
-        "api/pro-router.ts": "0c249ceb7420",
+        "api/pro-router.ts": "2a09064f0874",
         "src/pages/Pro.tsx": "fe168b78b55e",
         "src/pages/UltraLounge.tsx": "394f7655307b"
       },
-      "checked": "2026-11-05 df6216e1",
-      "arabic": "64a70c660023",
-      "arabicChecked": "2026-11-03 ff028180"
+      "checked": "2026-11-25 1435873a",
+      "arabic": "d0cbe844bbcb",
+      "arabicChecked": "2026-11-25 1435873a"
     },
     "expense-capture": {
       "files": {
@@ -402,7 +373,7 @@
         "api/boot.ts#job:nightly-rollup-reconciliation": "7a5700744f08",
         "api/boot.ts#job:taxonomy-migration": "5864e301b433",
         "api/budget-router.ts": "106bf2ec3b6c",
-        "api/business-router.ts": "e5273c8cd870",
+        "api/business-router.ts": "76d7b85948c3",
         "api/coach-router.ts": "d4bc2f825796",
         "api/commitments-router.ts": "c099a7a19411",
         "api/expense-router.ts#expense.createInstallmentPlan": "d0e4ac52ce8b",
@@ -473,9 +444,9 @@
         "src/pages/PlanPage.tsx": "107068a002b0",
         "src/pages/WalletsPage.tsx": "a1964708847b"
       },
-      "checked": "2026-11-21 e7b84e27",
-      "arabic": "4ddf8e9a38e7",
-      "arabicChecked": "2026-11-21 e7b84e27"
+      "checked": "2026-11-25 1435873a",
+      "arabic": "630b7e4b9752",
+      "arabicChecked": "2026-11-25 1435873a"
     },
     "notifications": {
       "files": {
@@ -490,7 +461,7 @@
         "api/lib/whatsapp/outbox.ts": "0ea9582f1170",
         "api/lib/whatsapp/templates.ts": "ad010886f602",
         "api/lib/whatsapp/webhook.ts": "b53832f7a45f",
-        "api/notification-engine.ts": "05ee6ffd292a",
+        "api/notification-engine.ts": "0433237c7f6d",
         "api/profile-router.ts#profile.getInAppNotifications": "ff2aee79554d",
         "api/profile-router.ts#profile.markAllInAppNotificationsRead": "6a3d324697cb",
         "api/profile-router.ts#profile.markInAppNotificationRead": "3ece83e41efc",
@@ -499,9 +470,9 @@
         "api/services/firebase.ts": "2181d9177c35",
         "src/pages/Notifications.tsx": "57d9f2b4b95f"
       },
-      "checked": "2026-11-21 0abf2ed4",
-      "arabic": "328536e3c484",
-      "arabicChecked": "2026-11-21 0abf2ed4"
+      "checked": "2026-11-25 1435873a",
+      "arabic": "346c6cd53daf",
+      "arabicChecked": "2026-11-25 1435873a"
     },
     "platform": {
       "files": {
@@ -526,7 +497,7 @@
         "api/lib/redis-client.ts": "b5bd5c4ff3ad",
         "api/lib/settings-cache.ts": "cf6ddd683871",
         "api/lib/shared-generation.ts": "2d53bf30e567",
-        "api/lib/system-settings-registry.ts": "3158833e931d",
+        "api/lib/system-settings-registry.ts": "6ce0bb7a65da",
         "api/middleware.ts": "6876b8eace8f",
         "api/queries/connection.ts": "49fd2ab76893",
         "api/router.ts": "6c6fc16e39c4",
@@ -550,7 +521,7 @@
         "contracts/expense-save.ts": "253785b79850",
         "contracts/ledger-movement.ts": "5bde6df7b14d",
         "contracts/notification-types.ts": "65ab2d76c494",
-        "contracts/plan-features.ts": "85f1c985c24f",
+        "contracts/plan-features.ts": "7d5d4dadb7aa",
         "contracts/plans.ts": "371c028a6907",
         "contracts/profile-fields.ts": "5bf4f78b90e6",
         "contracts/taxonomy.ts": "b7e212c8e310",
@@ -562,9 +533,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "39eda50cb310"
       },
-      "checked": "2026-11-21 e7b84e27",
-      "arabic": "5ce2b2cf7102",
-      "arabicChecked": "2026-11-21 e7b84e27"
+      "checked": "2026-11-25 1435873a",
+      "arabic": "e82b5b60761b",
+      "arabicChecked": "2026-11-25 1435873a"
     },
     "voice-calls": {
       "files": {
@@ -626,17 +597,17 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "69cc55d954de"
       },
-      "checked": "2026-11-21 0abf2ed4",
-      "arabic": "d9c67ff2beb4",
-      "arabicChecked": "2026-11-21 873da7f4"
+      "checked": "2026-11-25 1435873a",
+      "arabic": "13010d1c0723",
+      "arabicChecked": "2026-11-25 1435873a"
     },
     "web-app": {
       "files": {
-        "src/App.tsx": "caff34200617",
+        "src/App.tsx": "e80b871e179c",
         "src/components/NotificationBell.tsx": "ee7049e0f405",
         "src/components/OnboardingCard.tsx": "9b752f09004c",
         "src/components/PageLoadingSkeleton.tsx": "fa0fe3239b38",
-        "src/components/Sidebar.tsx": "c84e5a0cbe11",
+        "src/components/Sidebar.tsx": "be83e91fa7fd",
         "src/components/ads/AdBanner.tsx": "9e9811bd3c1c",
         "src/components/layout/MobileBottomNav.tsx": "58976958e2f2",
         "src/components/layout/PageTransition.tsx": "500656dd741d",
@@ -703,7 +674,6 @@
         "src/components/ui/toggle.tsx": "c14a8ae2065c",
         "src/components/ui/tooltip.tsx": "a2cdf86c629b",
         "src/hooks/use-mobile.ts": "55c59de545ad",
-        "src/hooks/useAdmin.ts": "15baa7e78ff1",
         "src/hooks/useAds.ts": "b08bb3b71bf5",
         "src/hooks/useAppResume.ts": "b626940d2e71",
         "src/hooks/useAuth.ts": "66948e88082a",
@@ -742,7 +712,7 @@
         "src/lib/utils.ts": "fe02cb01defc",
         "src/main.tsx": "edecd8a6865f",
         "src/pages/Landing.tsx": "c618847f38a4",
-        "src/pages/More.tsx": "41f39ae20d84",
+        "src/pages/More.tsx": "a5b50e8b2b6c",
         "src/pages/NotFound.tsx": "8c62f9d22119",
         "src/pages/Privacy.tsx": "d888313990ad",
         "src/pages/Terms.tsx": "4ff361a45f01",
@@ -753,9 +723,9 @@
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "04cff3e23190"
       },
-      "checked": "2026-11-21 e7b84e27",
-      "arabic": "f00cf97b4da3",
-      "arabicChecked": "2026-11-21 e7b84e27"
+      "checked": "2026-11-25 1435873a",
+      "arabic": "00f68712ad6d",
+      "arabicChecked": "2026-11-25 1435873a"
     }
   }
 }

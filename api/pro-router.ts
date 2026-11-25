@@ -2,11 +2,12 @@ import { z } from "zod";
 import { router, authedProcedure, adminProcedure } from "./middleware";
 import { db } from "./queries/connection";
 import { users, localUsers, proSubscriptions, storePurchases } from "../db/schema";
-import { eq, and, desc, count } from "drizzle-orm";
+import { eq, and, desc, count, inArray } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import {
   acknowledgeGooglePurchase,
   applyStoreEvent,
+  entitlementForStoreProduct,
   fetchGoogleSubscription,
   googlePurchaseKey,
   grantsAccess,
@@ -31,19 +32,48 @@ import { BILLING_PLAN_IDS } from "../contracts/plans";
 import { setPlan } from "./lib/access-control";
 import { getSystemSettings } from "./lib/settings-cache";
 import { buildPlanCatalog, buildPlanCatalogEntry } from "./lib/plan-catalog";
-import { asPlanId, isPlanFeatureEnabled } from "../contracts/plan-features";
+import { asPlanId, isPlanFeatureEnabled, planNumber } from "../contracts/plan-features";
 
 /** The plan features the screens gate on, from the admin's settings. Admins get all. */
 function planFeatures(settings: Record<string, string>, plan: string, role: string) {
+  const id = asPlanId(plan);
   const on = (feature: Parameters<typeof isPlanFeatureEnabled>[2]) =>
-    role === "admin" || isPlanFeatureEnabled(settings, plan, feature);
+    role === "admin" || isPlanFeatureEnabled(settings, id, feature);
   return {
     receipts: on("receipts"),
     business: on("business"),
     proReport: on("pro_report"),
     goalAnalysis: on("goal_analysis"),
     whatsappReport: on("whatsapp_report"),
-    ads: plan === "free" && role !== "admin",
+    commitments: on("commitments"),
+    commitmentReminders: on("commitment_reminders"),
+    commitmentWhatsapp: on("commitment_whatsapp"),
+    commitmentCaptureLink: on("commitment_capture_link"),
+    aiParse: role === "admin" || settings[`${id}_ai_parse`] !== "false",
+    aiAnalysis: role === "admin" || settings[`${id}_ai_analysis`] !== "false",
+    chatbot: role === "admin" || settings[`chatbot_enabled_${id}`] !== "false",
+    voiceCall: role === "admin" || settings[`voice_call_enabled_${id}`] !== "false",
+    ads: role !== "admin" && isPlanFeatureEnabled(settings, id, "ads"),
+  };
+}
+
+/** Numeric plan limits enforced by the server, exposed so mobile screens obey admin edits dynamically. */
+function planLimits(settings: Record<string, string>, plan: string) {
+  const id = asPlanId(plan);
+  const intVal = (key: string, fallback: number) => {
+    const parsed = Number.parseInt(String(settings[key] ?? ""), 10);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+  };
+  return {
+    goalsActiveLimit: planNumber(settings, id, "goals_active_limit"),
+    commitmentsActiveLimit: planNumber(settings, id, "commitments_active_limit"),
+    offlineLimit: planNumber(settings, id, "offline_limit"),
+    captureMonthlyLimit: planNumber(settings, id, "capture_monthly_limit"),
+    captureDevicesLimit: planNumber(settings, id, "capture_devices"),
+    dailyParseLimit: intVal(`${id}_daily_limit`, id === "ultra" ? 500 : id === "pro" ? 100 : 10),
+    chatbotDailyLimit: planNumber(settings, id, "chatbot_daily_limit"),
+    voiceMonthlySeconds: intVal(`voice_limit_${id}`, id === "ultra" ? 0 : id === "pro" ? 1800 : 300),
+    monthlyTokenLimit: intVal(`${id}_token_limit`, id === "ultra" ? 2_000_000 : id === "pro" ? 500_000 : 50_000),
   };
 }
 
@@ -62,11 +92,14 @@ async function confirmStorePurchase(
   store: StoreId,
   token: string,
 ): Promise<StoreEventResult> {
+  const settings = await getSystemSettings().catch(() => ({} as Record<string, string>));
   const owner = { userId: user.id, userType: user.type as "local" | "oauth" };
   const expectedAccount = storeAccountToken(owner);
 
   if (store === "google_play") {
-    if (!isGooglePlayConfigured()) throw storeUnavailable();
+    if (settings.store_google_play_enabled === "false" || !isGooglePlayConfigured()) {
+      throw storeUnavailable();
+    }
     if (!validateTokenInput(token)) return { outcome: "unknown_purchase" };
     const purchase = await fetchGoogleSubscription(token);
     if (!purchase) return { outcome: "unknown_purchase" };
@@ -92,7 +125,9 @@ async function confirmStorePurchase(
     return result;
   }
 
-  if (!isAppStoreConfigured()) throw storeUnavailable();
+  if (settings.store_app_store_enabled === "false" || !isAppStoreConfigured()) {
+    throw storeUnavailable();
+  }
   const tx = verifyAppleStoreKitTransaction(token);
   if (!tx || !(STORE_PRODUCT_IDS as readonly string[]).includes(tx.productId)) return { outcome: "unknown_purchase" };
   if (tx.accountToken && tx.accountToken !== expectedAccount) return { outcome: "owned_by_another_account" };
@@ -129,7 +164,7 @@ export const proRouter = router({
         ),
       )
       .orderBy(desc(proSubscriptions.createdAt))
-      .limit(1);
+      .limit(10);
 
     const storeSubs = await db
       .select()
@@ -141,61 +176,98 @@ export const proRouter = router({
         ),
       )
       .orderBy(desc(storePurchases.createdAt))
-      .limit(1);
+      .limit(10);
 
     const row = user[0];
     let plan = row?.plan ?? "free";
     const role = row?.role ?? "user";
     const now = new Date();
 
-    const sub = subs[0];
-    const storeSub = storeSubs[0];
-    let activeSubscriptionFound = false;
+    const expiredSubIds: number[] = [];
+    let activeWebSub: (typeof subs)[number] | undefined;
+    let highestEntitlement: "free" | "pro" | "ultra" = "free";
 
-    // Check web subscription
-    if (sub) {
-      if ((sub.status === "active" || sub.status === "cancelled") && sub.endDate >= now) {
-        activeSubscriptionFound = true;
-      } else if ((sub.status === "active" || sub.status === "cancelled") && sub.endDate < now) {
-        await db
-          .update(proSubscriptions)
-          .set({ status: "expired" })
-          .where(eq(proSubscriptions.id, sub.id));
-        sub.status = "expired";
+    for (const s of subs) {
+      if ((s.status === "active" || s.status === "cancelled") && s.endDate >= now) {
+        activeWebSub ??= s;
+        if (s.plan.toLowerCase().includes("ultra")) {
+          highestEntitlement = "ultra";
+        } else if (highestEntitlement === "free") {
+          highestEntitlement = "pro";
+        }
+      } else if ((s.status === "active" || s.status === "cancelled") && s.endDate < now) {
+        expiredSubIds.push(s.id);
+        s.status = "expired";
       }
     }
-
-    // Check mobile store subscription
-    if (storeSub) {
-      if (storeSub.status === "in_grace_period") {
-        activeSubscriptionFound = true;
-      } else if (storeSub.expiresAt && (storeSub.status === "active" || storeSub.status === "cancelled") && storeSub.expiresAt >= now) {
-        activeSubscriptionFound = true;
-      } else if (storeSub.expiresAt && (storeSub.status === "active" || storeSub.status === "cancelled") && storeSub.expiresAt < now) {
-        await db
-          .update(storePurchases)
-          .set({ status: "expired" })
-          .where(eq(storePurchases.id, storeSub.id));
-        storeSub.status = "expired";
-      }
+    if (expiredSubIds.length > 0) {
+      await db
+        .update(proSubscriptions)
+        .set({ status: "expired" })
+        .where(inArray(proSubscriptions.id, expiredSubIds));
     }
 
-    // Downgrade to free if no active subscription exists
-    if (!activeSubscriptionFound && plan !== "free" && role !== "admin") {
+    const expiredStoreIds: number[] = [];
+    let activeStoreSub: (typeof storeSubs)[number] | undefined;
+
+    for (const sp of storeSubs) {
+      if (grantsAccess(sp.status as EntitlementState, sp.expiresAt, now)) {
+        activeStoreSub ??= sp;
+        if (entitlementForStoreProduct(sp.storeProductId) === "ultra") {
+          highestEntitlement = "ultra";
+        } else if (highestEntitlement === "free") {
+          highestEntitlement = "pro";
+        }
+      } else if (sp.expiresAt && (sp.status === "active" || sp.status === "cancelled") && sp.expiresAt < now) {
+        expiredStoreIds.push(sp.id);
+        sp.status = "expired";
+      }
+    }
+    if (expiredStoreIds.length > 0) {
+      await db
+        .update(storePurchases)
+        .set({ status: "expired" })
+        .where(inArray(storePurchases.id, expiredStoreIds));
+    }
+
+    // Reconcile stored user plan with active subscriptions / manual grants
+    if (highestEntitlement !== "free" && plan !== highestEntitlement) {
+      await setPlan(ctx.user.type, ctx.user.id, highestEntitlement);
+      plan = highestEntitlement;
+    } else if (highestEntitlement === "free" && plan !== "free" && role !== "admin") {
       await setPlan(ctx.user.type, ctx.user.id, "free");
       plan = "free";
     }
 
-    const effectiveSubscription = sub ?? (storeSub ? {
-      id: storeSub.id,
-      userId: storeSub.userId,
-      userType: storeSub.userType,
-      plan: storeSub.storeProductId?.toLowerCase().includes("ultra") ? "ultra" : "pro",
-      status: storeSub.status,
-      startDate: storeSub.createdAt,
-      endDate: storeSub.expiresAt ?? storeSub.createdAt,
-      paymobOrderId: storeSub.originalTransactionId,
-    } : null);
+    const chosenStore = activeStoreSub ?? storeSubs[0];
+    const effectiveSubscription =
+      activeWebSub ??
+      (activeStoreSub
+        ? {
+            id: activeStoreSub.id,
+            userId: activeStoreSub.userId,
+            userType: activeStoreSub.userType,
+            plan: entitlementForStoreProduct(activeStoreSub.storeProductId),
+            status: activeStoreSub.status,
+            startDate: activeStoreSub.createdAt,
+            endDate: activeStoreSub.expiresAt ?? activeStoreSub.createdAt,
+            paymentMethod: activeStoreSub.store,
+            paymobOrderId: activeStoreSub.originalTransactionId,
+          }
+        : subs[0] ??
+          (chosenStore
+            ? {
+                id: chosenStore.id,
+                userId: chosenStore.userId,
+                userType: chosenStore.userType,
+                plan: entitlementForStoreProduct(chosenStore.storeProductId),
+                status: chosenStore.status,
+                startDate: chosenStore.createdAt,
+                endDate: chosenStore.expiresAt ?? chosenStore.createdAt,
+                paymentMethod: chosenStore.store,
+                paymobOrderId: chosenStore.originalTransactionId,
+              }
+            : null));
 
     const settings = await getSystemSettings().catch(() => ({} as Record<string, string>));
 
@@ -204,6 +276,7 @@ export const proRouter = router({
       role,
       subscription: effectiveSubscription,
       features: planFeatures(settings, plan, role),
+      limits: planLimits(settings, plan),
       included: buildPlanCatalogEntry(settings, asPlanId(plan)),
     };
   }),
@@ -325,12 +398,15 @@ export const proRouter = router({
     }),
 
   /** Whether the stores can sell here, and the value the app passes with a purchase to tie it to this account. */
-  storeBilling: authedProcedure.query(({ ctx }) => ({
-    googlePlay: isGooglePlayConfigured(),
-    appStore: isAppStoreConfigured(),
-    productIds: STORE_PRODUCT_IDS,
-    accountToken: storeAccountToken({ userId: ctx.user.id, userType: ctx.user.type as "local" | "oauth" }),
-  })),
+  storeBilling: authedProcedure.query(async ({ ctx }) => {
+    const settings = await getSystemSettings().catch(() => ({} as Record<string, string>));
+    return {
+      googlePlay: settings.store_google_play_enabled !== "false" && isGooglePlayConfigured(),
+      appStore: settings.store_app_store_enabled !== "false" && isAppStoreConfigured(),
+      productIds: STORE_PRODUCT_IDS,
+      accountToken: storeAccountToken({ userId: ctx.user.id, userType: ctx.user.type as "local" | "oauth" }),
+    };
+  }),
 
   /** Records a purchase the store confirms. What the phone sends only says where to look. */
   verifyStorePurchase: authedProcedure

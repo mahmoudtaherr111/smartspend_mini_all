@@ -13,30 +13,31 @@ codes ([decision 0042](../decisions/0042-no-codes-until-store-offers.md)).
 - What can be bought is `contracts/plans.ts#BILLING_PLANS`: Pro monthly, Pro yearly and Ultra monthly, each with an
   exact amount in piastres, a duration and the plan it grants.
 - What each plan includes is decided in the admin console, not in code. Features a plan may or may not have —
-  business mode, receipts, the printable Pro report, the goal analysis and the WhatsApp report — are switches per
-  plan (`feature_<feature>_<plan>`), and the numbers that had no setting — active goals, the per-minute AI burst
-  guard, chat, receipt and goal token caps, the offline queue — are `<name>_<plan>` settings. Both are declared once,
+  business mode, receipts, the printable Pro report, the goal analysis, the WhatsApp report, commitments and their reminders/capture links, and whether in-app ads are shown (`ads`) — are switches per
+  plan (`feature_<feature>_<plan>`), and the numbers that had no setting — active goals, active commitments, the per-minute AI burst
+  guard, chat, receipt, goal and business token caps, the offline queue — are `<name>_<plan>` settings. Both are declared once,
   with their defaults, in `contracts/plan-features.ts`; the defaults are the values that used to be hard-coded
-  (these features for Pro and Ultra, the WhatsApp report for Pro, three active goals on Free). The monthly number of
+  (these features for Pro and Ultra, no ads on Pro and Ultra, three active goals on Free). The monthly number of
   payments recorded from bank messages (`capture_monthly_limit_<plan>`, 50 on Free, none on Pro and Ultra) is one of
   them; while bank-message capture is open the plans screen lists it, and for no limit says that what was missed in
   the last two months is recorded on subscribing ([bank and wallet messages](bank-messages.md)).
 - The server gates those features with one builder per feature from `api/middleware.ts` (`businessProcedure`,
-  `businessAiProcedure`, `receiptsProcedure`, `proReportProcedure`, `goalAnalysisProcedure`), which read the switch
+  `businessAiProcedure`, `receiptsProcedure`, `proReportProcedure`, `goalAnalysisProcedure`, `commitmentsProcedure`), which read the switch
   for the caller's plan; an admin always passes. `proProcedure` and `ultraProcedure` remain for plan checks without a
   setting. The plan-dependent limits of AI features are settings, described in
   [AI providers and usage limits](ai-platform.md) and the systems that use them.
-- `pro.myPlan` returns the caller's feature switches (`features`, which the entry form uses for the receipt camera)
-  and what the plan includes; `pro.planCatalog` returns that list for every plan, built by
-  `api/lib/plan-catalog.ts#buildPlanCatalog` from the same settings the server enforces, and the plans screen renders
+- `pro.myPlan` reconciles the caller's highest active entitlement (`ultra`, `pro`, or `free`) across `pro_subscriptions` (including timed `admin_grant` rows created by `admin.updateUserPlanV2`) and `store_purchases`, and returns the caller's feature switches (`features`), numeric `limits` (`goalsActiveLimit`, `commitmentsActiveLimit`, `offlineLimit`, `captureMonthlyLimit`, `captureDevicesLimit`, `dailyParseLimit`, `chatbotDailyLimit`, `voiceMonthlySeconds`, `monthlyTokenLimit`)
+  and what the plan includes (`included`); `pro.planCatalog` returns that list for every plan, built by
+  `api/lib/plan-catalog.ts#buildPlanCatalog` from the same settings the server enforces (`ads` appears inverted as `no_ads` — "بدون إعلانات"), and the mobile (`mobile/app/lib/src/features/plans/plan_screen.dart`) and web plans screens render
   it instead of fixed text.
 
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Plans screen | `src/pages/Pro.tsx#Pro`, `src/hooks/usePro.ts` | The current plan and its end date, the plan cards, checkout, cancelling |
+| Mobile plans & store billing | `mobile/app/lib/src/features/plans/plan_screen.dart`, `cancel_plan_screen.dart`, `store_purchases.dart` | Native Google Play (Android) and App Store (iOS) purchases and restores only (no Paymob on mobile), background `purchaseStream` verification in `mobile/app/lib/src/app.dart`, and opening the store's subscriptions page to cancel |
+| Web plans screen (parked) | `src/pages/Pro.tsx#Pro`, `src/hooks/usePro.ts` | The parked website's plan cards, Paymob checkout and cancelling |
 | Ultra page | `src/pages/UltraLounge.tsx` | A placeholder for Ultra members |
-| Plan API | `api/pro-router.ts` | `pro.myPlan`, `pro.createCheckoutSession`, `pro.upgrade`, `pro.cancel`, `pro.listSubscriptions` |
+| Plan API | `api/pro-router.ts` | `pro.myPlan`, `pro.planCatalog`, `pro.storeBilling`, `pro.verifyStorePurchase`, `pro.restorePurchases`, `pro.createCheckoutSession`, `pro.upgrade`, `pro.cancel`, `pro.listSubscriptions` |
 | Paymob checkout | `api/lib/paymob.ts#createPaymobHostedCheckoutUrl` | The order, the payment key and the hosted checkout address |
 | Webhook | the `/api/webhooks/paymob` route in `api/boot.ts` | Verifies Paymob's callback and grants the plan |
 | Grant | `api/lib/subscription-service.ts#grantProSubscription` | One transaction: the subscription row, the user's plan, the session refresh |
@@ -67,14 +68,12 @@ codes ([decision 0042](../decisions/0042-no-codes-until-store-offers.md)).
 The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob-upgrade.c4`.
 
 ## Ending and cancelling
-- `pro.cancel` marks the user's active subscriptions `cancelled`; the plan stays until the end date. A store subscription renews at the store whatever this row says, so the mobile app does not call it: its cancel screen opens the person's subscriptions page in Google Play or the App Store.
+- `pro.cancel` marks the user's active web subscriptions `cancelled`; the plan stays until the end date. A store subscription renews at the store whatever this row says, so the mobile app never offers Paymob checkout or `pro.cancel`: `cancel_plan_screen.dart` opens the person's subscriptions page in Google Play or the App Store.
 - `daily-subscription-expiry` runs at 06:00 on replicas with `ENABLE_CRONS=true`: subscriptions that are active or
-  cancelled and past their end date become `expired`, and a user without another running subscription goes back to
-  Free, with the auth version bumped. One run handles up to 500 subscriptions. The same run then reminds users whose
+  cancelled and past their end date become `expired`, and each affected user's plan is recomputed from any remaining active, `in_grace_period`, or non-expired `cancelled` rows across `pro_subscriptions` and `store_purchases` (`ultra`, `pro`, or `free`), with the auth version bumped. One run handles up to 500 subscriptions per table. The same run then reminds users whose
   plan ends in three days, and again on its last day (`runRenewalReminders`, event `subscription_ending`, opening
   the plans screen), unless a paid renewal already runs past it.
-- `pro.myPlan` also expires the latest subscription when it finds it past its end date, and returns the plan, the role,
-  that subscription and a fixed list of paid features.
+- `pro.myPlan` also expires past-due rows among the user's recent subscriptions, reconciles the user's stored plan with any active `pro_subscriptions` or `store_purchases` entitlement, and returns the plan, role, effective subscription, `features`, `limits` and `included` catalog rows.
 
 ## Discount and referral codes
 There are none ([decision 0042](../decisions/0042-no-codes-until-store-offers.md)): no screen asks for or shows a code,
@@ -95,7 +94,7 @@ sign-up ignores a `referralCode` an older build sends.
 | A new per-plan feature | `contracts/plan-features.ts`, a builder in `api/middleware.ts`, and `api/lib/plan-catalog.ts` for the plans screen | `api/lib/plan-features.test.ts` |
 
 ## Rules for changes here
-1. A plan is granted only by `grantProSubscription`, from a verified webhook or the development simulation.
+1. Paid plans are granted only by `applyStoreEvent` (verified Google Play or App Store purchases), `grantProSubscription` (verified Paymob webhook or development simulation), or `admin.updateUserPlanV2` (explicit timed `admin_grant` rows from the admin console).
 2. Prices live in `contracts/plans.ts`, and the webhook accepts only the exact amount.
 3. Compare `plan` with plan names and `role` with roles, never across (golden rule 2, checked by
    `tests/knowledge/architecture.test.ts`).
@@ -104,16 +103,16 @@ sign-up ignores a `referralCode` an older build sends.
    row no longer has (`tests/knowledge/architecture.test.ts`).
 
 ## Store subscriptions
-Google Play and the App Store sell Pro inside the app. The code lives in `api/lib/store-billing/`, and nothing sells until
-the owner configures a store; `pro.storeBilling` tells the app which ones are on.
+Google Play (Android) and the App Store (iOS) sell `pro_monthly`, `pro_yearly` and `ultra_monthly` (`STORE_PRODUCT_IDS` in `api/lib/store-billing/entitlement.ts`) inside the Flutter mobile app. The code lives in `api/lib/store-billing/`, and nothing sells until
+the owner configures a store and leaves its gateway switch (`store_google_play_enabled`, `store_app_store_enabled`) on in the console's «الفلوس» page; `pro.storeBilling` tells the app which ones are available.
 - **Trust.** What a request says is never believed. A Google notification passes only with a Google-signed OIDC token for
   this endpoint and service account (`verifyGooglePlayWebhookAuth`), and even then the state is read from the Play
   Developer API (`fetchGoogleSubscription`). An Apple transaction or notification passes only when its signature chains to
   Apple's root (`decodeAndVerifyJWS`). `BILLING_SIMULATE=true` refuses to start in production.
 - **State.** `store_purchases` holds one row per purchase, unique per store and key, and `store_events` one row per event.
   `applyStoreEvent` in `api/lib/store-billing/ledger.ts` is the only writer: in one transaction it records the event, locks
-  the purchase, refuses another account, drops an older delivery, and sets the plan from everything the person pays for,
-  the website's subscriptions included. Nothing is kept in process memory, so replicas agree.
+  the purchase, refuses another account, drops an older delivery, and sets the plan (`ultra`, `pro`, or `free` via `entitlementForStoreProduct`) from everything the person pays for,
+  `pro_subscriptions` included. Nothing is kept in process memory, so replicas agree.
 - **Ownership.** `storeAccountToken` is a value derived from the account that the app passes with a purchase; a purchase
   carrying another account's value is refused.
 - **Acknowledging.** Google refunds a purchase left unacknowledged for three days, so a confirmed purchase is acknowledged

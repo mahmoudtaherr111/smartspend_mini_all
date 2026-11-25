@@ -72,10 +72,7 @@ describe("system settings", () => {
 
   // `updateSettings` keeps only registry keys, so a field outside the registry looks saved and is dropped.
   it("edited by an admin screen are each in the registry", () => {
-    const screens = [
-      ...sources("src/components/admin", [".tsx", ".ts"]),
-      ...sources("admin/src", [".tsx", ".ts"]),
-    ];
+    const screens = sources("admin/src", [".tsx", ".ts"]);
     const keys = new Set(SETTING_KEYS as readonly string[]);
     const dropped: string[] = [];
     let checked = 0;

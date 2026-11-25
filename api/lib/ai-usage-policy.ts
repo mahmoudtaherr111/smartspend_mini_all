@@ -53,7 +53,7 @@ const HARD_REQUEST_TOKEN_CAP: Record<PlanId, Record<AiUsageChannel, number>> = {
     image: 2_500,
     sms: 800,
     goal: 500,
-    business: 0,
+    business: 2_048,
   },
   pro: {
     parse: 6_000,
@@ -177,12 +177,7 @@ export function resolvePlanMaxPerRequest(
     return parseSafeInt(cfg[`goal_max_tokens_${plan}`], defaults[plan]);
   }
   if (channel === "business") {
-    const defaults: Record<PlanId, number> = {
-      free: 0,
-      pro: 2_048,
-      ultra: 4_096,
-    };
-    return parseSafeInt(cfg[`business_max_tokens_${plan}`], defaults[plan]);
+    return planNumber(cfg, plan, "business_max_tokens");
   }
   const defaults: Record<PlanId, number> = {
     free: 384,

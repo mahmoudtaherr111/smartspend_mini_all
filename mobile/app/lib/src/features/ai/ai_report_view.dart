@@ -48,7 +48,11 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
   }
 
   Future<void> _handleExport(String month) async {
-    if (!ref.read(isProUserProvider)) {
+    final plan = ref.read(userPlanProvider).value;
+    final canExport = plan != null
+        ? plan.proReportEnabled
+        : ref.read(isProUserProvider);
+    if (!canExport) {
       await showUpgradePromptSheet(
         context: context,
         reason: UpgradeLimitReason.export,

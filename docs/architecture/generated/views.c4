@@ -312,11 +312,6 @@ views {
     include *
   }
 
-  view module_web_admin of smartspend.web.modules.web-admin {
-    title 'Module · Admin UI'
-    include *
-  }
-
   view module_web_ai of smartspend.web.modules.web-ai {
     title 'Module · AI Center UI'
     include *

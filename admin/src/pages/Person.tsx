@@ -51,6 +51,14 @@ function Empty({ children }: { children: ReactNode }) {
   return <p className="text-sm text-muted-foreground">{children}</p>;
 }
 
+const GRANT_DURATIONS: [string, string][] = [
+  ["7", "7 أيام (تجربة)"],
+  ["14", "14 يوم (تجربة)"],
+  ["30", "30 يوم (شهر)"],
+  ["365", "سنة كاملة"],
+  ["3650", "مفتوح (10 سنين)"],
+];
+
 type Pending =
   | { kind: "plan"; value: string }
   | { kind: "role"; value: string }
@@ -68,6 +76,7 @@ export function Person() {
   const utils = trpc.useUtils();
   const person = trpc.adminConsole.person.useQuery({ type, id }, { enabled: id > 0 });
   const [pending, setPending] = useState<Pending>(null);
+  const [grantDays, setGrantDays] = useState("30");
   const [limit, setLimit] = useState("");
 
   const done = (message: string) => {
@@ -123,7 +132,10 @@ export function Person() {
         <Fact label="آخر عملية" value={day(p.lastRecordedAt)} />
         <Fact label="أيام متتالية" value={count(p.currentStreak)} />
         <Fact label="نداءات الذكاء الشهر ده" value={count(p.aiThisMonth.calls)} />
-        <Fact label="توكنز داخلة / خارجة" value={`${count(p.aiThisMonth.input)} / ${count(p.aiThisMonth.output)}`} />
+        <Fact
+          label={p.aiQuota.hasCustomLimit ? "رصيد التوكنز (حد مخصص)" : "رصيد التوكنز الشهر ده"}
+          value={`${count(p.aiQuota.used)} / ${count(p.aiQuota.limit)}`}
+        />
         <Fact label="تكلفة الذكاء الشهر ده" value={usd(p.aiThisMonth.usd)} />
         <Fact label="آخر دخول" value={day(p.lastSignInAt)} />
         <Fact label="التسجيلات الذكية الشهر ده" value={`${count(p.recordingThisMonth.requests)} / ${p.recordingThisMonth.limits.monthly ? count(p.recordingThisMonth.limits.monthly) : "من غير حد"}`} />
@@ -213,13 +225,18 @@ export function Person() {
         </Section>
 
         <Section title="الاشتراك والتذاكر">
-          {p.purchases.length === 0 ? (
-            <Empty>ما اشتركش من أي متجر.</Empty>
+          {p.purchases.length === 0 && p.manualSubscriptions.length === 0 ? (
+            <Empty>ما اشتركش من أي متجر ومالوش منحة نشطة.</Empty>
           ) : (
             <ul className="mb-3 divide-y text-sm">
               {p.purchases.map((purchase, index) => (
-                <li key={index} className="py-2">
-                  {word(STORE, purchase.store)} · {word(SUBSCRIPTION, purchase.status)} · لحد {day(purchase.expiresAt)}
+                <li key={`store-${index}`} className="py-2">
+                  {word(STORE, purchase.store)} · {purchase.product} · {word(SUBSCRIPTION, purchase.status)} · لحد {day(purchase.expiresAt)}
+                </li>
+              ))}
+              {p.manualSubscriptions.map((sub) => (
+                <li key={`sub-${sub.id}`} className="py-2">
+                  {word(STORE, sub.paymentMethod ?? "admin_grant")} · {sub.plan} · {word(SUBSCRIPTION, sub.status)} · لحد {day(sub.endDate)}
                 </li>
               ))}
             </ul>
@@ -307,12 +324,38 @@ export function Person() {
         title="تغيير الباقة"
         confirmLabel="غيّر الباقة"
         busy={busy}
-        onConfirm={() => pending?.kind === "plan" && setPlan.mutate({ ...who, plan: pending.value as "free" | "pro" | "ultra" })}
+        onConfirm={() =>
+          pending?.kind === "plan" &&
+          setPlan.mutate({
+            ...who,
+            plan: pending.value as "free" | "pro" | "ultra",
+            ...(pending.value !== "free" ? { durationDays: Number(grantDays) } : {}),
+          })
+        }
       >
-        <p>
-          باقة {p.name || "الحساب"} هتتغير من «{word(PLAN, p.plan)}» لـ«{pending?.kind === "plan" ? word(PLAN, pending.value) : ""}» فورًا،
-          من غير ما يدفع. لو مشترك من متجر، المتجر هيفضل يحاسبه لحد ما يلغي من هناك.
-        </p>
+        <div className="space-y-3">
+          <p>
+            باقة {p.name || "الحساب"} هتتغير من «{word(PLAN, p.plan)}» لـ«{pending?.kind === "plan" ? word(PLAN, pending.value) : ""}» فورًا،
+            من غير ما يدفع. لو مشترك من متجر، المتجر هيفضل يحاسبه لحد ما يلغي من هناك.
+          </p>
+          {pending?.kind === "plan" && pending.value !== "free" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="grant-days">مدة المنحة أو التجربة</Label>
+              <select
+                id="grant-days"
+                className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                value={grantDays}
+                onChange={(e) => setGrantDays(e.target.value)}
+              >
+                {GRANT_DURATIONS.map(([days, label]) => (
+                  <option key={days} value={days}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
       </Confirm>
       <Confirm
         open={pending?.kind === "role"}

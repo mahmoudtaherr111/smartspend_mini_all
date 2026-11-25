@@ -15,7 +15,6 @@ flowchart LR
   subgraph g_screens["Screens"]
     page_NotificationsPage["NotificationsPage screen"]
     screens_accounts["Screens of Accounts, sign-in and security"]
-    screens_admin["Screens of Admin console, support and growth tools"]
     screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
     screens_web_app["Screens of Web and mobile app shell"]
   end
@@ -86,9 +85,7 @@ flowchart LR
   router_profile ==> tbl_in_app_notifications
   router_profile ==> tbl_push_subscriptions
   screens_accounts --> router_profile
-  screens_admin --> router_adminWhatsapp
   screens_money --> router_profile
-  screens_web_app --> router_adminWhatsapp
   screens_web_app --> router_profile
 ```
 
@@ -106,17 +103,17 @@ flowchart LR
 | `adminWhatsapp.broadcastMessage` | mutation | `adminProcedure` | — | — | — |
 | `adminWhatsapp.broadcastTemplate` | mutation | `adminProcedure` | `local_users`, `whatsapp_contacts` | — | — |
 | `adminWhatsapp.clearQueue` | mutation | `adminProcedure` | — | — | — |
-| `adminWhatsapp.getOutboxLog` | query | `adminProcedure` | `whatsapp_messages` | — | `Admin`, `More` |
-| `adminWhatsapp.getSettings` | query | `adminProcedure` | — | — | `Admin`, `More` |
-| `adminWhatsapp.getStatus` | query | `adminProcedure` | `whatsapp_contacts`, `whatsapp_messages` | — | `Admin`, `More` |
-| `adminWhatsapp.getTemplates` | query | `adminProcedure` | — | — | `Admin`, `More` |
+| `adminWhatsapp.getOutboxLog` | query | `adminProcedure` | `whatsapp_messages` | — | — |
+| `adminWhatsapp.getSettings` | query | `adminProcedure` | — | — | — |
+| `adminWhatsapp.getStatus` | query | `adminProcedure` | `whatsapp_contacts`, `whatsapp_messages` | — | — |
+| `adminWhatsapp.getTemplates` | query | `adminProcedure` | — | — | — |
 | `adminWhatsapp.getUsers` | query | `adminProcedure` | `local_users`, `users` | — | — |
-| `adminWhatsapp.sendDirectMessage` | mutation | `adminProcedure` | `local_users`, `whatsapp_contacts` | `whatsapp_messages` | `Admin`, `More` |
+| `adminWhatsapp.sendDirectMessage` | mutation | `adminProcedure` | `local_users`, `whatsapp_contacts` | `whatsapp_messages` | — |
 | `adminWhatsapp.startService` | mutation | `adminProcedure` | — | — | — |
 | `adminWhatsapp.stopService` | mutation | `adminProcedure` | — | — | — |
-| `adminWhatsapp.syncTemplates` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
+| `adminWhatsapp.syncTemplates` | mutation | `adminProcedure` | — | — | — |
 | `adminWhatsapp.toggleOtpVerification` | mutation | `adminProcedure` | — | `system_settings` | — |
-| `adminWhatsapp.updateSettings` | mutation | `adminProcedure` | — | `system_settings` | `Admin`, `More` |
+| `adminWhatsapp.updateSettings` | mutation | `adminProcedure` | — | `system_settings` | — |
 | `profile.getInAppNotifications` | query | `authedProcedure` | `in_app_notifications` | — | `App shell`, `NotificationsPage` |
 | `profile.markAllInAppNotificationsRead` | mutation | `authedProcedure` | — | `in_app_notifications` | `App shell`, `NotificationsPage` |
 | `profile.markInAppNotificationRead` | mutation | `authedProcedure` | — | `in_app_notifications` | `App shell`, `NotificationsPage` |

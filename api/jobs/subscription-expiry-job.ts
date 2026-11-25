@@ -150,51 +150,53 @@ export async function runSubscriptionExpiryJob(): Promise<{
 
   for (const { userId, userType } of userMap.values()) {
     try {
-      // Check active web subscription
+      // Check active or non-expired cancelled web/admin-grant subscriptions
       const activeRenewals = await db
-        .select({ id: proSubscriptions.id })
+        .select({ plan: proSubscriptions.plan })
         .from(proSubscriptions)
         .where(
           and(
             eq(proSubscriptions.userId, userId),
             eq(proSubscriptions.userType, userType),
-            eq(proSubscriptions.status, "active"),
+            inArray(proSubscriptions.status, ["active", "cancelled"]),
             gt(proSubscriptions.endDate, now),
           ),
-        )
-        .limit(1);
-
-      if (activeRenewals.length > 0) {
-        log.info(
-          { userId, userType },
-          "User has active renewal web subscription; skipping downgrade",
         );
-        continue;
-      }
 
-      // Check active store subscription
+      // Check active, grace-period, or non-expired cancelled store subscriptions
       const activeStoreRenewals = await db
-        .select({ id: storePurchases.id })
+        .select({ storeProductId: storePurchases.storeProductId })
         .from(storePurchases)
         .where(
           and(
             eq(storePurchases.userId, userId),
             eq(storePurchases.userType, userType),
-            eq(storePurchases.status, "active"),
-            gt(storePurchases.expiresAt, now),
+            or(
+              eq(storePurchases.status, "in_grace_period"),
+              and(
+                inArray(storePurchases.status, ["active", "cancelled"]),
+                gt(storePurchases.expiresAt, now),
+              ),
+            ),
           ),
-        )
-        .limit(1);
-
-      if (activeStoreRenewals.length > 0) {
-        log.info(
-          { userId, userType },
-          "User has active renewal store subscription; skipping downgrade",
         );
-        continue;
-      }
 
-      await setPlan(userType, userId, "free");
+      const hasUltra =
+        activeRenewals.some((r) => r.plan.toLowerCase().includes("ultra")) ||
+        activeStoreRenewals.some((r) => r.storeProductId.toLowerCase().includes("ultra"));
+      const nextPlan: "free" | "pro" | "ultra" = hasUltra
+        ? "ultra"
+        : activeRenewals.length > 0 || activeStoreRenewals.length > 0
+          ? "pro"
+          : "free";
+
+      await setPlan(userType, userId, nextPlan);
+      if (nextPlan !== "free") {
+        log.info(
+          { userId, userType, nextPlan },
+          "User still holds an active entitlement; updated plan without downgrading to free",
+        );
+      }
     } catch (err) {
       log.error(
         { userId, userType, err },

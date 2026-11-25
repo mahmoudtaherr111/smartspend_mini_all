@@ -793,22 +793,76 @@ export const adminRouter = router({
       return { success: true, message: "تم تحديث الإعدادات بنجاح" };
     }),
 
-  // ─── Update User Plan (with Ultra) ───
+  // ─── Update User Plan (with Ultra & persistent admin grant record) ───
   updateUserPlanV2: adminProcedure
     .input(
       z.object({
         userId: z.number(),
         userType: z.enum(["oauth", "local"]),
         plan: z.enum(["free", "pro", "ultra"]),
+        durationDays: z.number().int().min(1).max(3650).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await setPlan(input.userType, input.userId, input.plan);
+      const now = new Date();
+      const days = input.durationDays ?? 365;
+      let afterCommit: (() => Promise<void>) | undefined;
+
+      await db.transaction(async (tx) => {
+        if (input.plan === "free") {
+          await tx
+            .update(proSubscriptions)
+            .set({ status: "expired", autoRenew: false, endDate: now })
+            .where(
+              and(
+                eq(proSubscriptions.userId, input.userId),
+                eq(proSubscriptions.userType, input.userType),
+                inArray(proSubscriptions.status, ["active", "cancelled"]),
+              ),
+            );
+        } else {
+          await tx
+            .update(proSubscriptions)
+            .set({ status: "expired", autoRenew: false, endDate: now })
+            .where(
+              and(
+                eq(proSubscriptions.userId, input.userId),
+                eq(proSubscriptions.userType, input.userType),
+                eq(proSubscriptions.paymentMethod, "admin_grant"),
+                inArray(proSubscriptions.status, ["active", "cancelled"]),
+              ),
+            );
+          const endDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+          await tx.insert(proSubscriptions).values({
+            userId: input.userId,
+            userType: input.userType,
+            plan: input.plan === "ultra" ? "ultra_monthly" : "pro_monthly",
+            status: "active",
+            autoRenew: false,
+            startDate: now,
+            endDate,
+            paymentMethod: "admin_grant",
+            transactionId: `admin_grant:${input.userType}:${input.userId}:${now.getTime()}`,
+          });
+        }
+        const invalidate = await setPlan(input.userType, input.userId, input.plan, {
+          tx,
+          deferInvalidation: true,
+        });
+        if (invalidate) afterCommit = invalidate;
+      });
+      await afterCommit?.();
+
       await logAdminAction(ctx, {
         action: "UPDATE_USER_PLAN",
         targetType: "user",
         targetId: `${input.userType}:${input.userId}`,
-        details: { newPlan: input.plan, userType: input.userType, userId: input.userId },
+        details: {
+          newPlan: input.plan,
+          durationDays: input.plan === "free" ? 0 : days,
+          userType: input.userType,
+          userId: input.userId,
+        },
       });
       return { success: true, message: "تم تحديث الخطة بنجاح" };
     }),

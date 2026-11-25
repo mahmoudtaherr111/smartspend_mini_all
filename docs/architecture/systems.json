@@ -143,13 +143,13 @@
       "id": "admin",
       "title": "Admin console, support and growth tools",
       "titleAr": "لوحة الإدارة والدعم وأدوات النمو",
-      "summary": "The admin console (users and plans, settings, AI providers, notification templates, learned rules, discount codes), support tickets, ads, SEO pages and usage analytics.",
-      "summaryAr": "لوحة الإدارة (المستخدمين والباقات والإعدادات ومزودي الذكاء الاصطناعي وقوالب الإشعارات والقواعد المتعلمة وأكواد الخصم)، وتذاكر الدعم، والإعلانات، وصفحات SEO، وإحصائيات الاستخدام.",
-      "clusters": ["web-admin"],
+      "summary": "The standalone admin console at /admin/ (users and manual plan grants, dynamic plan features and limits, store billing controls, settings, AI providers, notification templates, learned rules), support tickets, ads, SEO pages and usage analytics.",
+      "summaryAr": "لوحة الإدارة المستقلة على /admin/ (المستخدمين والمنح اليدوية للباقات، ومفاتيح وحدود كل باقة، وبوابات متاجر التطبيقات، والإعدادات، ومزودي الذكاء الاصطناعي، وقوالب الإشعارات، والقواعد المتعلمة)، وتذاكر الدعم، والإعلانات، وصفحات SEO، وإحصائيات الاستخدام.",
+      "clusters": [],
       "routers": ["admin", "adminConsole", "aiSetup", "ads", "seo", "support", "analytics"],
       "routes": ["GET /admin"],
       "procedures": ["export.allUsers"],
-      "pages": ["Admin", "Support"]
+      "pages": ["Support"]
     },
     {
       "id": "ai-platform",

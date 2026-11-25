@@ -18,6 +18,7 @@ const FEATURE_HINTS: Record<PlanFeature, string> = {
   commitment_reminders: "إشعار قبل الميعاد ويومه ولو اتأخر.",
   commitment_whatsapp: "نفس التذكيرات على واتساب، لو الأدمن شغّلها من «الالتزامات» والمستخدم وافق.",
   commitment_capture_link: "دفعة جاية من رسالة بنك أو محفظة تتربط بالقسط بتاعها.",
+  ads: "إظهار الكروت الدعائية لمستخدمي الباقة؛ اقفلها لإلغاء الإعلانات تمامًا.",
 };
 
 const FEATURES: Row[] = [
@@ -44,6 +45,7 @@ const AI_LIMITS: Row[] = [
   { kind: "number", label: "أطول رد في الشات", key: (plan) => `chatbot_max_tokens_${plan}`, unit: "توكن" },
   { kind: "number", label: "أطول رد في قراية الفاتورة", hint: "0 = الميزة مقفولة.", key: (plan) => `image_max_tokens_${plan}`, unit: "توكن" },
   { kind: "number", label: "أطول رد في تحليل الهدف", key: (plan) => `goal_max_tokens_${plan}`, unit: "توكن" },
+  { kind: "number", label: "أطول رد في اقتراحات البيزنس", key: (plan) => `business_max_tokens_${plan}`, unit: "توكن" },
 ];
 
 const OTHER_LIMITS: Row[] = [

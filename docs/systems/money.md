@@ -345,7 +345,7 @@ Decision 0051 makes every scheduled payment one system on `scheduled_cashflows`,
 ## Business mode
 A plan feature (`feature_business_<plan>`, Pro and Ultra by default; `businessProcedure`). A user has one active business with categories that the classification pipeline scores in
 business mode:
-- `business.suggestCategories` asks Gemini for categories with Egyptian keywords and examples from the business
+- `business.suggestCategories` asks Gemini (`ai_api_key` or `ai_api_key_2` from `getSystemSettings()`, else `GEMINI_API_KEY`) for categories with Egyptian keywords and examples from the business
   description;
 - `business.create`, `business.update`, `business.addCategory`, `business.updateCategory`, `business.removeCategory`
   (a soft delete) and `business.linkContact` change the categories the classification cache key carries, so the

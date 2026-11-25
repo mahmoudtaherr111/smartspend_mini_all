@@ -430,14 +430,6 @@
       ]
     },
     {
-      "id": "web-admin",
-      "title": "Admin UI",
-      "description": "Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration.",
-      "paths": [
-        "src/components/admin/**"
-      ]
-    },
-    {
       "id": "web-voice-call",
       "title": "Live voice call UI",
       "description": "The live voice call in the app. The call: a store any screen can start the call from (src/lib/voice/call-store.ts), which keeps it running across pages; microphone capture filtered down to 16 kHz with speech detection that sends audio only while the user speaks; the /api/voice/v2 socket client that resumes a dropped call; playback of the assistant's voice; and the call screen with its cards, the Home button and the AI Center tab (src/components/voice).",
@@ -527,7 +519,7 @@
     {
       "id": "web-hooks",
       "title": "Web hooks",
-      "description": "React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics.",
+      "description": "React hooks for auth, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics.",
       "paths": [
         "src/hooks/**"
       ]
