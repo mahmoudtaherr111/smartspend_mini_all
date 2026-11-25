@@ -13,7 +13,6 @@ Solid arrows: calls and uses. Thick arrows: writes a table. Dotted arrows: reads
 ```mermaid
 flowchart LR
   subgraph g_screens["Screens"]
-    screens_admin["Screens of Admin console, support and growth tools"]
     screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
     screens_web_app["Screens of Web and mobile app shell"]
   end
@@ -127,10 +126,8 @@ flowchart LR
   router_captureAdmin --> sys_platform
   router_captureAdmin ==> tbl_capture_sources
   router_captureAdmin ==> tbl_subscription_catalog
-  screens_admin --> router_captureAdmin
   screens_money --> router_capture
   screens_web_app --> router_capture
-  screens_web_app --> router_captureAdmin
 ```
 
 ## Code modules
@@ -167,19 +164,19 @@ flowchart LR
 | `capture.unignore` | mutation | `authedProcedure` | — | — | — |
 | `capture.walletKind` | query | `authedProcedure` | — | — | `More`, `WalletsPage` |
 | `capture.walletOffers` | query | `authedProcedure` | — | — | — |
-| `captureAdmin.bulkUndo` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
-| `captureAdmin.catalog` | query | `adminProcedure` | `capture_sources`, `subscription_catalog` | — | `Admin`, `More` |
-| `captureAdmin.funnel` | query | `adminProcedure` | — | — | `Admin`, `More` |
+| `captureAdmin.bulkUndo` | mutation | `adminProcedure` | — | — | — |
+| `captureAdmin.catalog` | query | `adminProcedure` | `capture_sources`, `subscription_catalog` | — | — |
+| `captureAdmin.funnel` | query | `adminProcedure` | — | — | — |
 | `captureAdmin.refreshMissingSubscriptionLogos` | mutation | `adminProcedure` | — | — | — |
 | `captureAdmin.refreshSubscriptionLogo` | mutation | `adminProcedure` | `subscription_catalog` | — | — |
-| `captureAdmin.restoreSeed` | mutation | `adminProcedure` | `capture_sources`, `subscription_catalog` | `capture_sources`, `subscription_catalog` | `Admin`, `More` |
-| `captureAdmin.saveSource` | mutation | `adminProcedure` | `capture_sources` | `capture_sources` | `Admin`, `More` |
-| `captureAdmin.saveSubscription` | mutation | `adminProcedure` | `subscription_catalog` | `subscription_catalog` | `Admin`, `More` |
-| `captureAdmin.setSourceStatus` | mutation | `adminProcedure` | `capture_sources` | `capture_sources` | `Admin`, `More` |
-| `captureAdmin.setSubscriptionStatus` | mutation | `adminProcedure` | `subscription_catalog` | `subscription_catalog` | `Admin`, `More` |
+| `captureAdmin.restoreSeed` | mutation | `adminProcedure` | `capture_sources`, `subscription_catalog` | `capture_sources`, `subscription_catalog` | — |
+| `captureAdmin.saveSource` | mutation | `adminProcedure` | `capture_sources` | `capture_sources` | — |
+| `captureAdmin.saveSubscription` | mutation | `adminProcedure` | `subscription_catalog` | `subscription_catalog` | — |
+| `captureAdmin.setSourceStatus` | mutation | `adminProcedure` | `capture_sources` | `capture_sources` | — |
+| `captureAdmin.setSubscriptionStatus` | mutation | `adminProcedure` | `subscription_catalog` | `subscription_catalog` | — |
 | `captureAdmin.simulate` | mutation | `adminProcedure` | — | — | — |
-| `captureAdmin.syncSeed` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
-| `captureAdmin.timeline` | query | `adminProcedure` | — | — | `Admin`, `More` |
+| `captureAdmin.syncSeed` | mutation | `adminProcedure` | — | — | — |
+| `captureAdmin.timeline` | query | `adminProcedure` | — | — | — |
 
 ## HTTP routes, WebSockets and scheduled jobs
 

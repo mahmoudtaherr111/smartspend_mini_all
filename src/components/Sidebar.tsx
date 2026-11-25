@@ -263,8 +263,8 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   {t("more.item.admin")}
                 </p>
               </div>
-              <Link
-                to="/admin"
+              <a
+                href="/admin/"
                 onClick={onToggle}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-xl transition-all duration-200 group relative select-none",
@@ -276,7 +276,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               >
                 <Shield className="w-4 h-4 shrink-0 text-amber-400" />
                 <span className="text-xs font-semibold">{t("more.item.admin")}</span>
-              </Link>
+              </a>
             </>
           )}
         </nav>

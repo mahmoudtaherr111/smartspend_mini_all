@@ -277,8 +277,8 @@ flowchart LR
 | --- | --- | --- | --- | --- | --- |
 | `auth.googleCallback` | mutation | `strictPublicProcedure` | `users` | `users` | — |
 | `auth.googleUrl` | query | `publicProcedure` | — | — | `Login` |
-| `auth.logout` | mutation | `authedProcedure` | — | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support`, `UltraLounge` |
-| `auth.me` | query | `publicProcedure` | `users` | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support`, `UltraLounge` |
+| `auth.logout` | mutation | `authedProcedure` | — | — | `AICenter`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support`, `UltraLounge` |
+| `auth.me` | query | `publicProcedure` | `users` | — | `AICenter`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support`, `UltraLounge` |
 | `auth.signInWithGoogle` | mutation | `strictPublicProcedure` | `users` | `users` | — |
 | `localAuth.confirmVerificationCode` | mutation | `strictPublicProcedure` | — | — | `Login` |
 | `localAuth.deleteUser` | mutation | `adminProcedure` | — | — | — |
@@ -287,8 +287,8 @@ flowchart LR
 | `localAuth.getVerificationSettings` | query | `publicProcedure` | — | — | `Login` |
 | `localAuth.listUsers` | query | `adminProcedure` | `expenses`, `local_users` | — | — |
 | `localAuth.login` | mutation | `publicProcedure` | `local_users` | `local_users` | `Login` |
-| `localAuth.logout` | mutation | `publicProcedure` | — | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support`, `UltraLounge` |
-| `localAuth.me` | query | `publicProcedure` | `local_users` | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support`, `UltraLounge` |
+| `localAuth.logout` | mutation | `publicProcedure` | — | — | `AICenter`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support`, `UltraLounge` |
+| `localAuth.me` | query | `publicProcedure` | `local_users` | — | `AICenter`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support`, `UltraLounge` |
 | `localAuth.register` | mutation | `strictPublicProcedure` | `local_users` | `local_users` | `Login` |
 | `localAuth.resetPassword` | mutation | `strictPublicProcedure` | `local_users` | `local_users` | — |
 | `localAuth.updateRole` | mutation | `adminProcedure` | — | — | — |

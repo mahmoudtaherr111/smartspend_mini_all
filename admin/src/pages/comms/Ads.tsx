@@ -35,9 +35,29 @@ export function Ads() {
 
   const save = () => {
     if (!form) return;
-    const common = { title: form.title.trim(), content: form.content.trim(), imageUrl: form.imageUrl.trim() || undefined, linkUrl: form.linkUrl.trim() || undefined, platformTarget: form.platformTarget, frequencyCapPerDay: Number(form.frequencyCapPerDay || 0) };
-    if (form.id) update.mutate({ id: form.id, ...common });
-    else create.mutate({ ...common, targetPlan: form.targetPlan, ...(form.startDate ? { startDate: form.startDate } : {}), ...(form.endDate ? { endDate: form.endDate } : {}) });
+    const common = {
+      title: form.title.trim(),
+      content: form.content.trim(),
+      imageUrl: form.imageUrl.trim() || undefined,
+      linkUrl: form.linkUrl.trim() || undefined,
+      targetPlan: form.targetPlan,
+      platformTarget: form.platformTarget,
+      frequencyCapPerDay: Number(form.frequencyCapPerDay || 0),
+    };
+    if (form.id) {
+      update.mutate({
+        id: form.id,
+        ...common,
+        startDate: form.startDate || null,
+        endDate: form.endDate || null,
+      });
+    } else {
+      create.mutate({
+        ...common,
+        ...(form.startDate ? { startDate: form.startDate } : {}),
+        ...(form.endDate ? { endDate: form.endDate } : {}),
+      });
+    }
   };
 
   return (
@@ -65,7 +85,26 @@ export function Ads() {
                   </div>
                 </div>
                 <Switch checked={!!ad.isActive} aria-label={`تشغيل ${ad.title}`} onCheckedChange={(isActive) => update.mutate({ id: ad.id, isActive })} />
-                <Button size="sm" variant="outline" onClick={() => setForm({ id: ad.id, title: ad.title, content: ad.content, imageUrl: ad.imageUrl ?? "", linkUrl: ad.linkUrl ?? "", targetPlan: ad.targetPlan === "all" ? "all" : "free", platformTarget: ad.platformTarget === "android" || ad.platformTarget === "ios" ? ad.platformTarget : "all", frequencyCapPerDay: String(ad.frequencyCapPerDay), startDate: "", endDate: "" })}>عدّل</Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setForm({
+                      id: ad.id,
+                      title: ad.title,
+                      content: ad.content,
+                      imageUrl: ad.imageUrl ?? "",
+                      linkUrl: ad.linkUrl ?? "",
+                      targetPlan: ad.targetPlan === "all" ? "all" : "free",
+                      platformTarget: ad.platformTarget === "android" || ad.platformTarget === "ios" ? ad.platformTarget : "all",
+                      frequencyCapPerDay: String(ad.frequencyCapPerDay),
+                      startDate: ad.startDate ? new Date(ad.startDate).toISOString().slice(0, 10) : "",
+                      endDate: ad.endDate ? new Date(ad.endDate).toISOString().slice(0, 10) : "",
+                    })
+                  }
+                >
+                  عدّل
+                </Button>
                 <Button size="sm" variant="ghost" className="text-red-700" onClick={() => setRemoving(ad)}>شيل</Button>
               </li>
             );
@@ -89,18 +128,15 @@ export function Ads() {
                     <option value="all">الاتنين</option><option value="android">أندرويد</option><option value="ios">آيفون</option>
                   </select></div>
                 <div className="space-y-1.5"><Label htmlFor="ad-plan">لمين</Label>
-                  <select id="ad-plan" disabled={!!form.id} className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={form.targetPlan} onChange={(e) => setForm({ ...form, targetPlan: e.target.value as Form["targetPlan"] })}>
+                  <select id="ad-plan" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={form.targetPlan} onChange={(e) => setForm({ ...form, targetPlan: e.target.value as Form["targetPlan"] })}>
                     <option value="free">المجانية بس</option><option value="all">كل الباقات</option>
                   </select></div>
                 <div className="space-y-1.5"><Label htmlFor="ad-cap">مرات في اليوم</Label><Input id="ad-cap" dir="ltr" inputMode="numeric" value={form.frequencyCapPerDay} onChange={(e) => setForm({ ...form, frequencyCapPerDay: e.target.value.replace(/\D/g, "") })} /><p className="text-xs text-muted-foreground">0 = من غير حد.</p></div>
               </div>
-              {!form.id && (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1.5"><Label htmlFor="ad-start">تبدأ</Label><Input id="ad-start" type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} /></div>
-                  <div className="space-y-1.5"><Label htmlFor="ad-end">تخلص</Label><Input id="ad-end" type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} /></div>
-                </div>
-              )}
-              {form.id && <p className="text-xs text-muted-foreground">الباقة والمواعيد بتتحدد لما الحملة تتعمل. عشان تغيّرها، اعمل حملة جديدة.</p>}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5"><Label htmlFor="ad-start">تبدأ</Label><Input id="ad-start" type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} /></div>
+                <div className="space-y-1.5"><Label htmlFor="ad-end">تخلص</Label><Input id="ad-end" type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} /></div>
+              </div>
             </div>
           )}
           <DialogFooter className="gap-2 sm:justify-start">

@@ -10,7 +10,12 @@ import { db } from "../../queries/connection";
 import { setPlan } from "../access-control";
 import { env } from "../env";
 import { createLogger } from "../log";
-import { grantsAccess, type EntitlementState, type StoreId } from "./entitlement";
+import {
+  entitlementForStoreProduct,
+  grantsAccess,
+  type EntitlementState,
+  type StoreId,
+} from "./entitlement";
 
 const log = createLogger("store-billing");
 
@@ -56,11 +61,14 @@ async function planFromPayments(tx: Tx, owner: StoreOwner, now: Date): Promise<"
         gt(proSubscriptions.endDate, now),
       ),
     );
-  if (web.some((row) => row.plan === "ultra")) return "ultra";
-  if (web.length > 0) return "pro";
+  if (web.some((row) => row.plan.toLowerCase().includes("ultra"))) return "ultra";
 
   const store = await tx
-    .select({ status: storePurchases.status, expiresAt: storePurchases.expiresAt })
+    .select({
+      storeProductId: storePurchases.storeProductId,
+      status: storePurchases.status,
+      expiresAt: storePurchases.expiresAt,
+    })
     .from(storePurchases)
     .where(
       and(
@@ -69,7 +77,12 @@ async function planFromPayments(tx: Tx, owner: StoreOwner, now: Date): Promise<"
         inArray(storePurchases.status, PAYING_STATES),
       ),
     );
-  return store.some((row) => grantsAccess(row.status as EntitlementState, row.expiresAt, now)) ? "pro" : "free";
+  const activeStore = store.filter((row) => grantsAccess(row.status as EntitlementState, row.expiresAt, now));
+  if (activeStore.some((row) => entitlementForStoreProduct(row.storeProductId) === "ultra")) {
+    return "ultra";
+  }
+  if (web.length > 0 || activeStore.length > 0) return "pro";
+  return "free";
 }
 
 export async function applyStoreEvent(event: StoreEvent): Promise<StoreEventResult> {

@@ -65,7 +65,6 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const WalletsPage = lazy(() => import("@/pages/WalletsPage"));
 const AuthCallback = lazy(() => import("@/pages/AuthCallback"));
 const Support = lazy(() => import("@/pages/Support"));
-const Admin = lazy(() => import("@/pages/Admin"));
 const Pro = lazy(() => import("@/pages/Pro"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
@@ -120,14 +119,19 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function AdminRoute({ children }: { children: React.ReactNode }) {
+function ConsoleRedirect() {
   const { user, isVerified, isAdmin } = useAuth();
+  React.useEffect(() => {
+    if (isVerified && user && isAdmin) {
+      window.location.replace("/admin/");
+    }
+  }, [isVerified, user, isAdmin]);
   // The optimistic identity snapshot never carries a role, so the admin shell
   // waits for the real session rather than reading a value off the device.
   if (!isVerified) return <PageLoadingSkeleton />;
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
-  return <>{children}</>;
+  return <PageLoadingSkeleton />;
 }
 
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
@@ -398,16 +402,8 @@ function AnimatedRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/admin"
-        element={
-          <AdminRoute>
-            <PageTransition>
-              <Admin />
-            </PageTransition>
-          </AdminRoute>
-        }
-      />
+      <Route path="/admin" element={<ConsoleRedirect />} />
+      <Route path="/admin/*" element={<ConsoleRedirect />} />
       <Route
         path="/pro"
         element={

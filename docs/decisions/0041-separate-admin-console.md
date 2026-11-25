@@ -3,8 +3,8 @@
 Date: 2026-11-03. Status: accepted.
 
 ## Context
-The admin console was a page of the web app (`src/pages/Admin.tsx`, about 2,600 lines, plus about 7,700 lines of tab
-components). Running it meant deploying the whole web app, its service worker and its install. The owner may not deploy
+The admin console was originally a single page inside `src/pages/` (about 2,600 lines, plus about 7,700 lines of tab
+components, since removed). Running it meant deploying the whole web app, its service worker and its install. The owner may not deploy
 the web app at all, and wants a console that a person who knows nothing about technology can run the product from:
 connectors and keys, every AI call and its cost, why a sentence was classified, users, support, subscriptions, and
 analytics per platform. The research behind this record lists what each service lets the admin see and change and

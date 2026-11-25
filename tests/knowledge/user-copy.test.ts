@@ -31,7 +31,6 @@ function offending(path: string, lines: string[], pick: (line: string) => boolea
 describe("the app's messages follow the writing guide", () => {
   it("uses no formal or technical phrasing in the web app", () => {
     const found = files(join(root, "src"))
-      .filter((path) => !path.includes(`${join("src", "components", "admin")}`) && !path.endsWith(join("pages", "Admin.tsx")))
       .flatMap((path) => offending(path, readFileSync(path, "utf8").split("\n"), (line) => !/^\s*(\/\/|\*)/.test(line)));
     expect(found).toEqual([]);
   });

@@ -20,6 +20,7 @@ export const LABELS: Record<string, { label: string; hint?: string }> = {
   confidence_auto_save: { label: "قديم: حد الحفظ لوحده", hint: "بيتقري بس لو «يتحفظ لوحده لو متأكد قد» مش متحفظ." },
   confidence_review: { label: "قديم: حد المراجعة", hint: "بيتقري بس لو «يتعرض للمراجعة لو متأكد قد» مش متحفظ." },
   chatbot_max_history: { label: "رسايل المحادثة اللي الشات بيفتكرها", hint: "آخر كام رسالة بتتبعت للموديل مع كل سؤال." },
+  ai_kernel_enabled: { label: "محرك الفهم المحلي في الشات", hint: "بيجاوب أسئلة الأرقام والذاكرة من غير استهلاك موديل." },
   chatbot_api_key: { label: "الشات الاحتياطي: المفتاح", hint: "بيتجرب بعد موديلات الشات في «إعداد الذكاء»." },
   chatbot_base_url: { label: "الشات الاحتياطي: عنوان الخدمة" },
   chatbot_model: { label: "الشات الاحتياطي: الموديل" },
@@ -61,6 +62,10 @@ export const LABELS: Record<string, { label: string; hint?: string }> = {
   commitments_whatsapp_template_lang: { label: "واتساب: لغة القالب", hint: "ar" },
   commitments_whatsapp_hours: { label: "واتساب: ساعات الإرسال", hint: "بتوقيت القاهرة، زي 9-21." },
   commitments_whatsapp_daily_cap: { label: "واتساب: أقصى رسايل للمستخدم في اليوم" },
+  whatsapp_reports_enabled: { label: "إرسال التقارير الشهرية على واتساب", hint: "للمشتركين اللي باقتهم فيها التقرير الشهري وموافقين." },
+  whatsapp_marketing_paused: { label: "إيقاف رسائل واتساب التسويقية", hint: "لو اتشغل، بيوقف إرسال حملات القوالب الجماعية." },
+  store_google_play_enabled: { label: "بوابة Google Play في الأندرويد", hint: "يسمح بالشراء واسترجاع الاشتراكات من متجر جوجل." },
+  store_app_store_enabled: { label: "بوابة App Store في الآيفون", hint: "يسمح بالشراء واسترجاع الاشتراكات من متجر آبل." },
 };
 
 /** Settings that take one of a few values: offered as a choice, so a typo cannot reach the server. */
@@ -83,13 +88,14 @@ export const CHOICES: Record<string, [string, string][]> = {
 export const READ_ONLY = new Set(["capture_financial_version"]);
 
 const GROUPS: { id: string; label: string; page?: { to: string; name: string }; test: (key: string) => boolean }[] = [
-  { id: "plans", label: "الباقات والحدود", page: { to: "/plans", name: "الباقات والحدود" }, test: (k) => /^feature_|_(free|pro|ultra)$/.test(k) && !/^(voice_|capture_|report_(provider|model|key_slot)_|ai_model_|stt_)/.test(k) && !/_stt_/.test(k) },
+  { id: "plans", label: "الباقات والحدود", page: { to: "/plans", name: "الباقات والحدود" }, test: (k) => /^feature_|_(free|pro|ultra)$/.test(k) && !/^(voice_(?!limit_|per_req_)|capture_(?!monthly_limit_|devices_)|report_(provider|model|key_slot)_|ai_model_|stt_)/.test(k) && !/_stt_/.test(k) },
   { id: "voice", label: "المكالمة الصوتية", page: { to: "/plans", name: "الباقات والحدود ← المكالمة" }, test: (k) => /^voice_(?!limit_|per_req_)/.test(k) },
   { id: "capture", label: "رسايل البنوك", page: { to: "/bank-messages", name: "رسايل البنوك" }, test: (k) => /^(capture_|sms_)/.test(k) },
   { id: "parser", label: "فهم الجمل", page: { to: "/ai/classifications", name: "التصنيف وسببه" }, test: (k) => /^(parser_|confidence_)/.test(k) },
   { id: "ai", label: "الذكاء الاصطناعي", page: { to: "/ai/setup", name: "إعداد الذكاء" }, test: (k) => /^(ai_|chatbot_|rag_|enable_rag|stt_|report_(provider|model|key_slot)_)|_stt_|_api_key/.test(k) },
   { id: "commitments", label: "الالتزامات والتذكير", test: (k) => /^commitments_/.test(k) },
   { id: "whatsapp", label: "واتساب", page: { to: "/communications", name: "التواصل والإعلانات" }, test: (k) => /^whatsapp_/.test(k) },
+  { id: "money", label: "الفلوس والمتاجر", page: { to: "/money", name: "الفلوس" }, test: (k) => /^(store_|usd_to_egp_rate$)/.test(k) },
   { id: "operations", label: "التشغيل", page: { to: "/operations", name: "التشغيل" }, test: () => true },
 ];
 

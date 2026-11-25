@@ -21,7 +21,8 @@ export type PlanFeature =
   | "commitments"
   | "commitment_reminders"
   | "commitment_whatsapp"
-  | "commitment_capture_link";
+  | "commitment_capture_link"
+  | "ads";
 
 /** On/off per plan. Setting key: `feature_<feature>_<plan>`, value "true" or "false". */
 export const PLAN_FEATURE_DEFAULTS: Record<PlanFeature, Record<PlanId, boolean>> = {
@@ -37,6 +38,7 @@ export const PLAN_FEATURE_DEFAULTS: Record<PlanFeature, Record<PlanId, boolean>>
   commitment_reminders: { free: true, pro: true, ultra: true },
   commitment_whatsapp: { free: false, pro: true, ultra: true },
   commitment_capture_link: { free: true, pro: true, ultra: true },
+  ads: { free: true, pro: false, ultra: false },
 };
 
 /** Numbers per plan that had no setting. Setting key: `<name>_<plan>`. 0 means no limit. */
@@ -47,6 +49,7 @@ export const PLAN_NUMBER_DEFAULTS = {
   chatbot_max_tokens: { free: 1000, pro: 3000, ultra: 5000 },
   image_max_tokens: { free: 0, pro: 1500, ultra: 2500 },
   goal_max_tokens: { free: 300, pro: 1800, ultra: 3500 },
+  business_max_tokens: { free: 1024, pro: 2048, ultra: 4096 },
   offline_limit: { free: 3, pro: 30, ultra: 30 },
   // New payments recorded from bank messages in a Cairo month (decision 0028); over it they are held until an upgrade.
   capture_monthly_limit: { free: 50, pro: 0, ultra: 0 },
@@ -119,4 +122,5 @@ export const PLAN_FEATURE_LABELS: Record<PlanFeature, string> = {
   commitment_reminders: "تذكير الالتزامات بالإشعارات",
   commitment_whatsapp: "تذكير الالتزامات على واتساب",
   commitment_capture_link: "ربط رسايل البنوك بالالتزامات",
+  ads: "عرض الإعلانات داخل التطبيق",
 };

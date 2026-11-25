@@ -1647,6 +1647,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get planPro => 'خطة المحترفين (Pro)';
 
   @override
+  String get planUltra => 'خطة Ultra';
+
+  @override
   String get planFeaturesTitle => 'مميزات خطة Pro';
 
   @override

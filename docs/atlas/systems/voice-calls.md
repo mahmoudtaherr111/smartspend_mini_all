@@ -13,7 +13,6 @@ Solid arrows: calls and uses. Thick arrows: writes a table. Dotted arrows: reads
 ```mermaid
 flowchart LR
   subgraph g_screens["Screens"]
-    screens_admin["Screens of Admin console, support and growth tools"]
     screens_ai_center["Screens of AI Center"]
     screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
     screens_web_app["Screens of Web and mobile app shell"]
@@ -76,7 +75,6 @@ flowchart LR
   mod_web_voice_call --> sys_web_app
   router_voice --> mod_voice
   router_voice -.-> tbl_voice_calls
-  screens_admin --> router_voice
   screens_ai_center --> router_voice
   screens_money --> router_voice
   screens_web_app --> router_voice
@@ -93,7 +91,7 @@ flowchart LR
 
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
-| `voice.adminStats` | query | `adminProcedure` | — | — | `Admin`, `More` |
+| `voice.adminStats` | query | `adminProcedure` | — | — | — |
 | `voice.eligibility` | query | `authedProcedure` | — | — | `AICenter`, `App shell`, `Home` |
 | `voice.listCalls` | query | `authedProcedure` | `voice_calls` | — | `App shell` |
 | `voice.startCall` | mutation | `authedProcedure` | — | — | — |
@@ -135,7 +133,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 Depends on: [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
-Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Used by: [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 

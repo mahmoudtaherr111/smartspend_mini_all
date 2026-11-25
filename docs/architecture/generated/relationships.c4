@@ -265,6 +265,7 @@ model {
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.scheduled_cashflows
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.seo_pages
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.sessions
+  smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.store_events
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.store_purchases
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.subscription_catalog
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.support_assignments
@@ -827,6 +828,7 @@ model {
   smartspend.api.trpc.admin.updateUserPlan -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.admin.updateUserPlanV2 -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.admin.updateUserPlanV2 -[uses]-> smartspend.api.modules.security
+  smartspend.api.trpc.admin.updateUserPlanV2 -[writes]-> smartspend.mysql.pro_subscriptions
   smartspend.api.trpc.admin.updateUserRole -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.admin.updateUserRole -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.admin.validateApiKey -[uses]-> smartspend.api.modules.ai-providers
@@ -849,18 +851,23 @@ model {
   smartspend.api.trpc.adminConsole.jobs -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminConsole.markAlertsRead -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminConsole.money -[reads]-> smartspend.mysql.local_users
+  smartspend.api.trpc.adminConsole.money -[reads]-> smartspend.mysql.pro_subscriptions
+  smartspend.api.trpc.adminConsole.money -[reads]-> smartspend.mysql.store_events
   smartspend.api.trpc.adminConsole.money -[reads]-> smartspend.mysql.store_purchases
   smartspend.api.trpc.adminConsole.money -[reads]-> smartspend.mysql.users
+  smartspend.api.trpc.adminConsole.money -[uses]-> smartspend.api.modules.billing
   smartspend.api.trpc.adminConsole.money -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminConsole.money -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.capture_devices
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.local_users
+  smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.pro_subscriptions
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.sessions
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.store_purchases
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.support_tickets
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.users
+  smartspend.api.trpc.adminConsole.person -[uses]-> smartspend.api.modules.ai-governance
   smartspend.api.trpc.adminConsole.person -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminConsole.searchPeople -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.adminConsole.searchPeople -[reads]-> smartspend.mysql.users
@@ -920,6 +927,7 @@ model {
   smartspend.api.trpc.ads.list -[reads]-> smartspend.mysql.ad_impressions
   smartspend.api.trpc.ads.list -[reads]-> smartspend.mysql.ads
   smartspend.api.trpc.ads.list -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.ads.list -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.ads.recordImpression -[reads]-> smartspend.mysql.ad_impressions
   smartspend.api.trpc.ads.recordImpression -[writes]-> smartspend.mysql.ad_impressions
   smartspend.api.trpc.ads.recordImpression -[writes]-> smartspend.mysql.ads
@@ -1389,11 +1397,14 @@ model {
   smartspend.api.trpc.pro.planCatalog -[uses]-> smartspend.api.modules.billing
   smartspend.api.trpc.pro.planCatalog -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.pro.restorePurchases -[uses]-> smartspend.api.modules.billing
+  smartspend.api.trpc.pro.restorePurchases -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.pro.storeBilling -[uses]-> smartspend.api.modules.billing
+  smartspend.api.trpc.pro.storeBilling -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.pro.upgrade -[uses]-> smartspend.api.modules.billing
   smartspend.api.trpc.pro.upgrade -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.pro.upgrade -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.pro.verifyStorePurchase -[uses]-> smartspend.api.modules.billing
+  smartspend.api.trpc.pro.verifyStorePurchase -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.profile.addContact -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.profile.addContact -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.profile.addContact -[uses]-> smartspend.api.modules.security
@@ -1541,12 +1552,6 @@ model {
   smartspend.web.modules.web-account -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-account -[imports]-> smartspend.web.modules.web-ui-kit
   smartspend.web.modules.web-account -[uses]-> turnstile
-  smartspend.web.modules.web-admin -[imports]-> smartspend.shared.contracts
-  smartspend.web.modules.web-admin -[imports]-> smartspend.web.modules.web-lib
-  smartspend.web.modules.web-admin -[imports]-> smartspend.web.modules.web-shell
-  smartspend.web.modules.web-admin -[imports]-> smartspend.web.modules.web-ui-kit
-  smartspend.web.modules.web-admin -[uses]-> fireworks
-  smartspend.web.modules.web-admin -[uses]-> openrouter
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-hooks
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-insights
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-lib
@@ -1579,7 +1584,6 @@ model {
   smartspend.web.modules.web-lib -[uses]-> capacitor
   smartspend.web.modules.web-pages -[imports]-> smartspend.shared.contracts
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-account
-  smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-admin
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-ai
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-bank-capture
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-capture
@@ -1635,86 +1639,6 @@ model {
   smartspend.web.pages.AICenter -[calls]-> smartspend.api.trpc.localAuth.logout
   smartspend.web.pages.AICenter -[calls]-> smartspend.api.trpc.localAuth.me
   smartspend.web.pages.AICenter -[calls]-> smartspend.api.trpc.voice.eligibility
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.addAiProvider
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.clearAllApiKeyErrors
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.createNotificationTemplate
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.deleteAiProvider
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.deleteLearnedRule
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.deleteNotificationTemplate
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.deleteUser
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.discoverProviderModels
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getAIClassificationStats
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getAICostOverview
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getActivityLog
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getAiModels
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getAiProviders
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getAiTelemetryOverview
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getApiKeyErrors
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getAuditLogs
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getAvailableModels
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getClassificationLogs
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getClassificationQuality
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getDashboardStats
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getFounderMetrics
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getLearnedRules
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getNotificationLogs
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getNotificationStats
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getNotificationTemplates
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getPendingClarifications
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getSettings
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getUserAiQuota
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getUserSessions
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getUserSmartProfile
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getVoiceUsageStats
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.listAllUsers
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.listStorePurchasesAdmin
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.listSubscriptionsAdmin
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.resolveApiKeyError
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.resolveClarification
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.revokeSession
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.saveAiModels
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.sendInstantNotification
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.toggleNotificationTemplate
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.triggerActivityCheck
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.triggerBackupDemo
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.updateAiProvider
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.updateNotificationTemplate
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.updateSettings
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.updateUserPlanV2
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.updateUserRole
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.validateApiKey
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.adminWhatsapp.getOutboxLog
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.adminWhatsapp.getSettings
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.adminWhatsapp.getStatus
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.adminWhatsapp.getTemplates
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.adminWhatsapp.sendDirectMessage
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.adminWhatsapp.syncTemplates
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.adminWhatsapp.updateSettings
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.ads.create
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.ads.delete
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.ads.stats
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.ads.update
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.ai.parseExpense
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.auth.logout
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.auth.me
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.bulkUndo
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.catalog
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.funnel
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.restoreSeed
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.saveSource
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.saveSubscription
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.setSourceStatus
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.setSubscriptionStatus
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.syncSeed
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.timeline
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.export.allUsers
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.localAuth.logout
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.localAuth.me
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.seo.getPage
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.support.close
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.support.listAll
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.support.respond
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.voice.adminStats
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.ai.getUserLimits
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.ai.parseExpense
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.ai.parseVoiceExpense
@@ -1774,67 +1698,7 @@ model {
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.localAuth.register
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.webauthn.generateAuthenticationOptions
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.webauthn.verifyAuthentication
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.addAiProvider
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.clearAllApiKeyErrors
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.createNotificationTemplate
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.deleteAiProvider
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.deleteLearnedRule
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.deleteNotificationTemplate
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.deleteUser
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.discoverProviderModels
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getAIClassificationStats
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getAICostOverview
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getActivityLog
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getAiModels
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getAiProviders
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getAiTelemetryOverview
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getApiKeyErrors
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getAuditLogs
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getAvailableModels
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getClassificationLogs
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getClassificationQuality
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getDashboardStats
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getFounderMetrics
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getLearnedRules
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getNotificationLogs
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getNotificationStats
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getNotificationTemplates
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getPendingClarifications
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getSettings
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getUserAiQuota
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getUserSessions
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getUserSmartProfile
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getVoiceUsageStats
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.listAllUsers
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.listStorePurchasesAdmin
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.listSubscriptionsAdmin
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.resolveApiKeyError
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.resolveClarification
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.revokeSession
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.saveAiModels
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.sendInstantNotification
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.toggleNotificationTemplate
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.triggerActivityCheck
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.triggerBackupDemo
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.updateAiProvider
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.updateNotificationTemplate
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.updateSettings
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.updateUserPlanV2
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.updateUserRole
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.validateApiKey
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.adminWhatsapp.getOutboxLog
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.adminWhatsapp.getSettings
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.adminWhatsapp.getStatus
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.adminWhatsapp.getTemplates
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.adminWhatsapp.sendDirectMessage
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.adminWhatsapp.syncTemplates
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.adminWhatsapp.updateSettings
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.ads.create
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.ads.delete
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.ads.stats
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.ads.update
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.ai.getUserLimits
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.ai.parseExpense
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.auth.logout
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.auth.me
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.business.addCategory
@@ -1847,16 +1711,6 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.capture.setWalletKind
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.capture.status
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.capture.walletKind
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.bulkUndo
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.catalog
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.funnel
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.restoreSeed
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.saveSource
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.saveSubscription
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.setSourceStatus
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.setSubscriptionStatus
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.syncSeed
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.timeline
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.coach.addCashflow
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.coach.cancelReminder
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.coach.endPlan
@@ -1867,7 +1721,6 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.coach.settle
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.coach.unsettle
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.expense.getMonthlyStats
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.export.allUsers
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.export.myExpenses
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.localAuth.logout
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.localAuth.me
@@ -1889,12 +1742,8 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.updateSmartProfile
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.updateUserInfo
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.seo.getPage
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.support.close
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.support.create
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.support.listAll
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.support.listMine
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.support.respond
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.voice.adminStats
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet.createWallet
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet.deleteWallet

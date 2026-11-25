@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, inArray, isNull, like, lt, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, gt, gte, inArray, isNull, like, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { BILLING_PLANS } from "../contracts/plans";
 import {
@@ -8,7 +8,9 @@ import {
   classificationLogs,
   expenses,
   localUsers,
+  proSubscriptions,
   sessions,
+  storeEvents,
   storePurchases,
   supportAssignments,
   supportTickets,
@@ -16,11 +18,13 @@ import {
   users,
 } from "../db/schema";
 import { ledgerTotalCostUsdSince } from "./lib/ai-ledger";
+import { asPlan, parseSafeInt, resolvePlanTokenLimit } from "./lib/ai-usage-policy";
 import { readClient } from "./lib/client-platform";
 import { dailyAiCapUsd } from "./lib/feature-switches";
 import { businessDayRange, businessMonthRange, startOfBusinessDay } from "./lib/app-time";
 import { getCacheRuntimeStatus } from "./lib/redis-client";
 import { getSystemSettings } from "./lib/settings-cache";
+import { isAppStoreConfigured, isGooglePlayConfigured } from "./lib/store-billing";
 import { SETTINGS } from "./lib/system-settings-registry";
 import { adminProcedure, moderatorProcedure, router } from "./middleware";
 import { listAdminAlerts, markAdminAlertsRead } from "./services/admin-alerts";
@@ -213,7 +217,7 @@ export const adminConsoleRouter = router({
     // The Cairo month (golden rule 6).
     const monthStart = businessMonthRange().start;
 
-    const [recent, totals, monthCount, aiMonth, aiCalls, devices, captures, purchases, tickets] = await Promise.all([
+    const [recent, totals, monthCount, aiMonth, aiCalls, devices, captures, purchases, manualSubscriptions, tickets, settings] = await Promise.all([
       db
         .select({
           id: expenses.id,
@@ -273,12 +277,30 @@ export const adminConsoleRouter = router({
         .where(mine(storePurchases))
         .orderBy(desc(storePurchases.createdAt)),
       db
+        .select({
+          id: proSubscriptions.id,
+          plan: proSubscriptions.plan,
+          status: proSubscriptions.status,
+          paymentMethod: proSubscriptions.paymentMethod,
+          startDate: proSubscriptions.startDate,
+          endDate: proSubscriptions.endDate,
+        })
+        .from(proSubscriptions)
+        .where(mine(proSubscriptions))
+        .orderBy(desc(proSubscriptions.createdAt))
+        .limit(10),
+      db
         .select({ id: supportTickets.id, subject: supportTickets.subject, status: supportTickets.status, createdAt: supportTickets.createdAt, respondedAt: supportTickets.respondedAt })
         .from(supportTickets)
         .where(mine(supportTickets))
         .orderBy(desc(supportTickets.createdAt))
         .limit(10),
+      getSystemSettings().catch(() => ({} as Record<string, string>)),
     ]);
+
+    const overrideLimit = parseSafeInt(settings[`user_token_limit_${input.type}_${input.id}`], -1);
+    const effectiveTokenLimit =
+      overrideLimit >= 0 ? overrideLimit : resolvePlanTokenLimit(settings, asPlan(profile.plan));
 
     return {
       type: input.type,
@@ -294,6 +316,11 @@ export const adminConsoleRouter = router({
       recordedTotal: Number(totals[0]?.count ?? 0),
       lastRecordedAt: totals[0]?.last ?? null,
       recordedThisMonth: monthCount,
+      aiQuota: {
+        used: Number(profile.aiTokensUsed ?? 0),
+        limit: effectiveTokenLimit,
+        hasCustomLimit: overrideLimit >= 0,
+      },
       aiThisMonth: {
         calls: Number(aiMonth[0]?.calls ?? 0),
         input: Number(aiMonth[0]?.input ?? 0),
@@ -305,6 +332,7 @@ export const adminConsoleRouter = router({
       devices: devices.map((device) => ({ ...device, ...readClient(device.userAgent) })),
       captureDevices: captures,
       purchases,
+      manualSubscriptions,
       tickets,
     };
   }),
@@ -708,34 +736,79 @@ export const adminConsoleRouter = router({
   status: adminProcedure.query(() => loadServerStatus()),
 
   money: adminProcedure.query(async () => {
+    const now = new Date();
     const monthStart = businessMonthRange().start;
-    const [byStatus, newThisMonth, endedThisMonth, latest] = await Promise.all([
-      db
-        .select({ store: storePurchases.store, product: storePurchases.storeProductId, status: storePurchases.status, count: count() })
-        .from(storePurchases)
-        .groupBy(storePurchases.store, storePurchases.storeProductId, storePurchases.status),
-      countOrNull(() => db.select({ count: count() }).from(storePurchases).where(gte(storePurchases.createdAt, monthStart))),
-      countOrNull(() =>
+    const [byStatus, newThisMonth, endedThisMonth, latest, activeManualGrants, manualGrants, recentEvents] =
+      await Promise.all([
         db
-          .select({ count: count() })
+          .select({
+            store: storePurchases.store,
+            product: storePurchases.storeProductId,
+            status: storePurchases.status,
+            count: count(),
+          })
           .from(storePurchases)
-          .where(and(inArray(storePurchases.status, ["expired", "revoked"]), gte(storePurchases.updatedAt, monthStart))),
-      ),
-      db
-        .select({
-          id: storePurchases.id,
-          userId: storePurchases.userId,
-          userType: storePurchases.userType,
-          store: storePurchases.store,
-          product: storePurchases.storeProductId,
-          status: storePurchases.status,
-          expiresAt: storePurchases.expiresAt,
-          createdAt: storePurchases.createdAt,
-        })
-        .from(storePurchases)
-        .orderBy(desc(storePurchases.createdAt))
-        .limit(40),
-    ]);
+          .where(
+            or(
+              eq(storePurchases.status, "in_grace_period"),
+              gt(storePurchases.expiresAt, now),
+              inArray(storePurchases.status, ["expired", "revoked", "refunded", "on_hold", "paused", "pending"]),
+            ),
+          )
+          .groupBy(storePurchases.store, storePurchases.storeProductId, storePurchases.status),
+        countOrNull(() => db.select({ count: count() }).from(storePurchases).where(gte(storePurchases.createdAt, monthStart))),
+        countOrNull(() =>
+          db
+            .select({ count: count() })
+            .from(storePurchases)
+            .where(and(inArray(storePurchases.status, ["expired", "revoked", "refunded"]), gte(storePurchases.updatedAt, monthStart))),
+        ),
+        db
+          .select({
+            id: storePurchases.id,
+            userId: storePurchases.userId,
+            userType: storePurchases.userType,
+            store: storePurchases.store,
+            product: storePurchases.storeProductId,
+            status: storePurchases.status,
+            expiresAt: storePurchases.expiresAt,
+            createdAt: storePurchases.createdAt,
+          })
+          .from(storePurchases)
+          .orderBy(desc(storePurchases.createdAt))
+          .limit(40),
+        countOrNull(() =>
+          db
+            .select({ count: count() })
+            .from(proSubscriptions)
+            .where(and(inArray(proSubscriptions.status, ["active", "cancelled"]), gt(proSubscriptions.endDate, now))),
+        ),
+        db
+          .select({
+            id: proSubscriptions.id,
+            userId: proSubscriptions.userId,
+            userType: proSubscriptions.userType,
+            plan: proSubscriptions.plan,
+            status: proSubscriptions.status,
+            paymentMethod: proSubscriptions.paymentMethod,
+            endDate: proSubscriptions.endDate,
+            createdAt: proSubscriptions.createdAt,
+          })
+          .from(proSubscriptions)
+          .orderBy(desc(proSubscriptions.createdAt))
+          .limit(20),
+        db
+          .select({
+            id: storeEvents.id,
+            store: storeEvents.store,
+            eventType: storeEvents.eventType,
+            eventTime: storeEvents.eventTime,
+          })
+          .from(storeEvents)
+          .orderBy(desc(storeEvents.eventTime))
+          .limit(20)
+          .catch(() => []),
+      ]);
     // A month's worth of each active subscription at the published price, in pounds. The stores keep their cut, so
     // this is what people pay, not what reaches the bank.
     const monthlyPounds = (product: string) => {
@@ -743,18 +816,29 @@ export const adminConsoleRouter = router({
       if (!plan) return 0;
       return plan.duration === "year" ? plan.amountCents / 100 / 12 : plan.amountCents / 100;
     };
-    const active = byStatus.filter((row) => row.status === "active" || row.status === "cancelled" || row.status === "grace");
-    const names = await namesOf(latest);
+    const active = byStatus.filter(
+      (row) => row.status === "active" || row.status === "cancelled" || row.status === "in_grace_period",
+    );
+    const names = await namesOf([...latest, ...manualGrants]);
     return {
+      gateways: {
+        googlePlayConfigured: isGooglePlayConfigured(),
+        appStoreConfigured: isAppStoreConfigured(),
+      },
       activeByStore: ["google_play", "app_store"].map((store) => ({
         store,
         count: active.filter((row) => row.store === store).reduce((sum, row) => sum + Number(row.count), 0),
       })),
-      monthlyRevenueEstimate: Math.round(active.reduce((sum, row) => sum + monthlyPounds(row.product) * Number(row.count), 0)),
+      activeManualGrants: activeManualGrants ?? 0,
+      monthlyRevenueEstimate: Math.round(
+        active.reduce((sum, row) => sum + monthlyPounds(row.product) * Number(row.count), 0),
+      ),
       byStatus: byStatus.map((row) => ({ ...row, count: Number(row.count) })),
       newThisMonth,
       endedThisMonth,
       latest: latest.map((row) => ({ ...row, who: names.get(`${row.userType}:${row.userId}`) ?? null })),
+      manualGrants: manualGrants.map((row) => ({ ...row, who: names.get(`${row.userType}:${row.userId}`) ?? null })),
+      recentEvents,
     };
   }),
 });

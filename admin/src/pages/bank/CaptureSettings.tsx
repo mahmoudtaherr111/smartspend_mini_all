@@ -57,6 +57,8 @@ export function CaptureSettings() {
             <h3 className="font-semibold md:col-span-2">الحدود</h3>
             <NumberField {...props} name="capture_monthly_limit_free" fallback="50" label="عمليات في الشهر (المجانية)" hint="بعدها العمليات بتتعلق وتتسجل لو اشترك. 0 = من غير حد." />
             <NumberField {...props} name="capture_monthly_limit_pro" fallback="0" label="عمليات في الشهر (Pro)" hint="0 = من غير حد." />
+            <NumberField {...props} name="capture_monthly_limit_ultra" fallback="0" label="عمليات في الشهر (Ultra)" hint="0 = من غير حد." />
+            <NumberField {...props} name="capture_ai_tokens_free" fallback="2000000" label="رصيد توكنز قراية الرسايل (المجانية)" hint="سقف التوكنز الشهري لقراية رسايل البنوك في الباقة المجانية." />
             <NumberField {...props} name="capture_daily_signal_limit" fallback="1000" label="رسايل في اليوم لكل مستخدم" hint="حماية من موبايل بيبعت رسايل كتير غلط. بعدها الموبايل بيستنى لنص الليل." />
             <NumberField {...props} name="capture_daily_question_notices" fallback="2" label="إشعارات الأسئلة في اليوم" hint="الباقي بيستنى جوه التطبيق." />
             <NumberField {...props} name="capture_ai_daily_cost_cap_usd" fallback="50" prefix="$" label="سقف تكلفة القراية في اليوم" hint="لكل المستخدمين مع بعض. بعده الرسايل بتستنى لبكره، ومابتضيعش. لازم أكبر من صفر." />
@@ -65,6 +67,11 @@ export function CaptureSettings() {
 
           <section className="space-y-3 rounded-xl border p-4">
             <h3 className="font-semibold">لمين</h3>
+            <div className="space-y-1">
+              <label className="text-sm font-semibold" htmlFor="capture_platforms">الأنظمة المسموح لها</label>
+              <Input id="capture_platforms" dir="ltr" placeholder="android,ios" value={props.formData.capture_platforms ?? "android,ios"} onChange={(e) => props.updateField("capture_platforms", e.target.value)} />
+              <p className="text-xs text-muted-foreground">اكتب android,ios للاثنين أو android بس.</p>
+            </div>
             <div className="space-y-1">
               <label className="text-sm font-semibold" htmlFor="capture_beta_users">مستخدمين التجربة بس</label>
               <Input id="capture_beta_users" dir="ltr" placeholder="local:12, oauth:7" value={props.formData.capture_beta_users ?? ""} onChange={(e) => props.updateField("capture_beta_users", e.target.value)} />

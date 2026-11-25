@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../plans/plan_providers.dart';
 import 'goal_detail_sheet.dart';
 import 'goal_form_sheet.dart';
 import 'goal_models.dart';
@@ -22,11 +23,12 @@ class GoalsScreen extends ConsumerWidget {
     GoalsListResponse data,
   ) async {
     final activeCount = data.goals.where((g) => g.isActive).length;
-    if (!data.isPro && activeCount >= 3) {
-      await showSmartSpendSheet<void>(
+    final planInfo = ref.read(userPlanProvider).asData?.value;
+    final limit = planInfo?.goalsActiveLimit ?? (data.isPro ? 0 : 3);
+    if (limit > 0 && activeCount >= limit) {
+      await showUpgradePromptSheet(
         context: context,
-        builder: (_) =>
-            const UpgradePromptSheet(reason: UpgradeLimitReason.goals),
+        reason: UpgradeLimitReason.goals,
       );
       return;
     }

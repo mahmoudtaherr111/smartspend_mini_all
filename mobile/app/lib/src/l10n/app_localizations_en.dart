@@ -1653,6 +1653,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planPro => 'Pro Plan';
 
   @override
+  String get planUltra => 'Ultra Plan';
+
+  @override
   String get planFeaturesTitle => 'Pro Plan Features';
 
   @override

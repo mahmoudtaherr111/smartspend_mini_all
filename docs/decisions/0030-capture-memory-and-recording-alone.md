@@ -2,7 +2,7 @@
 
 - Status: partially superseded by [decision 0049](0049-one-capture-path-model-decides.md): automatic recording no longer requires an approved pair. Memory and other parts remain. Built in `api/lib/capture/memory.ts` (memory and pairs), `api/lib/capture/intake.ts`
   (`mayRecordAlone`, `recordedNotice`, the shared `recordEventInTx`, "undo"), the admin section
-  `src/components/admin/settings/AdminCaptureSection.tsx`, tables `capture_memory` and `capture_user_pairs` (migration
+  `admin/src/pages/bank/CaptureSettings.tsx`, tables `capture_memory` and `capture_user_pairs` (migration
   0035).
 - Decided and recorded: 2026-10-28, from the capture production plan and the owner's answers (a pair recorded on its
   own with the user's consent after three confirmations; transfers to a person from 1,000 pounds asked first; rows

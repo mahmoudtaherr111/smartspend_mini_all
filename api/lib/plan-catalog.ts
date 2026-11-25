@@ -105,6 +105,14 @@ export function buildPlanCatalogEntry(
   }
 
   for (const feature of Object.keys(PLAN_FEATURE_LABELS) as PlanFeature[]) {
+    if (feature === "ads") {
+      rows.push({
+        key: "no_ads",
+        label: "بدون إعلانات",
+        value: !isPlanFeatureEnabled(settings, plan, "ads"),
+      });
+      continue;
+    }
     rows.push({
       key: feature,
       label: PLAN_FEATURE_LABELS[feature],

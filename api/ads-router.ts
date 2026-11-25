@@ -10,6 +10,8 @@ import { ads, adClicks, adImpressions } from "../db/schema";
 import { eq, and, or, isNull, lte, gte, sql, count, desc, type SQL } from "drizzle-orm";
 import { startOfBusinessDay } from "./lib/app-time";
 import { logAdminAction } from "./lib/admin-audit";
+import { getSystemSettings } from "./lib/settings-cache";
+import { asPlanId, planFeatureKey } from "../contracts/plan-features";
 
 const safeUrlSchema = z.string().url().optional().or(z.literal(""));
 
@@ -26,6 +28,13 @@ export const adsRouter = router({
         .optional(),
     )
     .query(async ({ ctx, input }) => {
+      if (ctx.user?.role === "admin") return [];
+      const callerPlan = asPlanId(ctx.user?.plan);
+      const settings = await getSystemSettings().catch(() => ({} as Record<string, string>));
+      if (settings[planFeatureKey("ads", callerPlan)] === "false") {
+        return [];
+      }
+
       const now = new Date();
       const plan = ctx.user && ctx.user.plan !== "free" ? "pro" : "free";
 
@@ -217,13 +226,22 @@ export const adsRouter = router({
         content: z.string().optional(),
         imageUrl: safeUrlSchema,
         linkUrl: safeUrlSchema,
+        placement: z.string().optional(),
+        targetPlan: z.enum(["free", "all"]).optional(),
         platformTarget: z.enum(["all", "android", "ios", "web"]).optional(),
         frequencyCapPerDay: z.number().min(0).optional(),
+        startDate: z.string().nullable().optional(),
+        endDate: z.string().nullable().optional(),
         isActive: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
+      const { id, startDate, endDate, ...rest } = input;
+      const data = {
+        ...rest,
+        ...(startDate !== undefined ? { startDate: startDate ? new Date(startDate) : null } : {}),
+        ...(endDate !== undefined ? { endDate: endDate ? new Date(endDate) : null } : {}),
+      };
       await db.update(ads).set(data).where(eq(ads.id, id));
       await logAdminAction(ctx, {
         action: "UPDATE_AD",

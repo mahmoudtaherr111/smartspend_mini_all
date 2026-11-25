@@ -39,6 +39,9 @@ abstract interface class StorePurchases {
   Future<List<ProductDetails>> products(List<String> ids);
   Future<PurchaseOutcome> buy(ProductDetails product, String accountToken);
   Future<bool> restore();
+  StreamSubscription<void>? observeBackgroundUpdates(
+    void Function() onVerified,
+  );
 }
 
 final class InAppStorePurchases implements StorePurchases {
@@ -46,6 +49,7 @@ final class InAppStorePurchases implements StorePurchases {
 
   final TrpcClient _client;
   final _store = InAppPurchase.instance;
+  bool _activeBuyInFlight = false;
 
   String get _storeId => Platform.isIOS ? 'app_store' : 'google_play';
 
@@ -99,6 +103,7 @@ final class InAppStorePurchases implements StorePurchases {
         }
       }
     });
+    _activeBuyInFlight = true;
     try {
       final started = await _store.buyNonConsumable(
         purchaseParam: PurchaseParam(
@@ -109,7 +114,38 @@ final class InAppStorePurchases implements StorePurchases {
       if (!started) return PurchaseOutcome.failed;
       return await done.future;
     } finally {
+      _activeBuyInFlight = false;
       await subscription.cancel();
+    }
+  }
+
+  @override
+  StreamSubscription<void>? observeBackgroundUpdates(
+    void Function() onVerified,
+  ) {
+    try {
+      return _store.purchaseStream.listen((purchases) async {
+        if (_activeBuyInFlight) return;
+        var changed = false;
+        for (final purchase in purchases) {
+          if (purchase.status != PurchaseStatus.purchased &&
+              purchase.status != PurchaseStatus.restored) {
+            continue;
+          }
+          try {
+            await _confirm(purchase);
+            if (purchase.pendingCompletePurchase) {
+              await _store.completePurchase(purchase);
+            }
+            changed = true;
+          } on Object {
+            // Keep pendingCompletePurchase untouched so the store retries later.
+          }
+        }
+        if (changed) onVerified();
+      }, onError: (_) {});
+    } on Object {
+      return null;
     }
   }
 

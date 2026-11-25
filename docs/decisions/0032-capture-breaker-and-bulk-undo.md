@@ -2,7 +2,7 @@
 
 - Status: accepted. Built in `api/lib/capture/operations.ts` (`runCaptureBreaker`, `previewBulkUndo`,
   `applyBulkUndo`, `captureFunnel`), the protected job `capture-breaker`, `captureAdmin.funnel` and
-  `captureAdmin.bulkUndo`, the console's «الأرقام» tab (`src/components/admin/capture/AdminCaptureNumbers.tsx`), and
+  `captureAdmin.bulkUndo`, the console's «الأرقام» tab (`admin/src/pages/bank/`), and
   `capture_events.source_slug` and `reader_version` (migration 0037).
 - Decided and recorded: 2026-10-28, from the capture production plan (P4).
 

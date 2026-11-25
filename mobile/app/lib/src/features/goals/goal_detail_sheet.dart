@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../plans/plan_providers.dart';
 import 'goal_form_sheet.dart';
 import 'goal_models.dart';
 import 'goals_providers.dart';
@@ -47,12 +48,18 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
     return widget.goal;
   }
 
+  bool get _canAnalyze =>
+      ref.watch(userPlanProvider).asData?.value.goalAnalysisEnabled ??
+      widget.isPro;
+
   Future<void> _analyze(Goal goal) async {
-    if (!widget.isPro) {
-      await showSmartSpendSheet<void>(
+    final allowed =
+        ref.read(userPlanProvider).asData?.value.goalAnalysisEnabled ??
+        widget.isPro;
+    if (!allowed) {
+      await showUpgradePromptSheet(
         context: context,
-        builder: (_) =>
-            const UpgradePromptSheet(reason: UpgradeLimitReason.goals),
+        reason: UpgradeLimitReason.goals,
       );
       return;
     }
@@ -435,7 +442,7 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                   ],
                 ] else ...[
                   Text(
-                    widget.isPro
+                    _canAnalyze
                         ? l10n.monRunTheAnalysisToGet
                         : l10n.monGoalAnalysisComesWithPro,
                     style: textTheme.bodySmall?.copyWith(
@@ -446,7 +453,7 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                   SmartSpendButton(
                     label: _analyzing
                         ? l10n.monAnalyzing
-                        : (widget.isPro
+                        : (_canAnalyze
                               ? l10n.monAnalyzeThisGoal
                               : l10n.monUpgradeToProForThe),
                     onPressed: _analyzing ? null : () => _analyze(goal),

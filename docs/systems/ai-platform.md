@@ -25,7 +25,7 @@ the per-plan token budget every paid call is measured against, and the two place
 | Budgets | `api/lib/ai-usage-policy.ts` | Per-plan monthly limits, per-request ceilings, the burst guard, and the token estimate |
 | Cost metrics | `api/services/ai-cost-policy.ts`, `api/services/ai-cost-analytics.ts` | A second, lighter accounting of AI work as `ai_cost_*` events, and the admin overview over them |
 | Provider clients | `api/lib/deepseek-client.ts`, `api/lib/fireworks-client.ts`, `api/lib/nvidia-client.ts`, `api/lib/groq-client.ts` | The direct calls still used by the AI Center and the report job |
-| Limits for the app | `ai.getUserLimits` in `api/ai-router.ts` | What the user has left this cycle: AI tokens, voice seconds for the Cairo calendar month (reset at its end) and offline items (`offline_limit_<plan>`) |
+| Limits for the app | `ai.getUserLimits` in `api/ai-router.ts` | What the user has left this cycle: AI tokens, voice seconds for the Cairo calendar month (reset at its end), offline items (`offline_limit_<plan>`), and the plan's active-goal, active-commitment and bank-capture caps |
 
 ## Choosing a provider
 1. The caller asks for a purpose and a tier. `resolveAdminRoutes` returns every active model of an active connector
@@ -132,8 +132,8 @@ models of the console's «تحويل الصوت لكلام» tab.
   used up. Callers then shrink the output with `clampOutputTokens`.
 - The monthly limit is `<plan>_token_limit` in the settings (50,000, 500,000 and 2,000,000 by default), and a
   `user_token_limit_<type>_<id>` setting overrides it for one person ([admin](admin.md)).
-- The per-request ceiling is the admin's `<plan>_max_per_request` (or the report, image and goal settings),
-  and then a hard ceiling per plan and channel in the code that the admin's value can only lower.
+- The per-request ceiling is the admin's `<plan>_max_per_request` (or the report, image, goal and `business_max_tokens_<plan>` settings),
+  and then a hard ceiling per plan and channel in the code that the admin's value can only lower (including a 2,048-token ceiling on Free for `business` so turning `feature_business_free` on in the console works).
 - The burst guard refuses more than the plan's `burst_limit_per_minute_<plan>` calls of one channel per minute (20, 60
   and 100 by default, editable in the console, `contracts/plan-features.ts`), counted from
   the `ai_<channel>` events of `user_analytics`.

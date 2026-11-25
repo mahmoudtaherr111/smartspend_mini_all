@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
@@ -7,8 +9,11 @@ import 'features/auth/session_controller.dart';
 import 'features/commitments/logo_cache.dart';
 import 'features/infrastructure/app_update_screen.dart';
 import 'features/infrastructure/remote_config.dart';
+import 'features/limits/limits_api.dart';
 import 'features/lock/lock_screen.dart';
 import 'features/notifications/push_notification_service.dart';
+import 'features/plans/plan_providers.dart';
+import 'features/plans/store_purchases.dart';
 import 'l10n/app_localizations.dart';
 import 'routing/app_router.dart';
 
@@ -22,11 +27,35 @@ class SmartSpendApp extends ConsumerStatefulWidget {
 
 class _SmartSpendAppState extends ConsumerState<SmartSpendApp> {
   bool _pushInitScheduled = false;
+  StreamSubscription<void>? _storeSub;
 
   @override
   void initState() {
     super.initState();
-    _schedulePushInitIfSignedIn(ref.read(sessionProvider));
+    final session = ref.read(sessionProvider);
+    _schedulePushInitIfSignedIn(session);
+    _syncStoreListener(session);
+  }
+
+  @override
+  void dispose() {
+    unawaited(_storeSub?.cancel());
+    super.dispose();
+  }
+
+  void _syncStoreListener(SessionState session) {
+    if (session is SignedIn) {
+      _storeSub ??= ref.read(storePurchasesProvider).observeBackgroundUpdates(
+        () {
+          if (!mounted) return;
+          ref.invalidate(userPlanProvider);
+          ref.invalidate(userLimitsProvider);
+        },
+      );
+    } else {
+      unawaited(_storeSub?.cancel());
+      _storeSub = null;
+    }
   }
 
   void _schedulePushInitIfSignedIn(SessionState session) {
@@ -41,6 +70,7 @@ class _SmartSpendAppState extends ConsumerState<SmartSpendApp> {
   @override
   Widget build(BuildContext context) {
     ref.listen(sessionProvider, (previous, next) {
+      _syncStoreListener(next);
       if (next is SignedIn) {
         _schedulePushInitIfSignedIn(next);
       } else if (next is SignedOut) {

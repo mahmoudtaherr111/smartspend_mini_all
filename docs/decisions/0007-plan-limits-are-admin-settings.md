@@ -2,7 +2,7 @@
 
 - Status: accepted, implemented in `contracts/plan-features.ts`, `api/middleware.ts` (the per-feature builders),
   `api/lib/plan-catalog.ts`, `api/lib/system-settings-registry.ts` and
-  `src/components/admin/settings/AdminPlansTab.tsx`.
+  `admin/src/pages/plans/Plans.tsx`.
 - Decided and recorded: 2026-09-24.
 
 ## Context

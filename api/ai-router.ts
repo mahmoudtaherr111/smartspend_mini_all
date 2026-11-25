@@ -987,6 +987,16 @@ export const aiRouter = router({
       offline: {
         limit: offlineLimit,
       },
+      goals: {
+        limit: planNumber(cfg, ctx.user.plan, "goals_active_limit"),
+      },
+      commitments: {
+        limit: planNumber(cfg, ctx.user.plan, "commitments_active_limit"),
+      },
+      capture: {
+        monthlyLimit: planNumber(cfg, ctx.user.plan, "capture_monthly_limit"),
+        devicesLimit: planNumber(cfg, ctx.user.plan, "capture_devices"),
+      },
     };
   }),
 

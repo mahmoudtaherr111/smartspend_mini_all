@@ -519,6 +519,7 @@
   "planCurrent": "Current Plan",
   "planFree": "Free Plan",
   "planPro": "Pro Plan",
+  "planUltra": "Ultra Plan",
   "planFeaturesTitle": "Pro Plan Features",
   "cancelPlanTitle": "Cancel Subscription",
   "cancelPlanRetainNotice": "Your plan keeps working until the end of the period you paid for.",

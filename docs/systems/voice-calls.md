@@ -14,7 +14,7 @@ has calls; the first call (`/api/voice/live`) was removed on 2026-09-25.
 | --- | --- | --- |
 | App side | `src/lib/voice/`, `src/components/voice/` | One call for the whole app: capture with speech detection, playback, the socket client, the call screen and its ways in |
 | Server side | `api/voice-router.ts`, `api/services/voice/`, `api/services/entitlements/voice.ts` | Who may call, the ticket, the `/api/voice/v2` socket, the Gemini Live engine, the brain and its tools |
-| Admin | `src/components/admin/settings/AdminVoiceCallSection.tsx`, `voice.adminStats` | Kill switch, models, cost caps, the calls dashboard |
+| Admin | `admin/src/pages/plans/VoiceCall.tsx`, `voice.adminStats` | Kill switch, models, cost caps, the calls dashboard |
 
 ## The call
 
@@ -374,8 +374,7 @@ routes. The next call's snapshot reads these memories, and the memory screen lab
   `VoiceCallHost`), looked at again six seconds later because the summary is written just after the call.
 
 ### In the admin console
-The settings page's plans tab has a section for the call
-(`src/components/admin/settings/AdminVoiceCallSection.tsx`), saved with the rest of the settings form:
+The «الباقات والحدود» page's «المكالمة الصوتية» tab (`admin/src/pages/plans/VoiceCall.tsx`) edits the call's settings, saved with the save bar:
 - **Stop:** the kill switch (`voice_v2_kill_switch`) stops every call and hides the ways in.
 - **Models:** the default Live model (`voice_v2_model`) and one per plan (`voice_v2_model_<plan>`, empty means the
   default), the thinking level for the extended-thinking model, and the text models of `think`, `market_price` and
@@ -400,7 +399,7 @@ Monthly minutes, seconds per call and whether a plan may call at all are in the 
 | To change | Edit | Check with |
 | --- | --- | --- |
 | Which origins may open the socket | `api/lib/origin-policy.ts` | |
-| Who may call, minutes, model, the kill switch | `api/services/entitlements/voice.ts` and the `voice_v2_*` settings, set in `src/components/admin/settings/AdminVoiceCallSection.tsx` | `api/services/entitlements/voice.test.ts`, `src/components/admin/settings/AdminVoiceCallSection.test.tsx` |
+| Who may call, minutes, model, the kill switch | `api/services/entitlements/voice.ts` and the `voice_v2_*` settings, set in `admin/src/pages/plans/VoiceCall.tsx` | `api/services/entitlements/voice.test.ts` |
 | the admin's dashboard | `api/services/voice/admin-stats.ts`, `voice.adminStats` in `api/voice-router.ts` | `api/services/voice/admin-stats.test.ts` |
 | Which Gemini models can be chosen | `contracts/voice-models.ts` | `api/lib/model-mapper.test.ts` |
 | the socket, resume, time and cost limits, checkpoints | `api/services/voice/gateway/` | `api/services/voice/gateway/gateway.test.ts` |

@@ -41,10 +41,10 @@ public pages (landing, privacy, terms and the not-found page).
 | `/support` | signed in | Support tickets ([admin](admin.md)) |
 | `/more`, `/settings/*` | signed in | The settings menu and its sections; `/settings` redirects to `/more` |
 | `/ultra` | signed in, on Ultra | The Ultra lounge |
-| `/admin` | admin only, after the session is verified | The console ([admin](admin.md)) |
+| `/admin`, `/admin/*` | admin only, after the session is verified (`ConsoleRedirect`) | Redirects to the standalone console at `/admin/` ([admin](admin.md)) |
 | anything else | open | Not found |
 
-`ProtectedRoute`, `AdminRoute` and `PublicOnlyRoute` all wait for the verified session before taking access
+`ProtectedRoute`, `ConsoleRedirect` and `PublicOnlyRoute` all wait for the verified session before taking access
 away: the identity snapshot replayed from the device carries a name, avatar and plan, never a role.
 
 ## Booting fast, and coming back

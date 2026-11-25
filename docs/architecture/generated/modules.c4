@@ -240,13 +240,6 @@ model {
         paths 'src/components/auth/**, src/components/profile/**, src/components/settings/**, src/components/notifications/**'
       }
     }
-    web-admin = module 'Admin UI' {
-      description 'Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration.'
-      metadata {
-        files '25'
-        paths 'src/components/admin/**'
-      }
-    }
     web-ai = module 'AI Center UI' {
       description 'AI Center screens: the chatbot, the AI memory manager and the monthly AI report.'
       metadata {
@@ -283,9 +276,9 @@ model {
       }
     }
     web-hooks = module 'Web hooks' {
-      description 'React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics.'
+      description 'React hooks for auth, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics.'
       metadata {
-        files '19'
+        files '18'
         paths 'src/hooks/**'
       }
     }
@@ -306,7 +299,7 @@ model {
     web-pages = module 'Web pages' {
       description 'Route-level page components lazy-loaded by src/App.tsx.'
       metadata {
-        files '17'
+        files '16'
         paths 'src/pages/**'
       }
     }

@@ -2858,6 +2858,12 @@ abstract class AppLocalizations {
   /// **'خطة المحترفين (Pro)'**
   String get planPro;
 
+  /// No description provided for @planUltra.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطة Ultra'**
+  String get planUltra;
+
   /// No description provided for @planFeaturesTitle.
   ///
   /// In ar, this message translates to:

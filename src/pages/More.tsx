@@ -113,7 +113,6 @@ const sections: MoreSection[] = [
 ];
 
 function preloadDestination(href: string) {
-  if (href === "/admin") return import("@/pages/Admin");
   if (href === "/wallets") return import("@/pages/WalletsPage");
   if (href === "/plan") return import("@/pages/PlanPage");
   if (href === "/pro") return import("@/pages/Pro");
@@ -228,11 +227,9 @@ export default function More() {
             </Link>
 
             {isAdmin && (
-              <Link
-                to="/admin"
+              <a
+                href="/admin/"
                 data-testid="mobile-admin-link"
-                onPointerEnter={() => void preloadDestination("/admin")}
-                onFocus={() => void preloadDestination("/admin")}
                 className="active-press flex min-h-[72px] items-center gap-3 px-4 py-3 border-t border-slate-200/70 dark:border-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-500"
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400">
@@ -247,7 +244,7 @@ export default function More() {
                   </span>
                 </span>
                 <ForwardChevron className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
-              </Link>
+              </a>
             )}
 
             <div className="border-t border-slate-200/70 dark:border-slate-800 p-2">

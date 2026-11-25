@@ -27,11 +27,11 @@ Future<void> startReceiptIntake({
   required BuildContext context,
   required WidgetRef ref,
 }) async {
-  // 1. Pro feature gate check (REC-06 acceptance)
+  // 1. Admin-configured plan feature gate check (REC-06 acceptance)
   final userPlan = await ref
       .read(userPlanProvider.future)
       .catchError((_) => const UserPlanInfo(plan: 'free', role: 'user'));
-  if (!userPlan.isPro) {
+  if (!userPlan.receiptsEnabled) {
     if (!context.mounted) return;
     await showUpgradePromptSheet(
       context: context,
